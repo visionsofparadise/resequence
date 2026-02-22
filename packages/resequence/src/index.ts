@@ -7,6 +7,7 @@ export type { Pitch } from './pitch'
 
 export type { Instrument } from './instrument'
 
+export { note, gap, sequence, layer, repeat, assign } from './pattern'
 export type {
   Pattern,
   NoteNode,
@@ -27,3 +28,6 @@ export type {
   CompiledAssignNode,
   CompiledSequence,
 } from './compiled'
+
+export { compile } from './compile'
+export type { CompileConfig } from './compile'
