@@ -1,1 +1,29 @@
-export {};
+/* eslint-disable barrel-files/avoid-barrel-files */
+export { PPQ, resolveDuration, bars, beats } from './duration'
+export type { Duration } from './duration'
+
+export { resolvePitch } from './pitch'
+export type { Pitch } from './pitch'
+
+export type { Instrument } from './instrument'
+
+export type {
+  Pattern,
+  NoteNode,
+  GapNode,
+  SequenceNode,
+  LayerNode,
+  RepeatNode,
+  AssignNode,
+} from './pattern'
+
+export type {
+  CompiledNode,
+  CompiledNoteNode,
+  CompiledGapNode,
+  CompiledSequenceNode,
+  CompiledLayerNode,
+  CompiledRepeatNode,
+  CompiledAssignNode,
+  CompiledSequence,
+} from './compiled'
