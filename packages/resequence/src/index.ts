@@ -1,22 +1,29 @@
 /* eslint-disable barrel-files/avoid-barrel-files */
-export { PPQ, resolveDuration, bars, beats } from './duration'
-export type { Duration } from './duration'
+export { bars, beats, PPQ, resolveDuration } from "./duration";
+export type { Duration } from "./duration";
 
-export { resolvePitch } from './pitch'
-export type { Pitch } from './pitch'
+export { resolvePitch } from "./pitch";
+export type { Pitch } from "./pitch";
 
-export type { InstrumentDefinition } from './instrument'
-export type { EffectDefinition } from './effect'
+export { compressor, delay, effects, filter, gain, highpass, lowpass, pan, reverb } from "./effect";
+export type { CompressorEffect, DelayEffect, Effect as EffectDefinition, EffectsChain, FilterEffect, FilterMode, GainEffect, PanEffect, ReverbEffect } from "./effect";
 
-export type { Pattern } from './patterns/pattern'
+export { instrument, Instrument as InstrumentDefinition, kit } from "./instrument";
+export type { Envelope, InstrumentZone, KitMapping } from "./instrument";
 
-export { note, NotePattern } from './patterns/note'
-export { gap, GapPattern } from './patterns/gap'
-export { sequence, SequencePattern } from './patterns/sequence'
-export { layer, LayerPattern } from './patterns/layer'
-export { repeat, RepeatPattern } from './patterns/repeat'
-export { assign, AssignPattern } from './patterns/assign'
+export type { Pattern } from "./patterns/pattern";
+export { MidiPattern, RoutedPattern } from "./patterns/pattern";
 
-export { chord } from './chord'
-export { scale } from './scale'
-export type { ScaleAccessor } from './scale'
+export { automate, AutomatePattern } from "./patterns/automate";
+export type { AutomationCurve, AutomationPoint } from "./patterns/automate";
+export { gap, GapPattern } from "./patterns/gap";
+export { layer, LayerPattern } from "./patterns/layer";
+export { metadata, MetadataPattern } from "./patterns/metadata";
+export { note, NotePattern } from "./patterns/note";
+export { repeat, RepeatPattern } from "./patterns/repeat";
+export { sample, SamplePattern } from "./patterns/sample";
+export { sequence, SequencePattern } from "./patterns/sequence";
+
+export { chord } from "./chord";
+export { scale } from "./scale";
+export type { ScaleAccessor } from "./scale";
