@@ -4,6 +4,16 @@ import { note } from './note'
 import { sequence, SequencePattern } from './sequence'
 
 describe('SequencePattern', () => {
+  describe('durationTicks', () => {
+    it('sums child durations', () => {
+      expect(sequence(note('C4', '4n'), note('E4', '8n')).durationTicks).toBe(720)
+    })
+
+    it('returns 0 for empty sequence', () => {
+      expect(sequence().durationTicks).toBe(0)
+    })
+  })
+
   describe('transpose', () => {
     it('transposes sequence children', () => {
       const result = sequence(note('C4', '4n'), note('E4', '4n')).transpose(3) as SequencePattern

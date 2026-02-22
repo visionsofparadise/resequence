@@ -1,25 +1,19 @@
-import type { CompiledLayerNode } from '../compiled'
 import { resolveDuration } from '../duration'
 import type { Duration } from '../duration'
 import type { Pattern } from './pattern'
 
 export class LayerPattern implements Pattern {
   readonly type = 'layer' as const
+  readonly durationTicks: number
 
   constructor(
     readonly nodes: ReadonlyArray<Pattern>,
     readonly duration?: Duration,
-  ) {}
-
-  compile(startTick: number): CompiledLayerNode {
-    const children = this.nodes.map((child) => child.compile(startTick))
-
-    const durationTicks =
-      this.duration !== undefined
-        ? resolveDuration(this.duration)
-        : Math.max(0, ...children.map((child) => child.durationTicks))
-
-    return { type: 'layer', startTick, durationTicks, nodes: children }
+  ) {
+    this.durationTicks =
+      duration !== undefined
+        ? resolveDuration(duration)
+        : Math.max(0, ...nodes.map((node) => node.durationTicks))
   }
 
   transpose(interval: number): LayerPattern {

@@ -2,6 +2,16 @@ import { describe, expect, it } from 'vitest'
 import { gap, GapPattern } from './gap'
 
 describe('GapPattern', () => {
+  describe('durationTicks', () => {
+    it('resolves string duration to ticks', () => {
+      expect(gap('8n').durationTicks).toBe(240)
+    })
+
+    it('resolves numeric duration as-is', () => {
+      expect(gap(120).durationTicks).toBe(120)
+    })
+  })
+
   describe('transpose', () => {
     it('leaves gap unchanged', () => {
       const result = gap('4n').transpose(5) as GapPattern

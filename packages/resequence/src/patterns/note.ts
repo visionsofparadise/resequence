@@ -1,4 +1,3 @@
-import type { CompiledNoteNode } from '../compiled'
 import { resolveDuration } from '../duration'
 import type { Duration } from '../duration'
 import { resolvePitch } from '../pitch'
@@ -7,18 +6,15 @@ import type { Pattern } from './pattern'
 
 export class NotePattern implements Pattern {
   readonly type = 'note' as const
+  readonly durationTicks: number
 
   constructor(
     readonly pitch: Pitch,
     readonly duration: Duration,
     readonly velocity: number,
     readonly lyric?: string,
-  ) {}
-
-  compile(startTick: number): CompiledNoteNode {
-    const durationTicks = resolveDuration(this.duration)
-    const pitch = resolvePitch(this.pitch)
-    return { type: 'note', startTick, durationTicks, pitch, velocity: this.velocity, lyric: this.lyric }
+  ) {
+    this.durationTicks = resolveDuration(duration)
   }
 
   transpose(interval: number): NotePattern {

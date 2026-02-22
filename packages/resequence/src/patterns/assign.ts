@@ -1,30 +1,38 @@
-import type { CompiledAssignNode } from '../compiled'
-import type { Instrument } from '../instrument'
+import type { EffectDefinition } from '../effect'
+import type { InstrumentDefinition } from '../instrument'
 import type { Pattern } from './pattern'
 
 export class AssignPattern implements Pattern {
   readonly type = 'assign' as const
+  readonly durationTicks: number
 
   constructor(
     readonly node: Pattern,
     readonly track: string,
-    readonly instrument?: Instrument,
-  ) {}
-
-  compile(startTick: number): CompiledAssignNode {
-    const child = this.node.compile(startTick)
-    return { type: 'assign', startTick, durationTicks: child.durationTicks, track: this.track, instrument: this.instrument, node: child }
+    readonly instrument?: InstrumentDefinition,
+    readonly audio?: string,
+    readonly effects?: ReadonlyArray<EffectDefinition>,
+  ) {
+    this.durationTicks = node.durationTicks
   }
 
   transpose(interval: number): AssignPattern {
-    return new AssignPattern(this.node.transpose(interval), this.track, this.instrument)
+    return new AssignPattern(this.node.transpose(interval), this.track, this.instrument, this.audio, this.effects)
   }
 
   reverse(): AssignPattern {
-    return new AssignPattern(this.node.reverse(), this.track, this.instrument)
+    return new AssignPattern(this.node.reverse(), this.track, this.instrument, this.audio, this.effects)
   }
 }
 
-export function assign(node: Pattern, config: { track: string; instrument?: Instrument }): AssignPattern {
-  return new AssignPattern(node, config.track, config.instrument)
+export function assign(
+  node: Pattern,
+  config: {
+    track: string
+    instrument?: InstrumentDefinition
+    audio?: string
+    effects?: ReadonlyArray<EffectDefinition>
+  },
+): AssignPattern {
+  return new AssignPattern(node, config.track, config.instrument, config.audio, config.effects)
 }

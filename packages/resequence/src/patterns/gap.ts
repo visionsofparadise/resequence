@@ -1,16 +1,13 @@
-import type { CompiledGapNode } from '../compiled'
 import { resolveDuration } from '../duration'
 import type { Duration } from '../duration'
 import type { Pattern } from './pattern'
 
 export class GapPattern implements Pattern {
   readonly type = 'gap' as const
+  readonly durationTicks: number
 
-  constructor(readonly duration: Duration) {}
-
-  compile(startTick: number): CompiledGapNode {
-    const durationTicks = resolveDuration(this.duration)
-    return { type: 'gap', startTick, durationTicks }
+  constructor(readonly duration: Duration) {
+    this.durationTicks = resolveDuration(duration)
   }
 
   transpose(): GapPattern {

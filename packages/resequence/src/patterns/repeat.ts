@@ -1,18 +1,14 @@
-import type { CompiledRepeatNode } from '../compiled'
 import type { Pattern } from './pattern'
 
 export class RepeatPattern implements Pattern {
   readonly type = 'repeat' as const
+  readonly durationTicks: number
 
   constructor(
     readonly node: Pattern,
     readonly count: number,
-  ) {}
-
-  compile(startTick: number): CompiledRepeatNode {
-    const child = this.node.compile(startTick)
-    const durationTicks = child.durationTicks * this.count
-    return { type: 'repeat', startTick, durationTicks, count: this.count, node: child }
+  ) {
+    this.durationTicks = node.durationTicks * count
   }
 
   transpose(interval: number): RepeatPattern {

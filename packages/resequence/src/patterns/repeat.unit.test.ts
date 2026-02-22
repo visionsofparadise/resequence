@@ -5,6 +5,12 @@ import { repeat, RepeatPattern } from './repeat'
 import { sequence, SequencePattern } from './sequence'
 
 describe('RepeatPattern', () => {
+  describe('durationTicks', () => {
+    it('multiplies child duration by count', () => {
+      expect(repeat(note('C4', '4n'), 4).durationTicks).toBe(1920)
+    })
+  })
+
   describe('transpose', () => {
     it('transposes repeat child', () => {
       const result = repeat(note('C4', '4n'), 4).transpose(5) as RepeatPattern

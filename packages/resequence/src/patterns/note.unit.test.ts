@@ -2,6 +2,20 @@ import { describe, expect, it } from 'vitest'
 import { note, NotePattern } from './note'
 
 describe('NotePattern', () => {
+  describe('durationTicks', () => {
+    it('resolves string duration to ticks', () => {
+      expect(note('C4', '4n').durationTicks).toBe(480)
+    })
+
+    it('resolves numeric duration as-is', () => {
+      expect(note('C4', 240).durationTicks).toBe(240)
+    })
+
+    it('resolves dotted duration', () => {
+      expect(note('C4', '4n.').durationTicks).toBe(720)
+    })
+  })
+
   describe('transpose', () => {
     it('transposes a single note up', () => {
       const result = note('C4', '4n').transpose(7) as NotePattern
