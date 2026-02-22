@@ -1,0 +1,38 @@
+import { Chord } from 'tonal'
+import type { Duration } from './duration'
+import type { LayerNode } from './pattern'
+import { layer, note } from './pattern'
+import { resolvePitch } from './pitch'
+
+const CHORD_REGEX = /^([A-G][#b]?)(\d)(.*)/
+
+export function chord(name: string | ReadonlyArray<string>, duration: Duration): LayerNode {
+  if (typeof name !== 'string') {
+    if (name.length === 0) throw new Error('chord() requires at least one pitch')
+
+    return layer(...name.map((pitch) => note(pitch, duration)))
+  }
+
+  const match = CHORD_REGEX.exec(name)
+
+  if (!match) throw new Error(`Invalid chord name: ${name}`)
+
+  const root = match[1]
+  const octave = match[2]
+  const quality = match[3]
+
+  const chordData = Chord.get(`${root}${quality}`)
+
+  if (chordData.empty) throw new Error(`Unknown chord quality: ${name}`)
+
+  const rootMidi = resolvePitch(`${root}${octave}`)
+
+  const notes = chordData.notes.map((pitchClass) => {
+    const noteMidi = resolvePitch(`${pitchClass}${octave}`)
+    const adjusted = noteMidi < rootMidi ? noteMidi + 12 : noteMidi
+    
+    return note(adjusted, duration)
+  })
+
+  return layer(...notes)
+}

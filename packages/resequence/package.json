@@ -8,9 +8,13 @@
       "types": "./dist/index.d.ts"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "sideEffects": false,
-  "publishConfig": { "access": "public" },
+  "publishConfig": {
+    "access": "public"
+  },
   "author": "Matt Cavender",
   "license": "ISC",
   "repository": {
@@ -31,5 +35,8 @@
     "tsup": "^8.0.0",
     "typescript": "*",
     "vitest": "^3.0.0"
+  },
+  "dependencies": {
+    "tonal": "^6.4.3"
   }
 }

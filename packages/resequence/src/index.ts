@@ -31,3 +31,9 @@ export type {
 
 export { compile } from './compile'
 export type { CompileConfig } from './compile'
+
+export { chord } from './chord'
+export { transpose } from './transpose'
+export { reverse } from './reverse'
+export { scale } from './scale'
+export type { ScaleAccessor } from './scale'
