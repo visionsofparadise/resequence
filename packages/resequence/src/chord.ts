@@ -1,12 +1,13 @@
 import { Chord } from 'tonal'
 import type { Duration } from './duration'
-import type { LayerNode } from './pattern'
-import { layer, note } from './pattern'
+import type { LayerPattern } from './patterns/layer'
+import { layer } from './patterns/layer'
+import { note } from './patterns/note'
 import { resolvePitch } from './pitch'
 
 const CHORD_REGEX = /^([A-G][#b]?)(\d)(.*)/
 
-export function chord(name: string | ReadonlyArray<string>, duration: Duration): LayerNode {
+export function chord(name: string | ReadonlyArray<string>, duration: Duration): LayerPattern {
   if (typeof name !== 'string') {
     if (name.length === 0) throw new Error('chord() requires at least one pitch')
 
@@ -30,7 +31,7 @@ export function chord(name: string | ReadonlyArray<string>, duration: Duration):
   const notes = chordData.notes.map((pitchClass) => {
     const noteMidi = resolvePitch(`${pitchClass}${octave}`)
     const adjusted = noteMidi < rootMidi ? noteMidi + 12 : noteMidi
-    
+
     return note(adjusted, duration)
   })
 

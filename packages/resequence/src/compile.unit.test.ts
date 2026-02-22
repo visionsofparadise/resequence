@@ -2,8 +2,12 @@ import { describe, expect, it } from 'vitest'
 import { compile } from './compile'
 import type { CompiledAssignNode, CompiledLayerNode, CompiledRepeatNode, CompiledSequenceNode } from './compiled'
 import { PPQ } from './duration'
-import type { LayerNode } from './pattern'
-import { assign, gap, layer, note, repeat, sequence } from './pattern'
+import { assign } from './patterns/assign'
+import { gap } from './patterns/gap'
+import { layer, LayerPattern } from './patterns/layer'
+import { note } from './patterns/note'
+import { repeat } from './patterns/repeat'
+import { sequence } from './patterns/sequence'
 
 const config = { tempo: 120, key: 'C', timeSignature: [4, 4] as const }
 
@@ -102,11 +106,7 @@ describe('compile', () => {
     })
 
     it('uses duration override when set on node', () => {
-      const layerNode: LayerNode = {
-        type: 'layer',
-        nodes: [note('C4', '4n'), note('E4', '2n')],
-        duration: '1n',
-      }
+      const layerNode = new LayerPattern([note('C4', '4n'), note('E4', '2n')], '1n')
       const result = compile(layerNode, config)
       const tree = result.tree as CompiledLayerNode
       expect(tree.durationTicks).toBe(PPQ * 4)

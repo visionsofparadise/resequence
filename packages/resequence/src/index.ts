@@ -7,16 +7,14 @@ export type { Pitch } from './pitch'
 
 export type { Instrument } from './instrument'
 
-export { note, gap, sequence, layer, repeat, assign } from './pattern'
-export type {
-  Pattern,
-  NoteNode,
-  GapNode,
-  SequenceNode,
-  LayerNode,
-  RepeatNode,
-  AssignNode,
-} from './pattern'
+export type { Pattern } from './patterns/pattern'
+
+export { note, NotePattern } from './patterns/note'
+export { gap, GapPattern } from './patterns/gap'
+export { sequence, SequencePattern } from './patterns/sequence'
+export { layer, LayerPattern } from './patterns/layer'
+export { repeat, RepeatPattern } from './patterns/repeat'
+export { assign, AssignPattern } from './patterns/assign'
 
 export type {
   CompiledNode,
@@ -33,7 +31,5 @@ export { compile } from './compile'
 export type { CompileConfig } from './compile'
 
 export { chord } from './chord'
-export { transpose } from './transpose'
-export { reverse } from './reverse'
 export { scale } from './scale'
 export type { ScaleAccessor } from './scale'

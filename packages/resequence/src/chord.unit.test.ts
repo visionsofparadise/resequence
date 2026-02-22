@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { chord } from './chord'
-import type { NoteNode } from './pattern'
+import type { NotePattern } from './patterns/note'
 
 function pitches(result: ReturnType<typeof chord>): ReadonlyArray<number | string> {
-  return result.nodes.map((n) => (n as NoteNode).pitch)
+  return result.nodes.map((n) => (n as NotePattern).pitch)
 }
 
 describe('chord', () => {
@@ -59,7 +59,7 @@ describe('chord', () => {
     it('applies duration to all notes', () => {
       const result = chord('C4', '2n')
       for (const n of result.nodes) {
-        expect((n as NoteNode).duration).toBe('2n')
+        expect((n as NotePattern).duration).toBe('2n')
       }
     })
 
@@ -98,7 +98,7 @@ describe('chord', () => {
     it('applies duration to all notes', () => {
       const result = chord(['C4', 'E4'], '8n')
       for (const n of result.nodes) {
-        expect((n as NoteNode).duration).toBe('8n')
+        expect((n as NotePattern).duration).toBe('8n')
       }
     })
 
