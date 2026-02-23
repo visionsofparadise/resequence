@@ -1,3 +1,5 @@
+import { ResequenceError } from "../error";
+
 export const PPQ = 480
 
 export type Duration =
@@ -29,7 +31,7 @@ export function resolveDuration(duration: Duration): number {
 
   const ticks = TICKS[duration]
 
-  if (ticks === undefined) throw new Error(`Unknown duration: ${duration}`)
+  if (ticks === undefined) throw new ResequenceError('UNKNOWN_DURATION', `Unknown duration: ${duration}`)
     
   return ticks
 }

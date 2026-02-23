@@ -1,3 +1,5 @@
+import { ResequenceError } from "../error";
+
 export type Pitch = string | number
 
 const NOTE_NAMES: Record<string, number> = {
@@ -10,7 +12,7 @@ export function resolvePitch(pitch: Pitch): number {
   if (typeof pitch === 'number') return pitch
 
   const match = PITCH_REGEX.exec(pitch) as [string, string, string | undefined, string] | null
-  if (!match) throw new Error(`Invalid pitch: ${pitch}`)
+  if (!match) throw new ResequenceError('INVALID_PITCH', `Invalid pitch: ${pitch}`)
 
   const [, noteName, accidental, octaveStr] = match
   const semitone = NOTE_NAMES[noteName] ?? 0

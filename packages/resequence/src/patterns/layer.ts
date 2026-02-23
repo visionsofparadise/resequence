@@ -1,6 +1,7 @@
 import type { Duration } from "../utils/duration";
 import { resolveDuration } from "../utils/duration";
 import type { ScheduleContext } from "../rendering/schedule-context";
+import type { ValidateContext } from "../validate";
 import type { Pattern, PositionedNote } from "./pattern";
 import { MidiPattern } from "./pattern";
 
@@ -39,6 +40,15 @@ export class LayerPattern extends MidiPattern {
 		}
 
 		return results;
+	}
+
+	validate(context: ValidateContext): void {
+		if (this.nodes.length === 0) {
+			context.warnings.push({ code: "EMPTY_CONTAINER", message: "layer() has no children" });
+		}
+		for (const child of this.nodes) {
+			child.validate(context);
+		}
 	}
 
 	schedule(offsetTicks: number, context: ScheduleContext): void {

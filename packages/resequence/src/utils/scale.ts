@@ -1,4 +1,5 @@
 import { Scale } from 'tonal'
+import { ResequenceError } from '../error'
 
 export type ScaleAccessor = (degree: number, octave?: number) => string
 
@@ -6,13 +7,13 @@ const SCALE_REGEX = /^([A-G][#b]?)(\d)\s+(.+)/
 
 export function scale(name: string): ScaleAccessor {
   const match = SCALE_REGEX.exec(name) as [string, string, string, string] | null
-  if (!match) throw new Error(`Invalid scale name: ${name}`)
+  if (!match) throw new ResequenceError('INVALID_SCALE_NAME', `Invalid scale name: ${name}`)
 
   const [, root, octaveStr, scaleType] = match
   const rootOctave = parseInt(octaveStr, 10)
 
   const scaleData = Scale.get(`${root} ${scaleType}`)
-  if (scaleData.empty) throw new Error(`Unknown scale: ${name}`)
+  if (scaleData.empty) throw new ResequenceError('UNKNOWN_SCALE', `Unknown scale: ${name}`)
 
   const pitchClasses = scaleData.notes
 

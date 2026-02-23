@@ -1,4 +1,6 @@
+import { ResequenceError } from "../error";
 import type { ScheduleContext } from "../rendering/schedule-context";
+import type { ValidateContext } from "../validate";
 import type { Pattern, PositionedNote } from "./pattern";
 import { MidiPattern } from "./pattern";
 
@@ -11,6 +13,10 @@ export class RepeatPattern extends MidiPattern {
 		readonly count: number,
 	) {
 		super();
+
+		if (count < 1 || !Number.isInteger(count)) {
+			throw new ResequenceError('INVALID_REPEAT_COUNT', `repeat(): count must be a positive integer, got ${count}`);
+		}
 
 		this.durationTicks = node.durationTicks * count;
 	}
@@ -31,6 +37,10 @@ export class RepeatPattern extends MidiPattern {
 		}
 
 		return results;
+	}
+
+	validate(context: ValidateContext): void {
+		this.node.validate(context);
 	}
 
 	schedule(offsetTicks: number, context: ScheduleContext): void {

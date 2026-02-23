@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { ResequenceError } from "../error";
 import { bars, beats } from "../utils/duration";
 import { automate } from "./automate";
 import { layer } from "./layer";
@@ -39,9 +40,9 @@ describe("AutomatePattern", () => {
 			expect(auto.durationTicks).toBe(bars(2));
 		});
 
-		it("is 0 for empty envelope", () => {
-			const auto = automate("empty", "bass.hp.frequency", []);
-			expect(auto.durationTicks).toBe(0);
+		it("rejects empty envelope", () => {
+			expect(() => automate("empty", "bass.hp.frequency", [])).toThrow(ResequenceError);
+			expect(() => automate("empty", "bass.hp.frequency", [])).toThrow("points array must not be empty");
 		});
 	});
 
@@ -119,11 +120,8 @@ describe("AutomatePattern", () => {
 			expect(auto.reverse().durationTicks).toBe(bars(2));
 		});
 
-		it("handles empty envelope", () => {
-			const auto = automate("empty", "bass.hp.frequency", []);
-			const reversed = auto.reverse();
-			expect(reversed.durationTicks).toBe(0);
-			expect(reversed.envelope).toHaveLength(0);
+		it("rejects empty envelope on reverse", () => {
+			expect(() => automate("empty", "bass.hp.frequency", [])).toThrow("points array must not be empty");
 		});
 	});
 

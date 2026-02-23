@@ -1,4 +1,6 @@
+import { ResequenceError } from "../error";
 import type { ScheduleContext } from "../rendering/schedule-context";
+import type { ValidateContext } from "../validate";
 import type { Pattern, PositionedNote } from "./pattern";
 
 export class MetadataPattern implements Pattern {
@@ -11,6 +13,17 @@ export class MetadataPattern implements Pattern {
 		readonly key?: string,
 		readonly timeSignature?: [number, number],
 	) {
+		if (tempo !== undefined && tempo <= 0) {
+			throw new ResequenceError('INVALID_TEMPO', `metadata(): tempo must be greater than 0, got ${tempo}`);
+		}
+
+		if (timeSignature !== undefined) {
+			const [numerator, denominator] = timeSignature;
+			if (numerator <= 0 || !Number.isInteger(numerator) || denominator <= 0 || !Number.isInteger(denominator)) {
+				throw new ResequenceError('INVALID_TIME_SIGNATURE', `metadata(): time signature values must be positive integers, got [${numerator}, ${denominator}]`);
+			}
+		}
+
 		this.durationTicks = node.durationTicks;
 	}
 
@@ -24,6 +37,10 @@ export class MetadataPattern implements Pattern {
 
 	getMidi(offset = 0, trackName?: string): Array<PositionedNote> {
 		return this.node.getMidi(offset, trackName);
+	}
+
+	validate(context: ValidateContext): void {
+		this.node.validate(context);
 	}
 
 	schedule(offsetTicks: number, context: ScheduleContext): void {

@@ -1,8 +1,21 @@
 import { describe, expect, it } from 'vitest'
+import { ResequenceError } from '../error'
 import { effects, gain, highpass, compressor } from './effect'
 import { instrument, kit, Instrument } from './instrument'
 
 describe('instrument', () => {
+  describe('validation', () => {
+    it('rejects empty name', () => {
+      expect(() => instrument('', './bass.wav', { root: 'C2' })).toThrow(ResequenceError)
+      expect(() => instrument('', './bass.wav', { root: 'C2' })).toThrow('name must not be empty')
+    })
+
+    it('rejects empty zones array', () => {
+      expect(() => instrument('bass', [])).toThrow(ResequenceError)
+      expect(() => instrument('bass', [])).toThrow('zones array must not be empty')
+    })
+  })
+
   describe('single sample', () => {
     it('creates instrument with one zone', () => {
       const inst = instrument('bass', './bass-C2.wav', { root: 'C2' })
@@ -67,6 +80,18 @@ describe('instrument', () => {
 })
 
 describe('kit', () => {
+  describe('validation', () => {
+    it('rejects empty name', () => {
+      expect(() => kit('', { C1: './kick.wav' })).toThrow(ResequenceError)
+      expect(() => kit('', { C1: './kick.wav' })).toThrow('name must not be empty')
+    })
+
+    it('rejects empty mapping', () => {
+      expect(() => kit('drums', {})).toThrow(ResequenceError)
+      expect(() => kit('drums', {})).toThrow('mapping must not be empty')
+    })
+  })
+
   it('creates kit with string mapping', () => {
     const drums = kit('drums', {
       C1: './kick.wav',

@@ -1,7 +1,28 @@
 import { describe, expect, it } from "vitest";
+import { ResequenceError } from "../error";
 import { note, NotePattern } from "./note";
 
 describe("NotePattern", () => {
+	describe("validation", () => {
+		it("rejects velocity below 0", () => {
+			expect(() => note("C4", "4n", { velocity: -1 })).toThrow(ResequenceError);
+			expect(() => note("C4", "4n", { velocity: -1 })).toThrow("velocity must be 0-127");
+		});
+
+		it("rejects velocity above 127", () => {
+			expect(() => note("C4", "4n", { velocity: 200 })).toThrow(ResequenceError);
+			expect(() => note("C4", "4n", { velocity: 200 })).toThrow("velocity must be 0-127, got 200");
+		});
+
+		it("accepts velocity 0", () => {
+			expect(note("C4", "4n", { velocity: 0 }).velocity).toBe(0);
+		});
+
+		it("accepts velocity 127", () => {
+			expect(note("C4", "4n", { velocity: 127 }).velocity).toBe(127);
+		});
+	});
+
 	describe("durationTicks", () => {
 		it("resolves string duration to ticks", () => {
 			expect(note("C4", "4n").durationTicks).toBe(480);

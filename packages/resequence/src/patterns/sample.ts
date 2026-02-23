@@ -1,8 +1,10 @@
+import { ResequenceError } from "../error";
 import type { Duration } from "../utils/duration";
 import { resolveDuration } from "../utils/duration";
 import type { EffectsChain } from "../instrument/effect";
 import type { ScheduleContext } from "../rendering/schedule-context";
 import { ticksToSeconds } from "../rendering/ticks-to-seconds";
+import type { ValidateContext } from "../validate";
 import type { Pattern, PositionedNote } from "./pattern";
 
 export class SamplePattern implements Pattern {
@@ -17,6 +19,10 @@ export class SamplePattern implements Pattern {
 		readonly reversed: boolean,
 		readonly effects?: EffectsChain,
 	) {
+		if (!path) {
+			throw new ResequenceError('EMPTY_SAMPLE_PATH', 'sample(): path must not be empty');
+		}
+
 		this.durationTicks = duration !== undefined ? resolveDuration(duration) : 0;
 	}
 
@@ -30,6 +36,10 @@ export class SamplePattern implements Pattern {
 
 	routeTo(effectsChain: EffectsChain): SamplePattern {
 		return new SamplePattern(this.name, this.path, this.duration, this.transposeSemitones, this.reversed, effectsChain);
+	}
+
+	validate(_context: ValidateContext): void {
+		return;
 	}
 
 	getMidi(): Array<PositionedNote> {

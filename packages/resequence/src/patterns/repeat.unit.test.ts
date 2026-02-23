@@ -1,10 +1,31 @@
 import { describe, expect, it } from "vitest";
+import { ResequenceError } from "../error";
 import type { NotePattern } from "./note";
 import { note } from "./note";
 import { repeat, RepeatPattern } from "./repeat";
 import { sequence, SequencePattern } from "./sequence";
 
 describe("RepeatPattern", () => {
+	describe("validation", () => {
+		it("rejects count less than 1", () => {
+			expect(() => repeat(note("C4", "4n"), 0)).toThrow(ResequenceError);
+			expect(() => repeat(note("C4", "4n"), 0)).toThrow("count must be a positive integer");
+		});
+
+		it("rejects negative count", () => {
+			expect(() => repeat(note("C4", "4n"), -2)).toThrow(ResequenceError);
+		});
+
+		it("rejects non-integer count", () => {
+			expect(() => repeat(note("C4", "4n"), 2.5)).toThrow(ResequenceError);
+			expect(() => repeat(note("C4", "4n"), 2.5)).toThrow("count must be a positive integer");
+		});
+
+		it("accepts count of 1", () => {
+			expect(repeat(note("C4", "4n"), 1).durationTicks).toBe(480);
+		});
+	});
+
 	describe("durationTicks", () => {
 		it("multiplies child duration by count", () => {
 			expect(repeat(note("C4", "4n"), 4).durationTicks).toBe(1920);

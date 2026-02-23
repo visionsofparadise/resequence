@@ -1,4 +1,6 @@
 /* eslint-disable barrel-files/avoid-barrel-files */
+export { ResequenceError } from "./error";
+
 export { bars, beats, PPQ, resolveDuration } from "./utils/duration";
 export type { Duration } from "./utils/duration";
 
@@ -50,3 +52,6 @@ export type { MidiRenderOptions, MidiRenderResult } from "./rendering/render-mid
 export { buildEffectsMap } from "./instrument/build-effects-map";
 export { encodeWav } from "./rendering/encode-wav";
 export type { EffectsGraphEntry, ScheduleContext } from "./rendering/schedule-context";
+
+export { validate } from "./validate";
+export type { ValidationWarning } from "./validate";

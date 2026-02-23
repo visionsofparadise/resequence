@@ -1,4 +1,5 @@
 import { Chord } from 'tonal'
+import { ResequenceError } from '../error'
 import type { Duration } from './duration'
 import type { LayerPattern } from '../patterns/layer'
 import { layer } from '../patterns/layer'
@@ -9,14 +10,14 @@ const CHORD_REGEX = /^([A-G][#b]?)(\d)(.*)/
 
 export function chord(name: string | ReadonlyArray<string>, duration: Duration): LayerPattern {
   if (typeof name !== 'string') {
-    if (name.length === 0) throw new Error('chord() requires at least one pitch')
+    if (name.length === 0) throw new ResequenceError('EMPTY_CHORD', 'chord() requires at least one pitch')
 
     return layer(...name.map((pitch) => note(pitch, duration)))
   }
 
   const match = CHORD_REGEX.exec(name)
 
-  if (!match) throw new Error(`Invalid chord name: ${name}`)
+  if (!match) throw new ResequenceError('INVALID_CHORD_NAME', `Invalid chord name: ${name}`)
 
   const root = match[1]
   const octave = match[2]
@@ -24,7 +25,7 @@ export function chord(name: string | ReadonlyArray<string>, duration: Duration):
 
   const chordData = Chord.get(`${root}${quality}`)
 
-  if (chordData.empty) throw new Error(`Unknown chord quality: ${name}`)
+  if (chordData.empty) throw new ResequenceError('UNKNOWN_CHORD_QUALITY', `Unknown chord quality: ${name}`)
 
   const rootMidi = resolvePitch(`${root}${octave}`)
 

@@ -1,7 +1,9 @@
+import { ResequenceError } from "../error";
 import type { Duration } from "../utils/duration";
 import { resolveDuration } from "../utils/duration";
 import type { ScheduleContext } from "../rendering/schedule-context";
 import { ticksToSeconds } from "../rendering/ticks-to-seconds";
+import type { ValidateContext } from "../validate";
 import type { Pattern, PositionedNote } from "./pattern";
 
 export type AutomationCurve = "linear" | "exponential" | "step";
@@ -31,6 +33,10 @@ export class AutomatePattern implements Pattern {
 	) {
 		this.paths = typeof paths === "string" ? [paths] : paths;
 
+		if (points.length === 0) {
+			throw new ResequenceError('EMPTY_AUTOMATION_POINTS', 'automate(): points array must not be empty');
+		}
+
 		this.envelope = points.map((point) => ({
 			timeTicks: resolveDuration(point.time),
 			value: point.value,
@@ -43,7 +49,7 @@ export class AutomatePattern implements Pattern {
 			const segments = path.split(".");
 
 			if (segments.length < 3) {
-				throw new Error(`Automation path must have at least 3 segments (instrumentName.effectKey.property), got: ${path}`);
+				throw new ResequenceError('INVALID_AUTOMATION_PATH', `Automation path must have at least 3 segments (instrumentName.effectKey.property), got: ${path}`);
 			}
 		}
 	}
@@ -53,10 +59,6 @@ export class AutomatePattern implements Pattern {
 	}
 
 	reverse(): AutomatePattern {
-		if (this.envelope.length === 0) {
-			return new AutomatePattern(this.name, this.paths, []);
-		}
-
 		const duration = this.durationTicks;
 		const reversedPoints: ReadonlyArray<AutomationPoint> = this.envelope.map((point) => ({
 			time: (duration - point.timeTicks) as Duration,
@@ -65,6 +67,10 @@ export class AutomatePattern implements Pattern {
 		}));
 
 		return new AutomatePattern(this.name, this.paths, reversedPoints);
+	}
+
+	validate(context: ValidateContext): void {
+		context.automationPaths.push({ name: this.name, paths: [...this.paths] });
 	}
 
 	getMidi(): Array<PositionedNote> {

@@ -1,3 +1,4 @@
+import { ResequenceError } from "../error";
 import type { EffectsChain } from "./effect";
 import type { Pitch } from "../utils/pitch";
 
@@ -48,8 +49,12 @@ export class Instrument {
 export function instrument(name: string, sample: string, options: { root: Pitch; envelope?: Envelope }): Instrument;
 export function instrument(name: string, zones: ReadonlyArray<InstrumentZone>): Instrument;
 export function instrument(name: string, sampleOrZones: string | ReadonlyArray<InstrumentZone>, options?: { root: Pitch; envelope?: Envelope }): Instrument {
+	if (!name) {
+		throw new ResequenceError('EMPTY_INSTRUMENT_NAME', 'instrument(): name must not be empty');
+	}
+
 	if (typeof sampleOrZones === "string") {
-		if (!options) throw new Error("options with root pitch required for single-sample instrument");
+		if (!options) throw new ResequenceError('MISSING_INSTRUMENT_OPTIONS', "options with root pitch required for single-sample instrument");
 
 		return new Instrument({
 			type: "instrument",
@@ -57,6 +62,10 @@ export function instrument(name: string, sampleOrZones: string | ReadonlyArray<I
 			zones: [{ sample: sampleOrZones, root: options.root }],
 			envelope: options.envelope,
 		});
+	}
+
+	if (sampleOrZones.length === 0) {
+		throw new ResequenceError('EMPTY_INSTRUMENT_ZONES', 'instrument(): zones array must not be empty');
 	}
 
 	return new Instrument({
@@ -67,6 +76,14 @@ export function instrument(name: string, sampleOrZones: string | ReadonlyArray<I
 }
 
 export function kit(name: string, mapping: KitMapping): Instrument {
+	if (!name) {
+		throw new ResequenceError('EMPTY_KIT_NAME', 'kit(): name must not be empty');
+	}
+
+	if (Object.keys(mapping).length === 0) {
+		throw new ResequenceError('EMPTY_KIT_MAPPING', 'kit(): mapping must not be empty');
+	}
+
 	return new Instrument({
 		type: "kit",
 		name,

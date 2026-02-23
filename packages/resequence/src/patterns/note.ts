@@ -1,3 +1,4 @@
+import { ResequenceError } from "../error";
 import type { Duration } from "../utils/duration";
 import { resolveDuration } from "../utils/duration";
 import type { Envelope, InstrumentZone, KitMapping } from "../instrument/instrument";
@@ -5,6 +6,7 @@ import type { Pitch } from "../utils/pitch";
 import { resolvePitch } from "../utils/pitch";
 import type { ScheduleContext } from "../rendering/schedule-context";
 import { ticksToSeconds } from "../rendering/ticks-to-seconds";
+import type { ValidateContext } from "../validate";
 import type { PositionedNote } from "./pattern";
 import { MidiPattern } from "./pattern";
 
@@ -20,6 +22,10 @@ export class NotePattern extends MidiPattern {
 	) {
 		super();
 
+		if (velocity < 0 || velocity > 127) {
+			throw new ResequenceError('INVALID_VELOCITY', `note(): velocity must be 0-127, got ${velocity}`);
+		}
+
 		this.durationTicks = resolveDuration(duration);
 	}
 
@@ -31,6 +37,15 @@ export class NotePattern extends MidiPattern {
 
 	reverse(): NotePattern {
 		return new NotePattern(this.pitch, this.duration, this.velocity, this.lyric);
+	}
+
+	validate(context: ValidateContext): void {
+		if (!context.insideRoute) {
+			context.warnings.push({
+				code: "ORPHANED_NOTES",
+				message: `Note '${this.pitch}' is not routed to any instrument — it won't produce sound`,
+			});
+		}
 	}
 
 	getMidi(offset = 0, trackName?: string): Array<PositionedNote> {

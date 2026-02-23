@@ -1,8 +1,16 @@
 import { describe, expect, it } from "vitest";
+import { ResequenceError } from "../error";
 import { effects, gain } from "../instrument/effect";
 import { sample, SamplePattern } from "./sample";
 
 describe("SamplePattern", () => {
+	describe("validation", () => {
+		it("rejects empty path", () => {
+			expect(() => sample("break", "")).toThrow(ResequenceError);
+			expect(() => sample("break", "")).toThrow("path must not be empty");
+		});
+	});
+
 	describe("creation", () => {
 		it("creates with name and path", () => {
 			const s = sample("break", "./break.wav");

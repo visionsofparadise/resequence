@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { ResequenceError } from "../error";
 import { instrument } from "../instrument/instrument";
 import { gap } from "./gap";
 import { layer } from "./layer";
@@ -10,6 +11,30 @@ import type { SequencePattern } from "./sequence";
 import { sequence } from "./sequence";
 
 describe("MetadataPattern", () => {
+	describe("validation", () => {
+		it("rejects tempo <= 0", () => {
+			expect(() => metadata(note("C4", "4n"), { tempo: 0 })).toThrow(ResequenceError);
+			expect(() => metadata(note("C4", "4n"), { tempo: -10 })).toThrow("tempo must be greater than 0");
+		});
+
+		it("rejects non-integer time signature numerator", () => {
+			expect(() => metadata(note("C4", "4n"), { timeSignature: [4.5, 4] })).toThrow(ResequenceError);
+			expect(() => metadata(note("C4", "4n"), { timeSignature: [4.5, 4] })).toThrow("time signature values must be positive integers");
+		});
+
+		it("rejects zero time signature denominator", () => {
+			expect(() => metadata(note("C4", "4n"), { timeSignature: [4, 0] })).toThrow(ResequenceError);
+		});
+
+		it("rejects negative time signature values", () => {
+			expect(() => metadata(note("C4", "4n"), { timeSignature: [-1, 4] })).toThrow(ResequenceError);
+		});
+
+		it("accepts valid metadata", () => {
+			expect(metadata(note("C4", "4n"), { tempo: 120, timeSignature: [3, 4] }).tempo).toBe(120);
+		});
+	});
+
 	describe("creation", () => {
 		it("wraps pattern with all metadata fields", () => {
 			const m = metadata(note("C4", "4n"), { tempo: 126, key: "Cm", timeSignature: [4, 4] });
