@@ -1,12 +1,13 @@
 import type { EffectsChain } from "../instrument/effect";
+import type { EnvelopesChain } from "../instrument/envelope";
 import type { Instrument } from "../instrument/instrument";
 import type { Pattern } from "../patterns/pattern";
 import { RoutedPattern } from "../patterns/pattern";
 import { SamplePattern } from "../patterns/sample";
 
 export type RoutingEntry =
-	| { readonly type: "instrument"; readonly instrument: Instrument; readonly effects?: EffectsChain }
-	| { readonly type: "sample"; readonly name: string; readonly path: string; readonly effects?: EffectsChain };
+	| { readonly type: "instrument"; readonly instrument: Instrument; readonly effects?: EffectsChain; readonly envelopes?: EnvelopesChain }
+	| { readonly type: "sample"; readonly name: string; readonly path: string; readonly effects?: EffectsChain; readonly envelopes?: EnvelopesChain };
 
 export function collectRouting(pattern: Pattern): Map<string, RoutingEntry> {
 	const routing = new Map<string, RoutingEntry>();
@@ -19,7 +20,7 @@ export function collectRouting(pattern: Pattern): Map<string, RoutingEntry> {
 function walk(pattern: Pattern, routing: Map<string, RoutingEntry>): void {
 	if (pattern instanceof RoutedPattern) {
 		if (!routing.has(pattern.instrument.name)) {
-			routing.set(pattern.instrument.name, { type: "instrument", instrument: pattern.instrument, effects: pattern.instrument.effects });
+			routing.set(pattern.instrument.name, { type: "instrument", instrument: pattern.instrument, effects: pattern.instrument.effects, envelopes: pattern.instrument.envelopes });
 		}
 
 		walk(pattern.node, routing);
@@ -29,7 +30,7 @@ function walk(pattern: Pattern, routing: Map<string, RoutingEntry>): void {
 
 	if (pattern instanceof SamplePattern) {
 		if (!routing.has(pattern.name)) {
-			routing.set(pattern.name, { type: "sample", name: pattern.name, path: pattern.path, effects: pattern.effects });
+			routing.set(pattern.name, { type: "sample", name: pattern.name, path: pattern.path, effects: pattern.effects, envelopes: pattern.envelopes });
 		}
 
 		return;

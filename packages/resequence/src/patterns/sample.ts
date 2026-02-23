@@ -2,6 +2,8 @@ import { ResequenceError } from "../error";
 import type { Duration } from "../utils/duration";
 import { resolveDuration } from "../utils/duration";
 import type { EffectsChain } from "../instrument/effect";
+import type { EnvelopesChain } from "../instrument/envelope";
+import { buildPerVoiceChain, isEnvelopesChain } from "../instrument/envelope";
 import type { ScheduleContext } from "../rendering/schedule-context";
 import { ticksToSeconds } from "../rendering/ticks-to-seconds";
 import type { ValidateContext } from "../validate";
@@ -18,6 +20,7 @@ export class SamplePattern implements Pattern {
 		readonly transposeSemitones: number,
 		readonly reversed: boolean,
 		readonly effects?: EffectsChain,
+		readonly envelopes?: EnvelopesChain,
 	) {
 		if (!path) {
 			throw new ResequenceError('EMPTY_SAMPLE_PATH', 'sample(): path must not be empty');
@@ -27,15 +30,19 @@ export class SamplePattern implements Pattern {
 	}
 
 	transpose(interval: number): SamplePattern {
-		return new SamplePattern(this.name, this.path, this.duration, this.transposeSemitones + interval, this.reversed, this.effects);
+		return new SamplePattern(this.name, this.path, this.duration, this.transposeSemitones + interval, this.reversed, this.effects, this.envelopes);
 	}
 
 	reverse(): SamplePattern {
-		return new SamplePattern(this.name, this.path, this.duration, this.transposeSemitones, !this.reversed, this.effects);
+		return new SamplePattern(this.name, this.path, this.duration, this.transposeSemitones, !this.reversed, this.effects, this.envelopes);
 	}
 
-	routeTo(effectsChain: EffectsChain): SamplePattern {
-		return new SamplePattern(this.name, this.path, this.duration, this.transposeSemitones, this.reversed, effectsChain);
+	routeTo(chain: EffectsChain | EnvelopesChain): SamplePattern {
+		if (isEnvelopesChain(chain)) {
+			return new SamplePattern(this.name, this.path, this.duration, this.transposeSemitones, this.reversed, this.effects, chain);
+		}
+
+		return new SamplePattern(this.name, this.path, this.duration, this.transposeSemitones, this.reversed, chain, this.envelopes);
 	}
 
 	validate(_context: ValidateContext): void {
@@ -67,9 +74,25 @@ export class SamplePattern implements Pattern {
 			source.playbackRate.value = 2 ** (this.transposeSemitones / 12);
 		}
 
-		const effectsEntry = context.effectsMap.get(this.name);
+		const effectsEntry = context.effectsMap[this.name];
 		const destination = effectsEntry?.input ?? context.audioContext.destination;
-		source.connect(destination);
+		const durationSeconds = this.durationTicks > 0
+			? ticksToSeconds(this.durationTicks, context.tempo)
+			: buffer.duration;
+
+		if (effectsEntry?.envelopes) {
+			const perVoice = buildPerVoiceChain(effectsEntry.envelopes, source, context.audioContext, offsetSeconds, durationSeconds);
+
+			if (perVoice.input && perVoice.output) {
+				source.connect(perVoice.input);
+				perVoice.output.connect(destination);
+			} else {
+				source.connect(destination);
+			}
+		} else {
+			source.connect(destination);
+		}
+
 		source.start(offsetSeconds);
 	}
 }

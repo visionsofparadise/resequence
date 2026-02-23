@@ -109,10 +109,10 @@ function resolveAudioParam(path: string, context: ScheduleContext): AudioParam |
 	const effectKey = segments[1]!;
 	const property = segments[2]!;
 
-	const entry = context.effectsMap.get(instrumentName);
+	const entry = context.effectsMap[instrumentName];
 	if (!entry) return undefined;
 
-	const node = entry.nodes.get(effectKey);
+	const node = entry.nodes[effectKey];
 	if (!node) return undefined;
 
 	const param: unknown = (node as unknown as Record<string, unknown>)[property];

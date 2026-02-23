@@ -3,6 +3,7 @@ import {
   note, gap, sequence, layer, repeat,
   instrument, kit,
   effects, gain, pan, highpass, compressor,
+  envelopes, volumeEnvelope,
   sample, metadata, automate,
   bars, beats,
   chord,
@@ -18,10 +19,8 @@ describe('integration', () => {
       vol: gain({ level: -3 }),
     }))
 
-  const pad = instrument('pad', './samples/pad-C3.wav', {
-    root: 'C3',
-    envelope: { attack: 0.3, sustain: 0.7, release: 0.8 },
-  })
+  const pad = instrument('pad', './samples/pad-C3.wav', { root: 'C3' })
+    .routeTo(envelopes({ amp: volumeEnvelope({ attack: 0.3, sustain: 0.7, release: 0.8 }) }))
 
   const drums = kit('drums', {
     C1: './samples/kick.wav',

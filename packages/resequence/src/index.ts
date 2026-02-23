@@ -11,7 +11,10 @@ export { compressor, delay, effects, filter, gain, highpass, lowpass, pan, rever
 export type { CompressorEffect, DelayEffect, Effect as EffectDefinition, EffectsChain, FilterEffect, FilterMode, GainEffect, PanEffect, ReverbEffect } from "./instrument/effect";
 
 export { instrument, Instrument as InstrumentDefinition, kit } from "./instrument/instrument";
-export type { Envelope, InstrumentZone, KitMapping } from "./instrument/instrument";
+export type { InstrumentZone, KitMapping } from "./instrument/instrument";
+
+export { envelopes, filterEnvelope, pitchEnvelope, volumeEnvelope } from "./instrument/envelope";
+export type { EnvelopeEffect, EnvelopesChain, FilterEnvelopeEffect, PitchEnvelopeEffect, VolumeEnvelopeEffect } from "./instrument/envelope";
 
 export type { Pattern, PositionedNote } from "./patterns/pattern";
 export { MidiPattern, RoutedPattern } from "./patterns/pattern";

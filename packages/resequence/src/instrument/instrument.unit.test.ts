@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { ResequenceError } from '../error'
 import { effects, gain, highpass, compressor } from './effect'
+import { envelopes, volumeEnvelope, filterEnvelope } from './envelope'
 import { instrument, kit, Instrument } from './instrument'
 
 describe('instrument', () => {
@@ -24,12 +25,10 @@ describe('instrument', () => {
       expect(inst.zones).toEqual([{ sample: './bass-C2.wav', root: 'C2' }])
     })
 
-    it('stores envelope', () => {
-      const inst = instrument('pad', './pad.wav', {
-        root: 'C3',
-        envelope: { attack: 0.3, sustain: 0.7, release: 0.8 },
-      })
-      expect(inst.envelope).toEqual({ attack: 0.3, sustain: 0.7, release: 0.8 })
+    it('stores envelopes via routeTo', () => {
+      const envChain = envelopes({ amp: volumeEnvelope({ attack: 0.3, sustain: 0.7, release: 0.8 }) })
+      const inst = instrument('pad', './pad.wav', { root: 'C3' }).routeTo(envChain)
+      expect(inst.envelopes).toBe(envChain)
     })
   })
 
@@ -75,6 +74,32 @@ describe('instrument', () => {
       const inst = instrument('bass', './bass.wav', { root: 'C2' })
       const routed = inst.routeTo(effects({ vol: gain({ level: -3 }) }))
       expect(routed).toBeInstanceOf(Instrument)
+    })
+
+    it('accepts envelopes chain', () => {
+      const inst = instrument('bass', './bass.wav', { root: 'C2' })
+      const envChain = envelopes({ amp: volumeEnvelope() })
+      const routed = inst.routeTo(envChain)
+      expect(routed.envelopes).toBe(envChain)
+      expect(routed.effects).toBeUndefined()
+    })
+
+    it('preserves effects when adding envelopes', () => {
+      const inst = instrument('bass', './bass.wav', { root: 'C2' })
+      const fxChain = effects({ vol: gain({ level: -3 }) })
+      const envChain = envelopes({ amp: volumeEnvelope() })
+      const routed = inst.routeTo(fxChain).routeTo(envChain)
+      expect(routed.effects).toBe(fxChain)
+      expect(routed.envelopes).toBe(envChain)
+    })
+
+    it('preserves envelopes when adding effects', () => {
+      const inst = instrument('bass', './bass.wav', { root: 'C2' })
+      const fxChain = effects({ vol: gain({ level: -3 }) })
+      const envChain = envelopes({ flt: filterEnvelope({ frequency: 1000, amount: 0.5 }) })
+      const routed = inst.routeTo(envChain).routeTo(fxChain)
+      expect(routed.effects).toBe(fxChain)
+      expect(routed.envelopes).toBe(envChain)
     })
   })
 })

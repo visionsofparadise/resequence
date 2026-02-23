@@ -1,7 +1,8 @@
 import { ResequenceError } from "../error";
 import type { Duration } from "../utils/duration";
 import { resolveDuration } from "../utils/duration";
-import type { Envelope, InstrumentZone, KitMapping } from "../instrument/instrument";
+import { buildPerVoiceChain } from "../instrument/envelope";
+import type { InstrumentZone, KitMapping } from "../instrument/instrument";
 import type { Pitch } from "../utils/pitch";
 import { resolvePitch } from "../utils/pitch";
 import type { ScheduleContext } from "../rendering/schedule-context";
@@ -97,22 +98,27 @@ export class NotePattern extends MidiPattern {
 		source.buffer = buffer;
 		source.playbackRate.value = playbackRate;
 
-		const effectsEntry = context.effectsMap.get(inst.name);
+		const effectsEntry = context.effectsMap[inst.name];
 		const destination = effectsEntry?.input ?? context.audioContext.destination;
 
-		if (inst.envelope) {
-			const env = context.audioContext.createGain();
+		let maxRelease = 0;
 
-			env.gain.value = 0;
-			scheduleAdsr(env.gain, offsetSeconds, durationSeconds, inst.envelope);
-			source.connect(env);
-			env.connect(destination);
+		if (effectsEntry?.envelopes) {
+			const perVoice = buildPerVoiceChain(effectsEntry.envelopes, source, context.audioContext, offsetSeconds, durationSeconds);
+			maxRelease = perVoice.maxRelease;
+
+			if (perVoice.input && perVoice.output) {
+				source.connect(perVoice.input);
+				perVoice.output.connect(destination);
+			} else {
+				source.connect(destination);
+			}
 		} else {
 			source.connect(destination);
 		}
 
 		source.start(offsetSeconds);
-		source.stop(offsetSeconds + durationSeconds);
+		source.stop(offsetSeconds + durationSeconds + maxRelease);
 	}
 }
 
@@ -159,18 +165,6 @@ function midiToName(midi: number): string {
 	return `${name}${octave}`;
 }
 
-function scheduleAdsr(gain: AudioParam, startTime: number, duration: number, env: Envelope): void {
-	const attack = env.attack ?? 0.01;
-	const decay = env.decay ?? 0.1;
-	const sustain = env.sustain ?? 0.7;
-	const release = env.release ?? 0.1;
-
-	gain.setValueAtTime(0, startTime);
-	gain.linearRampToValueAtTime(1, startTime + attack);
-	gain.linearRampToValueAtTime(sustain, startTime + attack + decay);
-	gain.setValueAtTime(sustain, startTime + duration - release);
-	gain.linearRampToValueAtTime(0, startTime + duration);
-}
 
 export function note(pitch: Pitch, duration: Duration, options?: { velocity?: number; lyric?: string }): NotePattern {
 	return new NotePattern(pitch, duration, options?.velocity ?? 100, options?.lyric);

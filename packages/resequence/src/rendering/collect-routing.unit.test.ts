@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { collectRouting } from "./collect-routing";
 import { effects, gain, highpass } from "../instrument/effect";
+import { envelopes, volumeEnvelope } from "../instrument/envelope";
 import { instrument, kit } from "../instrument/instrument";
 import { layer } from "../patterns/layer";
 import { metadata } from "../patterns/metadata";
@@ -116,5 +117,36 @@ describe("collectRouting", () => {
 		const routing = collectRouting(pattern);
 
 		expect(routing.size).toBe(1);
+	});
+
+	it("collects instrument envelopes", () => {
+		const envChain = envelopes({ amp: volumeEnvelope({ attack: 0.1 }) });
+		const bass = instrument("bass", "./bass.wav", { root: "C2" }).routeTo(envChain);
+		const pattern = note("C2", "4n").routeTo(bass);
+		const routing = collectRouting(pattern);
+
+		const entry = routing.get("bass");
+		expect(entry?.envelopes).toBe(envChain);
+	});
+
+	it("collects sample envelopes", () => {
+		const envChain = envelopes({ amp: volumeEnvelope() });
+		const pattern = sample("break", "./break.wav", "1n").routeTo(envChain);
+		const routing = collectRouting(pattern);
+
+		const entry = routing.get("break");
+		expect(entry?.envelopes).toBe(envChain);
+	});
+
+	it("collects both effects and envelopes on instrument", () => {
+		const envChain = envelopes({ amp: volumeEnvelope() });
+		const fxChain = effects({ vol: gain({ level: -3 }) });
+		const bass = instrument("bass", "./bass.wav", { root: "C2" }).routeTo(envChain).routeTo(fxChain);
+		const pattern = note("C2", "4n").routeTo(bass);
+		const routing = collectRouting(pattern);
+
+		const entry = routing.get("bass");
+		expect(entry?.effects).toBe(fxChain);
+		expect(entry?.envelopes).toBe(envChain);
 	});
 });

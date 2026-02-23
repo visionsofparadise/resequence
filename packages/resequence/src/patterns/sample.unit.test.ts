@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { ResequenceError } from "../error";
 import { effects, gain } from "../instrument/effect";
+import { envelopes, volumeEnvelope } from "../instrument/envelope";
 import { sample, SamplePattern } from "./sample";
 
 describe("SamplePattern", () => {
@@ -78,6 +79,35 @@ describe("SamplePattern", () => {
 			expect(s.transposeSemitones).toBe(3);
 			expect(s.reversed).toBe(true);
 			expect(s.durationTicks).toBe(960);
+		});
+
+		it("accepts envelopes chain", () => {
+			const envChain = envelopes({ amp: volumeEnvelope() });
+			const s = sample("break", "./break.wav").routeTo(envChain);
+			expect(s.envelopes).toBe(envChain);
+			expect(s.effects).toBeUndefined();
+		});
+
+		it("preserves effects when adding envelopes", () => {
+			const fxChain = effects({ vol: gain({ level: -6 }) });
+			const envChain = envelopes({ amp: volumeEnvelope() });
+			const s = sample("break", "./break.wav").routeTo(fxChain).routeTo(envChain);
+			expect(s.effects).toBe(fxChain);
+			expect(s.envelopes).toBe(envChain);
+		});
+
+		it("preserves envelopes when adding effects", () => {
+			const fxChain = effects({ vol: gain({ level: -6 }) });
+			const envChain = envelopes({ amp: volumeEnvelope() });
+			const s = sample("break", "./break.wav").routeTo(envChain).routeTo(fxChain);
+			expect(s.effects).toBe(fxChain);
+			expect(s.envelopes).toBe(envChain);
+		});
+
+		it("carries envelopes through transpose and reverse", () => {
+			const envChain = envelopes({ amp: volumeEnvelope() });
+			const s = sample("break", "./break.wav").routeTo(envChain).transpose(3).reverse();
+			expect(s.envelopes).toBe(envChain);
 		});
 	});
 

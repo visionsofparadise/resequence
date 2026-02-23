@@ -2,14 +2,14 @@ import type { RoutingEntry } from "../rendering/collect-routing";
 import type { EffectsChain } from "./effect";
 import type { EffectsGraphEntry } from "../rendering/schedule-context";
 
-export function buildEffectsMap(routing: Map<string, RoutingEntry>, audioContext: BaseAudioContext, sampleBank: ReadonlyMap<string, AudioBuffer>): ReadonlyMap<string, EffectsGraphEntry> {
-	const graph = new Map<string, EffectsGraphEntry>();
+export function buildEffectsMap(routing: Map<string, RoutingEntry>, audioContext: BaseAudioContext, sampleBank: ReadonlyMap<string, AudioBuffer>): Readonly<Record<string, EffectsGraphEntry>> {
+	const graph: Record<string, EffectsGraphEntry> = {};
 
 	for (const [name, entry] of routing) {
 		const chain = entry.effects;
 
 		if (!chain) {
-			graph.set(name, { input: audioContext.destination, nodes: new Map() });
+			graph[name] = { input: audioContext.destination, nodes: {}, envelopes: entry.envelopes };
 
 			continue;
 		}
@@ -17,14 +17,14 @@ export function buildEffectsMap(routing: Map<string, RoutingEntry>, audioContext
 		const { input, nodes, output } = buildChain(chain, audioContext, sampleBank);
 
 		output.connect(audioContext.destination);
-		graph.set(name, { input, nodes });
+		graph[name] = { input, nodes, envelopes: entry.envelopes };
 	}
 
 	return graph;
 }
 
-function buildChain(chain: EffectsChain, audioContext: BaseAudioContext, sampleBank: ReadonlyMap<string, AudioBuffer>): { input: AudioNode; nodes: Map<string, AudioNode>; output: AudioNode } {
-	const nodes = new Map<string, AudioNode>();
+function buildChain(chain: EffectsChain, audioContext: BaseAudioContext, sampleBank: ReadonlyMap<string, AudioBuffer>): { input: AudioNode; nodes: Record<string, AudioNode>; output: AudioNode } {
+	const nodes: Record<string, AudioNode> = {};
 	let firstNode: AudioNode | undefined;
 	let prevNode: AudioNode | undefined;
 
@@ -101,7 +101,7 @@ function buildChain(chain: EffectsChain, audioContext: BaseAudioContext, sampleB
 			}
 		}
 
-		nodes.set(key, node);
+		nodes[key] = node;
 		firstNode ??= node;
 
 		if (prevNode) prevNode.connect(node);
