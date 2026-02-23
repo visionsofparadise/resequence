@@ -1,6 +1,6 @@
 import type { Duration } from "../duration";
 import { resolveDuration } from "../duration";
-import type { Pattern } from "./pattern";
+import type { Pattern, PositionedNote } from "./pattern";
 
 export class GapPattern implements Pattern {
 	readonly type = "gap" as const;
@@ -16,6 +16,10 @@ export class GapPattern implements Pattern {
 
 	reverse(): GapPattern {
 		return new GapPattern(this.duration);
+	}
+
+	getNotes(): Array<PositionedNote> {
+		return [];
 	}
 }
 

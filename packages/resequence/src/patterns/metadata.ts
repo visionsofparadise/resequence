@@ -1,4 +1,4 @@
-import type { Pattern } from "./pattern";
+import type { Pattern, PositionedNote } from "./pattern";
 
 export class MetadataPattern implements Pattern {
 	readonly type = "metadata" as const;
@@ -19,6 +19,10 @@ export class MetadataPattern implements Pattern {
 
 	reverse(): MetadataPattern {
 		return new MetadataPattern(this.node.reverse(), this.tempo, this.key, this.timeSignature);
+	}
+
+	getNotes(offset = 0): Array<PositionedNote> {
+		return this.node.getNotes(offset);
 	}
 }
 

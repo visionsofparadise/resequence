@@ -139,4 +139,10 @@ describe('AutomatePattern', () => {
       expect(combined.durationTicks).toBe(480)
     })
   })
+
+  describe('getNotes', () => {
+    it('returns empty', () => {
+      expect(automate('test', 'bass.hp.frequency', [{ time: 0, value: 0.5 }]).getNotes()).toEqual([])
+    })
+  })
 })

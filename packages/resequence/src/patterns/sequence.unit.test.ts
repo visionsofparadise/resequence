@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { gap } from './gap'
 import type { NotePattern } from './note'
 import { note } from './note'
 import { sequence, SequencePattern } from './sequence'
@@ -40,6 +41,29 @@ describe('SequencePattern', () => {
       expect((reversedInner.nodes[0] as NotePattern).pitch).toBe('D4')
       expect((reversedInner.nodes[1] as NotePattern).pitch).toBe('C4')
       expect((result.nodes[1] as NotePattern).pitch).toBe('E4')
+    })
+  })
+
+  describe('getNotes', () => {
+    it('accumulates offsets', () => {
+      const pat = sequence(note('C4', '4n'), note('D4', '4n'), note('E4', '4n'))
+      expect(pat.getNotes()).toEqual([
+        { tick: 0, pitch: 60 },
+        { tick: 480, pitch: 62 },
+        { tick: 960, pitch: 64 },
+      ])
+    })
+
+    it('skips gaps', () => {
+      const pat = sequence(note('C4', '4n'), gap('4n'), note('E4', '4n'))
+      expect(pat.getNotes()).toEqual([
+        { tick: 0, pitch: 60 },
+        { tick: 960, pitch: 64 },
+      ])
+    })
+
+    it('returns empty for empty sequence', () => {
+      expect(sequence().getNotes()).toEqual([])
     })
   })
 })

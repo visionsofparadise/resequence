@@ -1,4 +1,4 @@
-import type { Pattern } from "./pattern";
+import type { Pattern, PositionedNote } from "./pattern";
 import { MidiPattern } from "./pattern";
 
 export class RepeatPattern extends MidiPattern {
@@ -20,6 +20,16 @@ export class RepeatPattern extends MidiPattern {
 
 	reverse(): RepeatPattern {
 		return new RepeatPattern(this.node.reverse(), this.count);
+	}
+
+	getNotes(offset = 0): Array<PositionedNote> {
+		const results: Array<PositionedNote> = [];
+
+		for (let iteration = 0; iteration < this.count; iteration++) {
+			results.push(...this.node.getNotes(offset + this.node.durationTicks * iteration));
+		}
+
+		return results;
 	}
 }
 

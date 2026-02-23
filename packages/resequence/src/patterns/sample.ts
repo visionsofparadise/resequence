@@ -1,7 +1,7 @@
 import type { Duration } from "../duration";
 import { resolveDuration } from "../duration";
 import type { EffectsChain } from "../effect";
-import type { Pattern } from "./pattern";
+import type { Pattern, PositionedNote } from "./pattern";
 
 export class SamplePattern implements Pattern {
 	readonly type = "sample" as const;
@@ -28,6 +28,10 @@ export class SamplePattern implements Pattern {
 
 	routeTo(effectsChain: EffectsChain): SamplePattern {
 		return new SamplePattern(this.name, this.path, this.duration, this.transposeSemitones, this.reversed, effectsChain);
+	}
+
+	getNotes(): Array<PositionedNote> {
+		return [];
 	}
 }
 

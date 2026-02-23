@@ -72,4 +72,10 @@ describe('SamplePattern', () => {
       expect(s.durationTicks).toBe(960)
     })
   })
+
+  describe('getNotes', () => {
+    it('returns empty', () => {
+      expect(sample('kick', './kick.wav').getNotes()).toEqual([])
+    })
+  })
 })

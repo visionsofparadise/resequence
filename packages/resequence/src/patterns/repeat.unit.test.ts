@@ -30,4 +30,26 @@ describe('RepeatPattern', () => {
       expect((inner.nodes[1] as NotePattern).pitch).toBe('C4')
     })
   })
+
+  describe('getNotes', () => {
+    it('multiplies offsets', () => {
+      const pat = repeat(note('C4', '4n'), 4)
+      expect(pat.getNotes()).toEqual([
+        { tick: 0, pitch: 60 },
+        { tick: 480, pitch: 60 },
+        { tick: 960, pitch: 60 },
+        { tick: 1440, pitch: 60 },
+      ])
+    })
+
+    it('handles repeat of a sequence', () => {
+      const pat = repeat(sequence(note('C4', '8n'), note('E4', '8n')), 2)
+      expect(pat.getNotes()).toEqual([
+        { tick: 0, pitch: 60 },
+        { tick: 240, pitch: 64 },
+        { tick: 480, pitch: 60 },
+        { tick: 720, pitch: 64 },
+      ])
+    })
+  })
 })

@@ -69,4 +69,18 @@ describe('NotePattern', () => {
       expect(result.lyric).toBe('hel')
     })
   })
+
+  describe('getNotes', () => {
+    it('returns position and pitch', () => {
+      expect(note('C4', '4n').getNotes()).toEqual([{ tick: 0, pitch: 60 }])
+    })
+
+    it('applies offset', () => {
+      expect(note('C4', '4n').getNotes(100)).toEqual([{ tick: 100, pitch: 60 }])
+    })
+
+    it('handles numeric pitch', () => {
+      expect(note(60, '4n').getNotes()).toEqual([{ tick: 0, pitch: 60 }])
+    })
+  })
 })

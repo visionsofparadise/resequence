@@ -1,5 +1,5 @@
+import type { Pattern, PositionedNote } from "./pattern";
 import { MidiPattern } from "./pattern";
-import type { Pattern } from "./pattern";
 
 export class SequencePattern extends MidiPattern {
 	readonly type = "sequence" as const;
@@ -16,6 +16,19 @@ export class SequencePattern extends MidiPattern {
 
 	reverse(): SequencePattern {
 		return new SequencePattern([...this.nodes].reverse().map((child) => child.reverse()));
+	}
+
+	getNotes(offset = 0): Array<PositionedNote> {
+		const results: Array<PositionedNote> = [];
+
+		let cursor = offset;
+
+		for (const child of this.nodes) {
+			results.push(...child.getNotes(cursor));
+			cursor += child.durationTicks;
+		}
+
+		return results;
 	}
 }
 

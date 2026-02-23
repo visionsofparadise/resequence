@@ -27,4 +27,10 @@ describe('GapPattern', () => {
       expect(result.duration).toBe('8n')
     })
   })
+
+  describe('getNotes', () => {
+    it('returns empty', () => {
+      expect(gap('4n').getNotes()).toEqual([])
+    })
+  })
 })

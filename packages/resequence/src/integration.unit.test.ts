@@ -6,6 +6,7 @@ import {
   sample, metadata, automate,
   bars, beats,
   chord,
+  trigger, sidechain, lfo, formula, invert,
   InstrumentDefinition, RoutedPattern, SamplePattern, MetadataPattern, AutomatePattern,
 } from './index'
 
@@ -35,9 +36,9 @@ describe('integration', () => {
   it('creates instruments with effects', () => {
     expect(bass).toBeInstanceOf(InstrumentDefinition)
     expect(bass.effects).toBeDefined()
-    expect(bass.effects!.hp.type).toBe('filter')
-    expect(bass.effects!.comp.type).toBe('compressor')
-    expect(bass.effects!.vol.type).toBe('gain')
+    expect(bass.effects?.hp.type).toBe('filter')
+    expect(bass.effects?.comp.type).toBe('compressor')
+    expect(bass.effects?.vol.type).toBe('gain')
   })
 
   it('routes patterns to instruments', () => {
@@ -151,5 +152,75 @@ describe('integration', () => {
     expect(composition).toBeInstanceOf(MetadataPattern)
     expect(composition.tempo).toBe(126)
     expect(composition.durationTicks).toBe(480 * 4 * 8)
+  })
+
+  it('creates sidechain automation from kick pattern', () => {
+    const kickPattern = repeat(note('C1', '4n'), 4)
+    const duck = sidechain(kickPattern, { depth: 0.8, attack: 1, release: '8n' })
+
+    expect(duck.length).toBeGreaterThan(0)
+    expect(duck[0]?.value).toBe(1)
+
+    const bassRiff = sequence(note('C2', '8n'), gap('8n'), note('C2', '8n'), gap('8n'))
+    const bassPart = bassRiff.routeTo(bass)
+    const duckAutomation = automate('sidechain-duck', 'bass.vol.level', duck)
+
+    const groove = layer(bassPart, duckAutomation)
+    expect(groove.durationTicks).toBeGreaterThan(0)
+  })
+
+  it('creates LFO automation on filter', () => {
+    const filterLfo = lfo({ shape: 'sine', rate: '2n', duration: bars(4) })
+
+    expect(filterLfo.length).toBeGreaterThan(0)
+    for (const pt of filterLfo) {
+      expect(pt.value).toBeGreaterThanOrEqual(0)
+      expect(pt.value).toBeLessThanOrEqual(1)
+    }
+
+    const lfoAutomation = automate('filter-lfo', 'pad.hp.frequency', filterLfo)
+    const padChords = repeat(chord('C4m', '1n'), 4).routeTo(pad)
+    const section = layer(padChords, lfoAutomation)
+    expect(section.durationTicks).toBe(bars(4))
+  })
+
+  it('creates formula automation', () => {
+    const fadeIn = formula((t) => t, { duration: bars(2), resolution: 16 })
+
+    expect(fadeIn.length).toBe(17)
+    expect(fadeIn[0]?.value).toBeCloseTo(0)
+    expect(fadeIn.at(-1)?.value).toBeCloseTo(1)
+
+    const fadeAutomation = automate('fade-in', 'bass.vol.level', fadeIn)
+    expect(fadeAutomation).toBeInstanceOf(AutomatePattern)
+    expect(fadeAutomation.durationTicks).toBe(bars(2))
+  })
+
+  it('composes invert with sidechain', () => {
+    const kickPattern = repeat(note('C1', '4n'), 4)
+    const duck = sidechain(kickPattern, { depth: 0.8, attack: 1, release: '8n' })
+    const inverted = invert(duck)
+
+    expect(duck[0]?.value).toBe(1)
+    expect(inverted[0]?.value).toBe(0)
+
+    for (let idx = 0; idx < duck.length; idx++) {
+      const duckValue = duck[idx]?.value ?? 0;
+      const invertedValue = inverted[idx]?.value ?? 0;
+      expect(duckValue + invertedValue).toBeCloseTo(1)
+    }
+  })
+
+  it('trigger creates pattern-driven envelope', () => {
+    const kickPattern = repeat(note('C1', '4n'), 4)
+    const envelope = trigger(kickPattern, { peak: 0.9, attack: 1, release: '8n' })
+
+    expect(envelope.length).toBeGreaterThan(0)
+
+    const peaks = envelope.filter((pt) => pt.value === 0.9)
+    expect(peaks).toHaveLength(4)
+
+    const triggerAutomation = automate('trigger-env', 'drums.vol.level', envelope)
+    expect(triggerAutomation).toBeInstanceOf(AutomatePattern)
   })
 })

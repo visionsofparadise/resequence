@@ -1,6 +1,6 @@
 import type { Duration } from "../duration";
 import { resolveDuration } from "../duration";
-import type { Pattern } from "./pattern";
+import type { Pattern, PositionedNote } from "./pattern";
 
 export type AutomationCurve = "linear" | "exponential" | "step";
 
@@ -63,6 +63,10 @@ export class AutomatePattern implements Pattern {
 		}));
 
 		return new AutomatePattern(this.name, this.paths, reversedPoints);
+	}
+
+	getNotes(): Array<PositionedNote> {
+		return [];
 	}
 }
 

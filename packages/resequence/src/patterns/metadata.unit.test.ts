@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest'
+import { instrument } from '../instrument'
+import { gap } from './gap'
+import { layer } from './layer'
 import { note } from './note'
+import { repeat } from './repeat'
 import { sequence } from './sequence'
 import { metadata, MetadataPattern } from './metadata'
 import type { NotePattern } from './note'
@@ -58,6 +62,30 @@ describe('MetadataPattern', () => {
       const inner = reversed.node as SequencePattern
       expect((inner.nodes[0] as NotePattern).pitch).toBe('E4')
       expect((inner.nodes[1] as NotePattern).pitch).toBe('C4')
+    })
+  })
+
+  describe('getNotes', () => {
+    it('delegates to child', () => {
+      const pat = metadata(note('C4', '4n'), { tempo: 120 })
+      expect(pat.getNotes()).toEqual([{ tick: 0, pitch: 60 }])
+    })
+
+    it('handles nested structures', () => {
+      const inst = instrument('drums', './kick.wav', { root: 'C1' })
+      const kick = repeat(note('C1', '4n'), 4).routeTo(inst)
+      const snare = sequence(gap('4n'), note('D1', '4n'), gap('4n'), note('D1', '4n'))
+      const groove = layer(kick, snare)
+      const song = metadata(groove, { tempo: 120 })
+
+      expect(song.getNotes()).toEqual([
+        { tick: 0, pitch: 24 },
+        { tick: 480, pitch: 24 },
+        { tick: 960, pitch: 24 },
+        { tick: 1440, pitch: 24 },
+        { tick: 480, pitch: 26 },
+        { tick: 1440, pitch: 26 },
+      ])
     })
   })
 })

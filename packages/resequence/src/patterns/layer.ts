@@ -1,6 +1,6 @@
 import type { Duration } from "../duration";
 import { resolveDuration } from "../duration";
-import type { Pattern } from "./pattern";
+import type { Pattern, PositionedNote } from "./pattern";
 import { MidiPattern } from "./pattern";
 
 export class LayerPattern extends MidiPattern {
@@ -28,6 +28,16 @@ export class LayerPattern extends MidiPattern {
 			this.nodes.map((child) => child.reverse()),
 			this.duration,
 		);
+	}
+
+	getNotes(offset = 0): Array<PositionedNote> {
+		const results: Array<PositionedNote> = [];
+
+		for (const child of this.nodes) {
+			results.push(...child.getNotes(offset));
+		}
+
+		return results;
 	}
 }
 

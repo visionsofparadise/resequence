@@ -42,4 +42,19 @@ describe('LayerPattern', () => {
       expect((reversed2.nodes[1] as NotePattern).pitch).toBe('E4')
     })
   })
+
+  describe('getNotes', () => {
+    it('places children at the same offset', () => {
+      const pat = layer(note('C4', '4n'), note('E4', '4n'), note('G4', '4n'))
+      expect(pat.getNotes()).toEqual([
+        { tick: 0, pitch: 60 },
+        { tick: 0, pitch: 64 },
+        { tick: 0, pitch: 67 },
+      ])
+    })
+
+    it('returns empty for empty layer', () => {
+      expect(layer().getNotes()).toEqual([])
+    })
+  })
 })

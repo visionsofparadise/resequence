@@ -2,6 +2,7 @@ import type { Duration } from "../duration";
 import { resolveDuration } from "../duration";
 import type { Pitch } from "../pitch";
 import { resolvePitch } from "../pitch";
+import type { PositionedNote } from "./pattern";
 import { MidiPattern } from "./pattern";
 
 export class NotePattern extends MidiPattern {
@@ -27,6 +28,10 @@ export class NotePattern extends MidiPattern {
 
 	reverse(): NotePattern {
 		return new NotePattern(this.pitch, this.duration, this.velocity, this.lyric);
+	}
+
+	getNotes(offset = 0): Array<PositionedNote> {
+		return [{ tick: offset, pitch: resolvePitch(this.pitch) }];
 	}
 }
 

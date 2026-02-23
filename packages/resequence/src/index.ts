@@ -11,7 +11,7 @@ export type { CompressorEffect, DelayEffect, Effect as EffectDefinition, Effects
 export { instrument, Instrument as InstrumentDefinition, kit } from "./instrument";
 export type { Envelope, InstrumentZone, KitMapping } from "./instrument";
 
-export type { Pattern } from "./patterns/pattern";
+export type { Pattern, PositionedNote } from "./patterns/pattern";
 export { MidiPattern, RoutedPattern } from "./patterns/pattern";
 
 export { automate, AutomatePattern } from "./patterns/automate";
@@ -23,6 +23,16 @@ export { note, NotePattern } from "./patterns/note";
 export { repeat, RepeatPattern } from "./patterns/repeat";
 export { sample, SamplePattern } from "./patterns/sample";
 export { sequence, SequencePattern } from "./patterns/sequence";
+
+export { trigger } from "./trigger";
+export type { TriggerOptions } from "./trigger";
+export { invert } from "./invert";
+export { sidechain } from "./sidechain";
+export type { SidechainOptions } from "./sidechain";
+export { lfo } from "./lfo";
+export type { LfoOptions, LfoShape } from "./lfo";
+export { formula } from "./formula";
+export type { FormulaOptions } from "./formula";
 
 export { chord } from "./chord";
 export { scale } from "./scale";

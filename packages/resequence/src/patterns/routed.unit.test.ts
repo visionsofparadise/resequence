@@ -86,6 +86,13 @@ describe('RoutedPattern', () => {
     })
   })
 
+  describe('getNotes', () => {
+    it('unwraps to child', () => {
+      const pat = note('C4', '4n').routeTo(bass)
+      expect(pat.getNotes()).toEqual([{ tick: 0, pitch: 60 }])
+    })
+  })
+
   describe('instrument with effects', () => {
     it('preserves effects on instrument through routing', () => {
       const bassWithFx = bass.routeTo(effects({
