@@ -82,7 +82,7 @@ describe("SamplePattern", () => {
 		});
 
 		it("accepts envelopes chain", () => {
-			const envChain = envelopes({ amp: volumeEnvelope() });
+			const envChain = envelopes({ amp: volumeEnvelope({ envelope: {} }) });
 			const s = sample("break", "./break.wav").routeTo(envChain);
 			expect(s.envelopes).toBe(envChain);
 			expect(s.effects).toBeUndefined();
@@ -90,7 +90,7 @@ describe("SamplePattern", () => {
 
 		it("preserves effects when adding envelopes", () => {
 			const fxChain = effects({ vol: gain({ level: -6 }) });
-			const envChain = envelopes({ amp: volumeEnvelope() });
+			const envChain = envelopes({ amp: volumeEnvelope({ envelope: {} }) });
 			const s = sample("break", "./break.wav").routeTo(fxChain).routeTo(envChain);
 			expect(s.effects).toBe(fxChain);
 			expect(s.envelopes).toBe(envChain);
@@ -98,16 +98,49 @@ describe("SamplePattern", () => {
 
 		it("preserves envelopes when adding effects", () => {
 			const fxChain = effects({ vol: gain({ level: -6 }) });
-			const envChain = envelopes({ amp: volumeEnvelope() });
+			const envChain = envelopes({ amp: volumeEnvelope({ envelope: {} }) });
 			const s = sample("break", "./break.wav").routeTo(envChain).routeTo(fxChain);
 			expect(s.effects).toBe(fxChain);
 			expect(s.envelopes).toBe(envChain);
 		});
 
 		it("carries envelopes through transpose and reverse", () => {
-			const envChain = envelopes({ amp: volumeEnvelope() });
+			const envChain = envelopes({ amp: volumeEnvelope({ envelope: {} }) });
 			const s = sample("break", "./break.wav").routeTo(envChain).transpose(3).reverse();
 			expect(s.envelopes).toBe(envChain);
+		});
+	});
+
+	describe("loop points", () => {
+		it("stores loop points from factory", () => {
+			const s = sample("pad", "./pad.wav", "1n", { loopStartMs: 500, loopEndMs: 2000 });
+			expect(s.loopStartMs).toBe(500);
+			expect(s.loopEndMs).toBe(2000);
+		});
+
+		it("has no loop points by default", () => {
+			const s = sample("pad", "./pad.wav");
+			expect(s.loopStartMs).toBeUndefined();
+			expect(s.loopEndMs).toBeUndefined();
+		});
+
+		it("survives transpose", () => {
+			const s = sample("pad", "./pad.wav", "1n", { loopStartMs: 500, loopEndMs: 2000 }).transpose(3);
+			expect(s.loopStartMs).toBe(500);
+			expect(s.loopEndMs).toBe(2000);
+		});
+
+		it("survives reverse", () => {
+			const s = sample("pad", "./pad.wav", "1n", { loopStartMs: 500, loopEndMs: 2000 }).reverse();
+			expect(s.loopStartMs).toBe(500);
+			expect(s.loopEndMs).toBe(2000);
+		});
+
+		it("survives routeTo", () => {
+			const chain = effects({ vol: gain({ level: -6 }) });
+			const s = sample("pad", "./pad.wav", "1n", { loopStartMs: 500, loopEndMs: 2000 }).routeTo(chain);
+			expect(s.loopStartMs).toBe(500);
+			expect(s.loopEndMs).toBe(2000);
 		});
 	});
 

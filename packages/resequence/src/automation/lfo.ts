@@ -1,8 +1,10 @@
+import type { Keyframe } from "../patterns/automate";
 import type { Duration } from "../utils/duration";
 import { resolveDuration } from "../utils/duration";
-import type { AutomationPoint } from "../patterns/automate";
+import type { LfoShape } from "../utils/lfo";
 
-export type LfoShape = "sine" | "saw" | "triangle" | "square";
+export type { LfoShape } from "../utils/lfo";
+// FIX: Once again pointlessly reexporting
 
 export interface LfoOptions {
 	readonly shape: LfoShape;
@@ -11,11 +13,13 @@ export interface LfoOptions {
 	readonly phase?: number;
 }
 
-export function lfo(options: LfoOptions): Array<AutomationPoint> {
+// FIX: Is this file even used anymore??
+
+export function lfo(options: LfoOptions): Array<Keyframe> {
 	const rate = resolveDuration(options.rate);
 	const duration = resolveDuration(options.duration);
 	const offset = options.phase ?? 0;
-	const points: Array<AutomationPoint> = [];
+	const keyframes: Array<Keyframe> = [];
 
 	switch (options.shape) {
 		case "sine":
@@ -23,7 +27,7 @@ export function lfo(options: LfoOptions): Array<AutomationPoint> {
 				if (tick < 0) continue;
 
 				const phase = tick / rate + offset;
-				points.push({ time: tick, value: 0.5 + 0.5 * Math.sin(2 * Math.PI * phase), curve: "exponential" });
+				keyframes.push({ time: tick, value: 0.5 + 0.5 * Math.sin(2 * Math.PI * phase), curve: "exponential" });
 			}
 
 			break;
@@ -33,21 +37,21 @@ export function lfo(options: LfoOptions): Array<AutomationPoint> {
 				if (tick < 0) continue;
 
 				const phase = (((tick / rate + offset) % 1) + 1) % 1;
-				points.push({ time: tick, value: phase < 0.5 ? phase * 2 : 2 - phase * 2, curve: "linear" });
+				keyframes.push({ time: tick, value: phase < 0.5 ? phase * 2 : 2 - phase * 2, curve: "linear" });
 			}
 
 			break;
 
-		case "saw":
+		case "sawtooth":
 			for (let tick = -offset * rate; tick <= duration; tick += rate) {
 				if (tick < 0) continue;
 
 				if (tick > 0) {
-					points.push({ time: tick, value: 1, curve: "linear" });
+					keyframes.push({ time: tick, value: 1, curve: "linear" });
 				}
 
 				if (tick <= duration) {
-					points.push({ time: tick, value: 0, curve: "step" });
+					keyframes.push({ time: tick, value: 0, curve: "step" });
 				}
 			}
 
@@ -58,11 +62,11 @@ export function lfo(options: LfoOptions): Array<AutomationPoint> {
 				if (tick < 0) continue;
 
 				const phase = (((tick / rate + offset) % 1) + 1) % 1;
-				points.push({ time: tick, value: phase < 0.5 ? 1 : 0, curve: "step" });
+				keyframes.push({ time: tick, value: phase < 0.5 ? 1 : 0, curve: "step" });
 			}
 
 			break;
 	}
 
-	return points;
+	return keyframes;
 }

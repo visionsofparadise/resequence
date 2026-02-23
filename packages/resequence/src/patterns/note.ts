@@ -1,12 +1,12 @@
 import { ResequenceError } from "../error";
-import type { Duration } from "../utils/duration";
-import { resolveDuration } from "../utils/duration";
 import { buildPerVoiceChain } from "../instrument/envelope";
 import type { InstrumentZone, KitMapping } from "../instrument/instrument";
-import type { Pitch } from "../utils/pitch";
-import { resolvePitch } from "../utils/pitch";
 import type { ScheduleContext } from "../rendering/schedule-context";
 import { ticksToSeconds } from "../rendering/ticks-to-seconds";
+import type { Duration } from "../utils/duration";
+import { resolveDuration } from "../utils/duration";
+import type { Pitch } from "../utils/pitch";
+import { resolvePitch } from "../utils/pitch";
 import type { ValidateContext } from "../validate";
 import type { PositionedNote } from "./pattern";
 import { MidiPattern } from "./pattern";
@@ -24,7 +24,7 @@ export class NotePattern extends MidiPattern {
 		super();
 
 		if (velocity < 0 || velocity > 127) {
-			throw new ResequenceError('INVALID_VELOCITY', `note(): velocity must be 0-127, got ${velocity}`);
+			throw new ResequenceError("INVALID_VELOCITY", `note(): velocity must be 0-127, got ${velocity}`);
 		}
 
 		this.durationTicks = resolveDuration(duration);
@@ -74,6 +74,8 @@ export class NotePattern extends MidiPattern {
 		const inst = context.instrument;
 		let buffer: AudioBuffer | undefined;
 		let playbackRate = 1;
+		let loopStartMs: number | undefined;
+		let loopEndMs: number | undefined;
 
 		if (inst.type === "instrument") {
 			const zone = findZone(inst.zones, midi, this.velocity);
@@ -81,6 +83,8 @@ export class NotePattern extends MidiPattern {
 			if (!zone) return;
 
 			buffer = context.sampleBank.get(zone.sample);
+			loopStartMs = zone.loopStartMs;
+			loopEndMs = zone.loopEndMs;
 
 			const rootMidi = resolvePitch(zone.root);
 			playbackRate = 2 ** ((midi - rootMidi) / 12);
@@ -89,7 +93,9 @@ export class NotePattern extends MidiPattern {
 
 			if (!entry) return;
 
-			buffer = context.sampleBank.get(entry);
+			buffer = context.sampleBank.get(entry.sample);
+			loopStartMs = entry.loopStartMs;
+			loopEndMs = entry.loopEndMs;
 		}
 
 		if (!buffer) return;
@@ -98,13 +104,19 @@ export class NotePattern extends MidiPattern {
 		source.buffer = buffer;
 		source.playbackRate.value = playbackRate;
 
-		const effectsEntry = context.effectsMap[inst.name];
-		const destination = effectsEntry?.input ?? context.audioContext.destination;
+		if (loopStartMs !== undefined && loopEndMs !== undefined) {
+			source.loop = true;
+			source.loopStart = loopStartMs / 1000;
+			source.loopEnd = loopEndMs / 1000;
+		}
+
+		const destination = context.inputMap[inst.name] ?? context.audioContext.destination;
+		const envelopes = context.envelopesMap[inst.name];
 
 		let maxRelease = 0;
 
-		if (effectsEntry?.envelopes) {
-			const perVoice = buildPerVoiceChain(effectsEntry.envelopes, source, context.audioContext, offsetSeconds, durationSeconds);
+		if (envelopes) {
+			const perVoice = buildPerVoiceChain(envelopes, source, context.audioContext, offsetSeconds, durationSeconds, context.tempo);
 			maxRelease = perVoice.maxRelease;
 
 			if (perVoice.input && perVoice.output) {
@@ -128,7 +140,10 @@ function findZone(zones: ReadonlyArray<InstrumentZone>, midi: number, velocity: 
 	if (velocityMatches.length === 0) return zones[0];
 
 	let closest = velocityMatches[0];
-	let closestDist = Math.abs(resolvePitch(closest!.root) - midi);
+
+	if (!closest) return undefined;
+
+	let closestDist = Math.abs(resolvePitch(closest.root) - midi);
 
 	for (const zone of velocityMatches) {
 		const dist = Math.abs(resolvePitch(zone.root) - midi);
@@ -141,30 +156,32 @@ function findZone(zones: ReadonlyArray<InstrumentZone>, midi: number, velocity: 
 	return closest;
 }
 
-function findKitEntry(mapping: KitMapping, pitch: Pitch, velocity: number): string | undefined {
+function findKitEntry(mapping: KitMapping, pitch: Pitch, velocity: number): { sample: string; loopStartMs?: number; loopEndMs?: number } | undefined {
 	const key = typeof pitch === "number" ? midiToName(pitch) : pitch;
 
 	const entry = mapping[key];
 
 	if (!entry) return undefined;
-	if (typeof entry === "string") return entry;
+	if (typeof entry === "string") return { sample: entry };
 
 	for (const layer of entry) {
 		if (velocity >= layer.velocity[0] && velocity <= layer.velocity[1]) {
-			return layer.sample;
+			return { sample: layer.sample, loopStartMs: layer.loopStartMs, loopEndMs: layer.loopEndMs };
 		}
 	}
 
-	return entry[0]?.sample;
+	const first = entry[0];
+
+	return first ? { sample: first.sample, loopStartMs: first.loopStartMs, loopEndMs: first.loopEndMs } : undefined;
 }
 
 function midiToName(midi: number): string {
 	const names = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 	const octave = Math.floor(midi / 12) - 1;
 	const name = names[midi % 12];
+
 	return `${name}${octave}`;
 }
-
 
 export function note(pitch: Pitch, duration: Duration, options?: { velocity?: number; lyric?: string }): NotePattern {
 	return new NotePattern(pitch, duration, options?.velocity ?? 100, options?.lyric);

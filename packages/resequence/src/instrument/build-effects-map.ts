@@ -1,119 +1,151 @@
 import type { RoutingEntry } from "../rendering/collect-routing";
-import type { EffectsChain } from "./effect";
 import type { EffectsGraphEntry } from "../rendering/schedule-context";
+import type { Effect } from "./effect";
+import type { EnvelopeEffect, EnvelopesChain } from "./envelope";
 
-export function buildEffectsMap(routing: Map<string, RoutingEntry>, audioContext: BaseAudioContext, sampleBank: ReadonlyMap<string, AudioBuffer>): Readonly<Record<string, EffectsGraphEntry>> {
-	const graph: Record<string, EffectsGraphEntry> = {};
+export function buildEffectsMap(
+	routing: Map<string, RoutingEntry>,
+	audioContext: BaseAudioContext,
+	sampleBank: ReadonlyMap<string, AudioBuffer>,
+): {
+	effectsMap: Readonly<Record<string, EffectsGraphEntry>>;
+	inputMap: Readonly<Record<string, AudioNode>>;
+	envelopesMap: Readonly<Record<string, EnvelopesChain>>;
+} {
+	const effectsMap: Record<string, EffectsGraphEntry> = {};
+	const inputMap: Record<string, AudioNode> = {};
+	const envelopesMap: Record<string, EnvelopesChain> = {};
 
 	for (const [name, entry] of routing) {
-		const chain = entry.effects;
+		const allNodes: Record<string, AudioNode> = {};
+		const nodeChain: Array<AudioNode> = [];
 
-		if (!chain) {
-			graph[name] = { input: audioContext.destination, nodes: {}, envelopes: entry.envelopes };
+		if (entry.envelopes) {
+			envelopesMap[name] = entry.envelopes;
 
-			continue;
+			for (const [key, envelope] of Object.entries(entry.envelopes)) {
+				const node = buildEnvelopeNode(envelope, audioContext);
+
+				if (node) {
+					allNodes[key] = node;
+					nodeChain.push(node);
+				}
+			}
 		}
 
-		const { input, nodes, output } = buildChain(chain, audioContext, sampleBank);
+		if (entry.effects) {
+			for (const [key, effect] of Object.entries(entry.effects)) {
+				const node = buildEffectNode(effect, audioContext, sampleBank);
 
-		output.connect(audioContext.destination);
-		graph[name] = { input, nodes, envelopes: entry.envelopes };
+				allNodes[key] = node;
+				nodeChain.push(node);
+			}
+		}
+
+		for (let index = 1; index < nodeChain.length; index++) {
+			const prev = nodeChain[index - 1];
+			const curr = nodeChain[index];
+
+			if (prev && curr) prev.connect(curr);
+		}
+
+		const lastNode = nodeChain[nodeChain.length - 1];
+
+		if (lastNode) lastNode.connect(audioContext.destination);
+
+		effectsMap[name] = allNodes;
+		inputMap[name] = nodeChain[0] ?? audioContext.destination;
 	}
 
-	return graph;
+	return { effectsMap, inputMap, envelopesMap };
 }
 
-function buildChain(chain: EffectsChain, audioContext: BaseAudioContext, sampleBank: ReadonlyMap<string, AudioBuffer>): { input: AudioNode; nodes: Record<string, AudioNode>; output: AudioNode } {
-	const nodes: Record<string, AudioNode> = {};
-	let firstNode: AudioNode | undefined;
-	let prevNode: AudioNode | undefined;
+function buildEnvelopeNode(envelope: EnvelopeEffect, audioContext: BaseAudioContext): AudioNode | undefined {
+	switch (envelope.type) {
+		case "volumeEnvelope": {
+			const gainNode = audioContext.createGain();
 
-	for (const [key, effect] of Object.entries(chain)) {
-		let node: AudioNode;
+			gainNode.gain.value = 1;
 
-		switch (effect.type) {
-			case "gain": {
-				const gainNode = audioContext.createGain();
-
-				gainNode.gain.value = dbToLinear(effect.level);
-				node = gainNode;
-
-				break;
-			}
-			case "pan": {
-				const panNode = audioContext.createStereoPanner();
-
-				panNode.pan.value = effect.value;
-				node = panNode;
-
-				break;
-			}
-			case "filter": {
-				const filterNode = audioContext.createBiquadFilter();
-
-				filterNode.type = effect.mode;
-				filterNode.frequency.value = effect.frequency;
-
-				if (effect.resonance !== undefined) filterNode.Q.value = effect.resonance;
-
-				node = filterNode;
-
-				break;
-			}
-			case "compressor": {
-				const compNode = audioContext.createDynamicsCompressor();
-
-				compNode.threshold.value = effect.threshold;
-				compNode.ratio.value = effect.ratio;
-
-				if (effect.attack !== undefined) compNode.attack.value = effect.attack;
-				if (effect.release !== undefined) compNode.release.value = effect.release;
-
-				node = compNode;
-
-				break;
-			}
-			case "delay": {
-				const delayNode = audioContext.createDelay(effect.time + 1);
-				delayNode.delayTime.value = effect.time;
-
-				if (effect.feedback !== undefined && effect.feedback > 0) {
-					const feedbackGain = audioContext.createGain();
-
-					feedbackGain.gain.value = effect.feedback;
-					delayNode.connect(feedbackGain);
-					feedbackGain.connect(delayNode);
-				}
-
-				node = delayNode;
-
-				break;
-			}
-			case "reverb": {
-				const convolver = audioContext.createConvolver();
-				const impulseBuffer = sampleBank.get(effect.impulse);
-
-				if (impulseBuffer) convolver.buffer = impulseBuffer;
-
-				node = convolver;
-
-				break;
-			}
+			return gainNode;
 		}
+		case "filterEnvelope": {
+			const filterNode = audioContext.createBiquadFilter();
 
-		nodes[key] = node;
-		firstNode ??= node;
+			filterNode.type = envelope.mode ?? "lowpass";
+			filterNode.frequency.value = envelope.frequency;
 
-		if (prevNode) prevNode.connect(node);
+			if (envelope.resonance !== undefined) filterNode.Q.value = envelope.resonance;
 
-		prevNode = node;
+			return filterNode;
+		}
+		case "pitchEnvelope": {
+			return undefined;
+		}
 	}
+}
 
-	return {
-		input: firstNode ?? audioContext.destination,
-		nodes,
-		output: prevNode ?? audioContext.destination,
-	};
+function buildEffectNode(effect: Effect, audioContext: BaseAudioContext, sampleBank: ReadonlyMap<string, AudioBuffer>): AudioNode {
+	switch (effect.type) {
+		case "gain": {
+			const gainNode = audioContext.createGain();
+
+			gainNode.gain.value = dbToLinear(effect.level);
+
+			return gainNode;
+		}
+		case "pan": {
+			const panNode = audioContext.createStereoPanner();
+
+			panNode.pan.value = effect.value;
+
+			return panNode;
+		}
+		case "filter": {
+			const filterNode = audioContext.createBiquadFilter();
+
+			filterNode.type = effect.mode;
+			filterNode.frequency.value = effect.frequency;
+
+			if (effect.resonance !== undefined) filterNode.Q.value = effect.resonance;
+
+			return filterNode;
+		}
+		case "compressor": {
+			const compNode = audioContext.createDynamicsCompressor();
+
+			compNode.threshold.value = effect.threshold;
+			compNode.ratio.value = effect.ratio;
+
+			if (effect.attack !== undefined) compNode.attack.value = effect.attack;
+			if (effect.release !== undefined) compNode.release.value = effect.release;
+
+			return compNode;
+		}
+		case "delay": {
+			const delayNode = audioContext.createDelay(effect.time + 1);
+
+			delayNode.delayTime.value = effect.time;
+
+			if (effect.feedback !== undefined && effect.feedback > 0) {
+				const feedbackGain = audioContext.createGain();
+
+				feedbackGain.gain.value = effect.feedback;
+				delayNode.connect(feedbackGain);
+				feedbackGain.connect(delayNode);
+			}
+
+			return delayNode;
+		}
+		case "reverb": {
+			const convolver = audioContext.createConvolver();
+			const impulseBuffer = sampleBank.get(effect.impulse);
+
+			if (impulseBuffer) convolver.buffer = impulseBuffer;
+
+			return convolver;
+		}
+	}
 }
 
 function dbToLinear(db: number): number {

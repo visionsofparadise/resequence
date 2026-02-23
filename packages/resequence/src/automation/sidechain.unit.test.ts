@@ -1,10 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { sidechain } from "./sidechain";
-import { trigger } from "./trigger";
-import { invert } from "./invert";
+import { resolveDuration } from "../utils/duration";
+import { gap } from "../patterns/gap";
 import { note } from "../patterns/note";
 import { repeat } from "../patterns/repeat";
-import { gap } from "../patterns/gap";
+import { invert } from "./invert";
+import { sidechain } from "./sidechain";
+import { trigger } from "./trigger";
 
 describe("sidechain", () => {
 	it("equals invert(trigger(...)) for same inputs", () => {
@@ -19,18 +20,18 @@ describe("sidechain", () => {
 	});
 
 	it("starts at 1 (full volume)", () => {
-		const points = sidechain(note("C1", "4n"), { depth: 0.8, attack: 1, release: "8n" });
-		expect(points[0]?.value).toBe(1);
+		const keyframes = sidechain(note("C1", "4n"), { depth: 0.8, attack: 1, release: "8n" });
+		expect(keyframes[0]?.value).toBe(1);
 	});
 
 	it("ducks toward 0 on hit", () => {
-		const points = sidechain(note("C1", "4n"), { depth: 0.8, attack: 1, release: "8n" });
-		expect(points[1]?.value).toBeCloseTo(0.2);
+		const keyframes = sidechain(note("C1", "4n"), { depth: 0.8, attack: 1, release: "8n" });
+		expect(keyframes[1]?.value).toBeCloseTo(0.2);
 	});
 
 	it("releases back toward 1", () => {
-		const points = sidechain(note("C1", "4n"), { depth: 0.8, attack: 1, release: "8n" });
-		const releasePoints = points.filter((pt) => pt.time > 1 && pt.curve === "linear");
+		const keyframes = sidechain(note("C1", "4n"), { depth: 0.8, attack: 1, release: "8n" });
+		const releasePoints = keyframes.filter((pt) => resolveDuration(pt.time) > 1 && pt.curve === "linear");
 		for (const pt of releasePoints) {
 			expect(pt.value).toBeGreaterThan(0.2);
 			expect(pt.value).toBeLessThanOrEqual(1);
@@ -44,7 +45,7 @@ describe("sidechain", () => {
 	});
 
 	it("handles depth 1 (full duck to 0)", () => {
-		const points = sidechain(note("C1", "4n"), { depth: 1, attack: 1, release: "8n" });
-		expect(points[1]?.value).toBeCloseTo(0);
+		const keyframes = sidechain(note("C1", "4n"), { depth: 1, attack: 1, release: "8n" });
+		expect(keyframes[1]?.value).toBeCloseTo(0);
 	});
 });

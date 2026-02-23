@@ -27,7 +27,7 @@ export function validate(pattern: Pattern, options?: { projectDir?: string }): A
 
 	for (const entry of context.automationPaths) {
 		for (const path of entry.paths) {
-			const instrumentName = path.split(".")[0]!;
+			const instrumentName = path.split(".")[0] ?? "";
 			if (!context.routing.has(instrumentName)) {
 				context.warnings.push({
 					code: "ORPHANED_AUTOMATION",
@@ -52,7 +52,9 @@ export function validate(pattern: Pattern, options?: { projectDir?: string }): A
 		const sampleSources = new Map<string, string>();
 
 		for (const [name, instances] of context.routing) {
-			const inst = instances[0]!;
+			const inst = instances[0];
+
+		if (!inst) continue;
 			if (inst.type === "instrument") {
 				for (const zone of inst.zones) {
 					samplePaths.add(zone.sample);

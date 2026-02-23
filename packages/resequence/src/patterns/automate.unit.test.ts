@@ -42,7 +42,7 @@ describe("AutomatePattern", () => {
 
 		it("rejects empty envelope", () => {
 			expect(() => automate("empty", "bass.hp.frequency", [])).toThrow(ResequenceError);
-			expect(() => automate("empty", "bass.hp.frequency", [])).toThrow("points array must not be empty");
+			expect(() => automate("empty", "bass.hp.frequency", [])).toThrow("keyframes array must not be empty");
 		});
 	});
 
@@ -121,7 +121,7 @@ describe("AutomatePattern", () => {
 		});
 
 		it("rejects empty envelope on reverse", () => {
-			expect(() => automate("empty", "bass.hp.frequency", [])).toThrow("points array must not be empty");
+			expect(() => automate("empty", "bass.hp.frequency", [])).toThrow("keyframes array must not be empty");
 		});
 	});
 

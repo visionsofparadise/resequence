@@ -120,7 +120,7 @@ describe("collectRouting", () => {
 	});
 
 	it("collects instrument envelopes", () => {
-		const envChain = envelopes({ amp: volumeEnvelope({ attack: 0.1 }) });
+		const envChain = envelopes({ amp: volumeEnvelope({ envelope: { attack: 0.1 } }) });
 		const bass = instrument("bass", "./bass.wav", { root: "C2" }).routeTo(envChain);
 		const pattern = note("C2", "4n").routeTo(bass);
 		const routing = collectRouting(pattern);
@@ -130,7 +130,7 @@ describe("collectRouting", () => {
 	});
 
 	it("collects sample envelopes", () => {
-		const envChain = envelopes({ amp: volumeEnvelope() });
+		const envChain = envelopes({ amp: volumeEnvelope({ envelope: {} }) });
 		const pattern = sample("break", "./break.wav", "1n").routeTo(envChain);
 		const routing = collectRouting(pattern);
 
@@ -139,7 +139,7 @@ describe("collectRouting", () => {
 	});
 
 	it("collects both effects and envelopes on instrument", () => {
-		const envChain = envelopes({ amp: volumeEnvelope() });
+		const envChain = envelopes({ amp: volumeEnvelope({ envelope: {} }) });
 		const fxChain = effects({ vol: gain({ level: -3 }) });
 		const bass = instrument("bass", "./bass.wav", { root: "C2" }).routeTo(envChain).routeTo(fxChain);
 		const pattern = note("C2", "4n").routeTo(bass);

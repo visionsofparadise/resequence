@@ -21,6 +21,8 @@ export class SamplePattern implements Pattern {
 		readonly reversed: boolean,
 		readonly effects?: EffectsChain,
 		readonly envelopes?: EnvelopesChain,
+		readonly loopStartMs?: number,
+		readonly loopEndMs?: number,
 	) {
 		if (!path) {
 			throw new ResequenceError('EMPTY_SAMPLE_PATH', 'sample(): path must not be empty');
@@ -30,19 +32,19 @@ export class SamplePattern implements Pattern {
 	}
 
 	transpose(interval: number): SamplePattern {
-		return new SamplePattern(this.name, this.path, this.duration, this.transposeSemitones + interval, this.reversed, this.effects, this.envelopes);
+		return new SamplePattern(this.name, this.path, this.duration, this.transposeSemitones + interval, this.reversed, this.effects, this.envelopes, this.loopStartMs, this.loopEndMs);
 	}
 
 	reverse(): SamplePattern {
-		return new SamplePattern(this.name, this.path, this.duration, this.transposeSemitones, !this.reversed, this.effects, this.envelopes);
+		return new SamplePattern(this.name, this.path, this.duration, this.transposeSemitones, !this.reversed, this.effects, this.envelopes, this.loopStartMs, this.loopEndMs);
 	}
 
 	routeTo(chain: EffectsChain | EnvelopesChain): SamplePattern {
 		if (isEnvelopesChain(chain)) {
-			return new SamplePattern(this.name, this.path, this.duration, this.transposeSemitones, this.reversed, this.effects, chain);
+			return new SamplePattern(this.name, this.path, this.duration, this.transposeSemitones, this.reversed, this.effects, chain, this.loopStartMs, this.loopEndMs);
 		}
 
-		return new SamplePattern(this.name, this.path, this.duration, this.transposeSemitones, this.reversed, chain, this.envelopes);
+		return new SamplePattern(this.name, this.path, this.duration, this.transposeSemitones, this.reversed, chain, this.envelopes, this.loopStartMs, this.loopEndMs);
 	}
 
 	validate(_context: ValidateContext): void {
@@ -74,14 +76,20 @@ export class SamplePattern implements Pattern {
 			source.playbackRate.value = 2 ** (this.transposeSemitones / 12);
 		}
 
-		const effectsEntry = context.effectsMap[this.name];
-		const destination = effectsEntry?.input ?? context.audioContext.destination;
+		if (this.loopStartMs !== undefined && this.loopEndMs !== undefined) {
+			source.loop = true;
+			source.loopStart = this.loopStartMs / 1000;
+			source.loopEnd = this.loopEndMs / 1000;
+		}
+
+		const destination = context.inputMap[this.name] ?? context.audioContext.destination;
+		const envelopes = context.envelopesMap[this.name];
 		const durationSeconds = this.durationTicks > 0
 			? ticksToSeconds(this.durationTicks, context.tempo)
 			: buffer.duration;
 
-		if (effectsEntry?.envelopes) {
-			const perVoice = buildPerVoiceChain(effectsEntry.envelopes, source, context.audioContext, offsetSeconds, durationSeconds);
+		if (envelopes) {
+			const perVoice = buildPerVoiceChain(envelopes, source, context.audioContext, offsetSeconds, durationSeconds, context.tempo);
 
 			if (perVoice.input && perVoice.output) {
 				source.connect(perVoice.input);
@@ -104,13 +112,13 @@ function copyReversed(buffer: AudioBuffer, audioCtx: BaseAudioContext): AudioBuf
 		const original = buffer.getChannelData(channel);
 		const output = reversed.getChannelData(channel);
 		for (let sample = 0; sample < original.length; sample++) {
-			output[sample] = original[original.length - 1 - sample]!;
+			output[sample] = original[original.length - 1 - sample] ?? 0;
 		}
 	}
 
 	return reversed;
 }
 
-export function sample(name: string, path: string, duration?: Duration): SamplePattern {
-	return new SamplePattern(name, path, duration, 0, false);
+export function sample(name: string, path: string, duration?: Duration, options?: { loopStartMs?: number; loopEndMs?: number }): SamplePattern {
+	return new SamplePattern(name, path, duration, 0, false, undefined, undefined, options?.loopStartMs, options?.loopEndMs);
 }

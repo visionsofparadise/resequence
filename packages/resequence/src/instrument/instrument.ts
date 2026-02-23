@@ -8,9 +8,18 @@ export interface InstrumentZone {
 	readonly sample: string;
 	readonly root: Pitch;
 	readonly velocity?: [number, number];
+	readonly loopStartMs?: number;
+	readonly loopEndMs?: number;
 }
 
-export type KitMapping = Readonly<Record<string, string | ReadonlyArray<{ sample: string; velocity: [number, number] }>>>;
+export interface KitVelocityLayer {
+	readonly sample: string;
+	readonly velocity: [number, number];
+	readonly loopStartMs?: number;
+	readonly loopEndMs?: number;
+}
+
+export type KitMapping = Readonly<Record<string, string | ReadonlyArray<KitVelocityLayer>>>;
 
 export class Instrument {
 	readonly type: "instrument" | "kit";
@@ -52,9 +61,9 @@ export class Instrument {
 	}
 }
 
-export function instrument(name: string, sample: string, options: { root: Pitch }): Instrument;
+export function instrument(name: string, sample: string, options: { root: Pitch; loopStartMs?: number; loopEndMs?: number }): Instrument;
 export function instrument(name: string, zones: ReadonlyArray<InstrumentZone>): Instrument;
-export function instrument(name: string, sampleOrZones: string | ReadonlyArray<InstrumentZone>, options?: { root: Pitch }): Instrument {
+export function instrument(name: string, sampleOrZones: string | ReadonlyArray<InstrumentZone>, options?: { root: Pitch; loopStartMs?: number; loopEndMs?: number }): Instrument {
 	if (!name) {
 		throw new ResequenceError('EMPTY_INSTRUMENT_NAME', 'instrument(): name must not be empty');
 	}
@@ -65,7 +74,7 @@ export function instrument(name: string, sampleOrZones: string | ReadonlyArray<I
 		return new Instrument({
 			type: "instrument",
 			name,
-			zones: [{ sample: sampleOrZones, root: options.root }],
+			zones: [{ sample: sampleOrZones, root: options.root, loopStartMs: options.loopStartMs, loopEndMs: options.loopEndMs }],
 		});
 	}
 

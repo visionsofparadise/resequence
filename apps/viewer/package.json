@@ -6,7 +6,8 @@
   "main": ".vite/build/main.js",
   "private": true,
   "scripts": {
-    "check": "tsc --noEmit",
+    "check": "tsc --noEmit --pretty false 2>&1 | node ../../agent-tsc.js",
+    "check:verbose": "tsc --noEmit",
     "start": "electron-forge start",
     "package": "electron-forge package",
     "make": "electron-forge make"

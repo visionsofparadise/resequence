@@ -1,46 +1,47 @@
+import { get } from "lodash";
 import { ResequenceError } from "../error";
-import type { Duration } from "../utils/duration";
-import { resolveDuration } from "../utils/duration";
 import type { ScheduleContext } from "../rendering/schedule-context";
 import { ticksToSeconds } from "../rendering/ticks-to-seconds";
+import type { Duration } from "../utils/duration";
+import { resolveDuration } from "../utils/duration";
 import type { ValidateContext } from "../validate";
 import type { Pattern, PositionedNote } from "./pattern";
 
-export type AutomationCurve = "linear" | "exponential" | "step";
+export type KeyframeCurve = "linear" | "exponential" | "step";
 
-export interface AutomationPoint {
+export interface Keyframe {
 	readonly time: Duration;
 	readonly value: number;
-	readonly curve?: AutomationCurve;
+	readonly curve?: KeyframeCurve;
 }
 
-interface ResolvedPoint {
+interface ResolvedKeyframe {
 	readonly timeTicks: number;
 	readonly value: number;
-	readonly curve?: AutomationCurve;
+	readonly curve?: KeyframeCurve;
 }
 
 export class AutomatePattern implements Pattern {
 	readonly type = "automate" as const;
 	readonly durationTicks: number;
 	readonly paths: ReadonlyArray<string>;
-	readonly envelope: ReadonlyArray<ResolvedPoint>;
+	readonly envelope: ReadonlyArray<ResolvedKeyframe>;
 
 	constructor(
 		readonly name: string,
 		paths: string | ReadonlyArray<string>,
-		points: ReadonlyArray<AutomationPoint>,
+		keyframes: ReadonlyArray<Keyframe>,
 	) {
 		this.paths = typeof paths === "string" ? [paths] : paths;
 
-		if (points.length === 0) {
-			throw new ResequenceError('EMPTY_AUTOMATION_POINTS', 'automate(): points array must not be empty');
+		if (keyframes.length === 0) {
+			throw new ResequenceError("EMPTY_KEYFRAMES", "automate(): keyframes array must not be empty");
 		}
 
-		this.envelope = points.map((point) => ({
-			timeTicks: resolveDuration(point.time),
-			value: point.value,
-			curve: point.curve,
+		this.envelope = keyframes.map((keyframe) => ({
+			timeTicks: resolveDuration(keyframe.time),
+			value: keyframe.value,
+			curve: keyframe.curve,
 		}));
 
 		this.durationTicks = this.envelope.length > 0 ? Math.max(...this.envelope.map((point) => point.timeTicks)) : 0;
@@ -49,7 +50,7 @@ export class AutomatePattern implements Pattern {
 			const segments = path.split(".");
 
 			if (segments.length < 3) {
-				throw new ResequenceError('INVALID_AUTOMATION_PATH', `Automation path must have at least 3 segments (instrumentName.effectKey.property), got: ${path}`);
+				throw new ResequenceError("INVALID_AUTOMATION_PATH", `Automation path must have at least 3 segments (instrumentName.effectKey.property), got: ${path}`);
 			}
 		}
 	}
@@ -60,13 +61,14 @@ export class AutomatePattern implements Pattern {
 
 	reverse(): AutomatePattern {
 		const duration = this.durationTicks;
-		const reversedPoints: ReadonlyArray<AutomationPoint> = this.envelope.map((point) => ({
-			time: (duration - point.timeTicks) as Duration,
-			value: point.value,
-			curve: point.curve,
+
+		const reversedKeyframes: ReadonlyArray<Keyframe> = this.envelope.map((keyframe) => ({
+			time: (duration - keyframe.timeTicks) as Duration,
+			value: keyframe.value,
+			curve: keyframe.curve,
 		}));
 
-		return new AutomatePattern(this.name, this.paths, reversedPoints);
+		return new AutomatePattern(this.name, this.paths, reversedKeyframes);
 	}
 
 	validate(context: ValidateContext): void {
@@ -80,21 +82,23 @@ export class AutomatePattern implements Pattern {
 	schedule(offsetTicks: number, context: ScheduleContext): void {
 		for (const path of this.paths) {
 			const param = resolveAudioParam(path, context);
+
 			if (!param) continue;
 
-			for (const point of this.envelope) {
-				const absoluteTicks = offsetTicks + point.timeTicks;
+			for (const keyframe of this.envelope) {
+				const absoluteTicks = offsetTicks + keyframe.timeTicks;
+
 				if (absoluteTicks < context.fromTicks || absoluteTicks > context.toTicks) continue;
 
 				const timeSeconds = ticksToSeconds(absoluteTicks, context.tempo);
-				const curve = point.curve ?? "step";
+				const curve = keyframe.curve ?? "step";
 
 				if (curve === "step") {
-					param.setValueAtTime(point.value, timeSeconds);
+					param.setValueAtTime(keyframe.value, timeSeconds);
 				} else if (curve === "linear") {
-					param.linearRampToValueAtTime(point.value, timeSeconds);
+					param.linearRampToValueAtTime(keyframe.value, timeSeconds);
 				} else {
-					param.exponentialRampToValueAtTime(Math.max(point.value, 1e-6), timeSeconds);
+					param.exponentialRampToValueAtTime(Math.max(keyframe.value, 1e-6), timeSeconds);
 				}
 			}
 		}
@@ -102,25 +106,13 @@ export class AutomatePattern implements Pattern {
 }
 
 function resolveAudioParam(path: string, context: ScheduleContext): AudioParam | undefined {
-	const segments = path.split(".");
-	if (segments.length < 3) return undefined;
+	const param: unknown = get(context.effectsMap, path);
 
-	const instrumentName = segments[0]!;
-	const effectKey = segments[1]!;
-	const property = segments[2]!;
-
-	const entry = context.effectsMap[instrumentName];
-	if (!entry) return undefined;
-
-	const node = entry.nodes[effectKey];
-	if (!node) return undefined;
-
-	const param: unknown = (node as unknown as Record<string, unknown>)[property];
 	if (!param || typeof param !== "object" || !("setValueAtTime" in param)) return undefined;
 
 	return param as AudioParam;
 }
 
-export function automate(name: string, paths: string | ReadonlyArray<string>, points: ReadonlyArray<AutomationPoint>): AutomatePattern {
-	return new AutomatePattern(name, paths, points);
+export function automate(name: string, paths: string | ReadonlyArray<string>, keyframes: ReadonlyArray<Keyframe>): AutomatePattern {
+	return new AutomatePattern(name, paths, keyframes);
 }

@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { trigger } from "./trigger";
-import { note } from "../patterns/note";
-import { sequence } from "../patterns/sequence";
 import { gap } from "../patterns/gap";
-import { repeat } from "../patterns/repeat";
 import { layer } from "../patterns/layer";
-import { beats } from "../utils/duration";
+import { note } from "../patterns/note";
+import { repeat } from "../patterns/repeat";
+import { sequence } from "../patterns/sequence";
+import { beats, resolveDuration } from "../utils/duration";
+import { trigger } from "./trigger";
 
 describe("trigger", () => {
 	it("returns empty for empty pattern", () => {
@@ -13,14 +13,14 @@ describe("trigger", () => {
 	});
 
 	it("produces envelope for a single hit", () => {
-		const points = trigger(note("C4", "4n"), { peak: 1, attack: 1, release: "8n" });
+		const keyframes = trigger(note("C4", "4n"), { peak: 1, attack: 1, release: "8n" });
 
-		expect(points[0]).toEqual({ time: 0, value: 0, curve: "step" });
-		expect(points[1]).toEqual({ time: 1, value: 1, curve: "linear" });
+		expect(keyframes[0]).toEqual({ time: 0, value: 0, curve: "step" });
+		expect(keyframes[1]).toEqual({ time: 1, value: 1, curve: "linear" });
 
-		expect(points.length).toBeGreaterThan(2);
+		expect(keyframes.length).toBeGreaterThan(2);
 
-		const last = points.at(-1);
+		const last = keyframes.at(-1);
 		expect(last).toBeDefined();
 		expect(last?.time).toBe(1 + 240);
 		expect(last?.value).toBeCloseTo(0, 4);
@@ -28,26 +28,26 @@ describe("trigger", () => {
 	});
 
 	it("uses peak value", () => {
-		const points = trigger(note("C4", "4n"), { peak: 0.8, attack: 1, release: "8n" });
+		const keyframes = trigger(note("C4", "4n"), { peak: 0.8, attack: 1, release: "8n" });
 
-		expect(points[1]).toEqual({ time: 1, value: 0.8, curve: "linear" });
+		expect(keyframes[1]).toEqual({ time: 1, value: 0.8, curve: "linear" });
 	});
 
 	it("resolves attack and release durations", () => {
-		const points = trigger(note("C4", "4n"), { peak: 1, attack: "16n", release: "4n" });
+		const keyframes = trigger(note("C4", "4n"), { peak: 1, attack: "16n", release: "4n" });
 
-		expect(points[0]).toEqual({ time: 0, value: 0, curve: "step" });
-		expect(points[1]).toEqual({ time: 120, value: 1, curve: "linear" });
+		expect(keyframes[0]).toEqual({ time: 0, value: 0, curve: "step" });
+		expect(keyframes[1]).toEqual({ time: 120, value: 1, curve: "linear" });
 
-		const last = points.at(-1);
+		const last = keyframes.at(-1);
 		expect(last?.time).toBe(120 + 480);
 	});
 
 	it("handles multiple hits", () => {
 		const pattern = sequence(note("C4", "4n"), note("D4", "4n"));
-		const points = trigger(pattern, { peak: 1, attack: 1, release: "8n" });
+		const keyframes = trigger(pattern, { peak: 1, attack: 1, release: "8n" });
 
-		const baselines = points.filter((pt) => pt.curve === "step");
+		const baselines = keyframes.filter((pt) => pt.curve === "step");
 		expect(baselines).toHaveLength(2);
 		expect(baselines[0]?.time).toBe(0);
 		expect(baselines[1]?.time).toBe(480);
@@ -55,23 +55,21 @@ describe("trigger", () => {
 
 	it("truncates release when next hit arrives", () => {
 		const pattern = sequence(note("C4", "8n"), note("D4", "8n"));
-		const points = trigger(pattern, { peak: 1, attack: 1, release: "4n" });
+		const keyframes = trigger(pattern, { peak: 1, attack: 1, release: "4n" });
 
-		const afterFirstPeak = points.filter(
-			(pt) => pt.time > 1 && pt.time < 240 && pt.curve === "linear",
-		);
+		const afterFirstPeak = keyframes.filter((pt) => resolveDuration(pt.time) > 1 && resolveDuration(pt.time) < 240 && pt.curve === "linear");
 		for (const pt of afterFirstPeak) {
 			expect(pt.time).toBeLessThanOrEqual(240);
 		}
 
-		const secondBaseline = points.find((pt) => pt.time === 240 && pt.curve === "step");
+		const secondBaseline = keyframes.find((pt) => pt.time === 240 && pt.curve === "step");
 		expect(secondBaseline).toBeDefined();
 	});
 
 	it("produces linear release with default tension (1)", () => {
-		const points = trigger(note("C4", "4n"), { peak: 1, attack: 1, release: beats(1) });
+		const keyframes = trigger(note("C4", "4n"), { peak: 1, attack: 1, release: beats(1) });
 
-		const releasePoints = points.filter((pt) => pt.time > 1 && pt.curve === "linear");
+		const releasePoints = keyframes.filter((pt) => resolveDuration(pt.time) > 1 && pt.curve === "linear");
 		expect(releasePoints.length).toBeGreaterThan(1);
 
 		for (let idx = 1; idx < releasePoints.length; idx++) {
@@ -84,8 +82,8 @@ describe("trigger", () => {
 	});
 
 	it("produces concave release with tension > 1", () => {
-		const points = trigger(note("C4", "4n"), { peak: 1, attack: 1, release: beats(1), tension: 3 });
-		const releasePoints = points.filter((pt) => pt.time > 1 && pt.curve === "linear");
+		const keyframes = trigger(note("C4", "4n"), { peak: 1, attack: 1, release: beats(1), tension: 3 });
+		const releasePoints = keyframes.filter((pt) => resolveDuration(pt.time) > 1 && pt.curve === "linear");
 
 		const firstRelease = releasePoints[0];
 		expect(firstRelease).toBeDefined();
@@ -95,8 +93,8 @@ describe("trigger", () => {
 	});
 
 	it("produces convex release with tension < 1", () => {
-		const points = trigger(note("C4", "4n"), { peak: 1, attack: 1, release: beats(1), tension: 0.5 });
-		const releasePoints = points.filter((pt) => pt.time > 1 && pt.curve === "linear");
+		const keyframes = trigger(note("C4", "4n"), { peak: 1, attack: 1, release: beats(1), tension: 0.5 });
+		const releasePoints = keyframes.filter((pt) => resolveDuration(pt.time) > 1 && pt.curve === "linear");
 
 		const firstRelease = releasePoints[0];
 		expect(firstRelease).toBeDefined();
@@ -106,8 +104,8 @@ describe("trigger", () => {
 	});
 
 	it("clamps final release value to epsilon", () => {
-		const points = trigger(note("C4", "4n"), { peak: 1, attack: 1, release: "8n" });
-		const last = points.at(-1);
+		const keyframes = trigger(note("C4", "4n"), { peak: 1, attack: 1, release: "8n" });
+		const last = keyframes.at(-1);
 		expect(last).toBeDefined();
 		expect(last?.value).toBeGreaterThan(0);
 		expect(last?.value).toBeLessThan(0.01);
@@ -115,18 +113,18 @@ describe("trigger", () => {
 
 	it("works with repeat pattern", () => {
 		const pattern = repeat(note("C1", "4n"), 4);
-		const points = trigger(pattern, { peak: 0.9, attack: 1, release: "8n" });
+		const keyframes = trigger(pattern, { peak: 0.9, attack: 1, release: "8n" });
 
-		const baselines = points.filter((pt) => pt.curve === "step");
+		const baselines = keyframes.filter((pt) => pt.curve === "step");
 		expect(baselines).toHaveLength(4);
 		expect(baselines.map((pt) => pt.time)).toEqual([0, 480, 960, 1440]);
 	});
 
 	it("works with layer pattern (simultaneous notes)", () => {
 		const pattern = layer(note("C4", "4n"), note("E4", "4n"));
-		const points = trigger(pattern, { peak: 1, attack: 1, release: "8n" });
+		const keyframes = trigger(pattern, { peak: 1, attack: 1, release: "8n" });
 
-		const baselines = points.filter((pt) => pt.curve === "step");
+		const baselines = keyframes.filter((pt) => pt.curve === "step");
 		expect(baselines).toHaveLength(2);
 		expect(baselines[0]?.time).toBe(0);
 		expect(baselines[1]?.time).toBe(0);

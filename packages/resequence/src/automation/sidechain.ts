@@ -1,7 +1,7 @@
+import type { Keyframe } from "../patterns/automate";
+import type { Pattern } from "../patterns/pattern";
 import type { Duration } from "../utils/duration";
 import { invert } from "./invert";
-import type { AutomationPoint } from "../patterns/automate";
-import type { Pattern } from "../patterns/pattern";
 import { trigger } from "./trigger";
 
 export interface SidechainOptions {
@@ -11,7 +11,7 @@ export interface SidechainOptions {
 	readonly tension?: number;
 }
 
-export function sidechain(pattern: Pattern, options: SidechainOptions): Array<AutomationPoint> {
+export function sidechain(pattern: Pattern, options: SidechainOptions): Array<Keyframe> {
 	return invert(
 		trigger(pattern, {
 			peak: options.depth,

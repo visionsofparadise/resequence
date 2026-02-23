@@ -151,11 +151,13 @@ async function runCli(args: CliOptions): Promise<void> {
 
 			for (const trackName of filteredNames) {
 				const offlineCtx = new NodeOfflineAudioContext(2, Math.ceil(totalSeconds * sampleRate), sampleRate);
-				const effectsMap = buildEffectsMap(routing, offlineCtx as unknown as BaseAudioContext, sampleBank);
+				const { effectsMap, inputMap, envelopesMap } = buildEffectsMap(routing, offlineCtx as unknown as BaseAudioContext, sampleBank);
 				const scheduleContext: ScheduleContext = {
 					audioContext: offlineCtx as unknown as BaseAudioContext,
 					sampleBank,
 					effectsMap,
+					inputMap,
+					envelopesMap,
 					tempo: meta.tempo,
 					fromTicks: 0,
 					toTicks: Infinity,
@@ -172,11 +174,13 @@ async function runCli(args: CliOptions): Promise<void> {
 
 			if (args.master) {
 				const offlineCtx = new NodeOfflineAudioContext(2, Math.ceil(totalSeconds * sampleRate), sampleRate);
-				const effectsMap = buildEffectsMap(routing, offlineCtx as unknown as BaseAudioContext, sampleBank);
+				const { effectsMap, inputMap, envelopesMap } = buildEffectsMap(routing, offlineCtx as unknown as BaseAudioContext, sampleBank);
 				const scheduleContext: ScheduleContext = {
 					audioContext: offlineCtx as unknown as BaseAudioContext,
 					sampleBank,
 					effectsMap,
+					inputMap,
+					envelopesMap,
 					tempo: meta.tempo,
 					fromTicks: 0,
 					toTicks: Infinity,

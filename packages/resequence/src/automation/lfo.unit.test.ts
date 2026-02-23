@@ -1,58 +1,58 @@
 import { describe, expect, it } from "vitest";
-import { lfo } from "./lfo";
 import { bars, beats } from "../utils/duration";
+import { lfo } from "./lfo";
 
 describe("lfo", () => {
 	it("sine produces values in 0-1 range", () => {
-		const points = lfo({ shape: "sine", rate: "4n", duration: bars(1) });
-		for (const pt of points) {
-			expect(pt.value).toBeGreaterThanOrEqual(0);
-			expect(pt.value).toBeLessThanOrEqual(1);
+		const keyframes = lfo({ shape: "sine", rate: "4n", duration: bars(1) });
+		for (const kf of keyframes) {
+			expect(kf.value).toBeGreaterThanOrEqual(0);
+			expect(kf.value).toBeLessThanOrEqual(1);
 		}
 	});
 
 	it("sine uses exponential curves", () => {
-		const points = lfo({ shape: "sine", rate: "4n", duration: bars(1) });
-		for (const pt of points) {
-			expect(pt.curve).toBe("exponential");
+		const keyframes = lfo({ shape: "sine", rate: "4n", duration: bars(1) });
+		for (const kf of keyframes) {
+			expect(kf.curve).toBe("exponential");
 		}
 	});
 
 	it("sine starts at 0.5 with no phase offset", () => {
-		const points = lfo({ shape: "sine", rate: "4n", duration: bars(1) });
-		expect(points[0]?.value).toBeCloseTo(0.5);
+		const keyframes = lfo({ shape: "sine", rate: "4n", duration: bars(1) });
+		expect(keyframes[0]?.value).toBeCloseTo(0.5);
 	});
 
 	it("sine starts at peak with phase 0.25", () => {
-		const points = lfo({ shape: "sine", rate: "4n", duration: bars(1), phase: 0.25 });
-		expect(points[0]?.value).toBeCloseTo(1);
+		const keyframes = lfo({ shape: "sine", rate: "4n", duration: bars(1), phase: 0.25 });
+		expect(keyframes[0]?.value).toBeCloseTo(1);
 	});
 
-	it("sine emits 4 key points per cycle", () => {
-		const points = lfo({ shape: "sine", rate: bars(1), duration: bars(1) });
-		expect(points.length).toBe(5);
+	it("sine emits 4 key keyframes per cycle", () => {
+		const keyframes = lfo({ shape: "sine", rate: bars(1), duration: bars(1) });
+		expect(keyframes.length).toBe(5);
 	});
 
 	it("saw ramps from 0 to 1", () => {
-		const points = lfo({ shape: "saw", rate: bars(1), duration: bars(1) });
-		expect(points[0]?.value).toBeCloseTo(0);
-		const last = points.at(-1);
+		const keyframes = lfo({ shape: "sawtooth", rate: bars(1), duration: bars(1) });
+		expect(keyframes[0]?.value).toBeCloseTo(0);
+		const last = keyframes.at(-1);
 		expect(last?.value).toBeCloseTo(0);
 	});
 
 	it("saw uses linear ramps and step resets", () => {
-		const points = lfo({ shape: "saw", rate: "4n", duration: bars(1) });
-		for (const pt of points) {
-			expect(pt.curve === "linear" || pt.curve === "step").toBe(true);
+		const keyframes = lfo({ shape: "sawtooth", rate: "4n", duration: bars(1) });
+		for (const kf of keyframes) {
+			expect(kf.curve === "linear" || kf.curve === "step").toBe(true);
 		}
-		const resets = points.filter((pt) => pt.curve === "step");
+		const resets = keyframes.filter((kf) => kf.curve === "step");
 		expect(resets.length).toBeGreaterThan(0);
 	});
 
 	it("triangle peaks at midpoint", () => {
-		const points = lfo({ shape: "triangle", rate: bars(1), duration: bars(1) });
-		const midpoint = points.find((pt) => {
-			const phase = pt.time as number / bars(1);
+		const keyframes = lfo({ shape: "triangle", rate: bars(1), duration: bars(1) });
+		const midpoint = keyframes.find((kf) => {
+			const phase = (kf.time as number) / bars(1);
 			return Math.abs(phase - 0.5) < 0.01;
 		});
 		expect(midpoint).toBeDefined();
@@ -60,39 +60,39 @@ describe("lfo", () => {
 	});
 
 	it("triangle uses linear curves", () => {
-		const points = lfo({ shape: "triangle", rate: "4n", duration: bars(1) });
-		for (const pt of points) {
-			expect(pt.curve).toBe("linear");
+		const keyframes = lfo({ shape: "triangle", rate: "4n", duration: bars(1) });
+		for (const kf of keyframes) {
+			expect(kf.curve).toBe("linear");
 		}
 	});
 
-	it("triangle emits 2 key points per cycle", () => {
-		const points = lfo({ shape: "triangle", rate: bars(1), duration: bars(1) });
-		expect(points.length).toBe(3);
+	it("triangle emits 2 key keyframes per cycle", () => {
+		const keyframes = lfo({ shape: "triangle", rate: bars(1), duration: bars(1) });
+		expect(keyframes.length).toBe(3);
 	});
 
 	it("square alternates between 0 and 1", () => {
-		const points = lfo({ shape: "square", rate: "4n", duration: bars(1) });
-		for (const pt of points) {
-			expect(pt.value === 0 || pt.value === 1).toBe(true);
+		const keyframes = lfo({ shape: "square", rate: "4n", duration: bars(1) });
+		for (const kf of keyframes) {
+			expect(kf.value === 0 || kf.value === 1).toBe(true);
 		}
 	});
 
 	it("square uses step curves", () => {
-		const points = lfo({ shape: "square", rate: "4n", duration: bars(1) });
-		for (const pt of points) {
-			expect(pt.curve).toBe("step");
+		const keyframes = lfo({ shape: "square", rate: "4n", duration: bars(1) });
+		for (const kf of keyframes) {
+			expect(kf.curve).toBe("step");
 		}
 	});
 
-	it("square emits 2 key points per cycle", () => {
-		const points = lfo({ shape: "square", rate: bars(1), duration: bars(1) });
-		expect(points.length).toBe(3);
+	it("square emits 2 key keyframes per cycle", () => {
+		const keyframes = lfo({ shape: "square", rate: bars(1), duration: bars(1) });
+		expect(keyframes.length).toBe(3);
 	});
 
 	it("respects duration", () => {
-		const points = lfo({ shape: "sine", rate: "4n", duration: bars(2) });
-		const last = points.at(-1);
+		const keyframes = lfo({ shape: "sine", rate: "4n", duration: bars(2) });
+		const last = keyframes.at(-1);
 		expect(last?.time).toBeCloseTo(bars(2));
 	});
 

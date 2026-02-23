@@ -26,9 +26,15 @@ describe('instrument', () => {
     })
 
     it('stores envelopes via routeTo', () => {
-      const envChain = envelopes({ amp: volumeEnvelope({ attack: 0.3, sustain: 0.7, release: 0.8 }) })
+      const envChain = envelopes({ amp: volumeEnvelope({ envelope: { attack: 0.3, sustain: 0.7, release: 0.8 } }) })
       const inst = instrument('pad', './pad.wav', { root: 'C3' }).routeTo(envChain)
       expect(inst.envelopes).toBe(envChain)
+    })
+
+    it('accepts loop points', () => {
+      const inst = instrument('pad', './pad.wav', { root: 'C3', loopStartMs: 500, loopEndMs: 1200 })
+      expect(inst.zones[0].loopStartMs).toBe(500)
+      expect(inst.zones[0].loopEndMs).toBe(1200)
     })
   })
 
@@ -78,7 +84,7 @@ describe('instrument', () => {
 
     it('accepts envelopes chain', () => {
       const inst = instrument('bass', './bass.wav', { root: 'C2' })
-      const envChain = envelopes({ amp: volumeEnvelope() })
+      const envChain = envelopes({ amp: volumeEnvelope({ envelope: {} }) })
       const routed = inst.routeTo(envChain)
       expect(routed.envelopes).toBe(envChain)
       expect(routed.effects).toBeUndefined()
@@ -87,7 +93,7 @@ describe('instrument', () => {
     it('preserves effects when adding envelopes', () => {
       const inst = instrument('bass', './bass.wav', { root: 'C2' })
       const fxChain = effects({ vol: gain({ level: -3 }) })
-      const envChain = envelopes({ amp: volumeEnvelope() })
+      const envChain = envelopes({ amp: volumeEnvelope({ envelope: {} }) })
       const routed = inst.routeTo(fxChain).routeTo(envChain)
       expect(routed.effects).toBe(fxChain)
       expect(routed.envelopes).toBe(envChain)
@@ -96,7 +102,7 @@ describe('instrument', () => {
     it('preserves envelopes when adding effects', () => {
       const inst = instrument('bass', './bass.wav', { root: 'C2' })
       const fxChain = effects({ vol: gain({ level: -3 }) })
-      const envChain = envelopes({ flt: filterEnvelope({ frequency: 1000, amount: 0.5 }) })
+      const envChain = envelopes({ flt: filterEnvelope({ frequency: 1000, envelope: { amount: 0.5 } }) })
       const routed = inst.routeTo(envChain).routeTo(fxChain)
       expect(routed.effects).toBe(fxChain)
       expect(routed.envelopes).toBe(envChain)
@@ -142,6 +148,17 @@ describe('kit', () => {
     })
     expect(Array.isArray(drums.mapping!.C1)).toBe(true)
     expect(typeof drums.mapping!.D1).toBe('string')
+  })
+
+  it('supports loop points on velocity layers', () => {
+    const drums = kit('drums', {
+      C3: [
+        { sample: './pad-soft.wav', velocity: [0, 80] as [number, number], loopStartMs: 500, loopEndMs: 1000 },
+      ],
+    })
+    const layers = drums.mapping!.C3 as ReadonlyArray<{ sample: string; velocity: [number, number]; loopStartMs?: number; loopEndMs?: number }>
+    expect(layers[0].loopStartMs).toBe(500)
+    expect(layers[0].loopEndMs).toBe(1000)
   })
 
   it('supports routeTo for effects', () => {

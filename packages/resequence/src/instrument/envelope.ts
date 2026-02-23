@@ -1,62 +1,98 @@
+import { ResequenceError } from "../error";
+import type { Duration } from "../utils/duration";
+import type { Lfo, LfoShape } from "../utils/lfo";
+import { resolveLfo, scheduleLfo } from "../utils/lfo";
 import type { FilterMode } from "./effect";
 
-export interface VolumeEnvelopeEffect {
-	readonly type: "volumeEnvelope";
+export interface EnvelopeAdsr {
 	readonly attack?: number;
 	readonly decay?: number;
 	readonly sustain?: number;
 	readonly release?: number;
+	readonly amount?: number;
+}
+
+export interface VolumeEnvelopeEffect {
+	readonly type: "volumeEnvelope";
+	readonly envelope?: EnvelopeAdsr;
+	readonly lfo?: Lfo;
 }
 
 export interface FilterEnvelopeEffect {
 	readonly type: "filterEnvelope";
-	readonly attack?: number;
-	readonly decay?: number;
-	readonly sustain?: number;
-	readonly release?: number;
 	readonly frequency: number;
-	readonly amount: number;
+	readonly resonance?: number;
 	readonly mode?: FilterMode;
+	readonly envelope?: EnvelopeAdsr & { readonly amount: number };
+	readonly lfo?: Lfo;
 }
 
 export interface PitchEnvelopeEffect {
 	readonly type: "pitchEnvelope";
-	readonly attack?: number;
-	readonly decay?: number;
-	readonly sustain?: number;
-	readonly release?: number;
-	readonly amount: number;
+	readonly envelope?: EnvelopeAdsr & { readonly amount: number };
+	readonly lfo?: Lfo;
 }
 
 export type EnvelopeEffect = VolumeEnvelopeEffect | FilterEnvelopeEffect | PitchEnvelopeEffect;
 export type EnvelopesChain = Readonly<Record<string, EnvelopeEffect>>;
 
-export function volumeEnvelope(adsr?: { attack?: number; decay?: number; sustain?: number; release?: number }): VolumeEnvelopeEffect {
-	return { type: "volumeEnvelope", attack: adsr?.attack, decay: adsr?.decay, sustain: adsr?.sustain, release: adsr?.release };
+interface LfoInput {
+	readonly shape: LfoShape;
+	readonly value: number;
+	readonly frequency: number | Duration;
+	readonly delay?: number;
+	readonly attack?: number;
+}
+
+export function volumeEnvelope({ envelope, lfo }: { envelope?: EnvelopeAdsr; lfo?: LfoInput }): VolumeEnvelopeEffect {
+	if (!envelope && !lfo) {
+		throw new ResequenceError("INVALID_ENVELOPE", "volumeEnvelope(): at least one of envelope or lfo is required");
+	}
+
+	return {
+		type: "volumeEnvelope",
+		envelope,
+		lfo: lfo ? resolveLfo(lfo) : undefined,
+	};
 }
 
 export function filterEnvelope({
 	frequency,
-	amount,
+	resonance,
 	mode,
-	attack,
-	decay,
-	sustain,
-	release,
+	envelope,
+	lfo,
 }: {
 	frequency: number;
-	amount: number;
+	resonance?: number;
 	mode?: FilterMode;
-	attack?: number;
-	decay?: number;
-	sustain?: number;
-	release?: number;
+	envelope?: EnvelopeAdsr & { amount: number };
+	lfo?: LfoInput;
 }): FilterEnvelopeEffect {
-	return { type: "filterEnvelope", frequency, amount, mode, attack, decay, sustain, release };
+	if (!envelope && !lfo) {
+		throw new ResequenceError("INVALID_ENVELOPE", "filterEnvelope(): at least one of envelope or lfo is required");
+	}
+
+	return {
+		type: "filterEnvelope",
+		frequency,
+		resonance,
+		mode,
+		envelope,
+		lfo: lfo ? resolveLfo(lfo) : undefined,
+	};
 }
 
-export function pitchEnvelope({ amount, attack, decay, sustain, release }: { amount: number; attack?: number; decay?: number; sustain?: number; release?: number }): PitchEnvelopeEffect {
-	return { type: "pitchEnvelope", amount, attack, decay, sustain, release };
+export function pitchEnvelope({ envelope, lfo }: { envelope?: EnvelopeAdsr & { amount: number }; lfo?: LfoInput }): PitchEnvelopeEffect {
+	if (!envelope && !lfo) {
+		throw new ResequenceError("INVALID_ENVELOPE", "pitchEnvelope(): at least one of envelope or lfo is required");
+	}
+
+	return {
+		type: "pitchEnvelope",
+		envelope,
+		lfo: lfo ? resolveLfo(lfo) : undefined,
+	};
 }
 
 export function envelopes(chain: Record<string, EnvelopeEffect>): EnvelopesChain {
@@ -90,46 +126,82 @@ export function buildPerVoiceChain(
 	audioContext: BaseAudioContext,
 	startTime: number,
 	duration: number,
+	tempo: number,
 ): { input?: AudioNode; output?: AudioNode; maxRelease: number } {
 	const chainNodes: Array<AudioNode> = [];
 	let maxRelease = 0;
 
 	for (const envelope of Object.values(envelopesChain)) {
-		const attack = envelope.attack ?? 0.01;
-		const decay = envelope.decay ?? 0.1;
-		const release = envelope.release ?? 0.1;
-
-		if (release > maxRelease) maxRelease = release;
-
 		switch (envelope.type) {
 			case "volumeEnvelope": {
-				const sustain = envelope.sustain ?? 0.7;
 				const gainNode = audioContext.createGain();
 
-				gainNode.gain.value = 0;
-				scheduleEnvelopeAdsr(gainNode.gain, startTime, duration, attack, decay, sustain, release, 1);
-				chainNodes.push(gainNode);
+				if (envelope.envelope) {
+					const attack = envelope.envelope.attack ?? 0.01;
+					const decay = envelope.envelope.decay ?? 0.1;
+					const sustain = envelope.envelope.sustain ?? 0.7;
+					const release = envelope.envelope.release ?? 0.1;
 
+					if (release > maxRelease) maxRelease = release;
+
+					gainNode.gain.value = 0;
+
+					scheduleEnvelopeAdsr(gainNode.gain, startTime, duration, attack, decay, sustain, release, envelope.envelope.amount ?? 1);
+				} else {
+					gainNode.gain.value = 1;
+				}
+
+				if (envelope.lfo) {
+					scheduleLfo(envelope.lfo, gainNode.gain, audioContext, startTime, startTime + duration + maxRelease, 1, tempo);
+				}
+
+				chainNodes.push(gainNode);
 				break;
 			}
 			case "filterEnvelope": {
-				const sustain = envelope.sustain ?? 0;
 				const filterNode = audioContext.createBiquadFilter();
 
 				filterNode.type = envelope.mode ?? "lowpass";
 				filterNode.frequency.value = envelope.frequency;
+
+				if (envelope.resonance !== undefined) filterNode.Q.value = envelope.resonance;
 				filterNode.detune.value = 0;
 
-				scheduleEnvelopeAdsr(filterNode.detune, startTime, duration, attack, decay, sustain, release, envelope.amount * 12000);
-				chainNodes.push(filterNode);
+				if (envelope.envelope) {
+					const attack = envelope.envelope.attack ?? 0.01;
+					const decay = envelope.envelope.decay ?? 0.1;
+					const sustain = envelope.envelope.sustain ?? 0;
+					const release = envelope.envelope.release ?? 0.1;
 
+					if (release > maxRelease) maxRelease = release;
+
+					scheduleEnvelopeAdsr(filterNode.detune, startTime, duration, attack, decay, sustain, release, envelope.envelope.amount * 12000);
+				}
+
+				if (envelope.lfo) {
+					scheduleLfo(envelope.lfo, filterNode.detune, audioContext, startTime, startTime + duration + maxRelease, 100, tempo);
+				}
+
+				chainNodes.push(filterNode);
 				break;
 			}
 			case "pitchEnvelope": {
-				const sustain = envelope.sustain ?? 0;
-
 				source.detune.value = 0;
-				scheduleEnvelopeAdsr(source.detune, startTime, duration, attack, decay, sustain, release, envelope.amount * 100);
+
+				if (envelope.envelope) {
+					const attack = envelope.envelope.attack ?? 0.01;
+					const decay = envelope.envelope.decay ?? 0.1;
+					const sustain = envelope.envelope.sustain ?? 0;
+					const release = envelope.envelope.release ?? 0.1;
+
+					if (release > maxRelease) maxRelease = release;
+
+					scheduleEnvelopeAdsr(source.detune, startTime, duration, attack, decay, sustain, release, envelope.envelope.amount * 100);
+				}
+
+				if (envelope.lfo) {
+					scheduleLfo(envelope.lfo, source.detune, audioContext, startTime, startTime + duration + maxRelease, 100, tempo);
+				}
 
 				break;
 			}
@@ -137,7 +209,9 @@ export function buildPerVoiceChain(
 	}
 
 	for (let index = 1; index < chainNodes.length; index++) {
-		chainNodes[index - 1]!.connect(chainNodes[index]!);
+		const prev = chainNodes[index - 1];
+		const curr = chainNodes[index];
+		if (prev && curr) prev.connect(curr);
 	}
 
 	return { input: chainNodes[0], output: chainNodes[chainNodes.length - 1], maxRelease };

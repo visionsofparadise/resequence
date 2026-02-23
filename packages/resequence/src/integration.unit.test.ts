@@ -20,7 +20,7 @@ describe('integration', () => {
     }))
 
   const pad = instrument('pad', './samples/pad-C3.wav', { root: 'C3' })
-    .routeTo(envelopes({ amp: volumeEnvelope({ attack: 0.3, sustain: 0.7, release: 0.8 }) }))
+    .routeTo(envelopes({ amp: volumeEnvelope({ envelope: { attack: 0.3, sustain: 0.7, release: 0.8 } }) }))
 
   const drums = kit('drums', {
     C1: './samples/kick.wav',
