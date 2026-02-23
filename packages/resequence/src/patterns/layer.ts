@@ -1,5 +1,6 @@
-import type { Duration } from "../duration";
-import { resolveDuration } from "../duration";
+import type { Duration } from "../utils/duration";
+import { resolveDuration } from "../utils/duration";
+import type { ScheduleContext } from "../rendering/schedule-context";
 import type { Pattern, PositionedNote } from "./pattern";
 import { MidiPattern } from "./pattern";
 
@@ -30,14 +31,20 @@ export class LayerPattern extends MidiPattern {
 		);
 	}
 
-	getNotes(offset = 0): Array<PositionedNote> {
+	getMidi(offset = 0, trackName?: string): Array<PositionedNote> {
 		const results: Array<PositionedNote> = [];
 
 		for (const child of this.nodes) {
-			results.push(...child.getNotes(offset));
+			results.push(...child.getMidi(offset, trackName));
 		}
 
 		return results;
+	}
+
+	schedule(offsetTicks: number, context: ScheduleContext): void {
+		for (const child of this.nodes) {
+			child.schedule(offsetTicks, context);
+		}
 	}
 }
 

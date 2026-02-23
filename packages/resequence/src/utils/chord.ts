@@ -1,8 +1,8 @@
 import { Chord } from 'tonal'
 import type { Duration } from './duration'
-import type { LayerPattern } from './patterns/layer'
-import { layer } from './patterns/layer'
-import { note } from './patterns/note'
+import type { LayerPattern } from '../patterns/layer'
+import { layer } from '../patterns/layer'
+import { note } from '../patterns/note'
 import { resolvePitch } from './pitch'
 
 const CHORD_REGEX = /^([A-G][#b]?)(\d)(.*)/

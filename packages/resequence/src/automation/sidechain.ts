@@ -1,7 +1,7 @@
-import type { Duration } from "./duration";
+import type { Duration } from "../utils/duration";
 import { invert } from "./invert";
-import type { AutomationPoint } from "./patterns/automate";
-import type { Pattern } from "./patterns/pattern";
+import type { AutomationPoint } from "../patterns/automate";
+import type { Pattern } from "../patterns/pattern";
 import { trigger } from "./trigger";
 
 export interface SidechainOptions {

@@ -1,3 +1,4 @@
+import type { ScheduleContext } from "../rendering/schedule-context";
 import type { Pattern, PositionedNote } from "./pattern";
 import { MidiPattern } from "./pattern";
 
@@ -22,14 +23,24 @@ export class RepeatPattern extends MidiPattern {
 		return new RepeatPattern(this.node.reverse(), this.count);
 	}
 
-	getNotes(offset = 0): Array<PositionedNote> {
+	getMidi(offset = 0, trackName?: string): Array<PositionedNote> {
 		const results: Array<PositionedNote> = [];
 
 		for (let iteration = 0; iteration < this.count; iteration++) {
-			results.push(...this.node.getNotes(offset + this.node.durationTicks * iteration));
+			results.push(...this.node.getMidi(offset + this.node.durationTicks * iteration, trackName));
 		}
 
 		return results;
+	}
+
+	schedule(offsetTicks: number, context: ScheduleContext): void {
+		for (let iteration = 0; iteration < this.count; iteration++) {
+			const iterationOffset = offsetTicks + this.node.durationTicks * iteration;
+
+			if (iterationOffset + this.node.durationTicks > context.fromTicks && iterationOffset < context.toTicks) {
+				this.node.schedule(iterationOffset, context);
+			}
+		}
 	}
 }
 

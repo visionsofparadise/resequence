@@ -1,3 +1,4 @@
+import type { ScheduleContext } from "../rendering/schedule-context";
 import type { Pattern, PositionedNote } from "./pattern";
 
 export class MetadataPattern implements Pattern {
@@ -21,8 +22,12 @@ export class MetadataPattern implements Pattern {
 		return new MetadataPattern(this.node.reverse(), this.tempo, this.key, this.timeSignature);
 	}
 
-	getNotes(offset = 0): Array<PositionedNote> {
-		return this.node.getNotes(offset);
+	getMidi(offset = 0, trackName?: string): Array<PositionedNote> {
+		return this.node.getMidi(offset, trackName);
+	}
+
+	schedule(offsetTicks: number, context: ScheduleContext): void {
+		this.node.schedule(offsetTicks, context);
 	}
 }
 

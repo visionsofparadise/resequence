@@ -1,7 +1,7 @@
-import type { Duration } from "./duration";
-import { resolveDuration } from "./duration";
-import type { AutomationPoint } from "./patterns/automate";
-import type { Pattern } from "./patterns/pattern";
+import type { Duration } from "../utils/duration";
+import { resolveDuration } from "../utils/duration";
+import type { AutomationPoint } from "../patterns/automate";
+import type { Pattern } from "../patterns/pattern";
 
 export interface TriggerOptions {
 	readonly peak: number;
@@ -14,7 +14,7 @@ const RELEASE_SAMPLES = 8;
 const EPSILON = 1e-6;
 
 export function trigger(pattern: Pattern, options: TriggerOptions): Array<AutomationPoint> {
-	const notes = pattern.getNotes();
+	const notes = pattern.getMidi();
 
 	if (notes.length === 0) return [];
 

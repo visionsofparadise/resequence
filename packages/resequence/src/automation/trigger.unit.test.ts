@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { trigger } from "./trigger";
-import { note } from "./patterns/note";
-import { sequence } from "./patterns/sequence";
-import { gap } from "./patterns/gap";
-import { repeat } from "./patterns/repeat";
-import { layer } from "./patterns/layer";
-import { beats } from "./duration";
+import { note } from "../patterns/note";
+import { sequence } from "../patterns/sequence";
+import { gap } from "../patterns/gap";
+import { repeat } from "../patterns/repeat";
+import { layer } from "../patterns/layer";
+import { beats } from "../utils/duration";
 
 describe("trigger", () => {
 	it("returns empty for empty pattern", () => {

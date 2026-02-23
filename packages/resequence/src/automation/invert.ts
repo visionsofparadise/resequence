@@ -1,4 +1,4 @@
-import type { AutomationPoint } from "./patterns/automate";
+import type { AutomationPoint } from "../patterns/automate";
 
 export function invert(points: ReadonlyArray<AutomationPoint>): Array<AutomationPoint> {
 	return points.map((point) => ({

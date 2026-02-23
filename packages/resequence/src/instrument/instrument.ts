@@ -1,5 +1,5 @@
 import type { EffectsChain } from "./effect";
-import type { Pitch } from "./pitch";
+import type { Pitch } from "../utils/pitch";
 
 export interface Envelope {
 	readonly attack?: number;

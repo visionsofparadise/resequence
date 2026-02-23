@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { invert } from "./invert";
-import type { AutomationPoint } from "./patterns/automate";
+import type { AutomationPoint } from "../patterns/automate";
 
 describe("invert", () => {
 	it("flips values (0 becomes 1, 1 becomes 0)", () => {

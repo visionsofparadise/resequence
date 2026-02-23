@@ -2,9 +2,9 @@ import { describe, expect, it } from "vitest";
 import { sidechain } from "./sidechain";
 import { trigger } from "./trigger";
 import { invert } from "./invert";
-import { note } from "./patterns/note";
-import { repeat } from "./patterns/repeat";
-import { gap } from "./patterns/gap";
+import { note } from "../patterns/note";
+import { repeat } from "../patterns/repeat";
+import { gap } from "../patterns/gap";
 
 describe("sidechain", () => {
 	it("equals invert(trigger(...)) for same inputs", () => {

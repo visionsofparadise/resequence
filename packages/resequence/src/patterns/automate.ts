@@ -1,5 +1,7 @@
-import type { Duration } from "../duration";
-import { resolveDuration } from "../duration";
+import type { Duration } from "../utils/duration";
+import { resolveDuration } from "../utils/duration";
+import type { ScheduleContext } from "../rendering/schedule-context";
+import { ticksToSeconds } from "../rendering/ticks-to-seconds";
 import type { Pattern, PositionedNote } from "./pattern";
 
 export type AutomationCurve = "linear" | "exponential" | "step";
@@ -65,9 +67,52 @@ export class AutomatePattern implements Pattern {
 		return new AutomatePattern(this.name, this.paths, reversedPoints);
 	}
 
-	getNotes(): Array<PositionedNote> {
+	getMidi(): Array<PositionedNote> {
 		return [];
 	}
+
+	schedule(offsetTicks: number, context: ScheduleContext): void {
+		for (const path of this.paths) {
+			const param = resolveAudioParam(path, context);
+			if (!param) continue;
+
+			for (const point of this.envelope) {
+				const absoluteTicks = offsetTicks + point.timeTicks;
+				if (absoluteTicks < context.fromTicks || absoluteTicks > context.toTicks) continue;
+
+				const timeSeconds = ticksToSeconds(absoluteTicks, context.tempo);
+				const curve = point.curve ?? "step";
+
+				if (curve === "step") {
+					param.setValueAtTime(point.value, timeSeconds);
+				} else if (curve === "linear") {
+					param.linearRampToValueAtTime(point.value, timeSeconds);
+				} else {
+					param.exponentialRampToValueAtTime(Math.max(point.value, 1e-6), timeSeconds);
+				}
+			}
+		}
+	}
+}
+
+function resolveAudioParam(path: string, context: ScheduleContext): AudioParam | undefined {
+	const segments = path.split(".");
+	if (segments.length < 3) return undefined;
+
+	const instrumentName = segments[0]!;
+	const effectKey = segments[1]!;
+	const property = segments[2]!;
+
+	const entry = context.effectsMap.get(instrumentName);
+	if (!entry) return undefined;
+
+	const node = entry.nodes.get(effectKey);
+	if (!node) return undefined;
+
+	const param: unknown = (node as unknown as Record<string, unknown>)[property];
+	if (!param || typeof param !== "object" || !("setValueAtTime" in param)) return undefined;
+
+	return param as AudioParam;
 }
 
 export function automate(name: string, paths: string | ReadonlyArray<string>, points: ReadonlyArray<AutomationPoint>): AutomatePattern {

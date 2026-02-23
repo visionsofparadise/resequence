@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { formula } from "./formula";
-import { bars } from "./duration";
+import { bars } from "../utils/duration";
 
 describe("formula", () => {
 	it("samples a linear function", () => {

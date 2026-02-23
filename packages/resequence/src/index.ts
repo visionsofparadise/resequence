@@ -1,15 +1,15 @@
 /* eslint-disable barrel-files/avoid-barrel-files */
-export { bars, beats, PPQ, resolveDuration } from "./duration";
-export type { Duration } from "./duration";
+export { bars, beats, PPQ, resolveDuration } from "./utils/duration";
+export type { Duration } from "./utils/duration";
 
-export { resolvePitch } from "./pitch";
-export type { Pitch } from "./pitch";
+export { resolvePitch } from "./utils/pitch";
+export type { Pitch } from "./utils/pitch";
 
-export { compressor, delay, effects, filter, gain, highpass, lowpass, pan, reverb } from "./effect";
-export type { CompressorEffect, DelayEffect, Effect as EffectDefinition, EffectsChain, FilterEffect, FilterMode, GainEffect, PanEffect, ReverbEffect } from "./effect";
+export { compressor, delay, effects, filter, gain, highpass, lowpass, pan, reverb } from "./instrument/effect";
+export type { CompressorEffect, DelayEffect, Effect as EffectDefinition, EffectsChain, FilterEffect, FilterMode, GainEffect, PanEffect, ReverbEffect } from "./instrument/effect";
 
-export { instrument, Instrument as InstrumentDefinition, kit } from "./instrument";
-export type { Envelope, InstrumentZone, KitMapping } from "./instrument";
+export { instrument, Instrument as InstrumentDefinition, kit } from "./instrument/instrument";
+export type { Envelope, InstrumentZone, KitMapping } from "./instrument/instrument";
 
 export type { Pattern, PositionedNote } from "./patterns/pattern";
 export { MidiPattern, RoutedPattern } from "./patterns/pattern";
@@ -24,16 +24,29 @@ export { repeat, RepeatPattern } from "./patterns/repeat";
 export { sample, SamplePattern } from "./patterns/sample";
 export { sequence, SequencePattern } from "./patterns/sequence";
 
-export { trigger } from "./trigger";
-export type { TriggerOptions } from "./trigger";
-export { invert } from "./invert";
-export { sidechain } from "./sidechain";
-export type { SidechainOptions } from "./sidechain";
-export { lfo } from "./lfo";
-export type { LfoOptions, LfoShape } from "./lfo";
-export { formula } from "./formula";
-export type { FormulaOptions } from "./formula";
+export { trigger } from "./automation/trigger";
+export type { TriggerOptions } from "./automation/trigger";
+export { invert } from "./automation/invert";
+export { sidechain } from "./automation/sidechain";
+export type { SidechainOptions } from "./automation/sidechain";
+export { lfo } from "./automation/lfo";
+export type { LfoOptions, LfoShape } from "./automation/lfo";
+export { formula } from "./automation/formula";
+export type { FormulaOptions } from "./automation/formula";
 
-export { chord } from "./chord";
-export { scale } from "./scale";
-export type { ScaleAccessor } from "./scale";
+export { chord } from "./utils/chord";
+export { scale } from "./utils/scale";
+export type { ScaleAccessor } from "./utils/scale";
+
+export { extractMetadata } from "./rendering/extract-metadata";
+export type { ExtractedMetadata } from "./rendering/extract-metadata";
+export { collectRouting } from "./rendering/collect-routing";
+export type { RoutingEntry } from "./rendering/collect-routing";
+export { ticksToSeconds } from "./rendering/ticks-to-seconds";
+export { encodeMidi } from "./rendering/encode-midi";
+export type { MidiNote } from "./rendering/encode-midi";
+export { renderMidi } from "./rendering/render-midi";
+export type { MidiRenderOptions, MidiRenderResult } from "./rendering/render-midi";
+export { buildEffectsMap } from "./instrument/build-effects-map";
+export { encodeWav } from "./rendering/encode-wav";
+export type { EffectsGraphEntry, ScheduleContext } from "./rendering/schedule-context";

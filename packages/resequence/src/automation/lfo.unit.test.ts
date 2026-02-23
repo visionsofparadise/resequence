@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { lfo } from "./lfo";
-import { bars, beats } from "./duration";
+import { bars, beats } from "../utils/duration";
 
 describe("lfo", () => {
 	it("sine produces values in 0-1 range", () => {

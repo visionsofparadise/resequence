@@ -1,6 +1,6 @@
-import type { Duration } from "./duration";
-import { resolveDuration } from "./duration";
-import type { AutomationPoint } from "./patterns/automate";
+import type { Duration } from "../utils/duration";
+import { resolveDuration } from "../utils/duration";
+import type { AutomationPoint } from "../patterns/automate";
 
 export interface FormulaOptions {
 	readonly duration: Duration;
