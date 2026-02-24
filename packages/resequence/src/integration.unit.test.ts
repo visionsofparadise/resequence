@@ -1,50 +1,45 @@
 import { describe, expect, it } from 'vitest'
 import {
   note, gap, sequence, layer, repeat,
-  instrument, kit,
-  effects, gain, pan, highpass, compressor,
-  envelopes, volumeEnvelope,
-  sample, metadata, automate,
+  sampler, SamplerNode,
+  gain, pan, highpass, compressor,
+  env, EnvNode,
+  audio, metadata, automate,
   bars, beats,
   chord,
   trigger, sidechain, formula, invert, resolveLfo,
-  InstrumentDefinition, RoutedPattern, SamplePattern, MetadataPattern, AutomatePattern,
+  MetadataPattern, AutomatePattern, AudioPattern,
 } from './index'
 
 describe('integration', () => {
-  const bass = instrument('bass', './samples/bass-C2.wav', { root: 'C2' })
-    .routeTo(effects({
-      hp: highpass({ frequency: 80 }),
-      comp: compressor({ threshold: -20, ratio: 4 }),
-      vol: gain({ level: -3 }),
-    }))
-
-  const pad = instrument('pad', './samples/pad-C3.wav', { root: 'C3' })
-    .routeTo(envelopes({ amp: volumeEnvelope({ envelope: { attack: 0.3, sustain: 0.7, release: 0.8 } }) }))
-
-  const drums = kit('drums', {
+  const bass = sampler('bass', './samples/bass-C2.wav', { root: 'C2' })
+  const pad = sampler('pad', './samples/pad-C3.wav', { root: 'C3' })
+  const drums = sampler('drums', {
     C1: './samples/kick.wav',
     D1: './samples/snare.wav',
     'F#1': './samples/hat-closed.wav',
-  }).routeTo(effects({
-    comp: compressor({ threshold: -15, ratio: 6 }),
-    vol: gain({ level: -2 }),
-    pan: pan({ value: 0 }),
-  }))
-
-  it('creates instruments with effects', () => {
-    expect(bass).toBeInstanceOf(InstrumentDefinition)
-    expect(bass.effects).toBeDefined()
-    expect(bass.effects?.hp.type).toBe('filter')
-    expect(bass.effects?.comp.type).toBe('compressor')
-    expect(bass.effects?.vol.type).toBe('gain')
   })
 
-  it('routes patterns to instruments', () => {
+  it('creates samplers', () => {
+    expect(bass).toBeInstanceOf(SamplerNode)
+    expect(bass.id).toBe('bass')
+    expect(drums).toBeInstanceOf(SamplerNode)
+    expect(drums.id).toBe('drums')
+  })
+
+  it('chains effects on instrument via .to()', () => {
+    const inst = sampler('test-inst', './samples/bass-C2.wav', { root: 'C2' })
+    const hp = highpass({ frequency: 80 })
+    const comp = compressor({ threshold: -20, ratio: 4 })
+    const g = gain({ level: -3 })
+    inst.to(hp).to(comp).to(g)
+    expect(inst.outputs).toHaveLength(1)
+    expect(inst.outputs[0]).toBe(hp)
+  })
+
+  it('routes pattern to instrument with .route()', () => {
     const kickPattern = repeat(note('C1', '4n'), 4)
-    const kickPart = kickPattern.routeTo(drums)
-    expect(kickPart).toBeInstanceOf(RoutedPattern)
-    expect(kickPart.instrument).toBe(drums)
+    const kickPart = kickPattern.route(drums)
     expect(kickPart.durationTicks).toBe(480 * 4)
   })
 
@@ -53,22 +48,17 @@ describe('integration', () => {
     const snarePattern = sequence(gap('4n'), note('D1', '4n'), gap('4n'), note('D1', '4n'))
     const bassRiff = sequence(note('C2', '8n'), gap('8n'), note('C2', '16n'), gap('16n'), note('C2', '8n'))
 
-    const kickPart = kickPattern.routeTo(drums)
-    const snarePart = snarePattern.routeTo(drums)
-    const bassPart = bassRiff.routeTo(bass)
-
-    const groove = layer(kickPart, snarePart, bassPart)
+    const groove = layer(kickPattern.route(drums), snarePattern.route(drums), bassRiff.route(bass))
     const verse = repeat(groove, 4)
 
     expect(groove.durationTicks).toBe(480 * 4)
     expect(verse.durationTicks).toBe(480 * 4 * 4)
   })
 
-  it('creates named samples with effects', () => {
-    const breakLoop = sample('break', './samples/break-140bpm.wav')
-      .routeTo(effects({ vol: gain({ level: -6 }) }))
-    expect(breakLoop).toBeInstanceOf(SamplePattern)
-    expect((breakLoop as SamplePattern).effects).toBeDefined()
+  it('creates named audio patterns', () => {
+    const breakLoop = audio('break', './samples/break-140bpm.wav')
+    expect(breakLoop).toBeInstanceOf(AudioPattern)
+    expect(breakLoop.name).toBe('break')
   })
 
   it('creates automation targeting effects', () => {
@@ -81,6 +71,14 @@ describe('integration', () => {
     expect(filterSweep.durationTicks).toBe(bars(2))
   })
 
+  it('accepts 2-segment automation paths', () => {
+    const sweep = automate('sweep', 'bass.frequency', [
+      { time: 0, value: 80 },
+      { time: beats(4), value: 2000 },
+    ])
+    expect(sweep.paths).toEqual(['bass.frequency'])
+  })
+
   it('creates multi-path automation', () => {
     const dualFilter = automate('dual-filter', ['bass.hp.frequency', 'pad.hp.frequency'], [
       { time: 0, value: 80 },
@@ -90,7 +88,7 @@ describe('integration', () => {
   })
 
   it('wraps with metadata', () => {
-    const kickPart = repeat(note('C1', '4n'), 4).routeTo(drums)
+    const kickPart = repeat(note('C1', '4n'), 4).route(drums)
     const filterSweep = automate('filter-sweep', 'bass.hp.frequency', [
       { time: 0, value: 80 },
       { time: bars(2), value: 2000 },
@@ -103,26 +101,27 @@ describe('integration', () => {
 
   it('preserves transpose through full tree', () => {
     const bassRiff = sequence(note('C2', '8n'), note('E2', '8n'))
-    const bassPart = bassRiff.routeTo(bass)
+    const bassPart = bassRiff.route(bass)
     const transposed = bassPart.transpose(7)
-    expect(transposed).toBeInstanceOf(RoutedPattern)
-    expect(transposed.instrument).toBe(bass)
     expect(transposed.durationTicks).toBe(480)
   })
 
   it('preserves reverse through full tree', () => {
     const bassRiff = sequence(note('C2', '8n'), note('E2', '8n'))
-    const bassPart = bassRiff.routeTo(bass)
-    const reversed = bassPart.reverse()
-    expect(reversed).toBeInstanceOf(RoutedPattern)
-    expect(reversed.instrument).toBe(bass)
+    const reversed = bassRiff.route(bass).reverse()
+    expect(reversed.durationTicks).toBe(480)
   })
 
   it('uses chord with routing', () => {
     const chordProg = sequence(chord('C4m', '2n'), chord('Ab3', '2n'))
-    const padPart = chordProg.routeTo(pad)
+    const padPart = chordProg.route(pad)
     expect(padPart.durationTicks).toBe(480 * 2 * 2)
-    expect(padPart.instrument).toBe(pad)
+  })
+
+  it('getMidi propagates track name from instrument', () => {
+    const kick = repeat(note('C1', '4n'), 4).route(drums)
+    const notes = kick.getMidi()
+    expect(notes.every((n) => n.trackName === 'drums')).toBe(true)
   })
 
   it('full composition matches API shape', () => {
@@ -130,20 +129,14 @@ describe('integration', () => {
     const snarePattern = sequence(gap('4n'), note('D1', '4n'), gap('4n'), note('D1', '4n'))
     const bassRiff = sequence(note('C2', '8n'), gap('8n'), note('C2', '16n'), gap('16n'), note('C2', '8n'))
 
-    const kickPart = kickPattern.routeTo(drums)
-    const snarePart = snarePattern.routeTo(drums)
-    const bassPart = bassRiff.routeTo(bass)
-
-    const breakLoop = sample('break', './samples/break-140bpm.wav')
-      .routeTo(effects({ vol: gain({ level: -6 }) }))
-
+    const breakLoop = audio('break', './samples/break-140bpm.wav')
     const filterSweep = automate('filter-sweep', 'bass.hp.frequency', [
       { time: 0, value: 80 },
       { time: beats(4), value: 2000, curve: 'linear' },
       { time: bars(2), value: 80, curve: 'exponential' },
     ])
 
-    const verse = layer(kickPart, snarePart, bassPart)
+    const verse = layer(kickPattern.route(drums), snarePattern.route(drums), bassRiff.route(bass))
     const song = repeat(verse, 8)
 
     const composition = metadata(layer(song, filterSweep, breakLoop), { tempo: 126, key: 'Cm' })
@@ -158,10 +151,11 @@ describe('integration', () => {
     const duck = sidechain(kickPattern, { depth: 0.8, attack: 1, release: '8n' })
 
     expect(duck.length).toBeGreaterThan(0)
-    expect(duck[0]?.value).toBe(1)
+    const firstDuck = duck[0]!
+    expect('value' in firstDuck && firstDuck.value).toBe(1)
 
     const bassRiff = sequence(note('C2', '8n'), gap('8n'), note('C2', '8n'), gap('8n'))
-    const bassPart = bassRiff.routeTo(bass)
+    const bassPart = bassRiff.route(bass)
     const duckAutomation = automate('sidechain-duck', 'bass.vol.level', duck)
 
     const groove = layer(bassPart, duckAutomation)
@@ -175,7 +169,7 @@ describe('integration', () => {
     expect(filterLfo.value).toBe(500)
 
     const lfoAutomation = automate('filter-lfo', 'pad.hp.frequency', filterLfo)
-    const padChords = repeat(chord('C4m', '1n'), 4).routeTo(pad)
+    const padChords = repeat(chord('C4m', '1n'), 4).route(pad)
     const section = layer(padChords, lfoAutomation)
     expect(section.durationTicks).toBe(bars(4))
   })
@@ -197,13 +191,17 @@ describe('integration', () => {
     const duck = sidechain(kickPattern, { depth: 0.8, attack: 1, release: '8n' })
     const inverted = invert(duck)
 
-    expect(duck[0]?.value).toBe(1)
-    expect(inverted[0]?.value).toBe(0)
+    const firstDuck = duck[0]!
+    const firstInverted = inverted[0]!
+    expect('value' in firstDuck && firstDuck.value).toBe(1)
+    expect('value' in firstInverted && firstInverted.value).toBe(0)
 
     for (let idx = 0; idx < duck.length; idx++) {
-      const duckValue = duck[idx]?.value ?? 0;
-      const invertedValue = inverted[idx]?.value ?? 0;
-      expect(duckValue + invertedValue).toBeCloseTo(1)
+      const duckKf = duck[idx]!
+      const invertedKf = inverted[idx]!
+      if ('value' in duckKf && 'value' in invertedKf) {
+        expect(duckKf.value + invertedKf.value).toBeCloseTo(1)
+      }
     }
   })
 
@@ -213,10 +211,16 @@ describe('integration', () => {
 
     expect(envelope.length).toBeGreaterThan(0)
 
-    const peaks = envelope.filter((pt) => pt.value === 0.9)
+    const peaks = envelope.filter((pt) => 'value' in pt && pt.value === 0.9)
     expect(peaks).toHaveLength(4)
 
     const triggerAutomation = automate('trigger-env', 'drums.vol.level', envelope)
     expect(triggerAutomation).toBeInstanceOf(AutomatePattern)
+  })
+
+  it('creates env node for ADSR modulation', () => {
+    const ampEnv = env('bass.level', { attack: 0.01, decay: 0.1, sustain: 0.8, release: 0.3 })
+    expect(ampEnv).toBeInstanceOf(EnvNode)
+    expect(ampEnv.path).toBe('bass.level')
   })
 })

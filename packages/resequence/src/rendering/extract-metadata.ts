@@ -24,8 +24,8 @@ function findMetadata(pattern: Pattern): MetadataPattern | undefined {
 		return findMetadata((pattern as { node: Pattern }).node);
 	}
 
-	if ("nodes" in pattern && Array.isArray((pattern as { nodes: unknown }).nodes)) {
-		for (const child of (pattern as { nodes: ReadonlyArray<Pattern> }).nodes) {
+	if ("children" in pattern && Array.isArray((pattern as { children: unknown }).children)) {
+		for (const child of (pattern as { children: ReadonlyArray<Pattern> }).children) {
 			const result = findMetadata(child);
 
 			if (result) return result;

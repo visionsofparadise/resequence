@@ -1,6 +1,6 @@
 import { parseMidi } from "midi-file";
 import { describe, expect, it } from "vitest";
-import { instrument, kit } from "../instrument/instrument";
+import { sampler } from "../nodes/generators/sampler";
 import { layer } from "../patterns/layer";
 import { metadata } from "../patterns/metadata";
 import { note } from "../patterns/note";
@@ -9,17 +9,11 @@ import { sequence } from "../patterns/sequence";
 import { renderMidi } from "./render-midi";
 
 describe("renderMidi", () => {
-	const bass = instrument("bass", "./bass.wav", { root: "C2" });
-	const drums = kit("drums", { C1: "./kick.wav", D1: "./snare.wav" });
+	const bass = sampler("bass", "./bass.wav", { root: "C2" });
+	const drums = sampler("drums", { C1: "./kick.wav", D1: "./snare.wav" });
 
 	it("renders per-track MIDI files", () => {
-		const pattern = metadata(
-			layer(
-				note("C2", "4n").routeTo(bass),
-				note("C1", "4n").routeTo(drums),
-			),
-			{ tempo: 120 },
-		);
+		const pattern = metadata(layer(note("C2", "4n").route(bass), note("C1", "4n").route(drums)), { tempo: 120 });
 
 		const result = renderMidi(pattern);
 		expect(result.tracks.size).toBe(2);
@@ -28,7 +22,7 @@ describe("renderMidi", () => {
 	});
 
 	it("each per-track file is valid MIDI", () => {
-		const pattern = note("C2", "4n").routeTo(bass);
+		const pattern = note("C2", "4n").route(bass);
 		const result = renderMidi(pattern);
 
 		const bassTrack = result.tracks.get("bass");
@@ -40,10 +34,7 @@ describe("renderMidi", () => {
 	});
 
 	it("renders master when requested", () => {
-		const pattern = layer(
-			note("C2", "4n").routeTo(bass),
-			note("C1", "4n").routeTo(drums),
-		);
+		const pattern = layer(note("C2", "4n").route(bass), note("C1", "4n").route(drums));
 
 		const result = renderMidi(pattern, { master: true });
 		expect(result.master).toBeDefined();
@@ -53,16 +44,13 @@ describe("renderMidi", () => {
 	});
 
 	it("does not render master by default", () => {
-		const pattern = note("C2", "4n").routeTo(bass);
+		const pattern = note("C2", "4n").route(bass);
 		const result = renderMidi(pattern);
 		expect(result.master).toBeUndefined();
 	});
 
 	it("filters with include", () => {
-		const pattern = layer(
-			note("C2", "4n").routeTo(bass),
-			note("C1", "4n").routeTo(drums),
-		);
+		const pattern = layer(note("C2", "4n").route(bass), note("C1", "4n").route(drums));
 
 		const result = renderMidi(pattern, { include: ["bass"] });
 		expect(result.tracks.size).toBe(1);
@@ -71,10 +59,7 @@ describe("renderMidi", () => {
 	});
 
 	it("filters with exclude", () => {
-		const pattern = layer(
-			note("C2", "4n").routeTo(bass),
-			note("C1", "4n").routeTo(drums),
-		);
+		const pattern = layer(note("C2", "4n").route(bass), note("C1", "4n").route(drums));
 
 		const result = renderMidi(pattern, { exclude: ["drums"] });
 		expect(result.tracks.size).toBe(1);
@@ -88,7 +73,7 @@ describe("renderMidi", () => {
 	});
 
 	it("preserves tempo from metadata", () => {
-		const pattern = metadata(note("C2", "4n").routeTo(bass), { tempo: 140 });
+		const pattern = metadata(note("C2", "4n").route(bass), { tempo: 140 });
 		const result = renderMidi(pattern);
 
 		const parsed = parseMidi(result.tracks.get("bass")!);
@@ -103,10 +88,7 @@ describe("renderMidi", () => {
 		const bassLine = sequence(note("C2", "8n"), note("E2", "8n"), note("G2", "8n"), note("C3", "8n"));
 		const kickPattern = repeat(note("C1", "4n"), 4);
 
-		const pattern = metadata(
-			layer(bassLine.routeTo(bass), kickPattern.routeTo(drums)),
-			{ tempo: 126 },
-		);
+		const pattern = metadata(layer(bassLine.route(bass), kickPattern.route(drums)), { tempo: 126 });
 
 		const result = renderMidi(pattern, { master: true });
 		expect(result.tracks.size).toBe(2);

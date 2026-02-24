@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ResequenceError } from "../error";
-import { instrument } from "../instrument/instrument";
+import { sampler } from "../nodes/generators/sampler";
 import { gap } from "./gap";
 import { layer } from "./layer";
 import { metadata, MetadataPattern } from "./metadata";
@@ -82,8 +82,8 @@ describe("MetadataPattern", () => {
 			expect(reversed).toBeInstanceOf(MetadataPattern);
 			expect(reversed.tempo).toBe(126);
 			const inner = reversed.node as SequencePattern;
-			expect((inner.nodes[0] as NotePattern).pitch).toBe("E4");
-			expect((inner.nodes[1] as NotePattern).pitch).toBe("C4");
+			expect((inner.children[0] as NotePattern).pitch).toBe("E4");
+			expect((inner.children[1] as NotePattern).pitch).toBe("C4");
 		});
 	});
 
@@ -94,8 +94,8 @@ describe("MetadataPattern", () => {
 		});
 
 		it("handles nested structures", () => {
-			const inst = instrument("drums", "./kick.wav", { root: "C1" });
-			const kick = repeat(note("C1", "4n"), 4).routeTo(inst);
+			const inst = sampler("drums", "./kick.wav", { root: "C1" });
+			const kick = repeat(note("C1", "4n"), 4).route(inst);
 			const snare = sequence(gap("4n"), note("D1", "4n"), gap("4n"), note("D1", "4n"));
 			const groove = layer(kick, snare);
 			const song = metadata(groove, { tempo: 120 });

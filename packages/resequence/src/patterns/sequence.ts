@@ -7,26 +7,26 @@ export class SequencePattern extends MidiPattern {
 	readonly type = "sequence" as const;
 	readonly durationTicks: number;
 
-	constructor(readonly nodes: ReadonlyArray<Pattern>) {
+	constructor(readonly children: ReadonlyArray<Pattern>) {
 		super();
-		this.durationTicks = nodes.reduce((sum, node) => sum + node.durationTicks, 0);
+		this.durationTicks = children.reduce((sum, child) => sum + child.durationTicks, 0);
 	}
 
 	transpose(interval: number): SequencePattern {
-		return new SequencePattern(this.nodes.map((child) => child.transpose(interval)));
+		return new SequencePattern(this.children.map((child) => child.transpose(interval)));
 	}
 
 	reverse(): SequencePattern {
-		return new SequencePattern([...this.nodes].reverse().map((child) => child.reverse()));
+		return new SequencePattern([...this.children].reverse().map((child) => child.reverse()));
 	}
 
 	getMidi(offset = 0, trackName?: string): Array<PositionedNote> {
 		const results: Array<PositionedNote> = [];
-
+		const resolvedTrackName = this.resolveTrackName(trackName);
 		let cursor = offset;
 
-		for (const child of this.nodes) {
-			results.push(...child.getMidi(cursor, trackName));
+		for (const child of this.children) {
+			results.push(...child.getMidi(cursor, resolvedTrackName));
 			cursor += child.durationTicks;
 		}
 
@@ -34,33 +34,49 @@ export class SequencePattern extends MidiPattern {
 	}
 
 	validate(context: ValidateContext): void {
-		if (this.nodes.length === 0) {
+		if (this.children.length === 0) {
 			context.warnings.push({ code: "EMPTY_CONTAINER", message: "sequence() has no children" });
 		}
-		for (const child of this.nodes) {
-			child.validate(context);
+		const childContext = this.outputs.length > 0 ? { ...context, insideRoute: true } : context;
+		for (const child of this.children) {
+			child.validate(childContext);
 		}
 	}
 
 	setup(context: ScheduleContext): void {
-		for (const child of this.nodes) {
+		for (const child of this.children) {
 			child.setup(context);
 		}
 	}
 
-	schedule(offsetTicks: number, context: ScheduleContext): void {
+	prepare(offsetTicks: number, context: ScheduleContext): void {
+		if (offsetTicks + this.durationTicks <= context.fromTicks || offsetTicks >= context.toTicks) return;
+		const childContext = this.outputs.length > 0 ? { ...context, activeNodes: this.outputs } : context;
 		let cursor = offsetTicks;
 
-		for (const child of this.nodes) {
+		for (const child of this.children) {
 			if (cursor + child.durationTicks > context.fromTicks && cursor < context.toTicks) {
-				child.schedule(cursor, context);
+				child.prepare(cursor, childContext);
+			}
+			cursor += child.durationTicks;
+		}
+	}
+
+	schedule(offsetTicks: number, context: ScheduleContext): void {
+		if (offsetTicks + this.durationTicks <= context.fromTicks || offsetTicks >= context.toTicks) return;
+		const childContext = this.outputs.length > 0 ? { ...context, activeNodes: this.outputs } : context;
+		let cursor = offsetTicks;
+
+		for (const child of this.children) {
+			if (cursor + child.durationTicks > context.fromTicks && cursor < context.toTicks) {
+				child.schedule(cursor, childContext);
 			}
 			cursor += child.durationTicks;
 		}
 	}
 
 	teardown(context: ScheduleContext): void {
-		for (const child of this.nodes) {
+		for (const child of this.children) {
 			child.teardown(context);
 		}
 	}

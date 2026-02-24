@@ -1,6 +1,6 @@
+import type { ScheduleContext } from "../rendering/schedule-context";
 import type { Duration } from "../utils/duration";
 import { resolveDuration } from "../utils/duration";
-import type { ScheduleContext } from "../rendering/schedule-context";
 import type { ValidateContext } from "../validate";
 import type { Pattern, PositionedNote } from "./pattern";
 
@@ -29,6 +29,10 @@ export class GapPattern implements Pattern {
 	}
 
 	setup(_context: ScheduleContext): void {
+		return;
+	}
+
+	prepare(_offsetTicks: number, _context: ScheduleContext): void {
 		return;
 	}
 

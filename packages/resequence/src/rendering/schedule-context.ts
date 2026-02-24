@@ -1,13 +1,27 @@
-import type { Instrument } from "../instrument/instrument";
+import type { Midi, Node } from "../nodes/node";
 
 export interface ScheduleContext {
 	readonly audioContext: BaseAudioContext;
 	readonly sampleMap: ReadonlyMap<string, AudioBuffer>;
-	readonly effectsMap: Readonly<Record<string, AudioNode>>;
+	readonly nodeMap: Map<string, AudioNode>;
 	readonly driverMap: Map<string, ConstantSourceNode>;
+	readonly activeNodes: ReadonlyArray<Node<Midi, ReadonlyArray<unknown>>>;
 	readonly tempo: number;
 	readonly fromTicks: number;
 	readonly toTicks: number;
 	readonly trackFilter?: ReadonlySet<string>;
-	readonly instrument?: Instrument;
+}
+
+export function getOrCreateDriver(path: string, defaultValue: number, context: ScheduleContext): ConstantSourceNode {
+	const existing = context.driverMap.get(path);
+
+	if (existing) return existing;
+
+	const driver = context.audioContext.createConstantSource();
+
+	driver.offset.value = defaultValue;
+	driver.start(0);
+	context.driverMap.set(path, driver);
+
+	return driver;
 }

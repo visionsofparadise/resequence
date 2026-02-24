@@ -3,7 +3,7 @@ import { chord } from './chord'
 import type { NotePattern } from './patterns/note'
 
 function pitches(result: ReturnType<typeof chord>): ReadonlyArray<number | string> {
-  return result.nodes.map((n) => (n as NotePattern).pitch)
+  return result.children.map((n) => (n as NotePattern).pitch)
 }
 
 describe('chord', () => {
@@ -58,7 +58,7 @@ describe('chord', () => {
 
     it('applies duration to all notes', () => {
       const result = chord('C4', '2n')
-      for (const n of result.nodes) {
+      for (const n of result.children) {
         expect((n as NotePattern).duration).toBe('2n')
       }
     })
@@ -97,7 +97,7 @@ describe('chord', () => {
 
     it('applies duration to all notes', () => {
       const result = chord(['C4', 'E4'], '8n')
-      for (const n of result.nodes) {
+      for (const n of result.children) {
         expect((n as NotePattern).duration).toBe('8n')
       }
     })

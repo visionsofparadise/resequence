@@ -15,7 +15,7 @@ export class RepeatPattern extends MidiPattern {
 		super();
 
 		if (count < 1 || !Number.isInteger(count)) {
-			throw new ResequenceError('INVALID_REPEAT_COUNT', `repeat(): count must be a positive integer, got ${count}`);
+			throw new ResequenceError("INVALID_REPEAT_COUNT", `repeat(): count must be a positive integer, got ${count}`);
 		}
 
 		this.durationTicks = node.durationTicks * count;
@@ -31,28 +31,46 @@ export class RepeatPattern extends MidiPattern {
 
 	getMidi(offset = 0, trackName?: string): Array<PositionedNote> {
 		const results: Array<PositionedNote> = [];
+		const resolvedTrackName = this.resolveTrackName(trackName);
 
 		for (let iteration = 0; iteration < this.count; iteration++) {
-			results.push(...this.node.getMidi(offset + this.node.durationTicks * iteration, trackName));
+			results.push(...this.node.getMidi(offset + this.node.durationTicks * iteration, resolvedTrackName));
 		}
 
 		return results;
 	}
 
 	validate(context: ValidateContext): void {
-		this.node.validate(context);
+		const childContext = this.outputs.length > 0 ? { ...context, insideRoute: true } : context;
+		this.node.validate(childContext);
 	}
 
 	setup(context: ScheduleContext): void {
 		this.node.setup(context);
 	}
 
-	schedule(offsetTicks: number, context: ScheduleContext): void {
+	prepare(offsetTicks: number, context: ScheduleContext): void {
+		if (offsetTicks + this.durationTicks <= context.fromTicks || offsetTicks >= context.toTicks) return;
+		const childContext = this.outputs.length > 0 ? { ...context, activeNodes: this.outputs } : context;
+
 		for (let iteration = 0; iteration < this.count; iteration++) {
 			const iterationOffset = offsetTicks + this.node.durationTicks * iteration;
 
 			if (iterationOffset + this.node.durationTicks > context.fromTicks && iterationOffset < context.toTicks) {
-				this.node.schedule(iterationOffset, context);
+				this.node.prepare(iterationOffset, childContext);
+			}
+		}
+	}
+
+	schedule(offsetTicks: number, context: ScheduleContext): void {
+		if (offsetTicks + this.durationTicks <= context.fromTicks || offsetTicks >= context.toTicks) return;
+		const childContext = this.outputs.length > 0 ? { ...context, activeNodes: this.outputs } : context;
+
+		for (let iteration = 0; iteration < this.count; iteration++) {
+			const iterationOffset = offsetTicks + this.node.durationTicks * iteration;
+
+			if (iterationOffset + this.node.durationTicks > context.fromTicks && iterationOffset < context.toTicks) {
+				this.node.schedule(iterationOffset, childContext);
 			}
 		}
 	}

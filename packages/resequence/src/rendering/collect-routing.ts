@@ -1,13 +1,11 @@
-import type { EffectsChain } from "../instrument/effect";
-import type { EnvelopesChain } from "../instrument/envelope";
-import type { Instrument } from "../instrument/instrument";
 import type { Pattern } from "../patterns/pattern";
-import { RoutedPattern } from "../patterns/pattern";
-import { SamplePattern } from "../patterns/sample";
+import { AudioPattern } from "../patterns/audio";
 
-export type RoutingEntry =
-	| { readonly type: "instrument"; readonly instrument: Instrument; readonly effects?: EffectsChain; readonly envelopes?: EnvelopesChain }
-	| { readonly type: "sample"; readonly name: string; readonly path: string; readonly effects?: EffectsChain; readonly envelopes?: EnvelopesChain };
+export interface RoutingEntry {
+	readonly type: "audio";
+	readonly name: string;
+	readonly path: string;
+}
 
 export function collectRouting(pattern: Pattern): Map<string, RoutingEntry> {
 	const routing = new Map<string, RoutingEntry>();
@@ -18,19 +16,9 @@ export function collectRouting(pattern: Pattern): Map<string, RoutingEntry> {
 }
 
 function walk(pattern: Pattern, routing: Map<string, RoutingEntry>): void {
-	if (pattern instanceof RoutedPattern) {
-		if (!routing.has(pattern.instrument.name)) {
-			routing.set(pattern.instrument.name, { type: "instrument", instrument: pattern.instrument, effects: pattern.instrument.effects, envelopes: pattern.instrument.envelopes });
-		}
-
-		walk(pattern.node, routing);
-
-		return;
-	}
-
-	if (pattern instanceof SamplePattern) {
+	if (pattern instanceof AudioPattern) {
 		if (!routing.has(pattern.name)) {
-			routing.set(pattern.name, { type: "sample", name: pattern.name, path: pattern.path, effects: pattern.effects, envelopes: pattern.envelopes });
+			routing.set(pattern.name, { type: "audio", name: pattern.name, path: pattern.path });
 		}
 
 		return;
@@ -40,9 +28,9 @@ function walk(pattern: Pattern, routing: Map<string, RoutingEntry>): void {
 		walk((pattern as { node: Pattern }).node, routing);
 	}
 
-	if ("nodes" in pattern && Array.isArray((pattern as { nodes: unknown }).nodes)) {
-		for (const child of (pattern as { nodes: ReadonlyArray<Pattern> }).nodes) {
-			walk(child, routing);
+	if ("children" in pattern && Array.isArray((pattern as { children: unknown }).children)) {
+		for (const child of (pattern as { children: ReadonlyArray<Pattern> }).children) {
+			if (isPattern(child)) walk(child, routing);
 		}
 	}
 }

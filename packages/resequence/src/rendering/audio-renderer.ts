@@ -1,4 +1,3 @@
-import { buildEffectsMap } from "../instrument/build-effects-map";
 import type { Pattern } from "../patterns/pattern";
 import { collectRouting } from "./collect-routing";
 import { extractMetadata } from "./extract-metadata";
@@ -29,30 +28,7 @@ export class AudioRenderer {
 		const samplePaths = new Set<string>();
 
 		for (const entry of routing.values()) {
-			if (entry.type === "instrument") {
-				for (const zone of entry.instrument.zones) {
-					samplePaths.add(zone.sample);
-				}
-				if (entry.instrument.mapping) {
-					for (const value of Object.values(entry.instrument.mapping)) {
-						if (typeof value === "string") {
-							samplePaths.add(value);
-						} else {
-							for (const layer of value) {
-								samplePaths.add(layer.sample);
-							}
-						}
-					}
-				}
-			} else {
-				samplePaths.add(entry.path);
-			}
-
-			if (entry.effects) {
-				for (const effect of Object.values(entry.effects)) {
-					if (effect.type === "reverb") samplePaths.add(effect.impulse);
-				}
-			}
+			samplePaths.add(entry.path);
 		}
 
 		const sampleMap = new Map<string, AudioBuffer>();
@@ -70,12 +46,14 @@ export class AudioRenderer {
 		await this.audioContext.audioWorklet.addModule(buildEnvelopeProcessorBlobUrl());
 
 		const driverMap = new Map<string, ConstantSourceNode>();
+		const nodeMap = new Map<string, AudioNode>();
 
 		const baseContext: ScheduleContext = {
 			audioContext: this.audioContext,
 			sampleMap,
-			effectsMap: {},
+			nodeMap,
 			driverMap,
+			activeNodes: [],
 			tempo,
 			fromTicks: 0,
 			toTicks: Infinity,
@@ -83,16 +61,27 @@ export class AudioRenderer {
 		};
 
 		this.pattern.setup(baseContext);
+		this.context = baseContext;
+	}
 
-		const { effectsMap } = buildEffectsMap(routing, this.audioContext, sampleMap, driverMap);
+	prepare(fromTicks: number, toTicks: number): void {
+		if (!this.context) throw new Error("AudioRenderer: setup() must be called before prepare()");
 
-		this.context = { ...baseContext, effectsMap };
+		this.pattern.prepare(0, { ...this.context, fromTicks, toTicks });
 	}
 
 	schedule(fromTicks: number, toTicks: number): void {
 		if (!this.context) throw new Error("AudioRenderer: setup() must be called before schedule()");
 
 		this.pattern.schedule(0, { ...this.context, fromTicks, toTicks });
+	}
+
+	render(fromTicks: number, toTicks: number): void {
+		if (!this.context) throw new Error("AudioRenderer: setup() must be called before render()");
+
+		const context = { ...this.context, fromTicks, toTicks };
+		this.pattern.prepare(0, context);
+		this.pattern.schedule(0, context);
 	}
 
 	teardown(): void {
@@ -104,6 +93,7 @@ export class AudioRenderer {
 }
 
 function buildEnvelopeProcessorBlobUrl(): string {
-	const processorPath = new URL("../instrument/envelope-processor.js", import.meta.url);
+	const processorPath = new URL("../nodes/envelope-processor.js", import.meta.url);
+
 	return processorPath.href;
 }

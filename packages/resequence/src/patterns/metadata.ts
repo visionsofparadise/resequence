@@ -14,13 +14,13 @@ export class MetadataPattern implements Pattern {
 		readonly timeSignature?: [number, number],
 	) {
 		if (tempo !== undefined && tempo <= 0) {
-			throw new ResequenceError('INVALID_TEMPO', `metadata(): tempo must be greater than 0, got ${tempo}`);
+			throw new ResequenceError("INVALID_TEMPO", `metadata(): tempo must be greater than 0, got ${tempo}`);
 		}
 
 		if (timeSignature !== undefined) {
 			const [numerator, denominator] = timeSignature;
 			if (numerator <= 0 || !Number.isInteger(numerator) || denominator <= 0 || !Number.isInteger(denominator)) {
-				throw new ResequenceError('INVALID_TIME_SIGNATURE', `metadata(): time signature values must be positive integers, got [${numerator}, ${denominator}]`);
+				throw new ResequenceError("INVALID_TIME_SIGNATURE", `metadata(): time signature values must be positive integers, got [${numerator}, ${denominator}]`);
 			}
 		}
 
@@ -45,6 +45,10 @@ export class MetadataPattern implements Pattern {
 
 	setup(context: ScheduleContext): void {
 		this.node.setup(context);
+	}
+
+	prepare(offsetTicks: number, context: ScheduleContext): void {
+		this.node.prepare(offsetTicks, context);
 	}
 
 	schedule(offsetTicks: number, context: ScheduleContext): void {

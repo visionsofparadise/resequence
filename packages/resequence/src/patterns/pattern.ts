@@ -1,4 +1,4 @@
-import type { Instrument } from "../instrument/instrument";
+import type { Midi, Node } from "../nodes/node";
 import type { ScheduleContext } from "../rendering/schedule-context";
 import type { ValidateContext } from "../validate";
 
@@ -18,6 +18,7 @@ export interface Pattern {
 	reverse(): Pattern;
 	getMidi(offset?: number, trackName?: string): Array<PositionedNote>;
 	setup(context: ScheduleContext): void;
+	prepare(offsetTicks: number, context: ScheduleContext): void;
 	schedule(offsetTicks: number, context: ScheduleContext): void;
 	teardown(context: ScheduleContext): void;
 	validate(context: ValidateContext): void;
@@ -32,64 +33,30 @@ export abstract class MidiPattern implements Pattern {
 	abstract schedule(offsetTicks: number, context: ScheduleContext): void;
 	abstract validate(context: ValidateContext): void;
 
-	setup(_context: ScheduleContext): void { return; }
-	teardown(_context: ScheduleContext): void { return; }
+	readonly outputs: Array<Node<Midi, ReadonlyArray<unknown>>> = [];
 
-	routeTo(instrument: Instrument): RoutedPattern {
-		return new RoutedPattern(this, instrument);
-	}
-}
-
-export class RoutedPattern extends MidiPattern {
-	readonly type = "routed" as const;
-	readonly durationTicks: number;
-
-	constructor(
-		readonly node: Pattern,
-		readonly instrument: Instrument,
-	) {
-		super();
-		this.durationTicks = node.durationTicks;
+	setup(_context: ScheduleContext): void {
+		return;
 	}
 
-	transpose(interval: number): RoutedPattern {
-		return new RoutedPattern(this.node.transpose(interval), this.instrument);
+	prepare(_offsetTicks: number, _context: ScheduleContext): void {
+		return;
 	}
 
-	reverse(): RoutedPattern {
-		return new RoutedPattern(this.node.reverse(), this.instrument);
+	teardown(_context: ScheduleContext): void {
+		return;
 	}
 
-	getMidi(offset = 0, trackName?: string): Array<PositionedNote> {
-		return this.node.getMidi(offset, trackName ?? this.instrument.name);
+	route(node: Node<Midi, ReadonlyArray<unknown>>): this {
+		this.outputs.push(node);
+		return this;
 	}
 
-	setup(context: ScheduleContext): void {
-		this.node.setup({ ...context, instrument: this.instrument });
-	}
-
-	schedule(offsetTicks: number, context: ScheduleContext): void {
-		if (context.trackFilter && !context.trackFilter.has(this.instrument.name)) return;
-
-		this.node.schedule(offsetTicks, { ...context, instrument: this.instrument });
-	}
-
-	teardown(context: ScheduleContext): void {
-		this.node.teardown({ ...context, instrument: this.instrument });
-	}
-
-	validate(context: ValidateContext): void {
-		const name = this.instrument.name;
-		const existing = context.routing.get(name);
-		if (existing) {
-			existing.push(this.instrument);
-		} else {
-			context.routing.set(name, [this.instrument]);
+	protected resolveTrackName(fallback?: string): string | undefined {
+		for (const node of this.outputs) {
+			if (node.id) return node.id;
 		}
 
-		const previousInsideRoute = context.insideRoute;
-		context.insideRoute = true;
-		this.node.validate(context);
-		context.insideRoute = previousInsideRoute;
+		return fallback;
 	}
 }

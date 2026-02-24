@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 import { ResequenceError } from "../error";
+import type { ScheduleContext } from "../rendering/schedule-context";
 import { bars, beats } from "../utils/duration";
 import { resolveLfo } from "../utils/lfo";
-import type { ScheduleContext } from "../rendering/schedule-context";
 import { automate } from "./automate";
 import { layer } from "./layer";
 import { note } from "./note";
@@ -28,6 +28,7 @@ function mockConstantSource(): ConstantSourceNode {
 
 function mockContext(driverMap = new Map<string, ConstantSourceNode>()): ScheduleContext {
 	const constant = mockConstantSource();
+
 	return {
 		audioContext: {
 			createConstantSource: vi.fn(() => constant),
@@ -44,7 +45,8 @@ function mockContext(driverMap = new Map<string, ConstantSourceNode>()): Schedul
 			})),
 		} as unknown as BaseAudioContext,
 		sampleMap: new Map(),
-		effectsMap: {},
+		nodeMap: new Map(),
+		activeNodes: [],
 		driverMap,
 		tempo: 120,
 		fromTicks: 0,
@@ -126,15 +128,15 @@ describe("AutomatePattern", () => {
 	});
 
 	describe("path validation", () => {
-		it("rejects paths with fewer than 3 segments", () => {
-			expect(() => automate("bad", "bass.hp", [{ time: 0, value: 0 }])).toThrow();
-		});
-
-		it("rejects single-segment paths", () => {
+		it("rejects paths with fewer than 2 segments", () => {
 			expect(() => automate("bad", "bass", [{ time: 0, value: 0 }])).toThrow();
 		});
 
-		it("accepts 3+ segment paths", () => {
+		it("accepts 2-segment paths", () => {
+			expect(() => automate("ok", "bass.hp", [{ time: 0, value: 0 }])).not.toThrow();
+		});
+
+		it("accepts 3-segment paths", () => {
 			expect(() => automate("ok", "bass.hp.frequency", [{ time: 0, value: 0 }])).not.toThrow();
 		});
 	});

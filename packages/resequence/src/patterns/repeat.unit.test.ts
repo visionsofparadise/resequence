@@ -47,8 +47,8 @@ describe("RepeatPattern", () => {
 			const result = repeat(seq, 4).reverse() as RepeatPattern;
 			expect(result.count).toBe(4);
 			const inner = result.node as SequencePattern;
-			expect((inner.nodes[0] as NotePattern).pitch).toBe("E4");
-			expect((inner.nodes[1] as NotePattern).pitch).toBe("C4");
+			expect((inner.children[0] as NotePattern).pitch).toBe("E4");
+			expect((inner.children[1] as NotePattern).pitch).toBe("C4");
 		});
 	});
 

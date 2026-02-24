@@ -19,8 +19,8 @@ describe("SequencePattern", () => {
 		it("transposes sequence children", () => {
 			const result = sequence(note("C4", "4n"), note("E4", "4n")).transpose(3) as SequencePattern;
 			expect(result.type).toBe("sequence");
-			expect((result.nodes[0] as NotePattern).pitch).toBe(63);
-			expect((result.nodes[1] as NotePattern).pitch).toBe(67);
+			expect((result.children[0] as NotePattern).pitch).toBe(63);
+			expect((result.children[1] as NotePattern).pitch).toBe(67);
 		});
 	});
 
@@ -28,19 +28,19 @@ describe("SequencePattern", () => {
 		it("reverses sequence children", () => {
 			const result = sequence(note("C4", "4n"), note("E4", "4n"), note("G4", "4n")).reverse() as SequencePattern;
 			expect(result.type).toBe("sequence");
-			expect((result.nodes[0] as NotePattern).pitch).toBe("G4");
-			expect((result.nodes[1] as NotePattern).pitch).toBe("E4");
-			expect((result.nodes[2] as NotePattern).pitch).toBe("C4");
+			expect((result.children[0] as NotePattern).pitch).toBe("G4");
+			expect((result.children[1] as NotePattern).pitch).toBe("E4");
+			expect((result.children[2] as NotePattern).pitch).toBe("C4");
 		});
 
 		it("recursively reverses nested sequences", () => {
 			const inner = sequence(note("C4", "4n"), note("D4", "4n"));
 			const outer = sequence(note("E4", "4n"), inner);
 			const result = outer.reverse() as SequencePattern;
-			const reversedInner = result.nodes[0] as SequencePattern;
-			expect((reversedInner.nodes[0] as NotePattern).pitch).toBe("D4");
-			expect((reversedInner.nodes[1] as NotePattern).pitch).toBe("C4");
-			expect((result.nodes[1] as NotePattern).pitch).toBe("E4");
+			const reversedInner = result.children[0] as SequencePattern;
+			expect((reversedInner.children[0] as NotePattern).pitch).toBe("D4");
+			expect((reversedInner.children[1] as NotePattern).pitch).toBe("C4");
+			expect((result.children[1] as NotePattern).pitch).toBe("E4");
 		});
 	});
 
