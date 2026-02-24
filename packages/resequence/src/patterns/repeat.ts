@@ -43,6 +43,10 @@ export class RepeatPattern extends MidiPattern {
 		this.node.validate(context);
 	}
 
+	setup(context: ScheduleContext): void {
+		this.node.setup(context);
+	}
+
 	schedule(offsetTicks: number, context: ScheduleContext): void {
 		for (let iteration = 0; iteration < this.count; iteration++) {
 			const iterationOffset = offsetTicks + this.node.durationTicks * iteration;
@@ -51,6 +55,10 @@ export class RepeatPattern extends MidiPattern {
 				this.node.schedule(iterationOffset, context);
 			}
 		}
+	}
+
+	teardown(context: ScheduleContext): void {
+		this.node.teardown(context);
 	}
 }
 

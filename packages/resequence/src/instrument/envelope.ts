@@ -6,6 +6,7 @@ import type { FilterMode } from "./effect";
 
 export interface EnvelopeAdsr {
 	readonly attack?: number;
+	readonly hold?: number;
 	readonly decay?: number;
 	readonly sustain?: number;
 	readonly release?: number;

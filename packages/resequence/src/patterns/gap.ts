@@ -28,7 +28,15 @@ export class GapPattern implements Pattern {
 		return;
 	}
 
+	setup(_context: ScheduleContext): void {
+		return;
+	}
+
 	schedule(_offsetTicks: number, _context: ScheduleContext): void {
+		return;
+	}
+
+	teardown(_context: ScheduleContext): void {
 		return;
 	}
 }

@@ -43,8 +43,16 @@ export class MetadataPattern implements Pattern {
 		this.node.validate(context);
 	}
 
+	setup(context: ScheduleContext): void {
+		this.node.setup(context);
+	}
+
 	schedule(offsetTicks: number, context: ScheduleContext): void {
 		this.node.schedule(offsetTicks, context);
+	}
+
+	teardown(context: ScheduleContext): void {
+		this.node.teardown(context);
 	}
 }
 

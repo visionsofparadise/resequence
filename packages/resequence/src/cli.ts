@@ -1,7 +1,14 @@
 import { parseArgs } from "node:util";
-import type { RoutingEntry } from "./rendering/collect-routing";
+import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { readFile } from "node:fs/promises";
+import { resolve, dirname } from "node:path";
+import { AudioRenderer } from "./rendering/audio-renderer";
+import { collectRouting } from "./rendering/collect-routing";
+import { encodeWav } from "./rendering/encode-wav";
+import { extractMetadata } from "./rendering/extract-metadata";
+import { renderMidi } from "./rendering/render-midi";
+import { ticksToSeconds } from "./rendering/ticks-to-seconds";
 import type { Pattern } from "./patterns/pattern";
-import type { ScheduleContext } from "./rendering/schedule-context";
 
 interface CliOptions {
 	readonly entrypoint: string;
@@ -73,10 +80,6 @@ async function main(): Promise<void> {
 }
 
 async function runCli(args: CliOptions): Promise<void> {
-	const { resolve, dirname } = await import("node:path");
-	const { existsSync, mkdirSync, writeFileSync } = await import("node:fs");
-	const { readFile } = await import("node:fs/promises");
-
 	const entrypoint = resolve(args.entrypoint);
 
 	if (!existsSync(entrypoint)) {
@@ -106,8 +109,6 @@ async function runCli(args: CliOptions): Promise<void> {
 
 		process.stdout.write(`Pattern: type=${typedPattern.type}, duration=${typedPattern.durationTicks} ticks\n`);
 
-		const { extractMetadata } = await import("./rendering/extract-metadata");
-		const { collectRouting } = await import("./rendering/collect-routing");
 		const meta = extractMetadata(typedPattern);
 		const routing = collectRouting(typedPattern);
 
@@ -117,7 +118,6 @@ async function runCli(args: CliOptions): Promise<void> {
 		process.stdout.write(`Tempo: ${meta.tempo} bpm, Tracks: ${filteredNames.join(", ")}\n`);
 
 		if (!args.audioOnly) {
-			const { renderMidi } = await import("./rendering/render-midi");
 			const midiResult = renderMidi(typedPattern, {
 				include: args.include ? [...args.include] : undefined,
 				exclude: args.exclude ? [...args.exclude] : undefined,
@@ -140,32 +140,27 @@ async function runCli(args: CliOptions): Promise<void> {
 		if (!args.midiOnly) {
 			const { default: nodeWebAudio } = await import("node-web-audio-api") as { default: { OfflineAudioContext: typeof OfflineAudioContext } };
 			const { OfflineAudioContext: NodeOfflineAudioContext } = nodeWebAudio;
-			const { buildEffectsMap } = await import("./instrument/build-effects-map");
-			const { encodeWav } = await import("./rendering/encode-wav");
-			const { ticksToSeconds } = await import("./rendering/ticks-to-seconds");
 
 			const totalSeconds = ticksToSeconds(typedPattern.durationTicks, meta.tempo);
 			const sampleRate = 44100;
 
-			const sampleBank = await loadSamples(routing, projectDir, NodeOfflineAudioContext, readFile);
-
 			for (const trackName of filteredNames) {
 				const offlineCtx = new NodeOfflineAudioContext(2, Math.ceil(totalSeconds * sampleRate), sampleRate);
-				const { effectsMap, inputMap, envelopesMap } = buildEffectsMap(routing, offlineCtx as unknown as BaseAudioContext, sampleBank);
-				const scheduleContext: ScheduleContext = {
-					audioContext: offlineCtx as unknown as BaseAudioContext,
-					sampleBank,
-					effectsMap,
-					inputMap,
-					envelopesMap,
+				const renderer = new AudioRenderer(typedPattern, offlineCtx as unknown as BaseAudioContext, {
 					tempo: meta.tempo,
-					fromTicks: 0,
-					toTicks: Infinity,
 					trackFilter: new Set([trackName]),
-				};
+				});
 
-				typedPattern.schedule(0, scheduleContext);
+				await renderer.setup((path) => readFile(resolve(projectDir, path)).then((data) => {
+					const copy = new ArrayBuffer(data.byteLength);
+					new Uint8Array(copy).set(new Uint8Array(data.buffer, data.byteOffset, data.byteLength));
+					return copy;
+				}));
+
+				renderer.schedule(0, typedPattern.durationTicks);
 				const rendered = await offlineCtx.startRendering();
+				renderer.teardown();
+
 				const wav = encodeWav(rendered as unknown as AudioBuffer);
 				const filePath = resolve(outDir, `${trackName}.wav`);
 				writeFileSync(filePath, Buffer.from(wav));
@@ -174,20 +169,20 @@ async function runCli(args: CliOptions): Promise<void> {
 
 			if (args.master) {
 				const offlineCtx = new NodeOfflineAudioContext(2, Math.ceil(totalSeconds * sampleRate), sampleRate);
-				const { effectsMap, inputMap, envelopesMap } = buildEffectsMap(routing, offlineCtx as unknown as BaseAudioContext, sampleBank);
-				const scheduleContext: ScheduleContext = {
-					audioContext: offlineCtx as unknown as BaseAudioContext,
-					sampleBank,
-					effectsMap,
-					inputMap,
-					envelopesMap,
+				const renderer = new AudioRenderer(typedPattern, offlineCtx as unknown as BaseAudioContext, {
 					tempo: meta.tempo,
-					fromTicks: 0,
-					toTicks: Infinity,
-				};
+				});
 
-				typedPattern.schedule(0, scheduleContext);
+				await renderer.setup((path) => readFile(resolve(projectDir, path)).then((data) => {
+					const copy = new ArrayBuffer(data.byteLength);
+					new Uint8Array(copy).set(new Uint8Array(data.buffer, data.byteOffset, data.byteLength));
+					return copy;
+				}));
+
+				renderer.schedule(0, typedPattern.durationTicks);
 				const rendered = await offlineCtx.startRendering();
+				renderer.teardown();
+
 				const wav = encodeWav(rendered as unknown as AudioBuffer);
 				const filePath = resolve(outDir, "master.wav");
 				writeFileSync(filePath, Buffer.from(wav));
@@ -219,61 +214,6 @@ function filterNames(
 	}
 
 	return filtered;
-}
-
-async function loadSamples(
-	routing: Map<string, RoutingEntry>,
-	projectDir: string,
-	NodeOfflineAudioContext: typeof OfflineAudioContext,
-	readFile: (path: string) => Promise<Buffer>,
-): Promise<Map<string, AudioBuffer>> {
-	const { resolve } = await import("node:path");
-	const samplePaths = new Set<string>();
-
-	for (const entry of routing.values()) {
-		if (entry.type === "instrument") {
-			for (const zone of entry.instrument.zones) {
-				samplePaths.add(zone.sample);
-			}
-			if (entry.instrument.mapping) {
-				for (const value of Object.values(entry.instrument.mapping)) {
-					if (typeof value === "string") {
-						samplePaths.add(value);
-					} else {
-						for (const layer of value) {
-							samplePaths.add(layer.sample);
-						}
-					}
-				}
-			}
-		} else {
-			samplePaths.add(entry.path);
-		}
-
-		if (entry.effects) {
-			for (const effect of Object.values(entry.effects)) {
-				if (effect.type === "reverb") samplePaths.add(effect.impulse);
-			}
-		}
-	}
-
-	const bank = new Map<string, AudioBuffer>();
-	const decoder = new NodeOfflineAudioContext(1, 1, 44100);
-
-	for (const samplePath of samplePaths) {
-		const absolutePath = resolve(projectDir, samplePath);
-		try {
-			const fileData = await readFile(absolutePath);
-			const copy = new ArrayBuffer(fileData.byteLength);
-			new Uint8Array(copy).set(new Uint8Array(fileData.buffer, fileData.byteOffset, fileData.byteLength));
-			const audioBuffer = await (decoder as unknown as BaseAudioContext).decodeAudioData(copy);
-			bank.set(samplePath, audioBuffer);
-		} catch {
-			process.stderr.write(`Warning: could not load sample: ${absolutePath}\n`);
-		}
-	}
-
-	return bank;
 }
 
 main().catch((error: unknown) => {

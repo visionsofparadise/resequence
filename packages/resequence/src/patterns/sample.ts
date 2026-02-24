@@ -3,7 +3,7 @@ import type { Duration } from "../utils/duration";
 import { resolveDuration } from "../utils/duration";
 import type { EffectsChain } from "../instrument/effect";
 import type { EnvelopesChain } from "../instrument/envelope";
-import { buildPerVoiceChain, isEnvelopesChain } from "../instrument/envelope";
+import { isEnvelopesChain } from "../instrument/envelope";
 import type { ScheduleContext } from "../rendering/schedule-context";
 import { ticksToSeconds } from "../rendering/ticks-to-seconds";
 import type { ValidateContext } from "../validate";
@@ -55,19 +55,26 @@ export class SamplePattern implements Pattern {
 		return [];
 	}
 
+	setup(_context: ScheduleContext): void {
+		return;
+	}
+
+	teardown(_context: ScheduleContext): void {
+		return;
+	}
+
 	schedule(offsetTicks: number, context: ScheduleContext): void {
 		if (context.trackFilter && !context.trackFilter.has(this.name)) return;
 		if (offsetTicks + this.durationTicks <= context.fromTicks || offsetTicks >= context.toTicks) return;
 
-		const buffer = context.sampleBank.get(this.path);
+		const buffer = context.sampleMap.get(this.path);
 		if (!buffer) return;
 
 		const offsetSeconds = ticksToSeconds(offsetTicks, context.tempo);
 		const source = context.audioContext.createBufferSource();
 
 		if (this.reversed) {
-			const reversed = copyReversed(buffer, context.audioContext);
-			source.buffer = reversed;
+			source.buffer = copyReversed(buffer, context.audioContext);
 		} else {
 			source.buffer = buffer;
 		}
@@ -82,26 +89,14 @@ export class SamplePattern implements Pattern {
 			source.loopEnd = this.loopEndMs / 1000;
 		}
 
-		const destination = context.inputMap[this.name] ?? context.audioContext.destination;
-		const envelopes = context.envelopesMap[this.name];
+		const destination = context.effectsMap[this.name] ?? context.audioContext.destination;
 		const durationSeconds = this.durationTicks > 0
 			? ticksToSeconds(this.durationTicks, context.tempo)
 			: buffer.duration;
 
-		if (envelopes) {
-			const perVoice = buildPerVoiceChain(envelopes, source, context.audioContext, offsetSeconds, durationSeconds, context.tempo);
-
-			if (perVoice.input && perVoice.output) {
-				source.connect(perVoice.input);
-				perVoice.output.connect(destination);
-			} else {
-				source.connect(destination);
-			}
-		} else {
-			source.connect(destination);
-		}
-
+		source.connect(destination);
 		source.start(offsetSeconds);
+		source.stop(offsetSeconds + durationSeconds);
 	}
 }
 

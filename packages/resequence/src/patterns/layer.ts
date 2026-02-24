@@ -51,9 +51,21 @@ export class LayerPattern extends MidiPattern {
 		}
 	}
 
+	setup(context: ScheduleContext): void {
+		for (const child of this.nodes) {
+			child.setup(context);
+		}
+	}
+
 	schedule(offsetTicks: number, context: ScheduleContext): void {
 		for (const child of this.nodes) {
 			child.schedule(offsetTicks, context);
+		}
+	}
+
+	teardown(context: ScheduleContext): void {
+		for (const child of this.nodes) {
+			child.teardown(context);
 		}
 	}
 }

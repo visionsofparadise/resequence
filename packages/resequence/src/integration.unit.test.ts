@@ -7,7 +7,7 @@ import {
   sample, metadata, automate,
   bars, beats,
   chord,
-  trigger, sidechain, lfo, formula, invert,
+  trigger, sidechain, formula, invert, resolveLfo,
   InstrumentDefinition, RoutedPattern, SamplePattern, MetadataPattern, AutomatePattern,
 } from './index'
 
@@ -169,13 +169,10 @@ describe('integration', () => {
   })
 
   it('creates LFO automation on filter', () => {
-    const filterLfo = lfo({ shape: 'sine', rate: '2n', duration: bars(4) })
+    const filterLfo = resolveLfo({ shape: 'sine', frequency: 2, value: 500 })
 
-    expect(filterLfo.length).toBeGreaterThan(0)
-    for (const pt of filterLfo) {
-      expect(pt.value).toBeGreaterThanOrEqual(0)
-      expect(pt.value).toBeLessThanOrEqual(1)
-    }
+    expect(filterLfo.shape).toBe('sine')
+    expect(filterLfo.value).toBe(500)
 
     const lfoAutomation = automate('filter-lfo', 'pad.hp.frequency', filterLfo)
     const padChords = repeat(chord('C4m', '1n'), 4).routeTo(pad)

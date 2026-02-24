@@ -1,43 +1,24 @@
 import type { RoutingEntry } from "../rendering/collect-routing";
-import type { EffectsGraphEntry } from "../rendering/schedule-context";
 import type { Effect } from "./effect";
-import type { EnvelopeEffect, EnvelopesChain } from "./envelope";
 
 export function buildEffectsMap(
 	routing: Map<string, RoutingEntry>,
 	audioContext: BaseAudioContext,
-	sampleBank: ReadonlyMap<string, AudioBuffer>,
+	sampleMap: ReadonlyMap<string, AudioBuffer>,
+	driverMap: Map<string, ConstantSourceNode>,
 ): {
-	effectsMap: Readonly<Record<string, EffectsGraphEntry>>;
-	inputMap: Readonly<Record<string, AudioNode>>;
-	envelopesMap: Readonly<Record<string, EnvelopesChain>>;
+	effectsMap: Readonly<Record<string, AudioNode>>;
 } {
-	const effectsMap: Record<string, EffectsGraphEntry> = {};
-	const inputMap: Record<string, AudioNode> = {};
-	const envelopesMap: Record<string, EnvelopesChain> = {};
+	const effectsMap: Record<string, AudioNode> = {};
 
 	for (const [name, entry] of routing) {
-		const allNodes: Record<string, AudioNode> = {};
 		const nodeChain: Array<AudioNode> = [];
-
-		if (entry.envelopes) {
-			envelopesMap[name] = entry.envelopes;
-
-			for (const [key, envelope] of Object.entries(entry.envelopes)) {
-				const node = buildEnvelopeNode(envelope, audioContext);
-
-				if (node) {
-					allNodes[key] = node;
-					nodeChain.push(node);
-				}
-			}
-		}
 
 		if (entry.effects) {
 			for (const [key, effect] of Object.entries(entry.effects)) {
-				const node = buildEffectNode(effect, audioContext, sampleBank);
+				const node = buildEffectNode(effect, audioContext, sampleMap);
 
-				allNodes[key] = node;
+				connectDrivers(node, effect.type, name, key, driverMap, audioContext);
 				nodeChain.push(node);
 			}
 		}
@@ -53,39 +34,65 @@ export function buildEffectsMap(
 
 		if (lastNode) lastNode.connect(audioContext.destination);
 
-		effectsMap[name] = allNodes;
-		inputMap[name] = nodeChain[0] ?? audioContext.destination;
+		effectsMap[name] = nodeChain[0] ?? audioContext.destination;
 	}
 
-	return { effectsMap, inputMap, envelopesMap };
+	return { effectsMap };
 }
 
-function buildEnvelopeNode(envelope: EnvelopeEffect, audioContext: BaseAudioContext): AudioNode | undefined {
-	switch (envelope.type) {
-		case "volumeEnvelope": {
-			const gainNode = audioContext.createGain();
+function connectDrivers(
+	node: AudioNode,
+	effectType: string,
+	instrumentName: string,
+	effectKey: string,
+	driverMap: Map<string, ConstantSourceNode>,
+	_audioContext: BaseAudioContext,
+): void {
+	const prefix = `${instrumentName}.${effectKey}`;
 
-			gainNode.gain.value = 1;
-
-			return gainNode;
+	switch (effectType) {
+		case "gain": {
+			const gainNode = node as GainNode;
+			const driver = driverMap.get(`${prefix}.level`);
+			if (driver) { gainNode.gain.value = 0; driver.connect(gainNode.gain); }
+			break;
 		}
-		case "filterEnvelope": {
-			const filterNode = audioContext.createBiquadFilter();
-
-			filterNode.type = envelope.mode ?? "lowpass";
-			filterNode.frequency.value = envelope.frequency;
-
-			if (envelope.resonance !== undefined) filterNode.Q.value = envelope.resonance;
-
-			return filterNode;
+		case "pan": {
+			const panNode = node as StereoPannerNode;
+			const driver = driverMap.get(`${prefix}.value`);
+			if (driver) { panNode.pan.value = 0; driver.connect(panNode.pan); }
+			break;
 		}
-		case "pitchEnvelope": {
-			return undefined;
+		case "filter": {
+			const filterNode = node as BiquadFilterNode;
+			const freqDriver = driverMap.get(`${prefix}.frequency`);
+			if (freqDriver) { filterNode.frequency.value = 0; freqDriver.connect(filterNode.frequency); }
+			const resDriver = driverMap.get(`${prefix}.resonance`);
+			if (resDriver) { filterNode.Q.value = 0; resDriver.connect(filterNode.Q); }
+			break;
+		}
+		case "compressor": {
+			const compNode = node as DynamicsCompressorNode;
+			const threshDriver = driverMap.get(`${prefix}.threshold`);
+			if (threshDriver) { compNode.threshold.value = 0; threshDriver.connect(compNode.threshold); }
+			const ratioDriver = driverMap.get(`${prefix}.ratio`);
+			if (ratioDriver) { compNode.ratio.value = 0; ratioDriver.connect(compNode.ratio); }
+			const attackDriver = driverMap.get(`${prefix}.attack`);
+			if (attackDriver) { compNode.attack.value = 0; attackDriver.connect(compNode.attack); }
+			const releaseDriver = driverMap.get(`${prefix}.release`);
+			if (releaseDriver) { compNode.release.value = 0; releaseDriver.connect(compNode.release); }
+			break;
+		}
+		case "delay": {
+			const delayNode = node as DelayNode;
+			const driver = driverMap.get(`${prefix}.time`);
+			if (driver) { delayNode.delayTime.value = 0; driver.connect(delayNode.delayTime); }
+			break;
 		}
 	}
 }
 
-function buildEffectNode(effect: Effect, audioContext: BaseAudioContext, sampleBank: ReadonlyMap<string, AudioBuffer>): AudioNode {
+function buildEffectNode(effect: Effect, audioContext: BaseAudioContext, sampleMap: ReadonlyMap<string, AudioBuffer>): AudioNode {
 	switch (effect.type) {
 		case "gain": {
 			const gainNode = audioContext.createGain();
@@ -139,7 +146,7 @@ function buildEffectNode(effect: Effect, audioContext: BaseAudioContext, sampleB
 		}
 		case "reverb": {
 			const convolver = audioContext.createConvolver();
-			const impulseBuffer = sampleBank.get(effect.impulse);
+			const impulseBuffer = sampleMap.get(effect.impulse);
 
 			if (impulseBuffer) convolver.buffer = impulseBuffer;
 

@@ -1,0 +1,24 @@
+diff --git a/node_modules/node-web-audio-api/js/AudioWorkletGlobalScope.js b/node_modules/node-web-audio-api/js/AudioWorkletGlobalScope.js
+index c77b1d7..4089372 100644
+--- a/node_modules/node-web-audio-api/js/AudioWorkletGlobalScope.js
++++ b/node_modules/node-web-audio-api/js/AudioWorkletGlobalScope.js
+@@ -109,7 +109,18 @@ function isConstructor(f) {
+ 
+ function runLoop() {
+   // block until we need to render a quantum
+-  run_audio_worklet_global_scope(workletId, processors);
++  try {
++    run_audio_worklet_global_scope(workletId, processors);
++  } catch (err) {
++    // For OfflineAudioContext, the Rust rendering context may not be ready yet
++    // when the first runLoop fires (race condition - see node-web-audio-api #127).
++    // Retry on the next event loop tick instead of crashing.
++    if (err.code === 'InvalidArg') {
++      runLoopImmediateId = setImmediate(runLoop);
++      return;
++    }
++    throw err;
++  }
+   // yield to the event loop, and then repeat
+   runLoopImmediateId = setImmediate(runLoop);
+ }

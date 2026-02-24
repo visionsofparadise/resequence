@@ -1,15 +1,17 @@
 import { ResequenceError } from "../error";
-import { buildPerVoiceChain } from "../instrument/envelope";
 import type { InstrumentZone, KitMapping } from "../instrument/instrument";
 import type { ScheduleContext } from "../rendering/schedule-context";
 import { ticksToSeconds } from "../rendering/ticks-to-seconds";
 import type { Duration } from "../utils/duration";
 import { resolveDuration } from "../utils/duration";
+import { scheduleLfo } from "../utils/lfo";
 import type { Pitch } from "../utils/pitch";
 import { resolvePitch } from "../utils/pitch";
 import type { ValidateContext } from "../validate";
 import type { PositionedNote } from "./pattern";
 import { MidiPattern } from "./pattern";
+
+const ENVELOPE_PARAMS = ["attack", "hold", "decay", "sustain", "release"] as const;
 
 export class NotePattern extends MidiPattern {
 	readonly type = "note" as const;
@@ -82,7 +84,7 @@ export class NotePattern extends MidiPattern {
 
 			if (!zone) return;
 
-			buffer = context.sampleBank.get(zone.sample);
+			buffer = context.sampleMap.get(zone.sample);
 			loopStartMs = zone.loopStartMs;
 			loopEndMs = zone.loopEndMs;
 
@@ -93,7 +95,7 @@ export class NotePattern extends MidiPattern {
 
 			if (!entry) return;
 
-			buffer = context.sampleBank.get(entry.sample);
+			buffer = context.sampleMap.get(entry.sample);
 			loopStartMs = entry.loopStartMs;
 			loopEndMs = entry.loopEndMs;
 		}
@@ -110,18 +112,84 @@ export class NotePattern extends MidiPattern {
 			source.loopEnd = loopEndMs / 1000;
 		}
 
-		const destination = context.inputMap[inst.name] ?? context.audioContext.destination;
-		const envelopes = context.envelopesMap[inst.name];
+		const destination = context.effectsMap[inst.name] ?? context.audioContext.destination;
+		const envelopes = inst.envelopes;
 
 		let maxRelease = 0;
 
 		if (envelopes) {
-			const perVoice = buildPerVoiceChain(envelopes, source, context.audioContext, offsetSeconds, durationSeconds, context.tempo);
-			maxRelease = perVoice.maxRelease;
+			let chainInput: AudioNode = source;
+			let chainOutput: AudioNode = source;
 
-			if (perVoice.input && perVoice.output) {
-				source.connect(perVoice.input);
-				perVoice.output.connect(destination);
+			for (const [envelopeKey, envelopeDef] of Object.entries(envelopes)) {
+				if (envelopeDef.type === "pitchEnvelope") {
+					source.detune.value = 0;
+
+					if (envelopeDef.envelope) {
+						const attack = envelopeDef.envelope.attack ?? 0.01;
+						const decay = envelopeDef.envelope.decay ?? 0.1;
+						const sustain = envelopeDef.envelope.sustain ?? 0;
+						const release = envelopeDef.envelope.release ?? 0.1;
+
+						if (release > maxRelease) maxRelease = release;
+
+						scheduleEnvelopeAdsr(source.detune, offsetSeconds, durationSeconds, attack, decay, sustain, release, envelopeDef.envelope.amount * 100);
+					}
+
+					if (envelopeDef.lfo) {
+						scheduleLfo(envelopeDef.lfo, source.detune, context.audioContext, offsetSeconds, offsetSeconds + durationSeconds + maxRelease, 100, context.tempo);
+					}
+
+					continue;
+				}
+
+				const worklet = new AudioWorkletNode(context.audioContext, "envelope-processor");
+				const workletParams = worklet.parameters as unknown as ReadonlyMap<string, AudioParam>;
+				const gate = workletParams.get("gate");
+
+				if (gate) {
+					gate.setValueAtTime(1, offsetSeconds);
+					gate.setValueAtTime(0, offsetSeconds + durationSeconds);
+				}
+
+				for (const param of ENVELOPE_PARAMS) {
+					const path = `${inst.name}.${envelopeKey}.${param}`;
+					const driver = context.driverMap.get(path);
+					const audioParam = workletParams.get(param);
+
+					if (!audioParam) continue;
+
+					if (driver) {
+						audioParam.value = 0;
+						driver.connect(audioParam);
+					} else if (envelopeDef.envelope) {
+						const defaultValues: Record<string, number> = { attack: 0.01, hold: 0, decay: 0.1, sustain: 0.7, release: 0.1 };
+						audioParam.value = (envelopeDef.envelope as Record<string, number | undefined>)[param] ?? defaultValues[param] ?? 0;
+
+						if (param === "release") {
+							const releaseVal = audioParam.value;
+							if (releaseVal > maxRelease) maxRelease = releaseVal;
+						}
+					}
+				}
+
+				if (envelopeDef.lfo) {
+					const lfoGain = context.audioContext.createGain();
+					worklet.connect(lfoGain);
+					scheduleLfo(envelopeDef.lfo, lfoGain.gain, context.audioContext, offsetSeconds, offsetSeconds + durationSeconds + maxRelease, 1, context.tempo);
+					chainOutput = lfoGain;
+				} else {
+					chainOutput = worklet;
+				}
+
+				if (chainInput === source) {
+					chainInput = worklet;
+				}
+			}
+
+			if (chainInput !== source) {
+				source.connect(chainInput);
+				chainOutput.connect(destination);
 			} else {
 				source.connect(destination);
 			}
@@ -132,6 +200,17 @@ export class NotePattern extends MidiPattern {
 		source.start(offsetSeconds);
 		source.stop(offsetSeconds + durationSeconds + maxRelease);
 	}
+}
+
+function scheduleEnvelopeAdsr(audioParam: AudioParam, startTime: number, duration: number, attack: number, decay: number, sustain: number, release: number, peakValue: number): void {
+	const sustainValue = peakValue * sustain;
+	const noteOff = startTime + duration;
+
+	audioParam.setValueAtTime(0, startTime);
+	audioParam.linearRampToValueAtTime(peakValue, startTime + attack);
+	audioParam.linearRampToValueAtTime(sustainValue, startTime + attack + decay);
+	audioParam.setValueAtTime(sustainValue, noteOff);
+	audioParam.linearRampToValueAtTime(0, noteOff + release);
 }
 
 function findZone(zones: ReadonlyArray<InstrumentZone>, midi: number, velocity: number): InstrumentZone | undefined {

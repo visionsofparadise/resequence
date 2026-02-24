@@ -42,6 +42,12 @@ export class SequencePattern extends MidiPattern {
 		}
 	}
 
+	setup(context: ScheduleContext): void {
+		for (const child of this.nodes) {
+			child.setup(context);
+		}
+	}
+
 	schedule(offsetTicks: number, context: ScheduleContext): void {
 		let cursor = offsetTicks;
 
@@ -50,6 +56,12 @@ export class SequencePattern extends MidiPattern {
 				child.schedule(cursor, context);
 			}
 			cursor += child.durationTicks;
+		}
+	}
+
+	teardown(context: ScheduleContext): void {
+		for (const child of this.nodes) {
+			child.teardown(context);
 		}
 	}
 }
