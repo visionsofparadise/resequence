@@ -9,6 +9,7 @@ import type { Pattern, PositionedNote } from "./pattern";
 export class AudioPattern implements Pattern {
 	readonly type = "audio" as const;
 	readonly durationTicks: number;
+	readonly notes: ReadonlyArray<PositionedNote> = [];
 
 	constructor(
 		readonly name: string,
@@ -26,20 +27,8 @@ export class AudioPattern implements Pattern {
 		this.durationTicks = duration !== undefined ? resolveDuration(duration) : 0;
 	}
 
-	transpose(interval: number): AudioPattern {
-		return new AudioPattern(this.name, this.path, this.duration, this.transposeSemitones + interval, this.reversed, this.loopStartMs, this.loopEndMs);
-	}
-
-	reverse(): AudioPattern {
-		return new AudioPattern(this.name, this.path, this.duration, this.transposeSemitones, !this.reversed, this.loopStartMs, this.loopEndMs);
-	}
-
 	validate(_context: ValidateContext): void {
 		return;
-	}
-
-	getMidi(): Array<PositionedNote> {
-		return [];
 	}
 
 	setup(_context: ScheduleContext): void {
@@ -95,6 +84,7 @@ function copyReversed(buffer: AudioBuffer, audioCtx: BaseAudioContext): AudioBuf
 	for (let channel = 0; channel < buffer.numberOfChannels; channel++) {
 		const original = buffer.getChannelData(channel);
 		const output = reversed.getChannelData(channel);
+
 		for (let sampleIdx = 0; sampleIdx < original.length; sampleIdx++) {
 			output[sampleIdx] = original[original.length - 1 - sampleIdx] ?? 0;
 		}

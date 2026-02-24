@@ -7,21 +7,10 @@ import type { Pattern, PositionedNote } from "./pattern";
 export class GapPattern implements Pattern {
 	readonly type = "gap" as const;
 	readonly durationTicks: number;
+	readonly notes: ReadonlyArray<PositionedNote> = [];
 
 	constructor(readonly duration: Duration) {
 		this.durationTicks = resolveDuration(duration);
-	}
-
-	transpose(): GapPattern {
-		return new GapPattern(this.duration);
-	}
-
-	reverse(): GapPattern {
-		return new GapPattern(this.duration);
-	}
-
-	getMidi(): Array<PositionedNote> {
-		return [];
 	}
 
 	validate(_context: ValidateContext): void {

@@ -14,11 +14,9 @@ const CURVE_SAMPLES = 128;
 const EPSILON = 1e-6;
 
 export function trigger(pattern: Pattern, options: TriggerOptions): Array<AnyKeyframe> {
-	const notes = pattern.getMidi();
+	if (pattern.notes.length === 0) return [];
 
-	if (notes.length === 0) return [];
-
-	const sorted = [...notes].sort((left, right) => left.tick - right.tick);
+	const sorted = [...pattern.notes].sort((left, right) => left.tick - right.tick);
 	const attackTicks = resolveDuration(options.attack);
 	const releaseTicks = resolveDuration(options.release);
 	const tension = options.tension ?? 1;

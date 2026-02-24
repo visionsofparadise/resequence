@@ -1,11 +1,9 @@
-import type { Midi, Node } from "../nodes/node";
 
 export interface ScheduleContext {
 	readonly audioContext: BaseAudioContext;
 	readonly sampleMap: ReadonlyMap<string, AudioBuffer>;
 	readonly nodeMap: Map<string, AudioNode>;
 	readonly driverMap: Map<string, ConstantSourceNode>;
-	readonly activeNodes: ReadonlyArray<Node<Midi, ReadonlyArray<unknown>>>;
 	readonly tempo: number;
 	readonly fromTicks: number;
 	readonly toTicks: number;

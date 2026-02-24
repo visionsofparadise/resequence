@@ -46,7 +46,6 @@ function mockContext(driverMap = new Map<string, ConstantSourceNode>()): Schedul
 		} as unknown as BaseAudioContext,
 		sampleMap: new Map(),
 		nodeMap: new Map(),
-		activeNodes: [],
 		driverMap,
 		tempo: 120,
 		fromTicks: 0,
@@ -141,39 +140,6 @@ describe("AutomatePattern", () => {
 		});
 	});
 
-	describe("transpose", () => {
-		it("returns self unchanged", () => {
-			const auto = automate("sweep", "bass.hp.frequency", [{ time: 0, value: 80 }]);
-			expect(auto.transpose(7)).toBe(auto);
-		});
-	});
-
-	describe("reverse", () => {
-		it("mirrors envelope ticks around duration", () => {
-			const auto = automate("sweep", "bass.hp.frequency", [
-				{ time: 0, value: 80 },
-				{ time: bars(2), value: 2000 },
-			]);
-			const reversed = auto.reverse();
-			expect(reversed.envelope[0].timeTicks).toBe(bars(2));
-			expect(reversed.envelope[0].value).toBe(80);
-			expect(reversed.envelope[1].timeTicks).toBe(0);
-			expect(reversed.envelope[1].value).toBe(2000);
-		});
-
-		it("preserves duration after reverse", () => {
-			const auto = automate("sweep", "bass.hp.frequency", [
-				{ time: 0, value: 80 },
-				{ time: bars(2), value: 2000 },
-			]);
-			expect(auto.reverse().durationTicks).toBe(bars(2));
-		});
-
-		it("rejects empty envelope on reverse", () => {
-			expect(() => automate("empty", "bass.hp.frequency", [])).toThrow("keyframes array must not be empty");
-		});
-	});
-
 	describe("composition", () => {
 		it("composes with layer alongside musical content", () => {
 			const auto = automate("sweep", "bass.hp.frequency", [
@@ -185,9 +151,9 @@ describe("AutomatePattern", () => {
 		});
 	});
 
-	describe("getMidi", () => {
+	describe("notes", () => {
 		it("returns empty", () => {
-			expect(automate("test", "bass.hp.frequency", [{ time: 0, value: 0.5 }]).getMidi()).toEqual([]);
+			expect(automate("test", "bass.hp.frequency", [{ time: 0, value: 0.5 }]).notes).toEqual([]);
 		});
 	});
 
@@ -208,12 +174,6 @@ describe("AutomatePattern", () => {
 			const lfo = resolveLfo({ shape: "sine", frequency: 2, value: 500 });
 			const auto = automate("filter-lfo", "bass.hp.frequency", lfo);
 			expect(auto.envelope).toEqual([]);
-		});
-
-		it("reverse returns self for Lfo source", () => {
-			const lfo = resolveLfo({ shape: "sine", frequency: 2, value: 500 });
-			const auto = automate("filter-lfo", "bass.hp.frequency", lfo);
-			expect(auto.reverse()).toBe(auto);
 		});
 	});
 

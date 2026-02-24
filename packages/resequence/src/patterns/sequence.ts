@@ -1,4 +1,5 @@
 import type { ScheduleContext } from "../rendering/schedule-context";
+import { isInScope, prepareNotes, scheduleNotes } from "../rendering/schedule-notes";
 import type { ValidateContext } from "../validate";
 import type { Pattern, PositionedNote } from "./pattern";
 import { MidiPattern } from "./pattern";
@@ -6,38 +7,35 @@ import { MidiPattern } from "./pattern";
 export class SequencePattern extends MidiPattern {
 	readonly type = "sequence" as const;
 	readonly durationTicks: number;
+	readonly notes: ReadonlyArray<PositionedNote>;
 
 	constructor(readonly children: ReadonlyArray<Pattern>) {
 		super();
+
 		this.durationTicks = children.reduce((sum, child) => sum + child.durationTicks, 0);
-	}
 
-	transpose(interval: number): SequencePattern {
-		return new SequencePattern(this.children.map((child) => child.transpose(interval)));
-	}
+		const notes: Array<PositionedNote> = [];
 
-	reverse(): SequencePattern {
-		return new SequencePattern([...this.children].reverse().map((child) => child.reverse()));
-	}
+		let cursor = 0;
 
-	getMidi(offset = 0, trackName?: string): Array<PositionedNote> {
-		const results: Array<PositionedNote> = [];
-		const resolvedTrackName = this.resolveTrackName(trackName);
-		let cursor = offset;
+		for (const child of children) {
+			for (const childNote of child.notes) {
+				notes.push({ ...childNote, tick: childNote.tick + cursor });
+			}
 
-		for (const child of this.children) {
-			results.push(...child.getMidi(cursor, resolvedTrackName));
 			cursor += child.durationTicks;
 		}
 
-		return results;
+		this.notes = notes;
 	}
 
 	validate(context: ValidateContext): void {
 		if (this.children.length === 0) {
 			context.warnings.push({ code: "EMPTY_CONTAINER", message: "sequence() has no children" });
 		}
+
 		const childContext = this.outputs.length > 0 ? { ...context, insideRoute: true } : context;
+
 		for (const child of this.children) {
 			child.validate(childContext);
 		}
@@ -50,27 +48,27 @@ export class SequencePattern extends MidiPattern {
 	}
 
 	prepare(offsetTicks: number, context: ScheduleContext): void {
-		if (offsetTicks + this.durationTicks <= context.fromTicks || offsetTicks >= context.toTicks) return;
-		const childContext = this.outputs.length > 0 ? { ...context, activeNodes: this.outputs } : context;
+		if (!isInScope(offsetTicks, this.durationTicks, context)) return;
+
+		prepareNotes(this.notes, offsetTicks, this.outputs, context);
+
 		let cursor = offsetTicks;
 
 		for (const child of this.children) {
-			if (cursor + child.durationTicks > context.fromTicks && cursor < context.toTicks) {
-				child.prepare(cursor, childContext);
-			}
+			child.prepare(cursor, context);
 			cursor += child.durationTicks;
 		}
 	}
 
 	schedule(offsetTicks: number, context: ScheduleContext): void {
-		if (offsetTicks + this.durationTicks <= context.fromTicks || offsetTicks >= context.toTicks) return;
-		const childContext = this.outputs.length > 0 ? { ...context, activeNodes: this.outputs } : context;
+		if (!isInScope(offsetTicks, this.durationTicks, context)) return;
+
+		scheduleNotes(this.notes, offsetTicks, this.outputs, context);
+
 		let cursor = offsetTicks;
 
 		for (const child of this.children) {
-			if (cursor + child.durationTicks > context.fromTicks && cursor < context.toTicks) {
-				child.schedule(cursor, childContext);
-			}
+			child.schedule(cursor, context);
 			cursor += child.durationTicks;
 		}
 	}

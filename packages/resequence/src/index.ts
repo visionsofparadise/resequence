@@ -53,6 +53,8 @@ export type { MidiRenderOptions, MidiRenderResult } from "./rendering/render-mid
 export { getOrCreateDriver } from "./rendering/schedule-context";
 export type { ScheduleContext } from "./rendering/schedule-context";
 export { ticksToSeconds } from "./rendering/ticks-to-seconds";
+export { CC } from "./utils/cc";
+export type { CCNumber } from "./utils/cc";
 export { bars, beats, PPQ, resolveDuration } from "./utils/duration";
 export type { Duration } from "./utils/duration";
 export { resolveLfo, scheduleLfo } from "./utils/lfo";
@@ -61,5 +63,53 @@ export { resolvePitch } from "./utils/pitch";
 export type { Pitch } from "./utils/pitch";
 export { scale } from "./utils/scale";
 export type { ScaleAccessor } from "./utils/scale";
+export { groupByOutput } from "./utils/group-by-output";
 export { validate } from "./validate";
 export type { ValidationWarning } from "./validate";
+// Pattern modifiers — pitch & time
+export { flip, FlipPattern } from "./patterns/modifiers/flip";
+export { harmonize, HarmonizePattern } from "./patterns/modifiers/harmonize";
+export { invertChord, InvertPattern } from "./patterns/modifiers/invert";
+export { offset, OffsetPattern } from "./patterns/modifiers/offset";
+export { reverse, ReversePattern } from "./patterns/modifiers/reverse";
+export { rotate, RotatePattern } from "./patterns/modifiers/rotate";
+export { stretch, StretchPattern } from "./patterns/modifiers/stretch";
+export { transpose, TransposePattern } from "./patterns/modifiers/transpose";
+export { voicing, VoicingPattern } from "./patterns/modifiers/voicing";
+export type { VoicingStyle } from "./patterns/modifiers/voicing";
+// Pattern modifiers — rhythm & chordal
+export { arp, ArpPattern, arpDown, arpRandom, arpUp, arpUpDown } from "./patterns/modifiers/arp";
+export { jitter, JitterPattern } from "./patterns/modifiers/jitter";
+export { quantize, QuantizePattern, shuffle } from "./patterns/modifiers/quantize";
+export { strum, StrumPattern } from "./patterns/modifiers/strum";
+export type { StrumOptions } from "./patterns/modifiers/strum";
+// Pattern modifiers — structural & expression
+export { accent, AccentPattern } from "./patterns/modifiers/accent";
+export { chop, ChopPattern } from "./patterns/modifiers/chop";
+export { echo, EchoPattern } from "./patterns/modifiers/echo";
+export { flam, FlamPattern } from "./patterns/modifiers/flam";
+export { gate, GatePattern } from "./patterns/modifiers/gate";
+export { heal, HealPattern } from "./patterns/modifiers/heal";
+export { humanize, level, LevelPattern } from "./patterns/modifiers/level";
+export type { LevelConfig, LevelProp, LevelPropOptions } from "./patterns/modifiers/level";
+export { legato, LegatoPattern } from "./patterns/modifiers/legato";
+export { length, LengthPattern } from "./patterns/modifiers/length";
+export { polyphony, PolyphonyPattern } from "./patterns/modifiers/polyphony";
+export { unison, UnisonPattern } from "./patterns/modifiers/unison";
+export type { UnisonSpread } from "./patterns/modifiers/unison";
+// Pattern modifiers — reduce & selection
+export { flatMap, map, mask, reduce, ReducePattern, thin } from "./patterns/modifiers/reduce";
+export { filter as filterNotes } from "./patterns/modifiers/reduce";
+export type { ReduceFn } from "./patterns/modifiers/reduce";
+export { slice, SlicePattern, trim, TrimPattern } from "./patterns/modifiers/slice";
+export { sort, SortPattern } from "./patterns/modifiers/sort";
+export type { SortKey } from "./patterns/modifiers/sort";
+export { insert, InsertPattern, splice, SplicePattern } from "./patterns/modifiers/splice";
+export type { InsertOptions, SpliceOptions } from "./patterns/modifiers/splice";
+// Pattern generators
+export { distribute, DistributePattern } from "./patterns/generators/distribute";
+export { FormulaPattern } from "./patterns/generators/formula";
+export { formula as formulaGen } from "./patterns/generators/formula";
+export type { FormulaCallback } from "./patterns/generators/formula";
+export { random, RandomPattern } from "./patterns/generators/random";
+export type { RandomOptions, RandomVelocityRange } from "./patterns/generators/random";

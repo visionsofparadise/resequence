@@ -1,8 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { gap } from "./gap";
-import type { NotePattern } from "./note";
 import { note } from "./note";
-import { sequence, SequencePattern } from "./sequence";
+import { sequence } from "./sequence";
 
 describe("SequencePattern", () => {
 	describe("durationTicks", () => {
@@ -15,39 +14,10 @@ describe("SequencePattern", () => {
 		});
 	});
 
-	describe("transpose", () => {
-		it("transposes sequence children", () => {
-			const result = sequence(note("C4", "4n"), note("E4", "4n")).transpose(3) as SequencePattern;
-			expect(result.type).toBe("sequence");
-			expect((result.children[0] as NotePattern).pitch).toBe(63);
-			expect((result.children[1] as NotePattern).pitch).toBe(67);
-		});
-	});
-
-	describe("reverse", () => {
-		it("reverses sequence children", () => {
-			const result = sequence(note("C4", "4n"), note("E4", "4n"), note("G4", "4n")).reverse() as SequencePattern;
-			expect(result.type).toBe("sequence");
-			expect((result.children[0] as NotePattern).pitch).toBe("G4");
-			expect((result.children[1] as NotePattern).pitch).toBe("E4");
-			expect((result.children[2] as NotePattern).pitch).toBe("C4");
-		});
-
-		it("recursively reverses nested sequences", () => {
-			const inner = sequence(note("C4", "4n"), note("D4", "4n"));
-			const outer = sequence(note("E4", "4n"), inner);
-			const result = outer.reverse() as SequencePattern;
-			const reversedInner = result.children[0] as SequencePattern;
-			expect((reversedInner.children[0] as NotePattern).pitch).toBe("D4");
-			expect((reversedInner.children[1] as NotePattern).pitch).toBe("C4");
-			expect((result.children[1] as NotePattern).pitch).toBe("E4");
-		});
-	});
-
-	describe("getMidi", () => {
+	describe("notes", () => {
 		it("accumulates offsets", () => {
 			const pat = sequence(note("C4", "4n"), note("D4", "4n"), note("E4", "4n"));
-			expect(pat.getMidi()).toMatchObject([
+			expect(pat.notes).toMatchObject([
 				{ tick: 0, pitch: 60 },
 				{ tick: 480, pitch: 62 },
 				{ tick: 960, pitch: 64 },
@@ -56,14 +26,14 @@ describe("SequencePattern", () => {
 
 		it("skips gaps", () => {
 			const pat = sequence(note("C4", "4n"), gap("4n"), note("E4", "4n"));
-			expect(pat.getMidi()).toMatchObject([
+			expect(pat.notes).toMatchObject([
 				{ tick: 0, pitch: 60 },
 				{ tick: 960, pitch: 64 },
 			]);
 		});
 
 		it("returns empty for empty sequence", () => {
-			expect(sequence().getMidi()).toEqual([]);
+			expect(sequence().notes).toEqual([]);
 		});
 	});
 });

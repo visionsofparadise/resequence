@@ -1,7 +1,6 @@
 import { ResequenceError } from "../error";
-import type { NoteContext } from "../nodes/node";
 import type { ScheduleContext } from "../rendering/schedule-context";
-import { ticksToSeconds } from "../rendering/ticks-to-seconds";
+import { isInScope, prepareNotes, scheduleNotes } from "../rendering/schedule-notes";
 import type { Duration } from "../utils/duration";
 import { resolveDuration } from "../utils/duration";
 import type { Pitch } from "../utils/pitch";
@@ -13,6 +12,7 @@ import { MidiPattern } from "./pattern";
 export class NotePattern extends MidiPattern {
 	readonly type = "note" as const;
 	readonly durationTicks: number;
+	readonly notes: ReadonlyArray<PositionedNote>;
 
 	constructor(
 		readonly pitch: Pitch,
@@ -27,16 +27,7 @@ export class NotePattern extends MidiPattern {
 		}
 
 		this.durationTicks = resolveDuration(duration);
-	}
-
-	transpose(interval: number): NotePattern {
-		const midi = resolvePitch(this.pitch) + interval;
-
-		return new NotePattern(midi, this.duration, this.velocity, this.lyric);
-	}
-
-	reverse(): NotePattern {
-		return new NotePattern(this.pitch, this.duration, this.velocity, this.lyric);
+		this.notes = [{ tick: 0, pitch: resolvePitch(this.pitch), durationTicks: this.durationTicks, velocity: this.velocity, lyric: this.lyric }];
 	}
 
 	validate(context: ValidateContext): void {
@@ -48,64 +39,17 @@ export class NotePattern extends MidiPattern {
 		}
 	}
 
-	getMidi(offset = 0, trackName?: string): Array<PositionedNote> {
-		return [
-			{
-				tick: offset,
-				pitch: resolvePitch(this.pitch),
-				durationTicks: this.durationTicks,
-				velocity: this.velocity,
-				lyric: this.lyric,
-				trackName: this.resolveTrackName(trackName),
-			},
-		];
-	}
-
 	prepare(offsetTicks: number, context: ScheduleContext): void {
-		if (offsetTicks + this.durationTicks <= context.fromTicks || offsetTicks >= context.toTicks) return;
-		if (context.activeNodes.length === 0) return;
+		if (!isInScope(offsetTicks, this.durationTicks, context)) return;
 
-		const midi = resolvePitch(this.pitch);
-		const startTime = ticksToSeconds(offsetTicks, context.tempo);
-		const stopTime = ticksToSeconds(offsetTicks + this.durationTicks, context.tempo);
-
-		const noteCtx: NoteContext = {
-			frequency: midiToFrequency(midi),
-			velocity: this.velocity,
-			startTime,
-			stopTime,
-			cleanupTime: stopTime + 5,
-		};
-
-		for (const node of context.activeNodes) {
-			node.prepare(noteCtx, context);
-		}
+		prepareNotes(this.notes, offsetTicks, this.outputs, context);
 	}
 
 	schedule(offsetTicks: number, context: ScheduleContext): void {
-		if (offsetTicks + this.durationTicks <= context.fromTicks || offsetTicks >= context.toTicks) return;
-		if (context.activeNodes.length === 0) return;
+		if (!isInScope(offsetTicks, this.durationTicks, context)) return;
 
-		const midi = resolvePitch(this.pitch);
-		const startTime = ticksToSeconds(offsetTicks, context.tempo);
-		const stopTime = ticksToSeconds(offsetTicks + this.durationTicks, context.tempo);
-
-		const noteCtx: NoteContext = {
-			frequency: midiToFrequency(midi),
-			velocity: this.velocity,
-			startTime,
-			stopTime,
-			cleanupTime: stopTime + 5,
-		};
-
-		for (const node of context.activeNodes) {
-			node.schedule(noteCtx, context);
-		}
+		scheduleNotes(this.notes, offsetTicks, this.outputs, context);
 	}
-}
-
-function midiToFrequency(midi: number): number {
-	return 440 * 2 ** ((midi - 69) / 12);
 }
 
 export function note(pitch: Pitch, duration: Duration, options?: { velocity?: number; lyric?: string }): NotePattern {

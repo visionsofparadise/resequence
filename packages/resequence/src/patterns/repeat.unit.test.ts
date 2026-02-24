@@ -1,9 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { ResequenceError } from "../error";
-import type { NotePattern } from "./note";
 import { note } from "./note";
-import { repeat, RepeatPattern } from "./repeat";
-import { sequence, SequencePattern } from "./sequence";
+import { repeat } from "./repeat";
+import { sequence } from "./sequence";
 
 describe("RepeatPattern", () => {
 	describe("validation", () => {
@@ -32,30 +31,10 @@ describe("RepeatPattern", () => {
 		});
 	});
 
-	describe("transpose", () => {
-		it("transposes repeat child", () => {
-			const result = repeat(note("C4", "4n"), 4).transpose(5) as RepeatPattern;
-			expect(result.type).toBe("repeat");
-			expect(result.count).toBe(4);
-			expect((result.node as NotePattern).pitch).toBe(65);
-		});
-	});
-
-	describe("reverse", () => {
-		it("reverses repeat child", () => {
-			const seq = sequence(note("C4", "4n"), note("E4", "4n"));
-			const result = repeat(seq, 4).reverse() as RepeatPattern;
-			expect(result.count).toBe(4);
-			const inner = result.node as SequencePattern;
-			expect((inner.children[0] as NotePattern).pitch).toBe("E4");
-			expect((inner.children[1] as NotePattern).pitch).toBe("C4");
-		});
-	});
-
-	describe("getMidi", () => {
+	describe("notes", () => {
 		it("multiplies offsets", () => {
 			const pat = repeat(note("C4", "4n"), 4);
-			expect(pat.getMidi()).toMatchObject([
+			expect(pat.notes).toMatchObject([
 				{ tick: 0, pitch: 60 },
 				{ tick: 480, pitch: 60 },
 				{ tick: 960, pitch: 60 },
@@ -65,7 +44,7 @@ describe("RepeatPattern", () => {
 
 		it("handles repeat of a sequence", () => {
 			const pat = repeat(sequence(note("C4", "8n"), note("E4", "8n")), 2);
-			expect(pat.getMidi()).toMatchObject([
+			expect(pat.notes).toMatchObject([
 				{ tick: 0, pitch: 60 },
 				{ tick: 240, pitch: 64 },
 				{ tick: 480, pitch: 60 },

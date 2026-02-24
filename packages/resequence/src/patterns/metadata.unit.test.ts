@@ -4,10 +4,8 @@ import { sampler } from "../nodes/generators/sampler";
 import { gap } from "./gap";
 import { layer } from "./layer";
 import { metadata, MetadataPattern } from "./metadata";
-import type { NotePattern } from "./note";
 import { note } from "./note";
 import { repeat } from "./repeat";
-import type { SequencePattern } from "./sequence";
 import { sequence } from "./sequence";
 
 describe("MetadataPattern", () => {
@@ -64,33 +62,10 @@ describe("MetadataPattern", () => {
 		});
 	});
 
-	describe("transpose", () => {
-		it("transposes child, preserves metadata", () => {
-			const m = metadata(note("C4", "4n"), { tempo: 126, key: "Cm" });
-			const transposed = m.transpose(7);
-			expect(transposed).toBeInstanceOf(MetadataPattern);
-			expect(transposed.tempo).toBe(126);
-			expect(transposed.key).toBe("Cm");
-			expect((transposed.node as NotePattern).pitch).toBe(67);
-		});
-	});
-
-	describe("reverse", () => {
-		it("reverses child, preserves metadata", () => {
-			const m = metadata(sequence(note("C4", "4n"), note("E4", "4n")), { tempo: 126 });
-			const reversed = m.reverse();
-			expect(reversed).toBeInstanceOf(MetadataPattern);
-			expect(reversed.tempo).toBe(126);
-			const inner = reversed.node as SequencePattern;
-			expect((inner.children[0] as NotePattern).pitch).toBe("E4");
-			expect((inner.children[1] as NotePattern).pitch).toBe("C4");
-		});
-	});
-
-	describe("getMidi", () => {
+	describe("notes", () => {
 		it("delegates to child", () => {
 			const pat = metadata(note("C4", "4n"), { tempo: 120 });
-			expect(pat.getMidi()).toMatchObject([{ tick: 0, pitch: 60 }]);
+			expect(pat.notes).toMatchObject([{ tick: 0, pitch: 60 }]);
 		});
 
 		it("handles nested structures", () => {
@@ -100,7 +75,7 @@ describe("MetadataPattern", () => {
 			const groove = layer(kick, snare);
 			const song = metadata(groove, { tempo: 120 });
 
-			expect(song.getMidi()).toMatchObject([
+			expect(song.notes).toMatchObject([
 				{ tick: 0, pitch: 24 },
 				{ tick: 480, pitch: 24 },
 				{ tick: 960, pitch: 24 },

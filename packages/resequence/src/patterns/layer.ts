@@ -1,4 +1,5 @@
 import type { ScheduleContext } from "../rendering/schedule-context";
+import { isInScope, prepareNotes, scheduleNotes } from "../rendering/schedule-notes";
 import type { Duration } from "../utils/duration";
 import { resolveDuration } from "../utils/duration";
 import type { ValidateContext } from "../validate";
@@ -8,6 +9,7 @@ import { MidiPattern } from "./pattern";
 export class LayerPattern extends MidiPattern {
 	readonly type = "layer" as const;
 	readonly durationTicks: number;
+	readonly notes: ReadonlyArray<PositionedNote>;
 
 	constructor(
 		readonly children: ReadonlyArray<Pattern>,
@@ -16,38 +18,23 @@ export class LayerPattern extends MidiPattern {
 		super();
 
 		this.durationTicks = duration !== undefined ? resolveDuration(duration) : Math.max(0, ...children.map((child) => child.durationTicks));
-	}
 
-	transpose(interval: number): LayerPattern {
-		return new LayerPattern(
-			this.children.map((child) => child.transpose(interval)),
-			this.duration,
-		);
-	}
+		const notes: Array<PositionedNote> = [];
 
-	reverse(): LayerPattern {
-		return new LayerPattern(
-			this.children.map((child) => child.reverse()),
-			this.duration,
-		);
-	}
-
-	getMidi(offset = 0, trackName?: string): Array<PositionedNote> {
-		const results: Array<PositionedNote> = [];
-		const resolvedTrackName = this.resolveTrackName(trackName);
-
-		for (const child of this.children) {
-			results.push(...child.getMidi(offset, resolvedTrackName));
+		for (const child of children) {
+			notes.push(...child.notes);
 		}
 
-		return results;
+		this.notes = notes;
 	}
 
 	validate(context: ValidateContext): void {
 		if (this.children.length === 0) {
 			context.warnings.push({ code: "EMPTY_CONTAINER", message: "layer() has no children" });
 		}
+
 		const childContext = this.outputs.length > 0 ? { ...context, insideRoute: true } : context;
+
 		for (const child of this.children) {
 			child.validate(childContext);
 		}
@@ -60,20 +47,22 @@ export class LayerPattern extends MidiPattern {
 	}
 
 	prepare(offsetTicks: number, context: ScheduleContext): void {
-		if (offsetTicks + this.durationTicks <= context.fromTicks || offsetTicks >= context.toTicks) return;
-		const childContext = this.outputs.length > 0 ? { ...context, activeNodes: this.outputs } : context;
+		if (!isInScope(offsetTicks, this.durationTicks, context)) return;
+
+		prepareNotes(this.notes, offsetTicks, this.outputs, context);
 
 		for (const child of this.children) {
-			child.prepare(offsetTicks, childContext);
+			child.prepare(offsetTicks, context);
 		}
 	}
 
 	schedule(offsetTicks: number, context: ScheduleContext): void {
-		if (offsetTicks + this.durationTicks <= context.fromTicks || offsetTicks >= context.toTicks) return;
-		const childContext = this.outputs.length > 0 ? { ...context, activeNodes: this.outputs } : context;
+		if (!isInScope(offsetTicks, this.durationTicks, context)) return;
+
+		scheduleNotes(this.notes, offsetTicks, this.outputs, context);
 
 		for (const child of this.children) {
-			child.schedule(offsetTicks, childContext);
+			child.schedule(offsetTicks, context);
 		}
 	}
 

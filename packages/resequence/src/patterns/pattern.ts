@@ -9,14 +9,14 @@ export interface PositionedNote {
 	readonly velocity?: number;
 	readonly lyric?: string;
 	readonly trackName?: string;
+	readonly cc?: Partial<Record<number, number>>;
 }
 
 export interface Pattern {
 	readonly type: string;
 	readonly durationTicks: number;
-	transpose(interval: number): Pattern;
-	reverse(): Pattern;
-	getMidi(offset?: number, trackName?: string): Array<PositionedNote>;
+	readonly notes: ReadonlyArray<PositionedNote>;
+
 	setup(context: ScheduleContext): void;
 	prepare(offsetTicks: number, context: ScheduleContext): void;
 	schedule(offsetTicks: number, context: ScheduleContext): void;
@@ -27,9 +27,7 @@ export interface Pattern {
 export abstract class MidiPattern implements Pattern {
 	abstract readonly type: string;
 	abstract readonly durationTicks: number;
-	abstract transpose(interval: number): Pattern;
-	abstract reverse(): Pattern;
-	abstract getMidi(offset?: number, trackName?: string): Array<PositionedNote>;
+	readonly notes: ReadonlyArray<PositionedNote> = [];
 	abstract schedule(offsetTicks: number, context: ScheduleContext): void;
 	abstract validate(context: ValidateContext): void;
 
@@ -49,6 +47,7 @@ export abstract class MidiPattern implements Pattern {
 
 	route(node: Node<Midi, ReadonlyArray<unknown>>): this {
 		this.outputs.push(node);
+
 		return this;
 	}
 

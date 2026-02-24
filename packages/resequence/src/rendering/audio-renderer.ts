@@ -53,7 +53,6 @@ export class AudioRenderer {
 			sampleMap,
 			nodeMap,
 			driverMap,
-			activeNodes: [],
 			tempo,
 			fromTicks: 0,
 			toTicks: Infinity,

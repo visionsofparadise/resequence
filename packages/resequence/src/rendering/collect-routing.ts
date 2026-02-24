@@ -24,6 +24,10 @@ function walk(pattern: Pattern, routing: Map<string, RoutingEntry>): void {
 		return;
 	}
 
+	if ("child" in pattern && isPattern((pattern as { child: unknown }).child)) {
+		walk((pattern as { child: Pattern }).child, routing);
+	}
+
 	if ("node" in pattern && isPattern((pattern as { node: unknown }).node)) {
 		walk((pattern as { node: Pattern }).node, routing);
 	}

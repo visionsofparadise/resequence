@@ -99,29 +99,16 @@ describe('integration', () => {
     expect(song.key).toBe('Cm')
   })
 
-  it('preserves transpose through full tree', () => {
-    const bassRiff = sequence(note('C2', '8n'), note('E2', '8n'))
-    const bassPart = bassRiff.route(bass)
-    const transposed = bassPart.transpose(7)
-    expect(transposed.durationTicks).toBe(480)
-  })
-
-  it('preserves reverse through full tree', () => {
-    const bassRiff = sequence(note('C2', '8n'), note('E2', '8n'))
-    const reversed = bassRiff.route(bass).reverse()
-    expect(reversed.durationTicks).toBe(480)
-  })
-
   it('uses chord with routing', () => {
     const chordProg = sequence(chord('C4m', '2n'), chord('Ab3', '2n'))
     const padPart = chordProg.route(pad)
     expect(padPart.durationTicks).toBe(480 * 2 * 2)
   })
 
-  it('getMidi propagates track name from instrument', () => {
+  it('notes aggregates all pitches unconditionally', () => {
     const kick = repeat(note('C1', '4n'), 4).route(drums)
-    const notes = kick.getMidi()
-    expect(notes.every((n) => n.trackName === 'drums')).toBe(true)
+    expect(kick.notes).toHaveLength(4)
+    expect(kick.notes.every((n) => n.pitch === 24)).toBe(true)
   })
 
   it('full composition matches API shape', () => {

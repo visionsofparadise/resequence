@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { gap, GapPattern } from "./gap";
+import { gap } from "./gap";
 
 describe("GapPattern", () => {
 	describe("durationTicks", () => {
@@ -12,25 +12,9 @@ describe("GapPattern", () => {
 		});
 	});
 
-	describe("transpose", () => {
-		it("leaves gap unchanged", () => {
-			const result = gap("4n").transpose(5) as GapPattern;
-			expect(result.type).toBe("gap");
-			expect(result.duration).toBe("4n");
-		});
-	});
-
-	describe("reverse", () => {
-		it("returns gap unchanged", () => {
-			const result = gap("8n").reverse() as GapPattern;
-			expect(result.type).toBe("gap");
-			expect(result.duration).toBe("8n");
-		});
-	});
-
-	describe("getMidi", () => {
+	describe("notes", () => {
 		it("returns empty", () => {
-			expect(gap("4n").getMidi()).toEqual([]);
+			expect(gap("4n").notes).toEqual([]);
 		});
 	});
 });

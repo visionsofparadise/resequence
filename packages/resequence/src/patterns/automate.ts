@@ -61,6 +61,7 @@ function resolveKeyframe(keyframe: AnyKeyframe): AnyResolvedKeyframe {
 export class AutomatePattern implements Pattern {
 	readonly type = "automate" as const;
 	readonly durationTicks: number;
+	readonly notes: ReadonlyArray<PositionedNote> = [];
 	readonly paths: ReadonlyArray<string>;
 	readonly source: ReadonlyArray<AnyResolvedKeyframe> | Lfo;
 
@@ -98,42 +99,12 @@ export class AutomatePattern implements Pattern {
 
 	get envelope(): ReadonlyArray<AnyResolvedKeyframe> {
 		if (Array.isArray(this.source)) return this.source as ReadonlyArray<AnyResolvedKeyframe>;
+
 		return [];
-	}
-
-	transpose(): this {
-		return this;
-	}
-
-	reverse(): AutomatePattern {
-		if (!Array.isArray(this.source)) return this;
-
-		const duration = this.durationTicks;
-		const reversedKeyframes: ReadonlyArray<AnyKeyframe> = (this.source as ReadonlyArray<AnyResolvedKeyframe>).map((keyframe) => {
-			if (keyframe.kind === "curve") {
-				return {
-					time: (duration - keyframe.timeTicks) as Duration,
-					duration: keyframe.durationTicks as Duration,
-					values: keyframe.values.slice().reverse() as unknown as Float32Array,
-				};
-			}
-
-			return {
-				time: (duration - keyframe.timeTicks) as Duration,
-				value: keyframe.value,
-				curve: keyframe.curve,
-			};
-		});
-
-		return new AutomatePattern(this.name, this.paths, reversedKeyframes);
 	}
 
 	validate(context: ValidateContext): void {
 		context.automationPaths.push({ name: this.name, paths: [...this.paths] });
-	}
-
-	getMidi(): Array<PositionedNote> {
-		return [];
 	}
 
 	setup(context: ScheduleContext): void {

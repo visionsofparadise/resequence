@@ -29,30 +29,6 @@ describe("AudioPattern", () => {
 		});
 	});
 
-	describe("transpose", () => {
-		it("accumulates semitone offset", () => {
-			expect(audio("break", "./break.wav").transpose(3).transposeSemitones).toBe(3);
-		});
-
-		it("accumulates across multiple transposes", () => {
-			expect(audio("break", "./break.wav").transpose(3).transpose(4).transposeSemitones).toBe(7);
-		});
-
-		it("supports negative intervals", () => {
-			expect(audio("break", "./break.wav").transpose(-5).transposeSemitones).toBe(-5);
-		});
-	});
-
-	describe("reverse", () => {
-		it("toggles reversed flag", () => {
-			expect(audio("break", "./break.wav").reverse().reversed).toBe(true);
-		});
-
-		it("double reverse cancels", () => {
-			expect(audio("break", "./break.wav").reverse().reverse().reversed).toBe(false);
-		});
-	});
-
 	describe("loop points", () => {
 		it("stores loop points from factory", () => {
 			const pattern = audio("pad", "./pad.wav", "1n", { loopStartMs: 500, loopEndMs: 2000 });
@@ -65,23 +41,11 @@ describe("AudioPattern", () => {
 			expect(pattern.loopStartMs).toBeUndefined();
 			expect(pattern.loopEndMs).toBeUndefined();
 		});
-
-		it("survives transpose", () => {
-			const pattern = audio("pad", "./pad.wav", "1n", { loopStartMs: 500, loopEndMs: 2000 }).transpose(3);
-			expect(pattern.loopStartMs).toBe(500);
-			expect(pattern.loopEndMs).toBe(2000);
-		});
-
-		it("survives reverse", () => {
-			const pattern = audio("pad", "./pad.wav", "1n", { loopStartMs: 500, loopEndMs: 2000 }).reverse();
-			expect(pattern.loopStartMs).toBe(500);
-			expect(pattern.loopEndMs).toBe(2000);
-		});
 	});
 
-	describe("getMidi", () => {
+	describe("notes", () => {
 		it("returns empty", () => {
-			expect(audio("kick", "./kick.wav").getMidi()).toEqual([]);
+			expect(audio("kick", "./kick.wav").notes).toEqual([]);
 		});
 	});
 

@@ -6,9 +6,10 @@ import type { Pattern, PositionedNote } from "./pattern";
 export class MetadataPattern implements Pattern {
 	readonly type = "metadata" as const;
 	readonly durationTicks: number;
+	readonly notes: ReadonlyArray<PositionedNote>;
 
 	constructor(
-		readonly node: Pattern,
+		readonly child: Pattern,
 		readonly tempo?: number,
 		readonly key?: string,
 		readonly timeSignature?: [number, number],
@@ -24,39 +25,28 @@ export class MetadataPattern implements Pattern {
 			}
 		}
 
-		this.durationTicks = node.durationTicks;
-	}
-
-	transpose(interval: number): MetadataPattern {
-		return new MetadataPattern(this.node.transpose(interval), this.tempo, this.key, this.timeSignature);
-	}
-
-	reverse(): MetadataPattern {
-		return new MetadataPattern(this.node.reverse(), this.tempo, this.key, this.timeSignature);
-	}
-
-	getMidi(offset = 0, trackName?: string): Array<PositionedNote> {
-		return this.node.getMidi(offset, trackName);
+		this.durationTicks = child.durationTicks;
+		this.notes = child.notes;
 	}
 
 	validate(context: ValidateContext): void {
-		this.node.validate(context);
+		this.child.validate(context);
 	}
 
 	setup(context: ScheduleContext): void {
-		this.node.setup(context);
+		this.child.setup(context);
 	}
 
 	prepare(offsetTicks: number, context: ScheduleContext): void {
-		this.node.prepare(offsetTicks, context);
+		this.child.prepare(offsetTicks, context);
 	}
 
 	schedule(offsetTicks: number, context: ScheduleContext): void {
-		this.node.schedule(offsetTicks, context);
+		this.child.schedule(offsetTicks, context);
 	}
 
 	teardown(context: ScheduleContext): void {
-		this.node.teardown(context);
+		this.child.teardown(context);
 	}
 }
 

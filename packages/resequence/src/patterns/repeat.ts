@@ -1,5 +1,6 @@
 import { ResequenceError } from "../error";
 import type { ScheduleContext } from "../rendering/schedule-context";
+import { isInScope, prepareNotes, scheduleNotes } from "../rendering/schedule-notes";
 import type { ValidateContext } from "../validate";
 import type { Pattern, PositionedNote } from "./pattern";
 import { MidiPattern } from "./pattern";
@@ -7,9 +8,10 @@ import { MidiPattern } from "./pattern";
 export class RepeatPattern extends MidiPattern {
 	readonly type = "repeat" as const;
 	readonly durationTicks: number;
+	readonly notes: ReadonlyArray<PositionedNote>;
 
 	constructor(
-		readonly node: Pattern,
+		readonly child: Pattern,
 		readonly count: number,
 	) {
 		super();
@@ -18,65 +20,53 @@ export class RepeatPattern extends MidiPattern {
 			throw new ResequenceError("INVALID_REPEAT_COUNT", `repeat(): count must be a positive integer, got ${count}`);
 		}
 
-		this.durationTicks = node.durationTicks * count;
-	}
+		this.durationTicks = child.durationTicks * count;
 
-	transpose(interval: number): RepeatPattern {
-		return new RepeatPattern(this.node.transpose(interval), this.count);
-	}
+		const notes: Array<PositionedNote> = [];
 
-	reverse(): RepeatPattern {
-		return new RepeatPattern(this.node.reverse(), this.count);
-	}
+		for (let iteration = 0; iteration < count; iteration++) {
+			const offset = child.durationTicks * iteration;
 
-	getMidi(offset = 0, trackName?: string): Array<PositionedNote> {
-		const results: Array<PositionedNote> = [];
-		const resolvedTrackName = this.resolveTrackName(trackName);
-
-		for (let iteration = 0; iteration < this.count; iteration++) {
-			results.push(...this.node.getMidi(offset + this.node.durationTicks * iteration, resolvedTrackName));
+			for (const childNote of child.notes) {
+				notes.push({ ...childNote, tick: childNote.tick + offset });
+			}
 		}
 
-		return results;
+		this.notes = notes;
 	}
 
 	validate(context: ValidateContext): void {
 		const childContext = this.outputs.length > 0 ? { ...context, insideRoute: true } : context;
-		this.node.validate(childContext);
+
+		this.child.validate(childContext);
 	}
 
 	setup(context: ScheduleContext): void {
-		this.node.setup(context);
+		this.child.setup(context);
 	}
 
 	prepare(offsetTicks: number, context: ScheduleContext): void {
-		if (offsetTicks + this.durationTicks <= context.fromTicks || offsetTicks >= context.toTicks) return;
-		const childContext = this.outputs.length > 0 ? { ...context, activeNodes: this.outputs } : context;
+		if (!isInScope(offsetTicks, this.durationTicks, context)) return;
+
+		prepareNotes(this.notes, offsetTicks, this.outputs, context);
 
 		for (let iteration = 0; iteration < this.count; iteration++) {
-			const iterationOffset = offsetTicks + this.node.durationTicks * iteration;
-
-			if (iterationOffset + this.node.durationTicks > context.fromTicks && iterationOffset < context.toTicks) {
-				this.node.prepare(iterationOffset, childContext);
-			}
+			this.child.prepare(offsetTicks + this.child.durationTicks * iteration, context);
 		}
 	}
 
 	schedule(offsetTicks: number, context: ScheduleContext): void {
-		if (offsetTicks + this.durationTicks <= context.fromTicks || offsetTicks >= context.toTicks) return;
-		const childContext = this.outputs.length > 0 ? { ...context, activeNodes: this.outputs } : context;
+		if (!isInScope(offsetTicks, this.durationTicks, context)) return;
+
+		scheduleNotes(this.notes, offsetTicks, this.outputs, context);
 
 		for (let iteration = 0; iteration < this.count; iteration++) {
-			const iterationOffset = offsetTicks + this.node.durationTicks * iteration;
-
-			if (iterationOffset + this.node.durationTicks > context.fromTicks && iterationOffset < context.toTicks) {
-				this.node.schedule(iterationOffset, childContext);
-			}
+			this.child.schedule(offsetTicks + this.child.durationTicks * iteration, context);
 		}
 	}
 
 	teardown(context: ScheduleContext): void {
-		this.node.teardown(context);
+		this.child.teardown(context);
 	}
 }
 
