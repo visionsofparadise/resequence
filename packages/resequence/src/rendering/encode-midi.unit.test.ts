@@ -102,6 +102,58 @@ describe("encodeMidi", () => {
 		}
 	});
 
+	it("encodes CC as controller events at the note tick", () => {
+		const tracks = new Map([["test", [
+			{ tick: 0, pitch: 60, durationTicks: 480, velocity: 100, cc: { 7: 64, 10: 0 } },
+		]]]);
+		const result = encodeMidi(tracks, { ppq: PPQ, tempo: 120 });
+
+		const parsed = parseMidi(result);
+		const noteTrack = parsed.tracks[1];
+		const ccEvents = noteTrack.filter((ev) => ev.type === "controller");
+
+		expect(ccEvents).toHaveLength(2);
+
+		const cc7 = ccEvents.find((ev) => ev.type === "controller" && ev.controllerType === 7);
+		expect(cc7).toBeDefined();
+		if (cc7?.type === "controller") {
+			expect(cc7.value).toBe(64);
+			expect(cc7.deltaTime).toBe(0);
+		}
+
+		const cc10 = ccEvents.find((ev) => ev.type === "controller" && ev.controllerType === 10);
+		expect(cc10).toBeDefined();
+		if (cc10?.type === "controller") {
+			expect(cc10.value).toBe(0);
+		}
+	});
+
+	it("emits CC events before noteOn at the same tick", () => {
+		const tracks = new Map([["test", [
+			{ tick: 0, pitch: 60, durationTicks: 480, velocity: 100, cc: { 7: 64 } },
+		]]]);
+		const result = encodeMidi(tracks, { ppq: PPQ, tempo: 120 });
+
+		const parsed = parseMidi(result);
+		const noteTrack = parsed.tracks[1];
+		const meaningful = noteTrack.filter((ev) => ev.type === "controller" || ev.type === "noteOn");
+
+		expect(meaningful[0]?.type).toBe("controller");
+		expect(meaningful[1]?.type).toBe("noteOn");
+	});
+
+	it("notes without CC emit no controller events", () => {
+		const tracks = new Map([["test", [
+			{ tick: 0, pitch: 60, durationTicks: 480, velocity: 100 },
+		]]]);
+		const result = encodeMidi(tracks, { ppq: PPQ, tempo: 120 });
+
+		const parsed = parseMidi(result);
+		const noteTrack = parsed.tracks[1];
+		const ccEvents = noteTrack.filter((ev) => ev.type === "controller");
+		expect(ccEvents).toHaveLength(0);
+	});
+
 	it("roundtrips correctly", () => {
 		const tracks = new Map([["piano", [
 			{ tick: 0, pitch: 60, durationTicks: 480, velocity: 100 },

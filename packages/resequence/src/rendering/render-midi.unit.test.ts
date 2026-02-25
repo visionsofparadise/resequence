@@ -1,11 +1,14 @@
 import { parseMidi } from "midi-file";
 import { describe, expect, it } from "vitest";
 import { sampler } from "../nodes/generators/sampler";
+import { level } from "../patterns/modifiers/level";
+import { transpose } from "../patterns/modifiers/transpose";
 import { layer } from "../patterns/layer";
 import { metadata } from "../patterns/metadata";
 import { note } from "../patterns/note";
 import { repeat } from "../patterns/repeat";
 import { sequence } from "../patterns/sequence";
+import { CC } from "../utils/cc";
 import { renderMidi } from "./render-midi";
 
 describe("renderMidi", () => {
@@ -84,6 +87,60 @@ describe("renderMidi", () => {
 		}
 	});
 
+	it("includes CC controller events from note cc option", () => {
+		const pattern = note("C4", "4n", { cc: { [CC.VOLUME]: 64 } }).route(bass);
+		const result = renderMidi(pattern);
+
+		const encoded = result.tracks.get("bass");
+		expect(encoded).toBeDefined();
+
+		const parsed = parseMidi(encoded!);
+		const noteTrack = parsed.tracks[1];
+		const ccEvents = noteTrack.filter((ev) => ev.type === "controller");
+
+		expect(ccEvents).toHaveLength(1);
+		if (ccEvents[0]?.type === "controller") {
+			expect(ccEvents[0].controllerType).toBe(CC.VOLUME);
+			expect(ccEvents[0].value).toBe(64);
+		}
+	});
+
+	it("exports MIDI from modifier patterns", () => {
+		const pattern = transpose(note("C4", "4n"), 7).route(bass);
+		const result = renderMidi(pattern);
+
+		const encoded = result.tracks.get("bass");
+		expect(encoded).toBeDefined();
+
+		const parsed = parseMidi(encoded!);
+		const noteTrack = parsed.tracks[1];
+		const noteOns = noteTrack.filter((ev) => ev.type === "noteOn");
+		expect(noteOns).toHaveLength(1);
+		if (noteOns[0]?.type === "noteOn") {
+			expect(noteOns[0].noteNumber).toBe(67); // C4 + 7 semitones = G4
+		}
+	});
+
+	it("includes CC from level modifier in MIDI output", () => {
+		const pattern = level(note("C4", "4n"), { cc: { [CC.CUTOFF]: 80 } }).route(bass);
+		const result = renderMidi(pattern);
+
+		const encoded = result.tracks.get("bass");
+		expect(encoded).toBeDefined();
+
+		const parsed = parseMidi(encoded!);
+		const noteTrack = parsed.tracks[1];
+		const noteOns = noteTrack.filter((ev) => ev.type === "noteOn");
+		const ccEvents = noteTrack.filter((ev) => ev.type === "controller");
+
+		expect(noteOns).toHaveLength(1);
+		expect(ccEvents).toHaveLength(1);
+		if (ccEvents[0]?.type === "controller") {
+			expect(ccEvents[0].controllerType).toBe(CC.CUTOFF);
+			expect(ccEvents[0].value).toBe(80);
+		}
+	});
+
 	it("handles complex pattern tree", () => {
 		const bassLine = sequence(note("C2", "8n"), note("E2", "8n"), note("G2", "8n"), note("C3", "8n"));
 		const kickPattern = repeat(note("C1", "4n"), 4);
@@ -103,5 +160,13 @@ describe("renderMidi", () => {
 		const drumsNoteTrack = drumsParsed.tracks[1];
 		const drumsNoteOns = drumsNoteTrack.filter((ev) => ev.type === "noteOn");
 		expect(drumsNoteOns).toHaveLength(4);
+	});
+
+	it("appears in multiple tracks when routed to multiple outputs", () => {
+		const bass2 = sampler("bass2", "./bass2.wav", { root: "C2" });
+		const pattern = note("C2", "4n").route(bass).route(bass2);
+		const result = renderMidi(pattern);
+		expect(result.tracks.has("bass")).toBe(true);
+		expect(result.tracks.has("bass2")).toBe(true);
 	});
 });

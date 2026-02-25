@@ -8,8 +8,8 @@ export interface PositionedNote {
 	readonly durationTicks?: number;
 	readonly velocity?: number;
 	readonly lyric?: string;
-	readonly trackName?: string;
 	readonly cc?: Partial<Record<number, number>>;
+	outputs: Array<string | undefined>;
 }
 
 export interface Pattern {
@@ -48,14 +48,10 @@ export abstract class MidiPattern implements Pattern {
 	route(node: Node<Midi, ReadonlyArray<unknown>>): this {
 		this.outputs.push(node);
 
-		return this;
-	}
-
-	protected resolveTrackName(fallback?: string): string | undefined {
-		for (const node of this.outputs) {
-			if (node.id) return node.id;
+		for (const positioned of this.notes) {
+			positioned.outputs = [...positioned.outputs, node.id];
 		}
 
-		return fallback;
+		return this;
 	}
 }

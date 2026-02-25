@@ -1,5 +1,6 @@
 import type { ScheduleContext } from "../../rendering/schedule-context";
 import { getOrCreateDriver } from "../../rendering/schedule-context";
+import { applyCC } from "../../rendering/schedule-notes";
 import { Node } from "../node";
 import type { Midi, MidiAudio, NoteContext } from "../node";
 
@@ -59,11 +60,13 @@ export class OscillatorNode extends Node<Midi, MidiAudio> {
 		oscillator.start(noteContext.startTime);
 		oscillator.stop(noteContext.cleanupTime);
 
+		const { node: chainEnd, cleanup } = applyCC(oscillator, noteContext.cc, noteContext, scheduleContext);
+
 		if (this.outputs.length === 0) {
-			oscillator.connect(scheduleContext.audioContext.destination);
+			chainEnd.connect(scheduleContext.audioContext.destination);
 		} else {
 			for (const node of this.outputs) {
-				node.schedule(oscillator, noteContext, scheduleContext);
+				node.schedule(chainEnd, noteContext, scheduleContext);
 			}
 		}
 
@@ -72,6 +75,7 @@ export class OscillatorNode extends Node<Midi, MidiAudio> {
 				scheduleContext.driverMap.get(`${this.id}.frequency`)?.disconnect(oscillator.frequency);
 				scheduleContext.driverMap.get(`${this.id}.detune`)?.disconnect(oscillator.detune);
 			}
+			cleanup();
 			oscillator.disconnect();
 		});
 	}

@@ -63,7 +63,6 @@ export { resolvePitch } from "./utils/pitch";
 export type { Pitch } from "./utils/pitch";
 export { scale } from "./utils/scale";
 export type { ScaleAccessor } from "./utils/scale";
-export { groupByOutput } from "./utils/group-by-output";
 export { validate } from "./validate";
 export type { ValidationWarning } from "./validate";
 // Pattern modifiers — pitch & time

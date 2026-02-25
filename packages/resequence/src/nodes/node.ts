@@ -9,6 +9,7 @@ export interface NoteContext {
 	readonly startTime: number;
 	readonly stopTime: number;
 	readonly cleanupTime: number;
+	readonly cc?: Partial<Record<number, number>>;
 }
 
 export abstract class Node<In extends ReadonlyArray<unknown>, Out extends ReadonlyArray<unknown>> {

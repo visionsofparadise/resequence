@@ -63,6 +63,7 @@ export class RandomPattern extends MidiPattern {
 				pitch,
 				durationTicks: stepDurationTicks,
 				velocity,
+				outputs: [],
 			});
 		}
 

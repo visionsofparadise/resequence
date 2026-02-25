@@ -7,6 +7,7 @@ export interface MidiNote {
 	readonly durationTicks: number;
 	readonly velocity: number;
 	readonly lyric?: string;
+	readonly cc?: Partial<Record<number, number>>;
 }
 
 export function encodeMidi(tracks: Map<string, ReadonlyArray<MidiNote>>, options: { ppq: number; tempo: number; timeSignature?: [number, number] }): Uint8Array {
@@ -47,6 +48,14 @@ function buildTrackEvents(name: string, notes: ReadonlyArray<MidiNote>): Array<M
 	for (const mn of notes) {
 		if (mn.lyric) {
 			timeEvents.push({ tick: mn.tick, event: { deltaTime: 0, type: "lyrics", text: mn.lyric, meta: true } });
+		}
+
+		if (mn.cc) {
+			for (const [ccKey, ccValue] of Object.entries(mn.cc)) {
+				if (ccValue !== undefined) {
+					timeEvents.push({ tick: mn.tick, event: { deltaTime: 0, type: "controller", channel: 0, controllerType: Number(ccKey), value: ccValue } });
+				}
+			}
 		}
 
 		timeEvents.push({ tick: mn.tick, event: { deltaTime: 0, type: "noteOn", channel: 0, noteNumber: mn.pitch, velocity: mn.velocity } });

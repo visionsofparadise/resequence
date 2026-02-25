@@ -19,6 +19,7 @@ export class NotePattern extends MidiPattern {
 		readonly duration: Duration,
 		readonly velocity: number,
 		readonly lyric?: string,
+		readonly cc?: Partial<Record<number, number>>,
 	) {
 		super();
 
@@ -27,7 +28,7 @@ export class NotePattern extends MidiPattern {
 		}
 
 		this.durationTicks = resolveDuration(duration);
-		this.notes = [{ tick: 0, pitch: resolvePitch(this.pitch), durationTicks: this.durationTicks, velocity: this.velocity, lyric: this.lyric }];
+		this.notes = [{ tick: 0, pitch: resolvePitch(this.pitch), durationTicks: this.durationTicks, velocity: this.velocity, lyric: this.lyric, cc: this.cc, outputs: [] }];
 	}
 
 	validate(context: ValidateContext): void {
@@ -52,6 +53,6 @@ export class NotePattern extends MidiPattern {
 	}
 }
 
-export function note(pitch: Pitch, duration: Duration, options?: { velocity?: number; lyric?: string }): NotePattern {
-	return new NotePattern(pitch, duration, options?.velocity ?? 100, options?.lyric);
+export function note(pitch: Pitch, duration: Duration, options?: { velocity?: number; lyric?: string; cc?: Partial<Record<number, number>> }): NotePattern {
+	return new NotePattern(pitch, duration, options?.velocity ?? 100, options?.lyric, options?.cc);
 }

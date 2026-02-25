@@ -41,6 +41,7 @@ export class DistributePattern extends MidiPattern {
 					tick: stepIndex * stepDuration,
 					pitch,
 					durationTicks: stepDuration,
+					outputs: [],
 				});
 			}
 		}

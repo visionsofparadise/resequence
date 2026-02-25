@@ -1,10 +1,4 @@
-import { LayerPattern } from "../patterns/layer";
-import { MetadataPattern } from "../patterns/metadata";
-import { NotePattern } from "../patterns/note";
-import type { Pattern, PositionedNote } from "../patterns/pattern";
-import { MidiPattern } from "../patterns/pattern";
-import { RepeatPattern } from "../patterns/repeat";
-import { SequencePattern } from "../patterns/sequence";
+import type { Pattern } from "../patterns/pattern";
 import { PPQ } from "../utils/duration";
 import type { MidiNote } from "./encode-midi";
 import { encodeMidi } from "./encode-midi";
@@ -23,8 +17,7 @@ export interface MidiRenderResult {
 
 export function renderMidi(pattern: Pattern, options?: MidiRenderOptions): MidiRenderResult {
 	const meta = extractMetadata(pattern);
-	const notes = collectMidi(pattern);
-	const grouped = groupByTrack(notes);
+	const grouped = groupByTrack(pattern);
 
 	const filteredNames = filterTrackNames([...grouped.keys()], options?.include, options?.exclude);
 	const tracks = new Map<string, Uint8Array>();
@@ -59,69 +52,29 @@ export function renderMidi(pattern: Pattern, options?: MidiRenderOptions): MidiR
 	return { tracks, master };
 }
 
-function collectMidi(pattern: Pattern, offsetTicks = 0, inheritedTrackName?: string): ReadonlyArray<PositionedNote> {
-	const ownTrack = pattern instanceof MidiPattern && pattern.outputs.length > 0 ? (pattern.outputs[0]?.id ?? undefined) : undefined;
-	const trackName = ownTrack ?? inheritedTrackName;
-
-	if (pattern instanceof NotePattern) {
-		if (!trackName) return [];
-		return [{ tick: offsetTicks, pitch: pattern.notes[0]?.pitch ?? 0, durationTicks: pattern.durationTicks, velocity: pattern.velocity, lyric: pattern.lyric, trackName }];
-	}
-
-	if (pattern instanceof SequencePattern) {
-		const results: Array<PositionedNote> = [];
-		let cursor = offsetTicks;
-		for (const child of pattern.children) {
-			results.push(...collectMidi(child, cursor, trackName));
-			cursor += child.durationTicks;
-		}
-		return results;
-	}
-
-	if (pattern instanceof LayerPattern) {
-		const results: Array<PositionedNote> = [];
-		for (const child of pattern.children) {
-			results.push(...collectMidi(child, offsetTicks, trackName));
-		}
-		return results;
-	}
-
-	if (pattern instanceof RepeatPattern) {
-		const results: Array<PositionedNote> = [];
-		for (let iteration = 0; iteration < pattern.count; iteration++) {
-			results.push(...collectMidi(pattern.child, offsetTicks + pattern.child.durationTicks * iteration, trackName));
-		}
-		return results;
-	}
-
-	if (pattern instanceof MetadataPattern) {
-		return collectMidi(pattern.child, offsetTicks, trackName);
-	}
-
-	// GapPattern, AudioPattern, AutomatePattern → no notes
-	return [];
-}
-
-function groupByTrack(notes: ReadonlyArray<PositionedNote>): Map<string, Array<MidiNote>> {
+function groupByTrack(pattern: Pattern): Map<string, Array<MidiNote>> {
 	const grouped = new Map<string, Array<MidiNote>>();
 
-	for (const pn of notes) {
-		if (!pn.trackName) continue;
+	for (const pn of pattern.notes) {
+		for (const outputId of pn.outputs) {
+			const trackName = outputId ?? "unknown";
 
-		let track = grouped.get(pn.trackName);
+			let track = grouped.get(trackName);
 
-		if (!track) {
-			track = [];
-			grouped.set(pn.trackName, track);
+			if (!track) {
+				track = [];
+				grouped.set(trackName, track);
+			}
+
+			track.push({
+				tick: pn.tick,
+				pitch: pn.pitch,
+				durationTicks: pn.durationTicks ?? 0,
+				velocity: pn.velocity ?? 100,
+				lyric: pn.lyric,
+				cc: pn.cc,
+			});
 		}
-
-		track.push({
-			tick: pn.tick,
-			pitch: pn.pitch,
-			durationTicks: pn.durationTicks ?? 0,
-			velocity: pn.velocity ?? 100,
-			lyric: pn.lyric,
-		});
 	}
 
 	return grouped;

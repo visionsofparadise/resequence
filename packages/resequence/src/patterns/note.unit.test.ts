@@ -56,5 +56,15 @@ describe("NotePattern", () => {
 			const result = note("C4", "4n", { lyric: "hello" }).notes;
 			expect(result[0]!.lyric).toBe("hello");
 		});
+
+		it("includes cc when set", () => {
+			const result = note("C4", "4n", { cc: { 7: 64, 10: 0 } }).notes;
+			expect(result[0]!.cc).toEqual({ 7: 64, 10: 0 });
+		});
+
+		it("cc is undefined when not set", () => {
+			const result = note("C4", "4n").notes;
+			expect(result[0]!.cc).toBeUndefined();
+		});
 	});
 });

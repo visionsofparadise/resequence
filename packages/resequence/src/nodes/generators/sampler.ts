@@ -1,5 +1,6 @@
 import { ResequenceError } from "../../error";
 import type { ScheduleContext } from "../../rendering/schedule-context";
+import { applyCC } from "../../rendering/schedule-notes";
 import type { Pitch } from "../../utils/pitch";
 import { resolvePitch } from "../../utils/pitch";
 import { Node } from "../node";
@@ -67,15 +68,18 @@ export class SamplerNode extends Node<Midi, MidiAudio> {
 		source.start(noteContext.startTime);
 		source.stop(noteContext.cleanupTime);
 
+		const { node: chainEnd, cleanup } = applyCC(source, noteContext.cc, noteContext, scheduleContext);
+
 		if (this.outputs.length === 0) {
-			source.connect(scheduleContext.audioContext.destination);
+			chainEnd.connect(scheduleContext.audioContext.destination);
 		} else {
 			for (const node of this.outputs) {
-				node.schedule(source, noteContext, scheduleContext);
+				node.schedule(chainEnd, noteContext, scheduleContext);
 			}
 		}
 
 		source.addEventListener("ended", () => {
+			cleanup();
 			source.disconnect();
 		});
 	}

@@ -1,7 +1,7 @@
 import type { ScheduleContext } from "../rendering/schedule-context";
 import { getOrCreateDriver } from "../rendering/schedule-context";
-import { Node } from "./node";
 import type { MidiAudio, NoteContext } from "./node";
+import { Node } from "./node";
 
 export interface EnvelopeAdsr {
 	readonly attack?: number;
@@ -42,6 +42,8 @@ export class EnvelopeNode extends Node<MidiAudio, MidiAudio> {
 		driver.offset.linearRampToValueAtTime(sustain, startTime + attack + hold + decay);
 		driver.offset.setValueAtTime(sustain, stopTime);
 		driver.offset.linearRampToValueAtTime(0, stopTime + release);
+
+		// TODO: envelopes may need to extend targets stop times
 
 		for (const node of this.outputs) node.prepare(note, context);
 	}
