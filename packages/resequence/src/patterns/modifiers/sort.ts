@@ -1,5 +1,7 @@
 import type { ScheduleContext } from "../../rendering/schedule-context";
 import { isInScope, prepareNotes, scheduleNotes } from "../../rendering/schedule-notes";
+import { pitchKey } from "../../utils/pitch";
+import type { Pitch } from "../../utils/pitch";
 import type { ValidateContext } from "../../validate";
 import type { Pattern, PositionedNote } from "../pattern";
 import { MidiPattern } from "../pattern";
@@ -8,7 +10,7 @@ export type SortKey = "asc" | "desc" | ((noteA: PositionedNote, noteB: Positione
 
 export class SortPattern extends MidiPattern {
 	readonly type = "sort" as const;
-	readonly durationTicks: number;
+	readonly durationBeats: number;
 	readonly notes: ReadonlyArray<PositionedNote>;
 
 	constructor(
@@ -17,13 +19,13 @@ export class SortPattern extends MidiPattern {
 	) {
 		super();
 
-		this.durationTicks = child.durationTicks;
+		this.durationBeats = child.durationBeats;
 
 		// Notes ordered by tick — these define the timing slots
-		const byTick = child.notes.slice().sort((noteA, noteB) => noteA.tick - noteB.tick);
+		const byTick = child.notes.slice().sort((noteA, noteB) => noteA.beat - noteB.beat);
 
 		// Pitches in sorted order, to assign into the timing slots
-		let pitches: Array<number>;
+		let pitches: Array<Pitch>;
 
 		if (typeof key === "function") {
 			pitches = child.notes
@@ -31,9 +33,9 @@ export class SortPattern extends MidiPattern {
 				.sort(key)
 				.map((positionedNote) => positionedNote.pitch);
 		} else if (key === "desc") {
-			pitches = byTick.map((positionedNote) => positionedNote.pitch).sort((pitchA, pitchB) => pitchB - pitchA);
+			pitches = byTick.map((positionedNote) => positionedNote.pitch).sort((pitchA, pitchB) => pitchKey(pitchB) - pitchKey(pitchA));
 		} else {
-			pitches = byTick.map((positionedNote) => positionedNote.pitch).sort((pitchA, pitchB) => pitchA - pitchB);
+			pitches = byTick.map((positionedNote) => positionedNote.pitch).sort((pitchA, pitchB) => pitchKey(pitchA) - pitchKey(pitchB));
 		}
 
 		this.notes = byTick.map((positionedNote, noteIndex) => ({
@@ -48,18 +50,18 @@ export class SortPattern extends MidiPattern {
 		this.child.validate(childContext);
 	}
 
-	prepare(offsetTicks: number, context: ScheduleContext): void {
-		if (!isInScope(offsetTicks, this.durationTicks, context)) return;
-		prepareNotes(this.notes, offsetTicks, this.outputs, context);
+	prepare(offsetBeats: number, context: ScheduleContext): void {
+		if (!isInScope(offsetBeats, this.durationBeats, context)) return;
+		prepareNotes(this.notes, offsetBeats, this.outputs, context);
 
-		this.child.prepare(offsetTicks, context);
+		this.child.prepare(offsetBeats, context);
 	}
 
-	schedule(offsetTicks: number, context: ScheduleContext): void {
-		if (!isInScope(offsetTicks, this.durationTicks, context)) return;
-		scheduleNotes(this.notes, offsetTicks, this.outputs, context);
+	schedule(offsetBeats: number, context: ScheduleContext): void {
+		if (!isInScope(offsetBeats, this.durationBeats, context)) return;
+		scheduleNotes(this.notes, offsetBeats, this.outputs, context);
 
-		this.child.schedule(offsetTicks, context);
+		this.child.schedule(offsetBeats, context);
 	}
 }
 

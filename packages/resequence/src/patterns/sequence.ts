@@ -6,13 +6,13 @@ import { MidiPattern } from "./pattern";
 
 export class SequencePattern extends MidiPattern {
 	readonly type = "sequence" as const;
-	readonly durationTicks: number;
+	readonly durationBeats: number;
 	readonly notes: ReadonlyArray<PositionedNote>;
 
 	constructor(readonly children: ReadonlyArray<Pattern>) {
 		super();
 
-		this.durationTicks = children.reduce((sum, child) => sum + child.durationTicks, 0);
+		this.durationBeats = children.reduce((sum, child) => sum + child.durationBeats, 0);
 
 		const notes: Array<PositionedNote> = [];
 
@@ -20,10 +20,10 @@ export class SequencePattern extends MidiPattern {
 
 		for (const child of children) {
 			for (const childNote of child.notes) {
-				notes.push({ ...childNote, tick: childNote.tick + cursor });
+				notes.push({ ...childNote, beat: childNote.beat + cursor });
 			}
 
-			cursor += child.durationTicks;
+			cursor += child.durationBeats;
 		}
 
 		this.notes = notes;
@@ -47,29 +47,29 @@ export class SequencePattern extends MidiPattern {
 		}
 	}
 
-	prepare(offsetTicks: number, context: ScheduleContext): void {
-		if (!isInScope(offsetTicks, this.durationTicks, context)) return;
+	prepare(offsetBeats: number, context: ScheduleContext): void {
+		if (!isInScope(offsetBeats, this.durationBeats, context)) return;
 
-		prepareNotes(this.notes, offsetTicks, this.outputs, context);
+		prepareNotes(this.notes, offsetBeats, this.outputs, context);
 
-		let cursor = offsetTicks;
+		let cursor = offsetBeats;
 
 		for (const child of this.children) {
 			child.prepare(cursor, context);
-			cursor += child.durationTicks;
+			cursor += child.durationBeats;
 		}
 	}
 
-	schedule(offsetTicks: number, context: ScheduleContext): void {
-		if (!isInScope(offsetTicks, this.durationTicks, context)) return;
+	schedule(offsetBeats: number, context: ScheduleContext): void {
+		if (!isInScope(offsetBeats, this.durationBeats, context)) return;
 
-		scheduleNotes(this.notes, offsetTicks, this.outputs, context);
+		scheduleNotes(this.notes, offsetBeats, this.outputs, context);
 
-		let cursor = offsetTicks;
+		let cursor = offsetBeats;
 
 		for (const child of this.children) {
 			child.schedule(cursor, context);
-			cursor += child.durationTicks;
+			cursor += child.durationBeats;
 		}
 	}
 

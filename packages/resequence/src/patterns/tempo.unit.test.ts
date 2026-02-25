@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ResequenceError } from "../error";
+import { resolvePitch } from "../utils/pitch";
 import { note } from "./note";
 import { sequence } from "./sequence";
 import { tempo, TempoPattern } from "./tempo";
@@ -17,18 +18,18 @@ describe("TempoPattern", () => {
 		expect(() => tempo(note("C4", "4n"), -10)).toThrow("bpm must be greater than 0");
 	});
 
-	it("delegates durationTicks to child", () => {
+	it("delegates durationBeats to child", () => {
 		const t = tempo(note("C4", "4n"), 120);
-		expect(t.durationTicks).toBe(480);
+		expect(t.durationBeats).toBe(1);
 	});
 
 	it("delegates sequence duration", () => {
 		const t = tempo(sequence(note("C4", "4n"), note("E4", "4n")), 120);
-		expect(t.durationTicks).toBe(960);
+		expect(t.durationBeats).toBe(2);
 	});
 
 	it("delegates notes to child", () => {
 		const t = tempo(note("C4", "4n"), 120);
-		expect(t.notes).toMatchObject([{ tick: 0, pitch: 60 }]);
+		expect(t.notes).toMatchObject([{ beat: 0, pitch: resolvePitch("C4") }]);
 	});
 });

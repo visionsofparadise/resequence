@@ -58,9 +58,9 @@ describe("LevelPattern", () => {
 		});
 	});
 
-	describe("durationTicks", () => {
+	describe("durationBeats", () => {
 		it("preserves child duration", () => {
-			expect(level(note("C4", "4n"), { velocity: 64 }).durationTicks).toBe(480);
+			expect(level(note("C4", "4n"), { velocity: 64 }).durationBeats).toBe(1);
 		});
 	});
 

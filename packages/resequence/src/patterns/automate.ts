@@ -1,6 +1,6 @@
 import { ResequenceError } from "../error";
 import type { ScheduleContext } from "../rendering/schedule-context";
-import { ticksToSeconds } from "../rendering/tempo-map";
+import { beatsToSeconds } from "../rendering/tempo-map";
 import type { Duration } from "../utils/duration";
 import { resolveDuration } from "../utils/duration";
 import type { Lfo } from "../utils/lfo";
@@ -26,15 +26,15 @@ export type AnyKeyframe = Keyframe | CurveKeyframe;
 
 interface ResolvedKeyframe {
 	readonly kind: "point";
-	readonly timeTicks: number;
+	readonly timeBeats: number;
 	readonly value: number;
 	readonly curve?: KeyframeCurve;
 }
 
 interface ResolvedCurveKeyframe {
 	readonly kind: "curve";
-	readonly timeTicks: number;
-	readonly durationTicks: number;
+	readonly timeBeats: number;
+	readonly durationBeats: number;
 	readonly values: Float32Array;
 }
 
@@ -44,15 +44,15 @@ function resolveKeyframe(keyframe: AnyKeyframe): AnyResolvedKeyframe {
 	if ("values" in keyframe) {
 		return {
 			kind: "curve",
-			timeTicks: resolveDuration(keyframe.time),
-			durationTicks: resolveDuration(keyframe.duration),
+			timeBeats: resolveDuration(keyframe.time),
+			durationBeats: resolveDuration(keyframe.duration),
 			values: keyframe.values,
 		};
 	}
 
 	return {
 		kind: "point",
-		timeTicks: resolveDuration(keyframe.time),
+		timeBeats: resolveDuration(keyframe.time),
 		value: keyframe.value,
 		curve: keyframe.curve,
 	};
@@ -60,7 +60,7 @@ function resolveKeyframe(keyframe: AnyKeyframe): AnyResolvedKeyframe {
 
 export class AutomatePattern implements Pattern {
 	readonly type = "automate" as const;
-	readonly durationTicks: number;
+	readonly durationBeats: number;
 	readonly notes: ReadonlyArray<PositionedNote> = [];
 	readonly paths: ReadonlyArray<string>;
 	readonly source: ReadonlyArray<AnyResolvedKeyframe> | Lfo;
@@ -82,10 +82,10 @@ export class AutomatePattern implements Pattern {
 			const resolved = keyframes.map(resolveKeyframe);
 
 			this.source = resolved;
-			this.durationTicks = Math.max(...resolved.map((point) => point.timeTicks));
+			this.durationBeats = Math.max(...resolved.map((point) => point.timeBeats));
 		} else {
 			this.source = source as Lfo;
-			this.durationTicks = 0;
+			this.durationBeats = 0;
 		}
 
 		for (const path of this.paths) {
@@ -116,10 +116,10 @@ export class AutomatePattern implements Pattern {
 				const keyframes = this.source as ReadonlyArray<AnyResolvedKeyframe>;
 
 				for (const keyframe of keyframes) {
-					const timeSeconds = ticksToSeconds(keyframe.timeTicks, context.tempoMap);
+					const timeSeconds = beatsToSeconds(keyframe.timeBeats, context.tempoMap);
 
 					if (keyframe.kind === "curve") {
-						const durationSeconds = ticksToSeconds(keyframe.durationTicks, context.tempoMap);
+						const durationSeconds = beatsToSeconds(keyframe.durationBeats, context.tempoMap);
 						constant.offset.setValueCurveAtTime(keyframe.values, timeSeconds, durationSeconds);
 					} else {
 						const curve = keyframe.curve ?? "step";
@@ -144,11 +144,11 @@ export class AutomatePattern implements Pattern {
 		}
 	}
 
-	prepare(_offsetTicks: number, _context: ScheduleContext): void {
+	prepare(_offsetBeats: number, _context: ScheduleContext): void {
 		return;
 	}
 
-	schedule(_offsetTicks: number, _context: ScheduleContext): void {
+	schedule(_offsetBeats: number, _context: ScheduleContext): void {
 		return;
 	}
 

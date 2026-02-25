@@ -64,7 +64,7 @@ function applyProp(originalValues: ReadonlyArray<number>, spec: LevelProp): Arra
 
 export class LevelPattern extends MidiPattern {
 	readonly type = "level" as const;
-	readonly durationTicks: number;
+	readonly durationBeats: number;
 	readonly notes: ReadonlyArray<PositionedNote>;
 
 	constructor(
@@ -73,7 +73,7 @@ export class LevelPattern extends MidiPattern {
 	) {
 		super();
 
-		this.durationTicks = child.durationTicks;
+		this.durationBeats = child.durationBeats;
 
 		let notes = child.notes.slice();
 
@@ -112,16 +112,16 @@ export class LevelPattern extends MidiPattern {
 		this.child.validate(childContext);
 	}
 
-	prepare(offsetTicks: number, context: ScheduleContext): void {
-		if (!isInScope(offsetTicks, this.durationTicks, context)) return;
-		prepareNotes(this.notes, offsetTicks, this.outputs, context);
-		this.child.prepare(offsetTicks, context);
+	prepare(offsetBeats: number, context: ScheduleContext): void {
+		if (!isInScope(offsetBeats, this.durationBeats, context)) return;
+		prepareNotes(this.notes, offsetBeats, this.outputs, context);
+		this.child.prepare(offsetBeats, context);
 	}
 
-	schedule(offsetTicks: number, context: ScheduleContext): void {
-		if (!isInScope(offsetTicks, this.durationTicks, context)) return;
-		scheduleNotes(this.notes, offsetTicks, this.outputs, context);
-		this.child.schedule(offsetTicks, context);
+	schedule(offsetBeats: number, context: ScheduleContext): void {
+		if (!isInScope(offsetBeats, this.durationBeats, context)) return;
+		scheduleNotes(this.notes, offsetBeats, this.outputs, context);
+		this.child.schedule(offsetBeats, context);
 	}
 }
 

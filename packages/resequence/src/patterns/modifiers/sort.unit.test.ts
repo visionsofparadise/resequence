@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { pitchKey, resolvePitch } from "../../utils/pitch";
 import { note } from "../note";
 import { sequence } from "../sequence";
 import { SortPattern, sort } from "./sort";
@@ -6,45 +7,45 @@ import { SortPattern, sort } from "./sort";
 describe("SortPattern", () => {
 	describe("notes", () => {
 		it("sorts pitches ascending by default", () => {
-			// notes at ticks 0, 480, 960 with pitches E4, C4, G4
+			// notes at beats 0, 1, 2 with pitches E4, C4, G4
 			const pat = sort(
 				sequence(note("E4", "4n"), note("C4", "4n"), note("G4", "4n")),
 			);
-			// pitches sorted asc: [60, 64, 67], assigned to ticks [0, 480, 960]
-			expect(pat.notes[0]!.pitch).toBe(60); // C4
-			expect(pat.notes[1]!.pitch).toBe(64); // E4
-			expect(pat.notes[2]!.pitch).toBe(67); // G4
+			// pitches sorted asc: [C4, E4, G4], assigned to beats [0, 1, 2]
+			expect(pat.notes[0]!.pitch).toEqual(resolvePitch("C4"));
+			expect(pat.notes[1]!.pitch).toEqual(resolvePitch("E4"));
+			expect(pat.notes[2]!.pitch).toEqual(resolvePitch("G4"));
 		});
 
-		it("preserves tick positions", () => {
+		it("preserves beat positions", () => {
 			const pat = sort(sequence(note("E4", "4n"), note("C4", "4n"), note("G4", "4n")));
-			expect(pat.notes[0]!.tick).toBe(0);
-			expect(pat.notes[1]!.tick).toBe(480);
-			expect(pat.notes[2]!.tick).toBe(960);
+			expect(pat.notes[0]!.beat).toBe(0);
+			expect(pat.notes[1]!.beat).toBe(1);
+			expect(pat.notes[2]!.beat).toBe(2);
 		});
 
 		it("sorts pitches descending when key is desc", () => {
 			const pat = sort(sequence(note("C4", "4n"), note("E4", "4n"), note("G4", "4n")), "desc");
-			expect(pat.notes[0]!.pitch).toBe(67); // G4
-			expect(pat.notes[1]!.pitch).toBe(64); // E4
-			expect(pat.notes[2]!.pitch).toBe(60); // C4
+			expect(pat.notes[0]!.pitch).toEqual(resolvePitch("G4"));
+			expect(pat.notes[1]!.pitch).toEqual(resolvePitch("E4"));
+			expect(pat.notes[2]!.pitch).toEqual(resolvePitch("C4"));
 		});
 
 		it("accepts a custom comparator", () => {
 			// Sort by descending pitch (same as "desc")
 			const pat = sort(
 				sequence(note("C4", "4n"), note("E4", "4n"), note("G4", "4n")),
-				(noteA, noteB) => noteB.pitch - noteA.pitch,
+				(noteA, noteB) => pitchKey(noteB.pitch) - pitchKey(noteA.pitch),
 			);
-			expect(pat.notes[0]!.pitch).toBe(67); // G4
-			expect(pat.notes[1]!.pitch).toBe(64); // E4
-			expect(pat.notes[2]!.pitch).toBe(60); // C4
+			expect(pat.notes[0]!.pitch).toEqual(resolvePitch("G4"));
+			expect(pat.notes[1]!.pitch).toEqual(resolvePitch("E4"));
+			expect(pat.notes[2]!.pitch).toEqual(resolvePitch("C4"));
 		});
 	});
 
-	describe("durationTicks", () => {
+	describe("durationBeats", () => {
 		it("preserves child duration", () => {
-			expect(sort(sequence(note("C4", "4n"), note("E4", "4n"))).durationTicks).toBe(960);
+			expect(sort(sequence(note("C4", "4n"), note("E4", "4n"))).durationBeats).toBe(2);
 		});
 	});
 

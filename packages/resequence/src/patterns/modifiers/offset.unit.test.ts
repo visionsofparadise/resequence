@@ -1,37 +1,38 @@
 import { describe, expect, it } from "vitest";
+import { resolvePitch } from "../../utils/pitch";
 import { note } from "../note";
 import { sequence } from "../sequence";
 import { OffsetPattern, offset } from "./offset";
 
 describe("OffsetPattern", () => {
 	describe("notes", () => {
-		it("shifts all tick positions by positive amount", () => {
-			const pat = offset(sequence(note("C4", "4n"), note("E4", "4n")), 120);
+		it("shifts all beat positions by positive amount", () => {
+			const pat = offset(sequence(note("C4", "4n"), note("E4", "4n")), "16n");
 			expect(pat.notes).toMatchObject([
-				{ tick: 120, pitch: 60 },
-				{ tick: 600, pitch: 64 },
+				{ beat: 0.25, pitch: resolvePitch("C4") },
+				{ beat: 1.25, pitch: resolvePitch("E4") },
 			]);
 		});
 
 		it("shifts by negative amount", () => {
-			const pat = offset(sequence(note("C4", "4n"), note("E4", "4n")), -120);
-			expect(pat.notes[1]?.tick).toBe(360);
+			const pat = offset(sequence(note("C4", "4n"), note("E4", "4n")), -0.25);
+			expect(pat.notes[1]?.beat).toBe(0.75);
 		});
 
-		it("clamps negative-shifted notes to tick 0", () => {
-			const pat = offset(note("C4", "4n"), -960);
-			expect(pat.notes[0]?.tick).toBe(0);
+		it("clamps negative-shifted notes to beat 0", () => {
+			const pat = offset(note("C4", "4n"), -2);
+			expect(pat.notes[0]?.beat).toBe(0);
 		});
 
 		it("accepts Duration string", () => {
 			const pat = offset(note("C4", "4n"), "8n");
-			expect(pat.notes[0]?.tick).toBe(240);
+			expect(pat.notes[0]?.beat).toBe(0.5);
 		});
 	});
 
-	describe("durationTicks", () => {
+	describe("durationBeats", () => {
 		it("preserves child duration", () => {
-			expect(offset(note("C4", "2n"), 120).durationTicks).toBe(960);
+			expect(offset(note("C4", "2n"), "8n").durationBeats).toBe(2);
 		});
 	});
 

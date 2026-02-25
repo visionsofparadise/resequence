@@ -21,11 +21,11 @@ describe("AudioPattern", () => {
 		});
 
 		it("has 0 duration when no explicit duration", () => {
-			expect(audio("break", "./break.wav").durationTicks).toBe(0);
+			expect(audio("break", "./break.wav").durationBeats).toBe(0);
 		});
 
 		it("resolves explicit duration", () => {
-			expect(audio("break", "./break.wav", "4n").durationTicks).toBe(480);
+			expect(audio("break", "./break.wav", "4n").durationBeats).toBe(1);
 		});
 	});
 

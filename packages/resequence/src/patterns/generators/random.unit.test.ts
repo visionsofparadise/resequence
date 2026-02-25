@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { resolvePitch } from "../../utils/pitch";
 import { RandomPattern, random } from "./random";
 
 describe("RandomPattern", () => {
@@ -11,16 +12,17 @@ describe("RandomPattern", () => {
 		it("draws pitches from the given pool", () => {
 			const pitches = [60, 64, 67]; // C4, E4, G4
 			const pat = random({ pitches, count: 16, stepDuration: "8n", seed: 42 });
+			const resolvedPitches = pitches.map(resolvePitch);
 			for (const positionedNote of pat.notes) {
-				expect(pitches).toContain(positionedNote.pitch);
+				expect(resolvedPitches).toContainEqual(positionedNote.pitch);
 			}
 		});
 
-		it("places notes at sequential step ticks", () => {
+		it("places notes at sequential step beats", () => {
 			const pat = random({ pitches: [60], count: 3, stepDuration: 240, seed: 1 });
-			expect(pat.notes[0]!.tick).toBe(0);
-			expect(pat.notes[1]!.tick).toBe(240);
-			expect(pat.notes[2]!.tick).toBe(480);
+			expect(pat.notes[0]!.beat).toBe(0);
+			expect(pat.notes[1]!.beat).toBe(240);
+			expect(pat.notes[2]!.beat).toBe(480);
 		});
 
 		it("produces deterministic output with a seed", () => {
@@ -46,9 +48,9 @@ describe("RandomPattern", () => {
 		});
 	});
 
-	describe("durationTicks", () => {
+	describe("durationBeats", () => {
 		it("equals count × stepDuration", () => {
-			expect(random({ pitches: [60], count: 4, stepDuration: "4n", seed: 1 }).durationTicks).toBe(1920);
+			expect(random({ pitches: [60], count: 4, stepDuration: "4n", seed: 1 }).durationBeats).toBe(4);
 		});
 	});
 

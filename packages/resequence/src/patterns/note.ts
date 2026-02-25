@@ -11,11 +11,11 @@ import { MidiPattern } from "./pattern";
 
 export class NotePattern extends MidiPattern {
 	readonly type = "note" as const;
-	readonly durationTicks: number;
+	readonly durationBeats: number;
 	readonly notes: ReadonlyArray<PositionedNote>;
 
 	constructor(
-		readonly pitch: Pitch,
+		readonly pitch: string | number | Pitch,
 		readonly duration: Duration,
 		readonly velocity: number,
 		readonly lyric?: string,
@@ -27,32 +27,32 @@ export class NotePattern extends MidiPattern {
 			throw new ResequenceError("INVALID_VELOCITY", `note(): velocity must be 0-127, got ${velocity}`);
 		}
 
-		this.durationTicks = resolveDuration(duration);
-		this.notes = [{ tick: 0, pitch: resolvePitch(this.pitch), durationTicks: this.durationTicks, velocity: this.velocity, lyric: this.lyric, cc: this.cc, outputs: [] }];
+		this.durationBeats = resolveDuration(duration);
+		this.notes = [{ beat: 0, pitch: resolvePitch(this.pitch), durationBeats: this.durationBeats, velocity: this.velocity, lyric: this.lyric, cc: this.cc, outputs: [] }];
 	}
 
 	validate(context: ValidateContext): void {
 		if (!context.insideRoute && this.outputs.length === 0) {
 			context.warnings.push({
 				code: "ORPHANED_NOTES",
-				message: `Note '${this.pitch}' is not routed to any instrument — it won't produce sound`,
+				message: `Note '${typeof this.pitch === "object" ? `${this.pitch.class}/${this.pitch.stepsPerOctave}:${this.pitch.octave}` : String(this.pitch)}' is not routed to any instrument — it won't produce sound`,
 			});
 		}
 	}
 
-	prepare(offsetTicks: number, context: ScheduleContext): void {
-		if (!isInScope(offsetTicks, this.durationTicks, context)) return;
+	prepare(offsetBeats: number, context: ScheduleContext): void {
+		if (!isInScope(offsetBeats, this.durationBeats, context)) return;
 
-		prepareNotes(this.notes, offsetTicks, this.outputs, context);
+		prepareNotes(this.notes, offsetBeats, this.outputs, context);
 	}
 
-	schedule(offsetTicks: number, context: ScheduleContext): void {
-		if (!isInScope(offsetTicks, this.durationTicks, context)) return;
+	schedule(offsetBeats: number, context: ScheduleContext): void {
+		if (!isInScope(offsetBeats, this.durationBeats, context)) return;
 
-		scheduleNotes(this.notes, offsetTicks, this.outputs, context);
+		scheduleNotes(this.notes, offsetBeats, this.outputs, context);
 	}
 }
 
-export function note(pitch: Pitch, duration: Duration, options?: { velocity?: number; lyric?: string; cc?: Partial<Record<number, number>> }): NotePattern {
+export function note(pitch: string | number | Pitch, duration: Duration, options?: { velocity?: number; lyric?: string; cc?: Partial<Record<number, number>> }): NotePattern {
 	return new NotePattern(pitch, duration, options?.velocity ?? 100, options?.lyric, options?.cc);
 }

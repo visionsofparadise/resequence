@@ -40,5 +40,5 @@ function walk(pattern: Pattern, routing: Map<string, RoutingEntry>): void {
 }
 
 function isPattern(value: unknown): value is Pattern {
-	return typeof value === "object" && value !== null && "type" in value && "durationTicks" in value;
+	return typeof value === "object" && value !== null && "type" in value && "durationBeats" in value;
 }

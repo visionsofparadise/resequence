@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ResequenceError } from "../error";
+import { resolvePitch } from "../utils/pitch";
 import { note } from "./note";
 
 describe("NotePattern", () => {
@@ -23,32 +24,32 @@ describe("NotePattern", () => {
 		});
 	});
 
-	describe("durationTicks", () => {
-		it("resolves string duration to ticks", () => {
-			expect(note("C4", "4n").durationTicks).toBe(480);
+	describe("durationBeats", () => {
+		it("resolves string duration to beats", () => {
+			expect(note("C4", "4n").durationBeats).toBe(1);
 		});
 
 		it("resolves numeric duration as-is", () => {
-			expect(note("C4", 240).durationTicks).toBe(240);
+			expect(note("C4", 0.5).durationBeats).toBe(0.5);
 		});
 
 		it("resolves dotted duration", () => {
-			expect(note("C4", "4n.").durationTicks).toBe(720);
+			expect(note("C4", "4n.").durationBeats).toBe(1.5);
 		});
 	});
 
 	describe("notes", () => {
 		it("returns position and pitch", () => {
-			expect(note("C4", "4n").notes).toMatchObject([{ tick: 0, pitch: 60 }]);
+			expect(note("C4", "4n").notes).toMatchObject([{ beat: 0, pitch: resolvePitch("C4") }]);
 		});
 
 		it("handles numeric pitch", () => {
-			expect(note(60, "4n").notes).toMatchObject([{ tick: 0, pitch: 60 }]);
+			expect(note(60, "4n").notes).toMatchObject([{ beat: 0, pitch: resolvePitch(60) }]);
 		});
 
-		it("includes durationTicks and velocity", () => {
+		it("includes durationBeats and velocity", () => {
 			const result = note("C4", "4n", { velocity: 80 }).notes;
-			expect(result[0]!.durationTicks).toBe(480);
+			expect(result[0]!.durationBeats).toBe(1);
 			expect(result[0]!.velocity).toBe(80);
 		});
 

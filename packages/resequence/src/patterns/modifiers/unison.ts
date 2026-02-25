@@ -1,5 +1,6 @@
 import type { ScheduleContext } from "../../rendering/schedule-context";
 import { isInScope, prepareNotes, scheduleNotes } from "../../rendering/schedule-notes";
+import { addSteps } from "../../utils/pitch";
 import type { ValidateContext } from "../../validate";
 import type { Pattern, PositionedNote } from "../pattern";
 import { MidiPattern } from "../pattern";
@@ -11,7 +12,7 @@ export interface UnisonSpread {
 
 export class UnisonPattern extends MidiPattern {
 	readonly type = "unison" as const;
-	readonly durationTicks: number;
+	readonly durationBeats: number;
 	readonly notes: ReadonlyArray<PositionedNote>;
 
 	constructor(
@@ -21,16 +22,16 @@ export class UnisonPattern extends MidiPattern {
 	) {
 		super();
 
-		this.durationTicks = child.durationTicks;
+		this.durationBeats = child.durationBeats;
 
 		const result: Array<PositionedNote> = [];
 
 		for (const positionedNote of child.notes) {
 			for (let voiceIndex = 0; voiceIndex < voices; voiceIndex++) {
-				const offset = (voiceIndex - (voices - 1) / 2) * (spread.pitch ?? 0);
+				const offset = Math.round((voiceIndex - (voices - 1) / 2) * (spread.pitch ?? 0));
 				const voiceNote: PositionedNote = {
 					...positionedNote,
-					pitch: Math.round(positionedNote.pitch + offset),
+					pitch: addSteps(positionedNote.pitch, offset),
 				};
 
 				if (spread.cc) {
@@ -59,20 +60,20 @@ export class UnisonPattern extends MidiPattern {
 		this.child.validate(childContext);
 	}
 
-	prepare(offsetTicks: number, context: ScheduleContext): void {
-		if (!isInScope(offsetTicks, this.durationTicks, context)) return;
+	prepare(offsetBeats: number, context: ScheduleContext): void {
+		if (!isInScope(offsetBeats, this.durationBeats, context)) return;
 
-		prepareNotes(this.notes, offsetTicks, this.outputs, context);
+		prepareNotes(this.notes, offsetBeats, this.outputs, context);
 
-		this.child.prepare(offsetTicks, context);
+		this.child.prepare(offsetBeats, context);
 	}
 
-	schedule(offsetTicks: number, context: ScheduleContext): void {
-		if (!isInScope(offsetTicks, this.durationTicks, context)) return;
+	schedule(offsetBeats: number, context: ScheduleContext): void {
+		if (!isInScope(offsetBeats, this.durationBeats, context)) return;
 
-		scheduleNotes(this.notes, offsetTicks, this.outputs, context);
+		scheduleNotes(this.notes, offsetBeats, this.outputs, context);
 
-		this.child.schedule(offsetTicks, context);
+		this.child.schedule(offsetBeats, context);
 	}
 }
 

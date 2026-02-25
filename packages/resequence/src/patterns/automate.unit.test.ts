@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { ResequenceError } from "../error";
 import type { ScheduleContext } from "../rendering/schedule-context";
-import { bars, beats } from "../utils/duration";
+import { bars } from "../utils/duration";
 import { resolveLfo } from "../utils/lfo";
 import { automate } from "./automate";
 import { layer } from "./layer";
@@ -48,8 +48,8 @@ function mockContext(driverMap = new Map<string, ConstantSourceNode>()): Schedul
 		nodeMap: new Map(),
 		driverMap,
 		tempo: 120,
-		fromTicks: 0,
-		toTicks: Infinity,
+		fromBeats: 0,
+		toBeats: Infinity,
 	};
 }
 
@@ -58,7 +58,7 @@ describe("AutomatePattern", () => {
 		it("creates with name and single path", () => {
 			const auto = automate("filter-sweep", "bass.hp.frequency", [
 				{ time: 0, value: 80 },
-				{ time: beats(4), value: 2000, curve: "linear" },
+				{ time: 4, value: 2000, curve: "linear" },
 			]);
 			expect(auto.type).toBe("automate");
 			expect(auto.name).toBe("filter-sweep");
@@ -78,14 +78,14 @@ describe("AutomatePattern", () => {
 		});
 	});
 
-	describe("durationTicks", () => {
+	describe("durationBeats", () => {
 		it("derives from last envelope point", () => {
 			const auto = automate("sweep", "bass.hp.frequency", [
 				{ time: 0, value: 80 },
-				{ time: beats(4), value: 2000 },
+				{ time: 4, value: 2000 },
 				{ time: bars(2), value: 80 },
 			]);
-			expect(auto.durationTicks).toBe(bars(2));
+			expect(auto.durationBeats).toBe(bars(2));
 		});
 
 		it("rejects empty envelope", () => {
@@ -95,23 +95,23 @@ describe("AutomatePattern", () => {
 	});
 
 	describe("envelope resolution", () => {
-		it("resolves Duration strings to ticks", () => {
+		it("resolves Duration strings to beats", () => {
 			const auto = automate("test", "bass.vol.level", [{ time: "4n", value: 0.5 }]);
-			expect(auto.envelope[0].timeTicks).toBe(480);
+			expect(auto.envelope[0].timeBeats).toBe(1);
 		});
 
-		it("resolves bars() and beats() to ticks", () => {
+		it("resolves bars() to beats", () => {
 			const auto = automate("test", "bass.vol.level", [
-				{ time: beats(2), value: 0.5 },
+				{ time: 2, value: 0.5 },
 				{ time: bars(1), value: 1.0 },
 			]);
-			expect(auto.envelope[0].timeTicks).toBe(960);
-			expect(auto.envelope[1].timeTicks).toBe(1920);
+			expect(auto.envelope[0].timeBeats).toBe(2);
+			expect(auto.envelope[1].timeBeats).toBe(4);
 		});
 
-		it("passes raw tick numbers through", () => {
+		it("passes raw numbers through as beats", () => {
 			const auto = automate("test", "bass.vol.level", [{ time: 100, value: 0.5 }]);
-			expect(auto.envelope[0].timeTicks).toBe(100);
+			expect(auto.envelope[0].timeBeats).toBe(100);
 		});
 
 		it("preserves curve types", () => {
@@ -147,7 +147,7 @@ describe("AutomatePattern", () => {
 				{ time: "4n", value: 2000 },
 			]);
 			const combined = layer(note("C4", "4n"), auto);
-			expect(combined.durationTicks).toBe(480);
+			expect(combined.durationBeats).toBe(1);
 		});
 	});
 
@@ -164,10 +164,10 @@ describe("AutomatePattern", () => {
 			expect(auto.source).toBe(lfo);
 		});
 
-		it("durationTicks is 0 for Lfo source", () => {
+		it("durationBeats is 0 for Lfo source", () => {
 			const lfo = resolveLfo({ shape: "sine", frequency: 2, value: 500 });
 			const auto = automate("filter-lfo", "bass.hp.frequency", lfo);
-			expect(auto.durationTicks).toBe(0);
+			expect(auto.durationBeats).toBe(0);
 		});
 
 		it("envelope getter returns empty for Lfo source", () => {

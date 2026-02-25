@@ -1,9 +1,13 @@
 import { describe, expect, it } from 'vitest'
+import { pitchToMidi } from '../utils/pitch'
 import { chord } from './chord'
-import type { NotePattern } from './patterns/note'
+import type { NotePattern } from './note'
 
 function pitches(result: ReturnType<typeof chord>): ReadonlyArray<number | string> {
-  return result.children.map((n) => (n as NotePattern).pitch)
+  return result.children.map((n) => {
+    const p = (n as NotePattern).pitch
+    return typeof p === 'object' ? pitchToMidi(p).note : p
+  })
 }
 
 describe('chord', () => {

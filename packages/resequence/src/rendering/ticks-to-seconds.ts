@@ -1,1 +1,1 @@
-export { ticksToSeconds } from "./tempo-map";
+export { beatsToSeconds } from "./tempo-map";

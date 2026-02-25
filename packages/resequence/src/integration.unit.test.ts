@@ -5,9 +5,10 @@ import {
   gain, pan, highpass, compressor,
   env, EnvNode,
   audio, metadata, automate,
-  bars, beats,
-  chord,
+  bars,
+  N, Chromatic,
   trigger, sidechain, formula, invert, resolveLfo,
+  pitchToMidi,
   MetadataPattern, AutomatePattern, AudioPattern,
 } from './index'
 
@@ -40,7 +41,7 @@ describe('integration', () => {
   it('routes pattern to instrument with .route()', () => {
     const kickPattern = repeat(note('C1', '4n'), 4)
     const kickPart = kickPattern.route(drums)
-    expect(kickPart.durationTicks).toBe(480 * 4)
+    expect(kickPart.durationBeats).toBe(4)
   })
 
   it('composes full arrangement', () => {
@@ -51,8 +52,8 @@ describe('integration', () => {
     const groove = layer(kickPattern.route(drums), snarePattern.route(drums), bassRiff.route(bass))
     const verse = repeat(groove, 4)
 
-    expect(groove.durationTicks).toBe(480 * 4)
-    expect(verse.durationTicks).toBe(480 * 4 * 4)
+    expect(groove.durationBeats).toBe(4)
+    expect(verse.durationBeats).toBe(16)
   })
 
   it('creates named audio patterns', () => {
@@ -64,17 +65,17 @@ describe('integration', () => {
   it('creates automation targeting effects', () => {
     const filterSweep = automate('filter-sweep', 'bass.hp.frequency', [
       { time: 0, value: 80 },
-      { time: beats(4), value: 2000, curve: 'linear' },
+      { time: 4, value: 2000, curve: 'linear' },
       { time: bars(2), value: 80, curve: 'exponential' },
     ])
     expect(filterSweep).toBeInstanceOf(AutomatePattern)
-    expect(filterSweep.durationTicks).toBe(bars(2))
+    expect(filterSweep.durationBeats).toBe(bars(2))
   })
 
   it('accepts 2-segment automation paths', () => {
     const sweep = automate('sweep', 'bass.frequency', [
       { time: 0, value: 80 },
-      { time: beats(4), value: 2000 },
+      { time: 4, value: 2000 },
     ])
     expect(sweep.paths).toEqual(['bass.frequency'])
   })
@@ -99,15 +100,15 @@ describe('integration', () => {
   })
 
   it('uses chord with routing', () => {
-    const chordProg = sequence(chord('C4m', '2n'), chord('Ab3', '2n'))
+    const chordProg = sequence(Chromatic.chord(N['C4']!.pitch, 'm', '2n'), Chromatic.chord(N['Ab3']!.pitch, '', '2n'))
     const padPart = chordProg.route(pad)
-    expect(padPart.durationTicks).toBe(480 * 2 * 2)
+    expect(padPart.durationBeats).toBe(4)
   })
 
   it('notes aggregates all pitches unconditionally', () => {
     const kick = repeat(note('C1', '4n'), 4).route(drums)
     expect(kick.notes).toHaveLength(4)
-    expect(kick.notes.every((n) => n.pitch === 24)).toBe(true)
+    expect(kick.notes.every((n) => pitchToMidi(n.pitch).note === 24)).toBe(true)
   })
 
   it('full composition matches API shape', () => {
@@ -118,7 +119,7 @@ describe('integration', () => {
     const breakLoop = audio('break', './samples/break-140bpm.wav')
     const filterSweep = automate('filter-sweep', 'bass.hp.frequency', [
       { time: 0, value: 80 },
-      { time: beats(4), value: 2000, curve: 'linear' },
+      { time: 4, value: 2000, curve: 'linear' },
       { time: bars(2), value: 80, curve: 'exponential' },
     ])
 
@@ -129,7 +130,7 @@ describe('integration', () => {
 
     expect(composition).toBeInstanceOf(MetadataPattern)
     expect(composition.name).toBe('Song')
-    expect(composition.durationTicks).toBe(480 * 4 * 8)
+    expect(composition.durationBeats).toBe(32)
   })
 
   it('creates sidechain automation from kick pattern', () => {
@@ -145,7 +146,7 @@ describe('integration', () => {
     const duckAutomation = automate('sidechain-duck', 'bass.vol.level', duck)
 
     const groove = layer(bassPart, duckAutomation)
-    expect(groove.durationTicks).toBeGreaterThan(0)
+    expect(groove.durationBeats).toBeGreaterThan(0)
   })
 
   it('creates LFO automation on filter', () => {
@@ -155,9 +156,9 @@ describe('integration', () => {
     expect(filterLfo.value).toBe(500)
 
     const lfoAutomation = automate('filter-lfo', 'pad.hp.frequency', filterLfo)
-    const padChords = repeat(chord('C4m', '1n'), 4).route(pad)
+    const padChords = repeat(Chromatic.chord(N['C4']!.pitch, 'm', '1n'), 4).route(pad)
     const section = layer(padChords, lfoAutomation)
-    expect(section.durationTicks).toBe(bars(4))
+    expect(section.durationBeats).toBe(bars(4))
   })
 
   it('creates formula automation', () => {
@@ -169,7 +170,7 @@ describe('integration', () => {
 
     const fadeAutomation = automate('fade-in', 'bass.vol.level', fadeIn)
     expect(fadeAutomation).toBeInstanceOf(AutomatePattern)
-    expect(fadeAutomation.durationTicks).toBe(bars(2))
+    expect(fadeAutomation.durationBeats).toBe(bars(2))
   })
 
   it('composes invert with sidechain', () => {

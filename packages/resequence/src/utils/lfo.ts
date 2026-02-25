@@ -1,4 +1,4 @@
-import { ticksToSeconds } from "../rendering/tempo-map";
+import { beatsToSeconds } from "../rendering/tempo-map";
 import type { TempoMap } from "../rendering/tempo-map";
 import type { Duration } from "./duration";
 import { resolveDuration } from "./duration";
@@ -9,20 +9,20 @@ export interface Lfo {
 	readonly shape: LfoShape;
 	readonly value: number;
 	readonly frequency?: number;
-	readonly speedTicks?: number;
+	readonly speedBeats?: number;
 	readonly delay: number;
 	readonly attack: number;
 }
 
 export function resolveLfo(lfo: { shape: LfoShape; value: number; frequency: number | Duration; delay?: number; attack?: number }): Lfo {
 	const frequency = typeof lfo.frequency === "number" ? lfo.frequency : undefined;
-	const speedTicks = typeof lfo.frequency !== "number" ? resolveDuration(lfo.frequency) : undefined;
+	const speedBeats = typeof lfo.frequency !== "number" ? resolveDuration(lfo.frequency) : undefined;
 
 	return {
 		shape: lfo.shape,
 		value: lfo.value,
 		frequency,
-		speedTicks,
+		speedBeats,
 		delay: lfo.delay ?? 0,
 		attack: lfo.attack ?? 0,
 	};
@@ -32,7 +32,7 @@ export function scheduleLfo(lfo: Lfo, target: AudioParam, audioContext: BaseAudi
 	const osc = audioContext.createOscillator();
 
 	osc.type = lfo.shape;
-	osc.frequency.value = lfo.frequency ?? (lfo.speedTicks !== undefined ? 1 / ticksToSeconds(lfo.speedTicks, tempoMap) : 0);
+	osc.frequency.value = lfo.frequency ?? (lfo.speedBeats !== undefined ? 1 / beatsToSeconds(lfo.speedBeats, tempoMap) : 0);
 
 	const depthGain = audioContext.createGain();
 	const fullDepth = lfo.value * depthScale;

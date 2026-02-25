@@ -8,7 +8,7 @@ import { MidiPattern } from "./pattern";
 
 export class LayerPattern extends MidiPattern {
 	readonly type = "layer" as const;
-	readonly durationTicks: number;
+	readonly durationBeats: number;
 	readonly notes: ReadonlyArray<PositionedNote>;
 
 	constructor(
@@ -17,7 +17,7 @@ export class LayerPattern extends MidiPattern {
 	) {
 		super();
 
-		this.durationTicks = duration !== undefined ? resolveDuration(duration) : Math.max(0, ...children.map((child) => child.durationTicks));
+		this.durationBeats = duration !== undefined ? resolveDuration(duration) : Math.max(0, ...children.map((child) => child.durationBeats));
 
 		const notes: Array<PositionedNote> = [];
 
@@ -46,23 +46,23 @@ export class LayerPattern extends MidiPattern {
 		}
 	}
 
-	prepare(offsetTicks: number, context: ScheduleContext): void {
-		if (!isInScope(offsetTicks, this.durationTicks, context)) return;
+	prepare(offsetBeats: number, context: ScheduleContext): void {
+		if (!isInScope(offsetBeats, this.durationBeats, context)) return;
 
-		prepareNotes(this.notes, offsetTicks, this.outputs, context);
+		prepareNotes(this.notes, offsetBeats, this.outputs, context);
 
 		for (const child of this.children) {
-			child.prepare(offsetTicks, context);
+			child.prepare(offsetBeats, context);
 		}
 	}
 
-	schedule(offsetTicks: number, context: ScheduleContext): void {
-		if (!isInScope(offsetTicks, this.durationTicks, context)) return;
+	schedule(offsetBeats: number, context: ScheduleContext): void {
+		if (!isInScope(offsetBeats, this.durationBeats, context)) return;
 
-		scheduleNotes(this.notes, offsetTicks, this.outputs, context);
+		scheduleNotes(this.notes, offsetBeats, this.outputs, context);
 
 		for (const child of this.children) {
-			child.schedule(offsetTicks, context);
+			child.schedule(offsetBeats, context);
 		}
 	}
 

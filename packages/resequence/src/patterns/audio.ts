@@ -1,6 +1,6 @@
 import { ResequenceError } from "../error";
 import type { ScheduleContext } from "../rendering/schedule-context";
-import { ticksToSeconds } from "../rendering/ticks-to-seconds";
+import { beatsToSeconds } from "../rendering/tempo-map";
 import type { Duration } from "../utils/duration";
 import { resolveDuration } from "../utils/duration";
 import type { ValidateContext } from "../validate";
@@ -8,7 +8,7 @@ import type { Pattern, PositionedNote } from "./pattern";
 
 export class AudioPattern implements Pattern {
 	readonly type = "audio" as const;
-	readonly durationTicks: number;
+	readonly durationBeats: number;
 	readonly notes: ReadonlyArray<PositionedNote> = [];
 
 	constructor(
@@ -24,7 +24,7 @@ export class AudioPattern implements Pattern {
 			throw new ResequenceError("EMPTY_AUDIO_PATH", "audio(): path must not be empty");
 		}
 
-		this.durationTicks = duration !== undefined ? resolveDuration(duration) : 0;
+		this.durationBeats = duration !== undefined ? resolveDuration(duration) : 0; // FIX duration 0 is a problem
 	}
 
 	validate(_context: ValidateContext): void {
@@ -35,7 +35,7 @@ export class AudioPattern implements Pattern {
 		return;
 	}
 
-	prepare(_offsetTicks: number, _context: ScheduleContext): void {
+	prepare(_offsetBeats: number, _context: ScheduleContext): void {
 		return;
 	}
 
@@ -43,14 +43,14 @@ export class AudioPattern implements Pattern {
 		return;
 	}
 
-	schedule(offsetTicks: number, context: ScheduleContext): void {
+	schedule(offsetBeats: number, context: ScheduleContext): void {
 		if (context.trackFilter && !context.trackFilter.has(this.name)) return;
-		if (offsetTicks + this.durationTicks <= context.fromTicks || offsetTicks >= context.toTicks) return;
+		if (offsetBeats + this.durationBeats <= context.fromBeats || offsetBeats >= context.toBeats) return;
 
 		const buffer = context.sampleMap.get(this.path);
 		if (!buffer) return;
 
-		const offsetSeconds = ticksToSeconds(offsetTicks, context.tempoMap);
+		const offsetSeconds = beatsToSeconds(offsetBeats, context.tempoMap);
 		const source = context.audioContext.createBufferSource();
 
 		if (this.reversed) {
@@ -70,7 +70,7 @@ export class AudioPattern implements Pattern {
 		}
 
 		const destination = context.nodeMap.get(this.name) ?? context.audioContext.destination;
-		const durationSeconds = this.durationTicks > 0 ? ticksToSeconds(this.durationTicks, context.tempoMap) : buffer.duration;
+		const durationSeconds = this.durationBeats > 0 ? beatsToSeconds(this.durationBeats, context.tempoMap) : buffer.duration;
 
 		source.connect(destination);
 		source.start(offsetSeconds);

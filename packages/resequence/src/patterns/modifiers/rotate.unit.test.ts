@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { pitchKey, resolvePitch } from "../../utils/pitch";
 import { note } from "../note";
 import { sequence } from "../sequence";
 import { RotatePattern, rotate } from "./rotate";
@@ -6,12 +7,12 @@ import { RotatePattern, rotate } from "./rotate";
 describe("RotatePattern", () => {
 	describe("notes", () => {
 		it("rotates note sequence by 1 step", () => {
-			// C4@0, E4@480, G4@960 → E4@0, G4@480, C4@960
+			// C4@0, E4@1, G4@2 → E4@0, G4@1, C4@2
 			const pat = rotate(sequence(note("C4", "4n"), note("E4", "4n"), note("G4", "4n")), 1);
 			expect(pat.notes).toMatchObject([
-				{ tick: 0, pitch: 64 },
-				{ tick: 480, pitch: 67 },
-				{ tick: 960, pitch: 60 },
+				{ beat: 0, pitch: resolvePitch("E4") },
+				{ beat: 1, pitch: resolvePitch("G4") },
+				{ beat: 2, pitch: resolvePitch("C4") },
 			]);
 		});
 
@@ -19,9 +20,9 @@ describe("RotatePattern", () => {
 			const src = sequence(note("C4", "4n"), note("E4", "4n"), note("G4", "4n"));
 			const pat = rotate(src, 3);
 			expect(pat.notes).toMatchObject([
-				{ tick: 0, pitch: 60 },
-				{ tick: 480, pitch: 64 },
-				{ tick: 960, pitch: 67 },
+				{ beat: 0, pitch: resolvePitch("C4") },
+				{ beat: 1, pitch: resolvePitch("E4") },
+				{ beat: 2, pitch: resolvePitch("G4") },
 			]);
 		});
 
@@ -29,14 +30,14 @@ describe("RotatePattern", () => {
 			// Rotate by -1 is same as rotate by (n-1)
 			const forward = rotate(sequence(note("C4", "4n"), note("E4", "4n"), note("G4", "4n")), 2);
 			const backward = rotate(sequence(note("C4", "4n"), note("E4", "4n"), note("G4", "4n")), -1);
-			expect(forward.notes.map((positionedNote) => positionedNote.pitch)).toEqual(
-				backward.notes.map((positionedNote) => positionedNote.pitch),
+			expect(forward.notes.map((positionedNote) => pitchKey(positionedNote.pitch))).toEqual(
+				backward.notes.map((positionedNote) => pitchKey(positionedNote.pitch)),
 			);
 		});
 
 		it("preserves total duration", () => {
 			const pat = rotate(sequence(note("C4", "4n"), note("E4", "4n")), 1);
-			expect(pat.durationTicks).toBe(960);
+			expect(pat.durationBeats).toBe(2);
 		});
 
 		it("returns empty for empty child", () => {

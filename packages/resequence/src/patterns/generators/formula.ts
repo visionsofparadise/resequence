@@ -10,7 +10,7 @@ export type FormulaCallback = (accumulator: Array<PositionedNote>, index: number
 
 export class FormulaPattern extends MidiPattern {
 	readonly type = "formula" as const;
-	readonly durationTicks: number;
+	readonly durationBeats: number;
 	readonly notes: ReadonlyArray<PositionedNote>;
 
 	constructor(
@@ -19,7 +19,7 @@ export class FormulaPattern extends MidiPattern {
 		readonly stepDuration: number,
 	) {
 		super();
-		this.durationTicks = count * stepDuration;
+		this.durationBeats = count * stepDuration;
 
 		let acc: Array<PositionedNote> = [];
 		for (let stepIndex = 0; stepIndex < count; stepIndex++) {
@@ -32,16 +32,16 @@ export class FormulaPattern extends MidiPattern {
 		return;
 	}
 
-	prepare(offsetTicks: number, context: ScheduleContext): void {
-		if (!isInScope(offsetTicks, this.durationTicks, context)) return;
+	prepare(offsetBeats: number, context: ScheduleContext): void {
+		if (!isInScope(offsetBeats, this.durationBeats, context)) return;
 
-		prepareNotes(this.notes, offsetTicks, this.outputs, context);
+		prepareNotes(this.notes, offsetBeats, this.outputs, context);
 	}
 
-	schedule(offsetTicks: number, context: ScheduleContext): void {
-		if (!isInScope(offsetTicks, this.durationTicks, context)) return;
+	schedule(offsetBeats: number, context: ScheduleContext): void {
+		if (!isInScope(offsetBeats, this.durationBeats, context)) return;
 
-		scheduleNotes(this.notes, offsetTicks, this.outputs, context);
+		scheduleNotes(this.notes, offsetBeats, this.outputs, context);
 	}
 }
 

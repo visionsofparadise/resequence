@@ -8,15 +8,15 @@ export interface FormulaOptions {
 }
 
 export function formula(evaluate: (t: number) => number, options: FormulaOptions): Array<Keyframe> {
-	const durationTicks = resolveDuration(options.duration);
+	const durationBeats = resolveDuration(options.duration);
 	const keyframes: Array<Keyframe> = [];
 
 	for (let index = 0; index <= options.resolution; index++) {
 		const progress = index / options.resolution;
-		const tick = progress * durationTicks;
+		const beatTime = progress * durationBeats;
 		const value = Math.max(0, Math.min(1, evaluate(progress)));
 
-		keyframes.push({ time: tick, value, curve: "linear" });
+		keyframes.push({ time: beatTime, value, curve: "linear" });
 	}
 
 	return keyframes;

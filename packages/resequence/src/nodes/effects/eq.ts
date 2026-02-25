@@ -29,8 +29,7 @@ export class EqEffectNode extends EffectNode {
 		if (!firstFilter) {
 			const filters: Array<BiquadFilterNode> = [];
 
-			for (let bandIndex = 0; bandIndex < this.bands.length; bandIndex++) {
-				const band = this.bands[bandIndex]!;
+			for (const [bandIndex, band] of this.bands.entries()) {
 				const filterNode = scheduleContext.audioContext.createBiquadFilter();
 
 				filterNode.type = band.type;
@@ -65,11 +64,15 @@ export class EqEffectNode extends EffectNode {
 			}
 
 			for (let bandIndex = 0; bandIndex < filters.length - 1; bandIndex++) {
-				filters[bandIndex]!.connect(filters[bandIndex + 1]!);
+				const cur = filters[bandIndex];
+				const next = filters[bandIndex + 1];
+				if (cur && next) cur.connect(next);
 			}
 
-			firstFilter = filters[0]!;
+			firstFilter = filters[0];
 		}
+
+		if (!firstFilter) return;
 
 		const lastKey = `${this.effectsId}.band.${this.bands.length - 1}`;
 		const lastNode = scheduleContext.nodeMap.get(lastKey);

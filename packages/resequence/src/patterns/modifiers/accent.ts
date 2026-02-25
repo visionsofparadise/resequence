@@ -8,7 +8,7 @@ import { MidiPattern } from "../pattern";
 
 export class AccentPattern extends MidiPattern {
 	readonly type = "accent" as const;
-	readonly durationTicks: number;
+	readonly durationBeats: number;
 	readonly notes: ReadonlyArray<PositionedNote>;
 
 	constructor(
@@ -18,7 +18,7 @@ export class AccentPattern extends MidiPattern {
 	) {
 		super();
 
-		this.durationTicks = child.durationTicks;
+		this.durationBeats = child.durationBeats;
 
 		const cycle = positions.reduce((sum, pos) => sum + pos, 0);
 
@@ -35,7 +35,7 @@ export class AccentPattern extends MidiPattern {
 
 			let start = 0;
 
-			while (start < child.durationTicks) {
+			while (start < child.durationBeats) {
 				for (const relOffset of relativeOffsets) {
 					accentedTicks.add(start + relOffset);
 				}
@@ -45,7 +45,7 @@ export class AccentPattern extends MidiPattern {
 		}
 
 		this.notes = child.notes.map((positionedNote) => {
-			if (accentedTicks.has(positionedNote.tick)) {
+			if (accentedTicks.has(positionedNote.beat)) {
 				return { ...positionedNote, velocity: Math.min(127, (positionedNote.velocity ?? 100) + amount) };
 			}
 
@@ -59,18 +59,18 @@ export class AccentPattern extends MidiPattern {
 		this.child.validate(childContext);
 	}
 
-	prepare(offsetTicks: number, context: ScheduleContext): void {
-		if (!isInScope(offsetTicks, this.durationTicks, context)) return;
+	prepare(offsetBeats: number, context: ScheduleContext): void {
+		if (!isInScope(offsetBeats, this.durationBeats, context)) return;
 
-		prepareNotes(this.notes, offsetTicks, this.outputs, context);
-		this.child.prepare(offsetTicks, context);
+		prepareNotes(this.notes, offsetBeats, this.outputs, context);
+		this.child.prepare(offsetBeats, context);
 	}
 
-	schedule(offsetTicks: number, context: ScheduleContext): void {
-		if (!isInScope(offsetTicks, this.durationTicks, context)) return;
+	schedule(offsetBeats: number, context: ScheduleContext): void {
+		if (!isInScope(offsetBeats, this.durationBeats, context)) return;
 
-		scheduleNotes(this.notes, offsetTicks, this.outputs, context);
-		this.child.schedule(offsetTicks, context);
+		scheduleNotes(this.notes, offsetBeats, this.outputs, context);
+		this.child.schedule(offsetBeats, context);
 	}
 }
 

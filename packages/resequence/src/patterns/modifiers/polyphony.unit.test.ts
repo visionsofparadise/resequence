@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { resolvePitch } from "../../utils/pitch";
 import { gap } from "../gap";
 import { layer } from "../layer";
 import { note } from "../note";
@@ -13,16 +14,16 @@ describe("PolyphonyPattern", () => {
 		});
 
 		it("drops notes exceeding max in non-greedy mode", () => {
-			// Two notes at tick 0, max 1 → second is dropped
+			// Two notes at beat 0, max 1 → second is dropped
 			const pat = polyphony(layer(note("C4", "4n"), note("E4", "4n")), 1);
 			expect(pat.notes).toHaveLength(1);
 		});
 
 		it("in greedy mode replaces oldest active note with incoming note", () => {
-			// Both notes at tick 0, max 1, greedy → second replaces first
+			// Both notes at beat 0, max 1, greedy → second replaces first
 			const pat = polyphony(layer(note("C4", "4n"), note("E4", "4n")), 1, true);
 			expect(pat.notes).toHaveLength(1);
-			expect(pat.notes[0]!.pitch).toBe(64); // E4 won (replaced C4)
+			expect(pat.notes[0]!.pitch).toEqual(resolvePitch("E4")); // E4 won (replaced C4)
 		});
 
 		it("does not drop notes that do not overlap in time", () => {
@@ -32,9 +33,9 @@ describe("PolyphonyPattern", () => {
 		});
 	});
 
-	describe("durationTicks", () => {
+	describe("durationBeats", () => {
 		it("preserves child duration", () => {
-			expect(polyphony(note("C4", "4n"), 4).durationTicks).toBe(480);
+			expect(polyphony(note("C4", "4n"), 4).durationBeats).toBe(1);
 		});
 	});
 

@@ -2,6 +2,8 @@ import type { ScheduleContext } from "../../rendering/schedule-context";
 import { isInScope, prepareNotes, scheduleNotes } from "../../rendering/schedule-notes";
 import type { Duration } from "../../utils/duration";
 import { resolveDuration } from "../../utils/duration";
+import type { Pitch } from "../../utils/pitch";
+import { resolvePitch } from "../../utils/pitch";
 import type { ValidateContext } from "../../validate";
 import type { PositionedNote } from "../pattern";
 import { MidiPattern } from "../pattern";
@@ -18,19 +20,19 @@ function euclidean(hits: number, steps: number, rotate: number): ReadonlyArray<b
 
 export class DistributePattern extends MidiPattern {
 	readonly type = "distribute" as const;
-	readonly durationTicks: number;
+	readonly durationBeats: number;
 	readonly notes: ReadonlyArray<PositionedNote>;
 
 	constructor(
 		readonly hits: number,
 		readonly steps: number,
-		readonly pitch: number,
+		readonly pitch: Pitch,
 		readonly stepDuration: number,
 		readonly rotate = 0,
 	) {
 		super();
 
-		this.durationTicks = steps * stepDuration;
+		this.durationBeats = steps * stepDuration;
 
 		const pattern = euclidean(hits, steps, rotate);
 		const result: Array<PositionedNote> = [];
@@ -38,9 +40,9 @@ export class DistributePattern extends MidiPattern {
 		for (let stepIndex = 0; stepIndex < steps; stepIndex++) {
 			if (pattern[stepIndex]) {
 				result.push({
-					tick: stepIndex * stepDuration,
+					beat: stepIndex * stepDuration,
 					pitch,
-					durationTicks: stepDuration,
+					durationBeats: stepDuration,
 					outputs: [],
 				});
 			}
@@ -53,19 +55,19 @@ export class DistributePattern extends MidiPattern {
 		return;
 	}
 
-	prepare(offsetTicks: number, context: ScheduleContext): void {
-		if (!isInScope(offsetTicks, this.durationTicks, context)) return;
+	prepare(offsetBeats: number, context: ScheduleContext): void {
+		if (!isInScope(offsetBeats, this.durationBeats, context)) return;
 
-		prepareNotes(this.notes, offsetTicks, this.outputs, context);
+		prepareNotes(this.notes, offsetBeats, this.outputs, context);
 	}
 
-	schedule(offsetTicks: number, context: ScheduleContext): void {
-		if (!isInScope(offsetTicks, this.durationTicks, context)) return;
+	schedule(offsetBeats: number, context: ScheduleContext): void {
+		if (!isInScope(offsetBeats, this.durationBeats, context)) return;
 
-		scheduleNotes(this.notes, offsetTicks, this.outputs, context);
+		scheduleNotes(this.notes, offsetBeats, this.outputs, context);
 	}
 }
 
-export function distribute(hits: number, steps: number, pitch: number, stepDuration: Duration | number, rotate = 0): DistributePattern {
-	return new DistributePattern(hits, steps, pitch, resolveDuration(stepDuration), rotate);
+export function distribute(hits: number, steps: number, pitch: string | number | Pitch, stepDuration: Duration | number, rotate = 0): DistributePattern {
+	return new DistributePattern(hits, steps, resolvePitch(pitch), resolveDuration(stepDuration), rotate);
 }

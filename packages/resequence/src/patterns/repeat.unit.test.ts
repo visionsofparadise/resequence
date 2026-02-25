@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ResequenceError } from "../error";
+import { resolvePitch } from "../utils/pitch";
 import { note } from "./note";
 import { repeat } from "./repeat";
 import { sequence } from "./sequence";
@@ -21,13 +22,13 @@ describe("RepeatPattern", () => {
 		});
 
 		it("accepts count of 1", () => {
-			expect(repeat(note("C4", "4n"), 1).durationTicks).toBe(480);
+			expect(repeat(note("C4", "4n"), 1).durationBeats).toBe(1);
 		});
 	});
 
-	describe("durationTicks", () => {
+	describe("durationBeats", () => {
 		it("multiplies child duration by count", () => {
-			expect(repeat(note("C4", "4n"), 4).durationTicks).toBe(1920);
+			expect(repeat(note("C4", "4n"), 4).durationBeats).toBe(4);
 		});
 	});
 
@@ -35,20 +36,20 @@ describe("RepeatPattern", () => {
 		it("multiplies offsets", () => {
 			const pat = repeat(note("C4", "4n"), 4);
 			expect(pat.notes).toMatchObject([
-				{ tick: 0, pitch: 60 },
-				{ tick: 480, pitch: 60 },
-				{ tick: 960, pitch: 60 },
-				{ tick: 1440, pitch: 60 },
+				{ beat: 0, pitch: resolvePitch("C4") },
+				{ beat: 1, pitch: resolvePitch("C4") },
+				{ beat: 2, pitch: resolvePitch("C4") },
+				{ beat: 3, pitch: resolvePitch("C4") },
 			]);
 		});
 
 		it("handles repeat of a sequence", () => {
 			const pat = repeat(sequence(note("C4", "8n"), note("E4", "8n")), 2);
 			expect(pat.notes).toMatchObject([
-				{ tick: 0, pitch: 60 },
-				{ tick: 240, pitch: 64 },
-				{ tick: 480, pitch: 60 },
-				{ tick: 720, pitch: 64 },
+				{ beat: 0, pitch: resolvePitch("C4") },
+				{ beat: 0.5, pitch: resolvePitch("E4") },
+				{ beat: 1, pitch: resolvePitch("C4") },
+				{ beat: 1.5, pitch: resolvePitch("E4") },
 			]);
 		});
 	});

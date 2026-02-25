@@ -1,7 +1,8 @@
 import { Chord } from "tonal";
 import { ResequenceError } from "../error";
 import type { Duration } from "../utils/duration";
-import { resolvePitch } from "../utils/pitch";
+import type { Pitch } from "../utils/pitch";
+import { addSteps, pitchKey, resolvePitch } from "../utils/pitch";
 import type { LayerPattern } from "./layer";
 import { layer } from "./layer";
 import { note } from "./note";
@@ -12,7 +13,7 @@ export function chord(name: string | ReadonlyArray<string>, duration: Duration):
 	if (typeof name !== "string") {
 		if (name.length === 0) throw new ResequenceError("EMPTY_CHORD", "chord() requires at least one pitch");
 
-		return layer(...name.map((pitch) => note(pitch, duration)));
+		return layer(...name.map((pitchStr) => note(pitchStr, duration)));
 	}
 
 	const match = CHORD_REGEX.exec(name);
@@ -27,11 +28,11 @@ export function chord(name: string | ReadonlyArray<string>, duration: Duration):
 
 	if (chordData.empty) throw new ResequenceError("UNKNOWN_CHORD_QUALITY", `Unknown chord quality: ${name}`);
 
-	const rootMidi = resolvePitch(`${root}${octave}`);
+	const rootPitch: Pitch = resolvePitch(`${root}${octave}`);
 
 	const notes = chordData.notes.map((pitchClass) => {
-		const noteMidi = resolvePitch(`${pitchClass}${octave}`);
-		const adjusted = noteMidi < rootMidi ? noteMidi + 12 : noteMidi;
+		const notePitch: Pitch = resolvePitch(`${pitchClass}${octave}`);
+		const adjusted = pitchKey(notePitch) < pitchKey(rootPitch) ? addSteps(notePitch, notePitch.stepsPerOctave) : notePitch;
 
 		return note(adjusted, duration);
 	});

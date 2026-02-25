@@ -1,9 +1,10 @@
 import type { Pattern } from "../patterns/pattern";
 import { PPQ } from "../utils/duration";
+import { pitchToMidi } from "../utils/pitch";
 import { collectMarkers } from "./collect-markers";
 import type { MidiNote } from "./encode-midi";
 import { encodeMidi } from "./encode-midi";
-import { buildTempoMap } from "./tempo-map";
+import { buildTempoMap, buildTimeSignatureMap } from "./tempo-map";
 
 export interface MidiRenderOptions {
 	readonly include?: ReadonlyArray<string>;
@@ -17,7 +18,8 @@ export interface MidiRenderResult {
 }
 
 export function renderMidi(pattern: Pattern, options?: MidiRenderOptions): MidiRenderResult {
-	const tempoChanges = buildTempoMap(pattern); // FIX: We already created the tempo map in the caller
+	const tempoChanges = buildTempoMap(pattern);
+	const timeSignatureChanges = buildTimeSignatureMap(pattern);
 	const markers = collectMarkers(pattern);
 	const grouped = groupByTrack(pattern);
 
@@ -30,7 +32,7 @@ export function renderMidi(pattern: Pattern, options?: MidiRenderOptions): MidiR
 		if (!trackNotes || trackNotes.length === 0) continue;
 
 		const singleTrack = new Map([[name, trackNotes]]);
-		tracks.set(name, encodeMidi(singleTrack, { ppq: PPQ, tempoChanges, markers }));
+		tracks.set(name, encodeMidi(singleTrack, { ppq: PPQ, tempoChanges, timeSignatureChanges, markers }));
 	}
 
 	let master: Uint8Array | undefined;
@@ -47,7 +49,7 @@ export function renderMidi(pattern: Pattern, options?: MidiRenderOptions): MidiR
 		}
 
 		if (masterTracks.size > 0) {
-			master = encodeMidi(masterTracks, { ppq: PPQ, tempoChanges, markers });
+			master = encodeMidi(masterTracks, { ppq: PPQ, tempoChanges, timeSignatureChanges, markers });
 		}
 	}
 
@@ -68,10 +70,13 @@ function groupByTrack(pattern: Pattern): Map<string, Array<MidiNote>> {
 				grouped.set(trackName, track);
 			}
 
+			const { note: midiNote, bend } = pitchToMidi(pn.pitch);
+
 			track.push({
-				tick: pn.tick,
-				pitch: pn.pitch,
-				durationTicks: pn.durationTicks ?? 0,
+				tick: Math.round(pn.beat * PPQ),
+				pitch: midiNote,
+				bend: bend !== 0 ? bend : undefined,
+				durationTicks: Math.round((pn.durationBeats ?? 0) * PPQ),
 				velocity: pn.velocity ?? 100,
 				lyric: pn.lyric,
 				cc: pn.cc,

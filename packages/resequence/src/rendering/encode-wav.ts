@@ -1,7 +1,7 @@
 import { WaveFile } from "wavefile";
 import type { MarkerPoint } from "./collect-markers";
 import type { TempoMap } from "./tempo-map";
-import { ticksToSeconds } from "./tempo-map";
+import { beatsToSeconds } from "./tempo-map";
 
 export function encodeWav(buffer: AudioBuffer, markers?: ReadonlyArray<MarkerPoint>, tempoMap?: TempoMap): ArrayBuffer {
 	const channels: Array<Float32Array> = [];
@@ -15,7 +15,7 @@ export function encodeWav(buffer: AudioBuffer, markers?: ReadonlyArray<MarkerPoi
 
 	if (markers && markers.length > 0 && tempoMap) {
 		for (const markerPoint of markers) {
-			const positionMs = ticksToSeconds(markerPoint.tick, tempoMap) * 1000;
+			const positionMs = beatsToSeconds(markerPoint.beat, tempoMap) * 1000;
 			wav.setCuePoint({ position: positionMs, label: markerPoint.name });
 		}
 	}

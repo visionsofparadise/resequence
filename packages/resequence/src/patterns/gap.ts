@@ -6,11 +6,11 @@ import type { Pattern, PositionedNote } from "./pattern";
 
 export class GapPattern implements Pattern {
 	readonly type = "gap" as const;
-	readonly durationTicks: number;
+	readonly durationBeats: number;
 	readonly notes: ReadonlyArray<PositionedNote> = [];
 
 	constructor(readonly duration: Duration) {
-		this.durationTicks = resolveDuration(duration);
+		this.durationBeats = resolveDuration(duration);
 	}
 
 	validate(_context: ValidateContext): void {
@@ -21,11 +21,11 @@ export class GapPattern implements Pattern {
 		return;
 	}
 
-	prepare(_offsetTicks: number, _context: ScheduleContext): void {
+	prepare(_offsetBeats: number, _context: ScheduleContext): void {
 		return;
 	}
 
-	schedule(_offsetTicks: number, _context: ScheduleContext): void {
+	schedule(_offsetBeats: number, _context: ScheduleContext): void {
 		return;
 	}
 

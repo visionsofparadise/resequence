@@ -138,8 +138,8 @@ describe("sampler", () => {
 				nodeMap: new Map(),
 				driverMap: new Map(),
 				tempoMap: [],
-				fromTicks: 0,
-				toTicks: Infinity,
+				fromBeats: 0,
+				toBeats: Infinity,
 			} as unknown as import("../../rendering/schedule-context").ScheduleContext;
 
 			const c4Freq = 440 * 2 ** ((60 - 69) / 12);

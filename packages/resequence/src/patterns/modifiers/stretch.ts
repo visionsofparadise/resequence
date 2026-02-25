@@ -6,7 +6,7 @@ import { MidiPattern } from "../pattern";
 
 export class StretchPattern extends MidiPattern {
 	readonly type = "stretch" as const;
-	readonly durationTicks: number;
+	readonly durationBeats: number;
 	readonly notes: ReadonlyArray<PositionedNote>;
 
 	constructor(
@@ -15,12 +15,12 @@ export class StretchPattern extends MidiPattern {
 	) {
 		super();
 
-		this.durationTicks = Math.round(child.durationTicks * factor);
+		this.durationBeats = child.durationBeats * factor;
 
 		this.notes = child.notes.map((positionedNote) => ({
 			...positionedNote,
-			tick: Math.round(positionedNote.tick * factor),
-			durationTicks: positionedNote.durationTicks !== undefined ? Math.round(positionedNote.durationTicks * factor) : undefined,
+			beat: positionedNote.beat * factor,
+			durationBeats: positionedNote.durationBeats !== undefined ? positionedNote.durationBeats * factor : undefined,
 		}));
 	}
 
@@ -30,20 +30,20 @@ export class StretchPattern extends MidiPattern {
 		this.child.validate(childContext);
 	}
 
-	prepare(offsetTicks: number, context: ScheduleContext): void {
-		if (!isInScope(offsetTicks, this.durationTicks, context)) return;
+	prepare(offsetBeats: number, context: ScheduleContext): void {
+		if (!isInScope(offsetBeats, this.durationBeats, context)) return;
 
-		prepareNotes(this.notes, offsetTicks, this.outputs, context);
+		prepareNotes(this.notes, offsetBeats, this.outputs, context);
 
-		this.child.prepare(offsetTicks, context);
+		this.child.prepare(offsetBeats, context);
 	}
 
-	schedule(offsetTicks: number, context: ScheduleContext): void {
-		if (!isInScope(offsetTicks, this.durationTicks, context)) return;
+	schedule(offsetBeats: number, context: ScheduleContext): void {
+		if (!isInScope(offsetBeats, this.durationBeats, context)) return;
 
-		scheduleNotes(this.notes, offsetTicks, this.outputs, context);
+		scheduleNotes(this.notes, offsetBeats, this.outputs, context);
 
-		this.child.schedule(offsetTicks, context);
+		this.child.schedule(offsetBeats, context);
 	}
 }
 

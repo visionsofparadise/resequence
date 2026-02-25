@@ -1,5 +1,6 @@
 import type { ScheduleContext } from "../../rendering/schedule-context";
 import { isInScope, prepareNotes, scheduleNotes } from "../../rendering/schedule-notes";
+import { addSteps, pitchKey } from "../../utils/pitch";
 import type { ValidateContext } from "../../validate";
 import type { Pattern, PositionedNote } from "../pattern";
 import { MidiPattern } from "../pattern";
@@ -8,7 +9,7 @@ export type VoicingStyle = "close" | "drop2" | "drop3" | "open";
 
 export class VoicingPattern extends MidiPattern {
 	readonly type = "voicing" as const;
-	readonly durationTicks: number;
+	readonly durationBeats: number;
 	readonly notes: ReadonlyArray<PositionedNote>;
 
 	constructor(
@@ -17,16 +18,16 @@ export class VoicingPattern extends MidiPattern {
 	) {
 		super();
 
-		this.durationTicks = child.durationTicks;
+		this.durationBeats = child.durationBeats;
 
 		const byTick = new Map<number, Array<PositionedNote>>();
 
 		for (const positionedNote of child.notes) {
-			let group = byTick.get(positionedNote.tick);
+			let group = byTick.get(positionedNote.beat);
 
 			if (!group) {
 				group = [];
-				byTick.set(positionedNote.tick, group);
+				byTick.set(positionedNote.beat, group);
 			}
 
 			group.push(positionedNote);
@@ -47,37 +48,38 @@ export class VoicingPattern extends MidiPattern {
 		this.child.validate(childContext);
 	}
 
-	prepare(offsetTicks: number, context: ScheduleContext): void {
-		if (!isInScope(offsetTicks, this.durationTicks, context)) return;
+	prepare(offsetBeats: number, context: ScheduleContext): void {
+		if (!isInScope(offsetBeats, this.durationBeats, context)) return;
 
-		prepareNotes(this.notes, offsetTicks, this.outputs, context);
+		prepareNotes(this.notes, offsetBeats, this.outputs, context);
 
-		this.child.prepare(offsetTicks, context);
+		this.child.prepare(offsetBeats, context);
 	}
 
-	schedule(offsetTicks: number, context: ScheduleContext): void {
-		if (!isInScope(offsetTicks, this.durationTicks, context)) return;
+	schedule(offsetBeats: number, context: ScheduleContext): void {
+		if (!isInScope(offsetBeats, this.durationBeats, context)) return;
 
-		scheduleNotes(this.notes, offsetTicks, this.outputs, context);
+		scheduleNotes(this.notes, offsetBeats, this.outputs, context);
 
-		this.child.schedule(offsetTicks, context);
+		this.child.schedule(offsetBeats, context);
 	}
 }
 
 function applyVoicing(group: ReadonlyArray<PositionedNote>, style: VoicingStyle): Array<PositionedNote> {
 	if (group.length < 2) return group.slice();
-	const sorted = group.slice().sort((noteA, noteB) => noteA.pitch - noteB.pitch);
+	const sorted = group.slice().sort((noteA, noteB) => pitchKey(noteA.pitch) - pitchKey(noteB.pitch));
 	const firstSorted = sorted[0];
 	if (firstSorted === undefined) return group.slice();
-	const base = firstSorted.pitch;
+	const baseKey = pitchKey(firstSorted.pitch);
+	const spo = firstSorted.pitch.stepsPerOctave;
 
 	// Close voicing: pack all notes within one octave above the lowest
 	const close = sorted.map((positionedNote, groupIndex) => {
 		if (groupIndex === 0) return positionedNote;
 		let pitch = positionedNote.pitch;
 
-		while (pitch > base + 12) pitch -= 12;
-		while (pitch <= base) pitch += 12;
+		while (pitchKey(pitch) > baseKey + spo) pitch = addSteps(pitch, -spo);
+		while (pitchKey(pitch) <= baseKey) pitch = addSteps(pitch, spo);
 
 		return { ...positionedNote, pitch };
 	});
@@ -89,7 +91,7 @@ function applyVoicing(group: ReadonlyArray<PositionedNote>, style: VoicingStyle)
 		const secondFromTop = voiced[voiced.length - 2];
 
 		if (secondFromTop) {
-			voiced[voiced.length - 2] = { ...secondFromTop, pitch: secondFromTop.pitch - 12 };
+			voiced[voiced.length - 2] = { ...secondFromTop, pitch: addSteps(secondFromTop.pitch, -spo) };
 		}
 
 		return voiced;
@@ -100,7 +102,7 @@ function applyVoicing(group: ReadonlyArray<PositionedNote>, style: VoicingStyle)
 
 		const thirdFromTop = voiced[voiced.length - 3];
 		if (thirdFromTop) {
-			voiced[voiced.length - 3] = { ...thirdFromTop, pitch: thirdFromTop.pitch - 12 };
+			voiced[voiced.length - 3] = { ...thirdFromTop, pitch: addSteps(thirdFromTop.pitch, -spo) };
 		}
 
 		return voiced;
@@ -112,7 +114,7 @@ function applyVoicing(group: ReadonlyArray<PositionedNote>, style: VoicingStyle)
 	for (let noteIndex = voiced.length - 1; noteIndex >= 0; noteIndex -= 2) {
 		const positionedNote = voiced[noteIndex];
 		if (positionedNote === undefined) continue;
-		voiced[noteIndex] = { ...positionedNote, pitch: positionedNote.pitch + 12 };
+		voiced[noteIndex] = { ...positionedNote, pitch: addSteps(positionedNote.pitch, spo) };
 	}
 
 	return voiced;

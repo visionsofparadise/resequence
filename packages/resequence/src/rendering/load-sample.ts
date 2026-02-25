@@ -31,7 +31,7 @@ export async function loadSample(
 
 	if (regionIndex === -1) return fullBuffer;
 
-	const startFrame = cuePoints[regionIndex]!.dwSampleOffset;
+	const startFrame = cuePoints[regionIndex]?.dwSampleOffset ?? 0;
 	const nextPoint = cuePoints[regionIndex + 1];
 	const endFrame = nextPoint !== undefined ? nextPoint.dwSampleOffset : fullBuffer.length;
 

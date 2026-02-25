@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { pitchToMidi } from "../../utils/pitch";
 import { layer } from "../layer";
 import { note } from "../note";
 import { VoicingPattern, voicing } from "./voicing";
@@ -12,9 +13,9 @@ describe("VoicingPattern", () => {
 	describe("close voicing", () => {
 		it("packs all notes within one octave above the lowest", () => {
 			const pat = voicing(cmaj7(), "close");
-			const pitches = pat.notes.map((positionedNote) => positionedNote.pitch).sort((pitchA, pitchB) => pitchA - pitchB);
-			const lowest = pitches[0]!;
-			expect(pitches.every((pitch) => pitch >= lowest && pitch <= lowest + 12)).toBe(true);
+			const midiNotes = pat.notes.map((positionedNote) => pitchToMidi(positionedNote.pitch).note).sort((a, b) => a - b);
+			const lowest = midiNotes[0]!;
+			expect(midiNotes.every((midi) => midi >= lowest && midi <= lowest + 12)).toBe(true);
 		});
 	});
 
@@ -22,10 +23,10 @@ describe("VoicingPattern", () => {
 		it("moves second-from-top note down an octave from close voicing", () => {
 			const closePat = voicing(cmaj7(), "close");
 			const drop2Pat = voicing(cmaj7(), "drop2");
-			const closePitches = closePat.notes.map((positionedNote) => positionedNote.pitch).sort((pitchA, pitchB) => pitchA - pitchB);
-			const drop2Pitches = drop2Pat.notes.map((positionedNote) => positionedNote.pitch).sort((pitchA, pitchB) => pitchA - pitchB);
+			const closeMidi = closePat.notes.map((positionedNote) => pitchToMidi(positionedNote.pitch).note).sort((a, b) => a - b);
+			const drop2Midi = drop2Pat.notes.map((positionedNote) => pitchToMidi(positionedNote.pitch).note).sort((a, b) => a - b);
 			// drop2 should have a lower minimum than close
-			expect(drop2Pitches[0]).toBeLessThan(closePitches[0]!);
+			expect(drop2Midi[0]).toBeLessThan(closeMidi[0]!);
 		});
 	});
 
@@ -33,24 +34,24 @@ describe("VoicingPattern", () => {
 		it("moves third-from-top note down an octave from close voicing", () => {
 			const closePat = voicing(cmaj7(), "close");
 			const drop3Pat = voicing(cmaj7(), "drop3");
-			const closePitches = closePat.notes.map((positionedNote) => positionedNote.pitch).sort((pitchA, pitchB) => pitchA - pitchB);
-			const drop3Pitches = drop3Pat.notes.map((positionedNote) => positionedNote.pitch).sort((pitchA, pitchB) => pitchA - pitchB);
-			expect(drop3Pitches[0]).toBeLessThan(closePitches[0]!);
+			const closeMidi = closePat.notes.map((positionedNote) => pitchToMidi(positionedNote.pitch).note).sort((a, b) => a - b);
+			const drop3Midi = drop3Pat.notes.map((positionedNote) => pitchToMidi(positionedNote.pitch).note).sort((a, b) => a - b);
+			expect(drop3Midi[0]).toBeLessThan(closeMidi[0]!);
 		});
 	});
 
 	describe("open voicing", () => {
 		it("spreads notes beyond one octave", () => {
 			const pat = voicing(cmaj7(), "open");
-			const pitches = pat.notes.map((positionedNote) => positionedNote.pitch).sort((pitchA, pitchB) => pitchA - pitchB);
-			const span = pitches[pitches.length - 1]! - pitches[0]!;
+			const midiNotes = pat.notes.map((positionedNote) => pitchToMidi(positionedNote.pitch).note).sort((a, b) => a - b);
+			const span = midiNotes[midiNotes.length - 1]! - midiNotes[0]!;
 			expect(span).toBeGreaterThan(12);
 		});
 	});
 
-	describe("durationTicks", () => {
+	describe("durationBeats", () => {
 		it("preserves child duration", () => {
-			expect(voicing(cmaj7(), "close").durationTicks).toBe(1920);
+			expect(voicing(cmaj7(), "close").durationBeats).toBe(4);
 		});
 	});
 

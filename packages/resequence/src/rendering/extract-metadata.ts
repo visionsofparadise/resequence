@@ -34,5 +34,5 @@ function findMetadata(pattern: Pattern): MetadataPattern | undefined {
 }
 
 function isPattern(value: unknown): value is Pattern {
-	return typeof value === "object" && value !== null && "type" in value && "durationTicks" in value;
+	return typeof value === "object" && value !== null && "type" in value && "durationBeats" in value;
 }

@@ -1,11 +1,12 @@
 import type { Midi, Node } from "../nodes/node";
 import type { ScheduleContext } from "../rendering/schedule-context";
+import type { Pitch } from "../utils/pitch";
 import type { ValidateContext } from "../validate";
 
 export interface PositionedNote {
-	readonly tick: number;
-	readonly pitch: number;
-	readonly durationTicks?: number;
+	readonly beat: number;
+	readonly pitch: Pitch;
+	readonly durationBeats?: number;
 	readonly velocity?: number;
 	readonly lyric?: string;
 	readonly cc?: Partial<Record<number, number>>;
@@ -14,21 +15,21 @@ export interface PositionedNote {
 
 export interface Pattern {
 	readonly type: string;
-	readonly durationTicks: number;
+	readonly durationBeats: number;
 	readonly notes: ReadonlyArray<PositionedNote>;
 
 	setup(context: ScheduleContext): void;
-	prepare(offsetTicks: number, context: ScheduleContext): void;
-	schedule(offsetTicks: number, context: ScheduleContext): void;
+	prepare(offsetBeats: number, context: ScheduleContext): void;
+	schedule(offsetBeats: number, context: ScheduleContext): void;
 	teardown(context: ScheduleContext): void;
 	validate(context: ValidateContext): void;
 }
 
 export abstract class MidiPattern implements Pattern {
 	abstract readonly type: string;
-	abstract readonly durationTicks: number;
+	abstract readonly durationBeats: number;
 	readonly notes: ReadonlyArray<PositionedNote> = [];
-	abstract schedule(offsetTicks: number, context: ScheduleContext): void;
+	abstract schedule(offsetBeats: number, context: ScheduleContext): void;
 	abstract validate(context: ValidateContext): void;
 
 	readonly outputs: Array<Node<Midi, ReadonlyArray<unknown>>> = [];
@@ -37,7 +38,7 @@ export abstract class MidiPattern implements Pattern {
 		return;
 	}
 
-	prepare(_offsetTicks: number, _context: ScheduleContext): void {
+	prepare(_offsetBeats: number, _context: ScheduleContext): void {
 		return;
 	}
 

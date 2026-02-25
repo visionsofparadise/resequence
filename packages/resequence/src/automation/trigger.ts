@@ -16,9 +16,9 @@ const EPSILON = 1e-6;
 export function trigger(pattern: Pattern, options: TriggerOptions): Array<AnyKeyframe> {
 	if (pattern.notes.length === 0) return [];
 
-	const sorted = [...pattern.notes].sort((left, right) => left.tick - right.tick);
-	const attackTicks = resolveDuration(options.attack);
-	const releaseTicks = resolveDuration(options.release);
+	const sorted = [...pattern.notes].sort((left, right) => left.beat - right.beat);
+	const attackBeats = resolveDuration(options.attack);
+	const releaseBeats = resolveDuration(options.release);
 	const tension = options.tension ?? 1;
 	const keyframes: Array<AnyKeyframe> = [];
 
@@ -27,34 +27,34 @@ export function trigger(pattern: Pattern, options: TriggerOptions): Array<AnyKey
 
 		if (!current) continue;
 
-		const tick = current.tick;
+		const tick = current.beat;
 		const next = sorted[index + 1];
-		const nextTick = next ? next.tick : Infinity;
-		const releaseEnd = tick + attackTicks + releaseTicks;
+		const nextBeat = next ? next.beat : Infinity;
+		const releaseEnd = tick + attackBeats + releaseBeats;
 
 		const baseline: Keyframe = { time: tick as Duration, value: 0, curve: "step" };
-		const peak: Keyframe = { time: (tick + attackTicks) as Duration, value: options.peak, curve: "linear" };
+		const peak: Keyframe = { time: (tick + attackBeats) as Duration, value: options.peak, curve: "linear" };
 		keyframes.push(baseline, peak);
 
-		const curve = buildReleaseCurve(tick + attackTicks, releaseTicks, options.peak, tension, Math.min(releaseEnd, nextTick));
+		const curve = buildReleaseCurve(tick + attackBeats, releaseBeats, options.peak, tension, Math.min(releaseEnd, nextBeat));
 		if (curve) keyframes.push(curve);
 	}
 
 	return keyframes;
 }
 
-function buildReleaseCurve(startTick: number, releaseTicks: number, peak: number, tension: number, cutoffTick: number): CurveKeyframe | null {
-	const effectiveDuration = cutoffTick - startTick;
+function buildReleaseCurve(startBeat: number, releaseBeats: number, peak: number, tension: number, cutoffBeat: number): CurveKeyframe | null {
+	const effectiveDuration = cutoffBeat - startBeat;
 
 	if (effectiveDuration <= 0) return null;
 
 	const values = Float32Array.from({ length: CURVE_SAMPLES }, (_, sampleIndex) => {
-		const progress = (sampleIndex / (CURVE_SAMPLES - 1)) * (effectiveDuration / releaseTicks);
+		const progress = (sampleIndex / (CURVE_SAMPLES - 1)) * (effectiveDuration / releaseBeats);
 		return Math.max(peak * Math.pow(1 - progress, tension), EPSILON);
 	});
 
 	return {
-		time: startTick as Duration,
+		time: startBeat as Duration,
 		duration: effectiveDuration as Duration,
 		values,
 	};

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { resolvePitch } from "../../utils/pitch";
 import { note } from "../note";
 import { sequence } from "../sequence";
 import { ReversePattern, reverse } from "./reverse";
@@ -7,12 +8,12 @@ describe("ReversePattern", () => {
 	describe("notes", () => {
 		it("reverses note order in time", () => {
 			const pat = reverse(sequence(note("C4", "4n"), note("E4", "4n"), note("G4", "4n")));
-			// Original: C4@0, E4@480, G4@960, total=1440
-			// Reversed: G4@0, E4@480, C4@960 (mirrored)
+			// Original: C4@0, E4@1, G4@2, total=3
+			// Reversed: G4@0, E4@1, C4@2 (mirrored)
 			expect(pat.notes).toMatchObject([
-				{ tick: 0, pitch: 67 },
-				{ tick: 480, pitch: 64 },
-				{ tick: 960, pitch: 60 },
+				{ beat: 0, pitch: resolvePitch("G4") },
+				{ beat: 1, pitch: resolvePitch("E4") },
+				{ beat: 2, pitch: resolvePitch("C4") },
 			]);
 		});
 
@@ -22,14 +23,14 @@ describe("ReversePattern", () => {
 
 		it("single note tick becomes 0", () => {
 			const pat = reverse(note("C4", "4n"));
-			expect(pat.notes[0]?.tick).toBe(0);
+			expect(pat.notes[0]?.beat).toBe(0);
 		});
 	});
 
-	describe("durationTicks", () => {
+	describe("durationBeats", () => {
 		it("preserves total duration", () => {
 			const pat = reverse(sequence(note("C4", "4n"), note("E4", "4n")));
-			expect(pat.durationTicks).toBe(960);
+			expect(pat.durationBeats).toBe(2);
 		});
 	});
 

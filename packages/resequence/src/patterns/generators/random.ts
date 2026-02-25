@@ -2,6 +2,8 @@ import type { ScheduleContext } from "../../rendering/schedule-context";
 import { isInScope, prepareNotes, scheduleNotes } from "../../rendering/schedule-notes";
 import type { Duration } from "../../utils/duration";
 import { resolveDuration } from "../../utils/duration";
+import type { Pitch } from "../../utils/pitch";
+import { resolvePitch } from "../../utils/pitch";
 import type { ValidateContext } from "../../validate";
 import type { PositionedNote } from "../pattern";
 import { MidiPattern } from "../pattern";
@@ -12,7 +14,7 @@ export interface RandomVelocityRange {
 }
 
 export interface RandomOptions {
-	readonly pitches: ReadonlyArray<number>;
+	readonly pitches: ReadonlyArray<string | number | Pitch>;
 	readonly count: number;
 	readonly stepDuration: Duration | number;
 	readonly velocity?: RandomVelocityRange;
@@ -34,34 +36,37 @@ function mulberry32(seed: number): () => number {
 
 export class RandomPattern extends MidiPattern {
 	readonly type = "random" as const;
-	readonly durationTicks: number;
+	readonly durationBeats: number;
 	readonly notes: ReadonlyArray<PositionedNote>;
 
 	constructor(readonly options: RandomOptions) {
 		super();
 
-		const stepDurationTicks = resolveDuration(options.stepDuration);
-		this.durationTicks = options.count * stepDurationTicks;
+		const stepDurationBeats = resolveDuration(options.stepDuration);
+		this.durationBeats = options.count * stepDurationBeats;
 
 		const rng = options.seed !== undefined ? mulberry32(options.seed) : Math.random.bind(Math);
 		const result: Array<PositionedNote> = [];
-		const firstPitch = options.pitches[0];
+		const firstRaw = options.pitches[0];
 
-		if (firstPitch === undefined) {
+		if (firstRaw === undefined) {
 			this.notes = result;
 			return;
 		}
 
+		const resolvedPitches = options.pitches.map(resolvePitch);
+		const firstPitch = resolvePitch(firstRaw);
+
 		for (let stepIndex = 0; stepIndex < options.count; stepIndex++) {
-			const pitch = options.pitches[Math.floor(rng() * options.pitches.length)] ?? firstPitch;
+			const pitch = resolvedPitches[Math.floor(rng() * resolvedPitches.length)] ?? firstPitch;
 			const minVel = options.velocity?.min ?? 100;
 			const maxVel = options.velocity?.max ?? 100;
 			const velocity = Math.round(minVel + rng() * (maxVel - minVel));
 
 			result.push({
-				tick: stepIndex * stepDurationTicks,
+				beat: stepIndex * stepDurationBeats,
 				pitch,
-				durationTicks: stepDurationTicks,
+				durationBeats: stepDurationBeats,
 				velocity,
 				outputs: [],
 			});
@@ -74,16 +79,16 @@ export class RandomPattern extends MidiPattern {
 		return;
 	}
 
-	prepare(offsetTicks: number, context: ScheduleContext): void {
-		if (!isInScope(offsetTicks, this.durationTicks, context)) return;
+	prepare(offsetBeats: number, context: ScheduleContext): void {
+		if (!isInScope(offsetBeats, this.durationBeats, context)) return;
 
-		prepareNotes(this.notes, offsetTicks, this.outputs, context);
+		prepareNotes(this.notes, offsetBeats, this.outputs, context);
 	}
 
-	schedule(offsetTicks: number, context: ScheduleContext): void {
-		if (!isInScope(offsetTicks, this.durationTicks, context)) return;
+	schedule(offsetBeats: number, context: ScheduleContext): void {
+		if (!isInScope(offsetBeats, this.durationBeats, context)) return;
 
-		scheduleNotes(this.notes, offsetTicks, this.outputs, context);
+		scheduleNotes(this.notes, offsetBeats, this.outputs, context);
 	}
 }
 

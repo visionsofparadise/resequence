@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { resolvePitch } from "../../utils/pitch";
 import { note } from "../note";
 import { sequence } from "../sequence";
 import { SlicePattern, TrimPattern, slice, trim } from "./slice";
@@ -8,28 +9,28 @@ describe("slice", () => {
 		it("keeps notes at the specified index range", () => {
 			const pat = slice(sequence(note("C4", "4n"), note("E4", "4n"), note("G4", "4n")), 1, 3);
 			expect(pat.notes).toHaveLength(2);
-			expect(pat.notes[0]!.pitch).toBe(64); // E4
-			expect(pat.notes[1]!.pitch).toBe(67); // G4
+			expect(pat.notes[0]!.pitch).toEqual(resolvePitch("E4"));
+			expect(pat.notes[1]!.pitch).toEqual(resolvePitch("G4"));
 		});
 
-		it("shifts ticks so the first kept note starts at zero", () => {
+		it("shifts beats so the first kept note starts at zero", () => {
 			const pat = slice(sequence(note("C4", "4n"), note("E4", "4n"), note("G4", "4n")), 1, 3);
-			expect(pat.notes[0]!.tick).toBe(0); // E4 was at 480, shifted to 0
-			expect(pat.notes[1]!.tick).toBe(480); // G4 was at 960, shifted to 480
+			expect(pat.notes[0]!.beat).toBe(0); // E4 was at 1, shifted to 0
+			expect(pat.notes[1]!.beat).toBe(1); // G4 was at 2, shifted to 1
 		});
 
 		it("returns empty notes and zero duration when range is empty", () => {
 			const pat = slice(note("C4", "4n"), 5, 10);
 			expect(pat.notes).toHaveLength(0);
-			expect(pat.durationTicks).toBe(0);
+			expect(pat.durationBeats).toBe(0);
 		});
 	});
 
-	describe("durationTicks", () => {
+	describe("durationBeats", () => {
 		it("equals the span of kept notes", () => {
 			const pat = slice(sequence(note("C4", "4n"), note("E4", "4n"), note("G4", "4n")), 0, 2);
-			// notes at tick 0 and 480, each dur 480 → span = 480+480-0 = 960
-			expect(pat.durationTicks).toBe(960);
+			// notes at beat 0 and 1, each dur 1 → span = 1+1-0 = 2
+			expect(pat.durationBeats).toBe(2);
 		});
 	});
 
@@ -43,39 +44,39 @@ describe("slice", () => {
 describe("trim", () => {
 	describe("notes", () => {
 		it("keeps notes within the time window", () => {
-			const pat = trim(sequence(note("C4", "4n"), note("E4", "4n"), note("G4", "4n")), 480, 960);
+			const pat = trim(sequence(note("C4", "4n"), note("E4", "4n"), note("G4", "4n")), 1, 2);
 			expect(pat.notes).toHaveLength(1);
-			expect(pat.notes[0]!.pitch).toBe(64); // E4 at tick 480
+			expect(pat.notes[0]!.pitch).toEqual(resolvePitch("E4")); // E4 at beat 1
 		});
 
-		it("shifts ticks relative to window start", () => {
-			const pat = trim(sequence(note("C4", "4n"), note("E4", "4n")), 480, 960);
-			expect(pat.notes[0]!.tick).toBe(0); // E4 was at 480, shifted to 0
+		it("shifts beats relative to window start", () => {
+			const pat = trim(sequence(note("C4", "4n"), note("E4", "4n")), 1, 2);
+			expect(pat.notes[0]!.beat).toBe(0); // E4 was at beat 1, shifted to 0
 		});
 
 		it("clips notes that span the window boundary", () => {
-			// C4@0 dur 480 [0,480), trim window [240, 480) → clip to [240,480) → tick=0 dur=240
-			const pat = trim(note("C4", "4n"), 240, 480);
+			// C4@0 dur 1 beat, trim window [0.5, 1) → clip to [0.5,1), beat=0 dur=0.5
+			const pat = trim(note("C4", "4n"), 0.5, 1);
 			expect(pat.notes).toHaveLength(1);
-			expect(pat.notes[0]).toMatchObject({ tick: 0, durationTicks: 240 });
+			expect(pat.notes[0]).toMatchObject({ beat: 0, durationBeats: 0.5 });
 		});
 
 		it("accepts musical notation for window bounds", () => {
 			const pat = trim(sequence(note("C4", "4n"), note("E4", "4n")), "4n", "2n");
 			expect(pat.notes).toHaveLength(1);
-			expect(pat.notes[0]!.pitch).toBe(64); // E4 at tick 480
+			expect(pat.notes[0]!.pitch).toEqual(resolvePitch("E4")); // E4 at beat 1
 		});
 	});
 
-	describe("durationTicks", () => {
+	describe("durationBeats", () => {
 		it("equals to - from", () => {
-			expect(trim(note("C4", "2n"), 0, 480).durationTicks).toBe(480);
+			expect(trim(note("C4", "2n"), 0, 1).durationBeats).toBe(1);
 		});
 	});
 
 	describe("instanceof", () => {
 		it("is a TrimPattern", () => {
-			expect(trim(note("C4", "4n"), 0, 240)).toBeInstanceOf(TrimPattern);
+			expect(trim(note("C4", "4n"), 0, 0.5)).toBeInstanceOf(TrimPattern);
 		});
 	});
 });

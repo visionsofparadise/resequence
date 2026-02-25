@@ -2,14 +2,14 @@ import { ResequenceError } from "../../error";
 import type { ScheduleContext } from "../../rendering/schedule-context";
 import { applyCC } from "../../rendering/schedule-notes";
 import type { Pitch } from "../../utils/pitch";
-import { resolvePitch } from "../../utils/pitch";
+import { pitchToMidi, resolvePitch } from "../../utils/pitch";
 import type { Midi, MidiAudio, NoteContext } from "../node";
 import { Node } from "../node";
 
 export interface SamplerZone {
 	readonly sample: string;
 	readonly region?: string;
-	readonly root?: Pitch;
+	readonly root?: string | number | Pitch;
 	readonly velocity?: number;
 	readonly loopStartMs?: number;
 	readonly loopEndMs?: number;
@@ -124,7 +124,7 @@ interface ResolvedSample {
 
 function resolveFromMapping(mapping: SamplerMapping, midiNote: number, velocity: number, sampleMap: ReadonlyMap<string, AudioBuffer>): ResolvedSample | null {
 	const notes = Object.keys(mapping)
-		.map((key) => ({ key, midi: resolvePitch(key as Pitch) }))
+		.map((key) => ({ key, midi: pitchToMidi(resolvePitch(key)).note }))
 		.sort((left, right) => left.midi - right.midi);
 
 	if (notes.length === 0) return null;
@@ -161,7 +161,7 @@ function resolveFromMapping(mapping: SamplerMapping, midiNote: number, velocity:
 function resolveFromZones(zones: ReadonlyArray<NormalizedZone>, midiNote: number, velocity: number, sampleMap: ReadonlyMap<string, AudioBuffer>): ResolvedSample | null {
 	if (zones.length === 0) return null;
 
-	const anchored = zones.filter((zone): zone is NormalizedZone & { root: Pitch } => zone.root !== undefined).sort((left, right) => resolvePitch(left.root) - resolvePitch(right.root));
+	const anchored = zones.filter((zone): zone is NormalizedZone & { root: Pitch } => zone.root !== undefined).sort((left, right) => pitchToMidi(left.root).note - pitchToMidi(right.root).note);
 
 	if (anchored.length === 0) {
 		const zone = selectVelocityLayer(zones, velocity);
@@ -177,16 +177,16 @@ function resolveFromZones(zones: ReadonlyArray<NormalizedZone>, midiNote: number
 
 	if (!firstZone) return null;
 
-	let selectedRoot = resolvePitch(firstZone.root);
+	let selectedRoot = pitchToMidi(firstZone.root).note;
 
 	for (const zone of anchored) {
-		const rootMidi = resolvePitch(zone.root);
+		const rootMidi = pitchToMidi(zone.root).note;
 
 		if (rootMidi <= midiNote) selectedRoot = rootMidi;
 		else break;
 	}
 
-	const coRootZones = anchored.filter((zone) => resolvePitch(zone.root) === selectedRoot);
+	const coRootZones = anchored.filter((zone) => pitchToMidi(zone.root).note === selectedRoot);
 	const zone = selectVelocityLayer(coRootZones, velocity);
 
 	if (!zone) return null;
@@ -222,7 +222,8 @@ function frequencyToMidi(frequency: number): number {
 
 function normalizeZone(zone: SamplerZone): NormalizedZone {
 	const sample = zone.region && !zone.sample.includes("#") ? `${zone.sample}#${zone.region}` : zone.sample;
-	return { sample, root: zone.root, velocity: zone.velocity, loopStartMs: zone.loopStartMs, loopEndMs: zone.loopEndMs };
+	const root = zone.root !== undefined ? resolvePitch(zone.root) : undefined;
+	return { sample, root, velocity: zone.velocity, loopStartMs: zone.loopStartMs, loopEndMs: zone.loopEndMs };
 }
 
 function normalizeVelocityLayer(layer: SamplerVelocityLayer): SamplerVelocityLayer {
@@ -232,11 +233,11 @@ function normalizeVelocityLayer(layer: SamplerVelocityLayer): SamplerVelocityLay
 
 export function sampler(id: string, path: string, options?: { root: Pitch; loopStartMs?: number; loopEndMs?: number }): SamplerNode;
 export function sampler(id: string, source: SamplerMapping | ReadonlyArray<SamplerZone>): SamplerNode;
-export function sampler(id: string, source: string | SamplerMapping | ReadonlyArray<SamplerZone>, options?: { root: Pitch; loopStartMs?: number; loopEndMs?: number }): SamplerNode {
+export function sampler(id: string, source: string | SamplerMapping | ReadonlyArray<SamplerZone>, options?: { root: string | number | Pitch; loopStartMs?: number; loopEndMs?: number }): SamplerNode {
 	if (!id) throw new ResequenceError("EMPTY_SAMPLER_ID", "sampler(): id must not be empty");
 
 	if (typeof source === "string") {
-		const rootMidi = options?.root !== undefined ? resolvePitch(options.root) : undefined;
+		const rootMidi = options?.root !== undefined ? pitchToMidi(resolvePitch(options.root)).note : undefined;
 
 		return new SamplerNode(id, { kind: "single", path: source, rootMidi, loopStartMs: options?.loopStartMs, loopEndMs: options?.loopEndMs });
 	}

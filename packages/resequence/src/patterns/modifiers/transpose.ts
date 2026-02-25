@@ -1,12 +1,13 @@
 import type { ScheduleContext } from "../../rendering/schedule-context";
 import { isInScope, prepareNotes, scheduleNotes } from "../../rendering/schedule-notes";
+import { addSteps } from "../../utils/pitch";
 import type { ValidateContext } from "../../validate";
 import type { Pattern, PositionedNote } from "../pattern";
 import { MidiPattern } from "../pattern";
 
 export class TransposePattern extends MidiPattern {
 	readonly type = "transpose" as const;
-	readonly durationTicks: number;
+	readonly durationBeats: number;
 	readonly notes: ReadonlyArray<PositionedNote>;
 
 	constructor(
@@ -15,8 +16,8 @@ export class TransposePattern extends MidiPattern {
 	) {
 		super();
 
-		this.durationTicks = child.durationTicks;
-		this.notes = child.notes.map((positionedNote) => ({ ...positionedNote, pitch: positionedNote.pitch + interval }));
+		this.durationBeats = child.durationBeats;
+		this.notes = child.notes.map((positionedNote) => ({ ...positionedNote, pitch: addSteps(positionedNote.pitch, interval) }));
 	}
 
 	validate(context: ValidateContext): void {
@@ -25,20 +26,20 @@ export class TransposePattern extends MidiPattern {
 		this.child.validate(childContext);
 	}
 
-	prepare(offsetTicks: number, context: ScheduleContext): void {
-		if (!isInScope(offsetTicks, this.durationTicks, context)) return;
+	prepare(offsetBeats: number, context: ScheduleContext): void {
+		if (!isInScope(offsetBeats, this.durationBeats, context)) return;
 
-		prepareNotes(this.notes, offsetTicks, this.outputs, context);
+		prepareNotes(this.notes, offsetBeats, this.outputs, context);
 
-		this.child.prepare(offsetTicks, context);
+		this.child.prepare(offsetBeats, context);
 	}
 
-	schedule(offsetTicks: number, context: ScheduleContext): void {
-		if (!isInScope(offsetTicks, this.durationTicks, context)) return;
+	schedule(offsetBeats: number, context: ScheduleContext): void {
+		if (!isInScope(offsetBeats, this.durationBeats, context)) return;
 
-		scheduleNotes(this.notes, offsetTicks, this.outputs, context);
+		scheduleNotes(this.notes, offsetBeats, this.outputs, context);
 
-		this.child.schedule(offsetTicks, context);
+		this.child.schedule(offsetBeats, context);
 	}
 }
 

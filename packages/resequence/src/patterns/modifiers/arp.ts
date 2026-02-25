@@ -1,6 +1,8 @@
 import type { ScheduleContext } from "../../rendering/schedule-context";
 import { isInScope, prepareNotes, scheduleNotes } from "../../rendering/schedule-notes";
 import type { Duration } from "../../utils/duration";
+import type { Pitch } from "../../utils/pitch";
+import { pitchKey } from "../../utils/pitch";
 import type { ValidateContext } from "../../validate";
 import { note } from "../note";
 import type { Pattern, PositionedNote } from "../pattern";
@@ -20,7 +22,7 @@ function mulberry32(seed: number): () => number {
 
 export class ArpPattern extends MidiPattern {
 	readonly type = "arp" as const;
-	readonly durationTicks: number;
+	readonly durationBeats: number;
 	readonly notes: ReadonlyArray<PositionedNote>;
 
 	constructor(
@@ -29,19 +31,25 @@ export class ArpPattern extends MidiPattern {
 	) {
 		super();
 
-		this.durationTicks = child.durationTicks;
+		this.durationBeats = child.durationBeats;
 
-		const total = child.durationTicks;
-		const mappingDuration = mappingPattern.durationTicks;
+		const total = child.durationBeats;
+		const mappingDuration = mappingPattern.durationBeats;
 
-		const pitchPool = [...new Set(child.notes.map((positionedNote) => positionedNote.pitch))].sort((pitchA, pitchB) => pitchA - pitchB);
+		const seen = new Set<number>();
+		const pitchPool: Array<Pitch> = [];
+		for (const positionedNote of child.notes) {
+			const key = pitchKey(positionedNote.pitch);
+			if (!seen.has(key)) { seen.add(key); pitchPool.push(positionedNote.pitch); }
+		}
+		pitchPool.sort((pitchA, pitchB) => pitchKey(pitchA) - pitchKey(pitchB));
 
 		if (pitchPool.length === 0 || mappingDuration === 0) {
 			this.notes = [];
 			return;
 		}
 
-		const mappingNotes = mappingPattern.notes.slice().sort((noteA, noteB) => noteA.tick - noteB.tick);
+		const mappingNotes = mappingPattern.notes.slice().sort((noteA, noteB) => noteA.beat - noteB.beat);
 
 		if (mappingNotes.length === 0) {
 			this.notes = [];
@@ -62,13 +70,13 @@ export class ArpPattern extends MidiPattern {
 
 		for (;;) {
 			const mappingNote = mappingNotes[stepIndex % mappingNotes.length] ?? firstMappingNote;
-			const absoluteTick = cycle * mappingDuration + mappingNote.tick;
+			const absoluteTick = cycle * mappingDuration + mappingNote.beat;
 
 			if (absoluteTick >= total) break;
 
-			const poolIndex = mappingNote.pitch % pitchPool.length;
+			const poolIndex = ((pitchKey(mappingNote.pitch) % pitchPool.length) + pitchPool.length) % pitchPool.length;
 			const pitch = pitchPool[poolIndex] ?? firstPitch;
-			result.push({ ...mappingNote, tick: absoluteTick, pitch });
+			result.push({ ...mappingNote, beat: absoluteTick, pitch });
 
 			stepIndex++;
 
@@ -84,18 +92,18 @@ export class ArpPattern extends MidiPattern {
 		this.child.validate(childContext);
 	}
 
-	prepare(offsetTicks: number, context: ScheduleContext): void {
-		if (!isInScope(offsetTicks, this.durationTicks, context)) return;
+	prepare(offsetBeats: number, context: ScheduleContext): void {
+		if (!isInScope(offsetBeats, this.durationBeats, context)) return;
 
-		prepareNotes(this.notes, offsetTicks, this.outputs, context);
-		this.child.prepare(offsetTicks, context);
+		prepareNotes(this.notes, offsetBeats, this.outputs, context);
+		this.child.prepare(offsetBeats, context);
 	}
 
-	schedule(offsetTicks: number, context: ScheduleContext): void {
-		if (!isInScope(offsetTicks, this.durationTicks, context)) return;
+	schedule(offsetBeats: number, context: ScheduleContext): void {
+		if (!isInScope(offsetBeats, this.durationBeats, context)) return;
 
-		scheduleNotes(this.notes, offsetTicks, this.outputs, context);
-		this.child.schedule(offsetTicks, context);
+		scheduleNotes(this.notes, offsetBeats, this.outputs, context);
+		this.child.schedule(offsetBeats, context);
 	}
 }
 

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { resolvePitch } from "../utils/pitch";
 import { sampler } from "../nodes/generators/sampler";
 import { gap } from "./gap";
 import { layer } from "./layer";
@@ -29,22 +30,22 @@ describe("MetadataPattern", () => {
 		});
 	});
 
-	describe("durationTicks", () => {
+	describe("durationBeats", () => {
 		it("delegates to child", () => {
 			const m = metadata(note("C4", "4n"), {});
-			expect(m.durationTicks).toBe(480);
+			expect(m.durationBeats).toBe(1);
 		});
 
 		it("delegates sequence duration", () => {
 			const m = metadata(sequence(note("C4", "4n"), note("E4", "4n")), {});
-			expect(m.durationTicks).toBe(960);
+			expect(m.durationBeats).toBe(2);
 		});
 	});
 
 	describe("notes", () => {
 		it("delegates to child", () => {
 			const pat = metadata(note("C4", "4n"), {});
-			expect(pat.notes).toMatchObject([{ tick: 0, pitch: 60 }]);
+			expect(pat.notes).toMatchObject([{ beat: 0, pitch: resolvePitch("C4") }]);
 		});
 
 		it("handles nested structures", () => {
@@ -55,12 +56,12 @@ describe("MetadataPattern", () => {
 			const song = metadata(groove, { name: "Groove" });
 
 			expect(song.notes).toMatchObject([
-				{ tick: 0, pitch: 24 },
-				{ tick: 480, pitch: 24 },
-				{ tick: 960, pitch: 24 },
-				{ tick: 1440, pitch: 24 },
-				{ tick: 480, pitch: 26 },
-				{ tick: 1440, pitch: 26 },
+				{ beat: 0, pitch: resolvePitch("C1") },
+				{ beat: 1, pitch: resolvePitch("C1") },
+				{ beat: 2, pitch: resolvePitch("C1") },
+				{ beat: 3, pitch: resolvePitch("C1") },
+				{ beat: 1, pitch: resolvePitch("D1") },
+				{ beat: 3, pitch: resolvePitch("D1") },
 			]);
 		});
 	});

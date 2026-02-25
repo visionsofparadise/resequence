@@ -8,38 +8,42 @@ export type Duration =
   | '2t' | '4t' | '8t' | '16t'
   | number
 
-const TICKS: Record<string, number> = {
-  '1n': PPQ * 4,
-  '2n': PPQ * 2,
-  '4n': PPQ,
-  '8n': PPQ / 2,
-  '16n': PPQ / 4,
-  '32n': PPQ / 8,
-  '1n.': PPQ * 4 * 1.5,
-  '2n.': PPQ * 2 * 1.5,
-  '4n.': PPQ * 1.5,
-  '8n.': (PPQ / 2) * 1.5,
-  '16n.': (PPQ / 4) * 1.5,
-  '2t': (PPQ * 2 * 2) / 3,
-  '4t': (PPQ * 2) / 3,
-  '8t': PPQ / 3,
-  '16t': (PPQ / 2) / 3,
+const BEATS: Record<string, number> = {
+  '1n': 4,
+  '2n': 2,
+  '4n': 1,
+  '8n': 0.5,
+  '16n': 0.25,
+  '32n': 0.125,
+  '1n.': 6,
+  '2n.': 3,
+  '4n.': 1.5,
+  '8n.': 0.75,
+  '16n.': 0.375,
+  '2t': 4 / 3,
+  '4t': 2 / 3,
+  '8t': 1 / 3,
+  '16t': 1 / 6,
 }
 
 export function resolveDuration(duration: Duration): number {
   if (typeof duration === 'number') return duration
 
-  const ticks = TICKS[duration]
+  const beats = BEATS[duration]
 
-  if (ticks === undefined) throw new ResequenceError('UNKNOWN_DURATION', `Unknown duration: ${duration}`)
-    
-  return ticks
+  if (beats === undefined) throw new ResequenceError('UNKNOWN_DURATION', `Unknown duration: ${duration}`)
+
+  return beats
 }
 
-export function bars(count: number): number {
-  return count * PPQ * 4
+export function bars(count: number, timeSignature: readonly [number, number] = [4, 4]): number {
+  return count * timeSignature[0] * (4 / timeSignature[1])
 }
 
-export function beats(count: number): number {
-  return count * PPQ
+export function ms(millis: number, bpm: number): number {
+  return (millis / 1000) * (bpm / 60)
+}
+
+export function sec(seconds: number, bpm: number): number {
+  return seconds * (bpm / 60)
 }

@@ -43,8 +43,6 @@ export class EnvelopeNode extends Node<MidiAudio, MidiAudio> {
 		driver.offset.setValueAtTime(sustain, stopTime);
 		driver.offset.linearRampToValueAtTime(0, stopTime + release);
 
-		// TODO: envelopes may need to extend targets stop times
-
 		for (const node of this.outputs) node.prepare(note, context);
 	}
 

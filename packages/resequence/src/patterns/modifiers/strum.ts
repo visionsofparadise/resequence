@@ -1,5 +1,6 @@
 import type { ScheduleContext } from "../../rendering/schedule-context";
 import { isInScope, prepareNotes, scheduleNotes } from "../../rendering/schedule-notes";
+import { pitchKey } from "../../utils/pitch";
 import type { ValidateContext } from "../../validate";
 import type { Pattern, PositionedNote } from "../pattern";
 import { MidiPattern } from "../pattern";
@@ -11,7 +12,7 @@ export interface StrumOptions {
 
 export class StrumPattern extends MidiPattern {
 	readonly type = "strum" as const;
-	readonly durationTicks: number;
+	readonly durationBeats: number;
 	readonly notes: ReadonlyArray<PositionedNote>;
 
 	constructor(
@@ -20,7 +21,7 @@ export class StrumPattern extends MidiPattern {
 	) {
 		super();
 
-		this.durationTicks = child.durationTicks;
+		this.durationBeats = child.durationBeats;
 
 		const strumOffset = options.strumOffset ?? 15;
 		const direction = options.direction ?? "up";
@@ -28,11 +29,11 @@ export class StrumPattern extends MidiPattern {
 		const byTick = new Map<number, Array<PositionedNote>>();
 
 		for (const positionedNote of child.notes) {
-			let group = byTick.get(positionedNote.tick);
+			let group = byTick.get(positionedNote.beat);
 
 			if (!group) {
 				group = [];
-				byTick.set(positionedNote.tick, group);
+				byTick.set(positionedNote.beat, group);
 			}
 			group.push(positionedNote);
 		}
@@ -40,10 +41,10 @@ export class StrumPattern extends MidiPattern {
 		const result: Array<PositionedNote> = [];
 
 		for (const group of byTick.values()) {
-			const sorted = direction === "up" ? group.slice().sort((noteA, noteB) => noteA.pitch - noteB.pitch) : group.slice().sort((noteA, noteB) => noteB.pitch - noteA.pitch);
+			const sorted = direction === "up" ? group.slice().sort((noteA, noteB) => pitchKey(noteA.pitch) - pitchKey(noteB.pitch)) : group.slice().sort((noteA, noteB) => pitchKey(noteB.pitch) - pitchKey(noteA.pitch));
 
 			sorted.forEach((positionedNote, voiceIndex) => {
-				result.push({ ...positionedNote, tick: positionedNote.tick + voiceIndex * strumOffset });
+				result.push({ ...positionedNote, beat: positionedNote.beat + voiceIndex * strumOffset });
 			});
 		}
 
@@ -56,20 +57,20 @@ export class StrumPattern extends MidiPattern {
 		this.child.validate(childContext);
 	}
 
-	prepare(offsetTicks: number, context: ScheduleContext): void {
-		if (!isInScope(offsetTicks, this.durationTicks, context)) return;
+	prepare(offsetBeats: number, context: ScheduleContext): void {
+		if (!isInScope(offsetBeats, this.durationBeats, context)) return;
 
-		prepareNotes(this.notes, offsetTicks, this.outputs, context);
+		prepareNotes(this.notes, offsetBeats, this.outputs, context);
 
-		this.child.prepare(offsetTicks, context);
+		this.child.prepare(offsetBeats, context);
 	}
 
-	schedule(offsetTicks: number, context: ScheduleContext): void {
-		if (!isInScope(offsetTicks, this.durationTicks, context)) return;
+	schedule(offsetBeats: number, context: ScheduleContext): void {
+		if (!isInScope(offsetBeats, this.durationBeats, context)) return;
 
-		scheduleNotes(this.notes, offsetTicks, this.outputs, context);
+		scheduleNotes(this.notes, offsetBeats, this.outputs, context);
 
-		this.child.schedule(offsetTicks, context);
+		this.child.schedule(offsetBeats, context);
 	}
 }
 

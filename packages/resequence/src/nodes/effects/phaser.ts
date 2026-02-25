@@ -31,7 +31,9 @@ export class PhaserEffectNode extends EffectNode {
 			}
 
 			for (let stage = 0; stage < filters.length - 1; stage++) {
-				filters[stage]!.connect(filters[stage + 1]!);
+				const cur = filters[stage];
+				const next = filters[stage + 1];
+				if (cur && next) cur.connect(next);
 			}
 
 			const lfo = scheduleContext.audioContext.createOscillator();
@@ -61,14 +63,20 @@ export class PhaserEffectNode extends EffectNode {
 				depthDriver.connect(depthGain.gain);
 			}
 
-			firstFilter = filters[0]!;
-			const lastFilter = filters[filters.length - 1]!;
+			const first = filters[0];
+			const last = filters[filters.length - 1];
 
-			scheduleContext.nodeMap.set(this.effectsId, firstFilter);
-			scheduleContext.nodeMap.set(`${this.effectsId}.last`, lastFilter);
+			if (first && last) {
+				firstFilter = first;
+				scheduleContext.nodeMap.set(this.effectsId, first);
+				scheduleContext.nodeMap.set(`${this.effectsId}.last`, last);
+			}
+
 			scheduleContext.nodeMap.set(`${this.effectsId}.lfo`, lfo);
 			scheduleContext.nodeMap.set(`${this.effectsId}.depth`, depthGain);
 		}
+
+		if (!firstFilter) return;
 
 		const lastFilter = scheduleContext.nodeMap.get(`${this.effectsId}.last`);
 		const tail = lastFilter instanceof BiquadFilterNode ? lastFilter : firstFilter;

@@ -10,7 +10,7 @@ import { sequence } from "../sequence";
 
 export class QuantizePattern extends MidiPattern {
 	readonly type = "quantize" as const;
-	readonly durationTicks: number;
+	readonly durationBeats: number;
 	readonly notes: ReadonlyArray<PositionedNote>;
 
 	constructor(
@@ -20,25 +20,25 @@ export class QuantizePattern extends MidiPattern {
 	) {
 		super();
 
-		this.durationTicks = child.durationTicks;
+		this.durationBeats = child.durationBeats;
 
 		const grid = resolveDuration(subdivision);
 
 		if (!grooveMap) {
 			this.notes = child.notes.map((positionedNote) => {
-				const remainder = positionedNote.tick % grid;
-				const base = positionedNote.tick - remainder;
-				return { ...positionedNote, tick: base + (remainder <= grid / 2 ? 0 : grid) };
+				const remainder = positionedNote.beat % grid;
+				const base = positionedNote.beat - remainder;
+				return { ...positionedNote, beat: base + (remainder <= grid / 2 ? 0 : grid) };
 			});
 		} else {
-			const groovePositions = grooveMap.notes.map((positionedNote) => positionedNote.tick % grid).sort((tickA, tickB) => tickA - tickB);
+			const groovePositions = grooveMap.notes.map((positionedNote) => positionedNote.beat % grid).sort((tickA, tickB) => tickA - tickB);
 
 			this.notes = child.notes.map((positionedNote) => {
-				const cycle = Math.floor(positionedNote.tick / grid);
-				const remainder = positionedNote.tick % grid;
+				const cycle = Math.floor(positionedNote.beat / grid);
+				const remainder = positionedNote.beat % grid;
 				const nearest = groovePositions.reduce((best, grooveTick) => (Math.abs(grooveTick - remainder) < Math.abs(best - remainder) ? grooveTick : best), groovePositions[0] ?? 0);
 
-				return { ...positionedNote, tick: cycle * grid + nearest };
+				return { ...positionedNote, beat: cycle * grid + nearest };
 			});
 		}
 	}
@@ -49,18 +49,18 @@ export class QuantizePattern extends MidiPattern {
 		this.child.validate(childContext);
 	}
 
-	prepare(offsetTicks: number, context: ScheduleContext): void {
-		if (!isInScope(offsetTicks, this.durationTicks, context)) return;
+	prepare(offsetBeats: number, context: ScheduleContext): void {
+		if (!isInScope(offsetBeats, this.durationBeats, context)) return;
 
-		prepareNotes(this.notes, offsetTicks, this.outputs, context);
-		this.child.prepare(offsetTicks, context);
+		prepareNotes(this.notes, offsetBeats, this.outputs, context);
+		this.child.prepare(offsetBeats, context);
 	}
 
-	schedule(offsetTicks: number, context: ScheduleContext): void {
-		if (!isInScope(offsetTicks, this.durationTicks, context)) return;
+	schedule(offsetBeats: number, context: ScheduleContext): void {
+		if (!isInScope(offsetBeats, this.durationBeats, context)) return;
 
-		scheduleNotes(this.notes, offsetTicks, this.outputs, context);
-		this.child.schedule(offsetTicks, context);
+		scheduleNotes(this.notes, offsetBeats, this.outputs, context);
+		this.child.schedule(offsetBeats, context);
 	}
 }
 
@@ -69,10 +69,7 @@ export function quantize(pattern: Pattern, subdivision: Duration | number, groov
 }
 
 function buildSwingMap(amount: number): Pattern {
-	const quarterTicks = 480;
-	const swungBeat = Math.round(amount * quarterTicks);
-
-	return sequence(note(0, swungBeat), note(0, quarterTicks - swungBeat));
+	return sequence(note(0, amount), note(0, 1 - amount));
 }
 
 export function shuffle(pattern: Pattern, amount: number): QuantizePattern {

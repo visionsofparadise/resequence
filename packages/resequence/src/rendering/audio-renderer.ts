@@ -49,8 +49,8 @@ export class AudioRenderer {
 			nodeMap,
 			driverMap,
 			tempoMap,
-			fromTicks: 0,
-			toTicks: Infinity,
+			fromBeats: 0,
+			toBeats: Infinity,
 			trackFilter: this.options.trackFilter,
 		};
 
@@ -58,22 +58,22 @@ export class AudioRenderer {
 		this.context = baseContext;
 	}
 
-	prepare(fromTicks: number, toTicks: number): void {
+	prepare(fromBeats: number, toBeats: number): void {
 		if (!this.context) throw new Error("AudioRenderer: setup() must be called before prepare()");
 
-		this.pattern.prepare(0, { ...this.context, fromTicks, toTicks });
+		this.pattern.prepare(0, { ...this.context, fromBeats, toBeats });
 	}
 
-	schedule(fromTicks: number, toTicks: number): void {
+	schedule(fromBeats: number, toBeats: number): void {
 		if (!this.context) throw new Error("AudioRenderer: setup() must be called before schedule()");
 
-		this.pattern.schedule(0, { ...this.context, fromTicks, toTicks });
+		this.pattern.schedule(0, { ...this.context, fromBeats, toBeats });
 	}
 
-	render(fromTicks: number, toTicks: number): void {
+	render(fromBeats: number, toBeats: number): void {
 		if (!this.context) throw new Error("AudioRenderer: setup() must be called before render()");
 
-		const context = { ...this.context, fromTicks, toTicks };
+		const context = { ...this.context, fromBeats, toBeats };
 		this.pattern.prepare(0, context);
 		this.pattern.schedule(0, context);
 	}

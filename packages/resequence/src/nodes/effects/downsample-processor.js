@@ -7,6 +7,7 @@ class DownsampleProcessor extends AudioWorkletProcessor {
 
 	constructor(options) {
 		super(options);
+
 		this._heldSamples = [];
 		this._counter = 0;
 	}
@@ -30,6 +31,7 @@ class DownsampleProcessor extends AudioWorkletProcessor {
 					if ((this._counter + sample) % step === 0) {
 						this._heldSamples[channel] = inputChannel?.[sample] ?? 0;
 					}
+					
 					outputChannel[sample] = this._heldSamples[channel];
 				}
 			}

@@ -22,7 +22,7 @@ function mulberry32(seed: number): () => number {
 
 export class ReducePattern extends MidiPattern {
 	readonly type = "reduce" as const;
-	readonly durationTicks: number;
+	readonly durationBeats: number;
 	readonly notes: ReadonlyArray<PositionedNote>;
 
 	constructor(
@@ -31,7 +31,7 @@ export class ReducePattern extends MidiPattern {
 	) {
 		super();
 
-		this.durationTicks = child.durationTicks;
+		this.durationBeats = child.durationBeats;
 		this.notes = child.notes.reduce<Array<PositionedNote>>(callback, []);
 	}
 
@@ -41,18 +41,18 @@ export class ReducePattern extends MidiPattern {
 		this.child.validate(childContext);
 	}
 
-	prepare(offsetTicks: number, context: ScheduleContext): void {
-		if (!isInScope(offsetTicks, this.durationTicks, context)) return;
+	prepare(offsetBeats: number, context: ScheduleContext): void {
+		if (!isInScope(offsetBeats, this.durationBeats, context)) return;
 
-		prepareNotes(this.notes, offsetTicks, this.outputs, context);
-		this.child.prepare(offsetTicks, context);
+		prepareNotes(this.notes, offsetBeats, this.outputs, context);
+		this.child.prepare(offsetBeats, context);
 	}
 
-	schedule(offsetTicks: number, context: ScheduleContext): void {
-		if (!isInScope(offsetTicks, this.durationTicks, context)) return;
+	schedule(offsetBeats: number, context: ScheduleContext): void {
+		if (!isInScope(offsetBeats, this.durationBeats, context)) return;
 
-		scheduleNotes(this.notes, offsetTicks, this.outputs, context);
-		this.child.schedule(offsetTicks, context);
+		scheduleNotes(this.notes, offsetBeats, this.outputs, context);
+		this.child.schedule(offsetBeats, context);
 	}
 }
 
@@ -96,10 +96,10 @@ export function thin(pattern: Pattern, factor: number, seed?: number): ReducePat
 }
 
 export function mask(pattern: Pattern, maskPattern: Pattern): ReducePattern {
-	const maskTicks = new Set(maskPattern.notes.map((positionedNote) => positionedNote.tick));
-	const maskDuration = maskPattern.durationTicks;
+	const maskTicks = new Set(maskPattern.notes.map((positionedNote) => positionedNote.beat));
+	const maskDuration = maskPattern.durationBeats;
 	return reduce(pattern, (acc, positionedNote) => {
-		const cyclicTick = maskDuration > 0 ? positionedNote.tick % maskDuration : positionedNote.tick;
+		const cyclicTick = maskDuration > 0 ? positionedNote.beat % maskDuration : positionedNote.beat;
 		if (maskTicks.has(cyclicTick)) {
 			acc.push(positionedNote);
 		}

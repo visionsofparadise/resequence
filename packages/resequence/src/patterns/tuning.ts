@@ -1,17 +1,18 @@
 import type { ScheduleContext } from "../rendering/schedule-context";
+import type { TuningConfig } from "../utils/pitch";
 import type { ValidateContext } from "../validate";
 import type { Pattern, PositionedNote } from "./pattern";
 
 export class TuningPattern implements Pattern {
 	readonly type = "tuning" as const;
-	readonly durationTicks: number;
+	readonly durationBeats: number;
 	readonly notes: ReadonlyArray<PositionedNote>;
 
 	constructor(
 		readonly child: Pattern,
-		readonly def: unknown,
+		readonly def: TuningConfig,
 	) {
-		this.durationTicks = child.durationTicks;
+		this.durationBeats = child.durationBeats;
 		this.notes = child.notes;
 	}
 
@@ -20,22 +21,22 @@ export class TuningPattern implements Pattern {
 	}
 
 	setup(context: ScheduleContext): void {
-		this.child.setup(context);
+		this.child.setup({ ...context, tuning: this.def });
 	}
 
-	prepare(offsetTicks: number, context: ScheduleContext): void {
-		this.child.prepare(offsetTicks, context);
+	prepare(offsetBeats: number, context: ScheduleContext): void {
+		this.child.prepare(offsetBeats, { ...context, tuning: this.def });
 	}
 
-	schedule(offsetTicks: number, context: ScheduleContext): void {
-		this.child.schedule(offsetTicks, context);
+	schedule(offsetBeats: number, context: ScheduleContext): void {
+		this.child.schedule(offsetBeats, { ...context, tuning: this.def });
 	}
 
 	teardown(context: ScheduleContext): void {
-		this.child.teardown(context);
+		this.child.teardown({ ...context, tuning: this.def });
 	}
 }
 
-export function tuning(pattern: Pattern, def: unknown): TuningPattern {
+export function tuning(pattern: Pattern, def: TuningConfig): TuningPattern {
 	return new TuningPattern(pattern, def);
 }

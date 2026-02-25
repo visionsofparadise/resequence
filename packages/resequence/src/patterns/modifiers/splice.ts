@@ -20,7 +20,7 @@ export interface InsertOptions {
 
 export class SplicePattern extends MidiPattern {
 	readonly type = "splice" as const;
-	readonly durationTicks: number;
+	readonly durationBeats: number;
 	readonly notes: ReadonlyArray<PositionedNote>;
 
 	constructor(
@@ -29,7 +29,7 @@ export class SplicePattern extends MidiPattern {
 	) {
 		super();
 
-		const sorted = child.notes.slice().sort((noteA, noteB) => noteA.tick - noteB.tick);
+		const sorted = child.notes.slice().sort((noteA, noteB) => noteA.beat - noteB.beat);
 		const removeCount = options.remove ?? 0;
 		const before = sorted.slice(0, options.at);
 		const removing = sorted.slice(options.at, options.at + removeCount);
@@ -39,25 +39,25 @@ export class SplicePattern extends MidiPattern {
 		const lastRemoving = removing[removing.length - 1];
 		const firstAfter = after[0];
 
-		const insertionTick = firstRemoving !== undefined ? firstRemoving.tick : firstAfter !== undefined ? firstAfter.tick : child.durationTicks;
+		const insertionTick = firstRemoving !== undefined ? firstRemoving.beat : firstAfter !== undefined ? firstAfter.beat : child.durationBeats;
 
-		const removedSpan = firstRemoving !== undefined && lastRemoving !== undefined ? lastRemoving.tick + (lastRemoving.durationTicks ?? 0) - firstRemoving.tick : 0;
+		const removedSpan = firstRemoving !== undefined && lastRemoving !== undefined ? lastRemoving.beat + (lastRemoving.durationBeats ?? 0) - firstRemoving.beat : 0;
 
-		const insertDuration = options.insert?.durationTicks ?? 0;
+		const insertDuration = options.insert?.durationBeats ?? 0;
 		const shift = insertDuration - removedSpan;
 
 		const insertedNotes = (options.insert?.notes ?? []).map((positionedNote) => ({
 			...positionedNote,
-			tick: positionedNote.tick + insertionTick,
+			beat: positionedNote.beat + insertionTick,
 		}));
 
 		const afterNotes = after.map((positionedNote) => ({
 			...positionedNote,
-			tick: positionedNote.tick + shift,
+			beat: positionedNote.beat + shift,
 		}));
 
 		this.notes = [...before, ...insertedNotes, ...afterNotes];
-		this.durationTicks = child.durationTicks + shift;
+		this.durationBeats = child.durationBeats + shift;
 	}
 
 	validate(context: ValidateContext): void {
@@ -66,26 +66,26 @@ export class SplicePattern extends MidiPattern {
 		this.child.validate(childContext);
 	}
 
-	prepare(offsetTicks: number, context: ScheduleContext): void {
-		if (!isInScope(offsetTicks, this.durationTicks, context)) return;
+	prepare(offsetBeats: number, context: ScheduleContext): void {
+		if (!isInScope(offsetBeats, this.durationBeats, context)) return;
 
-		prepareNotes(this.notes, offsetTicks, this.outputs, context);
+		prepareNotes(this.notes, offsetBeats, this.outputs, context);
 
-		this.child.prepare(offsetTicks, context);
+		this.child.prepare(offsetBeats, context);
 	}
 
-	schedule(offsetTicks: number, context: ScheduleContext): void {
-		if (!isInScope(offsetTicks, this.durationTicks, context)) return;
+	schedule(offsetBeats: number, context: ScheduleContext): void {
+		if (!isInScope(offsetBeats, this.durationBeats, context)) return;
 
-		scheduleNotes(this.notes, offsetTicks, this.outputs, context);
+		scheduleNotes(this.notes, offsetBeats, this.outputs, context);
 
-		this.child.schedule(offsetTicks, context);
+		this.child.schedule(offsetBeats, context);
 	}
 }
 
 export class InsertPattern extends MidiPattern {
 	readonly type = "insert" as const;
-	readonly durationTicks: number;
+	readonly durationBeats: number;
 	readonly notes: ReadonlyArray<PositionedNote>;
 
 	constructor(
@@ -97,19 +97,19 @@ export class InsertPattern extends MidiPattern {
 		const atTick = resolveDuration(options.at);
 		const removeDuration = options.remove !== undefined ? resolveDuration(options.remove) : 0;
 		const removeEndTick = atTick + removeDuration;
-		const insertDuration = options.insert?.durationTicks ?? 0;
+		const insertDuration = options.insert?.durationBeats ?? 0;
 		const shift = insertDuration - removeDuration;
 
-		const before = child.notes.filter((positionedNote) => positionedNote.tick + (positionedNote.durationTicks ?? 0) <= atTick);
-		const afterNotes = child.notes.filter((positionedNote) => positionedNote.tick >= removeEndTick).map((positionedNote) => ({ ...positionedNote, tick: positionedNote.tick + shift }));
+		const before = child.notes.filter((positionedNote) => positionedNote.beat + (positionedNote.durationBeats ?? 0) <= atTick);
+		const afterNotes = child.notes.filter((positionedNote) => positionedNote.beat >= removeEndTick).map((positionedNote) => ({ ...positionedNote, beat: positionedNote.beat + shift }));
 
 		const insertedNotes = (options.insert?.notes ?? []).map((positionedNote) => ({
 			...positionedNote,
-			tick: positionedNote.tick + atTick,
+			beat: positionedNote.beat + atTick,
 		}));
 
 		this.notes = [...before, ...insertedNotes, ...afterNotes];
-		this.durationTicks = child.durationTicks + shift;
+		this.durationBeats = child.durationBeats + shift;
 	}
 
 	validate(context: ValidateContext): void {
@@ -118,20 +118,20 @@ export class InsertPattern extends MidiPattern {
 		this.child.validate(childContext);
 	}
 
-	prepare(offsetTicks: number, context: ScheduleContext): void {
-		if (!isInScope(offsetTicks, this.durationTicks, context)) return;
+	prepare(offsetBeats: number, context: ScheduleContext): void {
+		if (!isInScope(offsetBeats, this.durationBeats, context)) return;
 
-		prepareNotes(this.notes, offsetTicks, this.outputs, context);
+		prepareNotes(this.notes, offsetBeats, this.outputs, context);
 
-		this.child.prepare(offsetTicks, context);
+		this.child.prepare(offsetBeats, context);
 	}
 
-	schedule(offsetTicks: number, context: ScheduleContext): void {
-		if (!isInScope(offsetTicks, this.durationTicks, context)) return;
+	schedule(offsetBeats: number, context: ScheduleContext): void {
+		if (!isInScope(offsetBeats, this.durationBeats, context)) return;
 
-		scheduleNotes(this.notes, offsetTicks, this.outputs, context);
+		scheduleNotes(this.notes, offsetBeats, this.outputs, context);
 
-		this.child.schedule(offsetTicks, context);
+		this.child.schedule(offsetBeats, context);
 	}
 }
 

@@ -1,3 +1,4 @@
+import type { TuningConfig } from "../utils/pitch";
 import type { TempoMap } from "./tempo-map";
 
 export interface ScheduleContext {
@@ -6,8 +7,10 @@ export interface ScheduleContext {
 	readonly nodeMap: Map<string, AudioNode>;
 	readonly driverMap: Map<string, ConstantSourceNode>;
 	readonly tempoMap: TempoMap;
-	readonly fromTicks: number;
-	readonly toTicks: number;
+	readonly fromBeats: number;
+	readonly toBeats: number;
+	readonly timeSignature?: readonly [number, number];
+	readonly tuning?: TuningConfig;
 	readonly trackFilter?: ReadonlySet<string>;
 }
 

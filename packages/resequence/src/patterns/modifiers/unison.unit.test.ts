@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { resolvePitch } from "../../utils/pitch";
 import { note } from "../note";
 import { UnisonPattern, unison } from "./unison";
 
@@ -12,15 +13,15 @@ describe("UnisonPattern", () => {
 		it("centers voices around original pitch with pitch spread", () => {
 			// 3 voices, spread pitch 12: offsets = -12, 0, +12
 			const pat = unison(note("C4", "4n"), 3, { pitch: 12 });
-			expect(pat.notes[0]!.pitch).toBe(48); // 60 - 12
-			expect(pat.notes[1]!.pitch).toBe(60); // 60 + 0
-			expect(pat.notes[2]!.pitch).toBe(72); // 60 + 12
+			expect(pat.notes[0]!.pitch).toEqual(resolvePitch("C3")); // C4 - 12 semitones
+			expect(pat.notes[1]!.pitch).toEqual(resolvePitch("C4")); // C4 + 0
+			expect(pat.notes[2]!.pitch).toEqual(resolvePitch("C5")); // C4 + 12 semitones
 		});
 
 		it("all voices share the same pitch when no spread is given", () => {
 			const pat = unison(note("C4", "4n"), 3);
 			for (const positionedNote of pat.notes) {
-				expect(positionedNote.pitch).toBe(60);
+				expect(positionedNote.pitch).toEqual(resolvePitch("C4"));
 			}
 		});
 
@@ -32,18 +33,18 @@ describe("UnisonPattern", () => {
 			expect(pat.notes[2]!.cc?.[1]).toBe(74); // 64 + 10
 		});
 
-		it("preserves tick and durationTicks on all voices", () => {
+		it("preserves beat and durationBeats on all voices", () => {
 			const pat = unison(note("C4", "4n"), 2, { pitch: 12 });
 			for (const positionedNote of pat.notes) {
-				expect(positionedNote.tick).toBe(0);
-				expect(positionedNote.durationTicks).toBe(480);
+				expect(positionedNote.beat).toBe(0);
+				expect(positionedNote.durationBeats).toBe(1);
 			}
 		});
 	});
 
-	describe("durationTicks", () => {
+	describe("durationBeats", () => {
 		it("preserves child duration", () => {
-			expect(unison(note("C4", "4n"), 3).durationTicks).toBe(480);
+			expect(unison(note("C4", "4n"), 3).durationBeats).toBe(1);
 		});
 	});
 

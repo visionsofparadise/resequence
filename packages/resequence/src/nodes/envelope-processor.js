@@ -52,20 +52,24 @@ class EnvelopeProcessor extends AudioWorkletProcessor {
 					} else {
 						this._envValue = this._stateTime / attack;
 						this._stateTime += sampleDuration;
+
 						if (this._stateTime >= attack) {
 							this._envValue = 1;
 							this._state = hold > 0 ? "hold" : "decay";
 							this._stateTime = 0;
 						}
 					}
+
 					break;
 				case "hold":
 					this._envValue = 1;
 					this._stateTime += sampleDuration;
+
 					if (this._stateTime >= hold) {
 						this._state = "decay";
 						this._stateTime = 0;
 					}
+
 					break;
 				case "decay":
 					if (decay <= 0) {
@@ -74,14 +78,17 @@ class EnvelopeProcessor extends AudioWorkletProcessor {
 					} else {
 						this._envValue = 1 - (1 - sustain) * (this._stateTime / decay);
 						this._stateTime += sampleDuration;
+
 						if (this._stateTime >= decay) {
 							this._envValue = sustain;
 							this._state = "sustain";
 						}
 					}
+
 					break;
 				case "sustain":
 					this._envValue = sustain;
+
 					break;
 				case "release":
 					if (release <= 0) {
@@ -90,20 +97,24 @@ class EnvelopeProcessor extends AudioWorkletProcessor {
 					} else {
 						this._envValue = Math.max(0, this._envValue - (this._envValue / release) * sampleDuration);
 						this._stateTime += sampleDuration;
+
 						if (this._stateTime >= release) {
 							this._envValue = 0;
 							this._state = "idle";
 						}
 					}
+
 					break;
 				case "idle":
 					this._envValue = 0;
+
 					break;
 			}
 
 			for (let channel = 0; channel < output.length; channel++) {
 				const inputChannel = input?.[channel];
 				const outputChannel = output[channel];
+				
 				if (outputChannel) {
 					outputChannel[sample] = (inputChannel?.[sample] ?? 0) * this._envValue;
 				}

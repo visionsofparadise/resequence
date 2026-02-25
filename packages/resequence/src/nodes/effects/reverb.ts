@@ -62,8 +62,13 @@ export class ReverbEffectNode extends EffectNode {
 				allpasses.push(allpass);
 			}
 
-			combSumGain.connect(allpasses[0]!);
-			allpasses[0]!.connect(allpasses[1]!);
+			const firstAllpass = allpasses[0];
+			const secondAllpass = allpasses[1];
+
+			if (firstAllpass && secondAllpass) {
+				combSumGain.connect(firstAllpass);
+				firstAllpass.connect(secondAllpass);
+			}
 
 			if (this.id) {
 				const roomSizeDriver = getOrCreateDriver(`${this.id}.roomSize`, this.roomSize, scheduleContext);
@@ -81,11 +86,11 @@ export class ReverbEffectNode extends EffectNode {
 			}
 
 			scheduleContext.nodeMap.set(combSumKey, combSumGain);
-			scheduleContext.nodeMap.set(`${this.effectsId}.allpass0`, allpasses[0]!);
-			scheduleContext.nodeMap.set(`${this.effectsId}.allpass1`, allpasses[1]!);
+			if (firstAllpass) scheduleContext.nodeMap.set(`${this.effectsId}.allpass0`, firstAllpass);
+			if (secondAllpass) scheduleContext.nodeMap.set(`${this.effectsId}.allpass1`, secondAllpass);
 
-			for (let combIndex = 0; combIndex < combDelays.length; combIndex++) {
-				scheduleContext.nodeMap.set(`${this.effectsId}.comb${combIndex}`, combDelays[combIndex]!);
+			for (const [combIndex, combDelay] of combDelays.entries()) {
+				scheduleContext.nodeMap.set(`${this.effectsId}.comb${combIndex}`, combDelay);
 			}
 		}
 

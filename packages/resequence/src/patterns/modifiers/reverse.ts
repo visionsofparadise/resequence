@@ -6,24 +6,24 @@ import { MidiPattern } from "../pattern";
 
 export class ReversePattern extends MidiPattern {
 	readonly type = "reverse" as const;
-	readonly durationTicks: number;
+	readonly durationBeats: number;
 	readonly notes: ReadonlyArray<PositionedNote>;
 
 	constructor(readonly child: Pattern) {
 		super();
 
-		this.durationTicks = child.durationTicks;
+		this.durationBeats = child.durationBeats;
 
-		const total = child.durationTicks;
+		const total = child.durationBeats;
 
 		this.notes = child.notes
 			.slice()
-			.sort((noteA, noteB) => noteA.tick - noteB.tick)
+			.sort((noteA, noteB) => noteA.beat - noteB.beat)
 			.map((positionedNote) => ({
 				...positionedNote,
-				tick: total - positionedNote.tick - (positionedNote.durationTicks ?? 0),
+				beat: total - positionedNote.beat - (positionedNote.durationBeats ?? 0),
 			}))
-			.sort((noteA, noteB) => noteA.tick - noteB.tick);
+			.sort((noteA, noteB) => noteA.beat - noteB.beat);
 	}
 
 	validate(context: ValidateContext): void {
@@ -32,18 +32,18 @@ export class ReversePattern extends MidiPattern {
 		this.child.validate(childContext);
 	}
 
-	prepare(offsetTicks: number, context: ScheduleContext): void {
-		if (!isInScope(offsetTicks, this.durationTicks, context)) return;
+	prepare(offsetBeats: number, context: ScheduleContext): void {
+		if (!isInScope(offsetBeats, this.durationBeats, context)) return;
 
-		prepareNotes(this.notes, offsetTicks, this.outputs, context);
-		this.child.prepare(offsetTicks, context);
+		prepareNotes(this.notes, offsetBeats, this.outputs, context);
+		this.child.prepare(offsetBeats, context);
 	}
 
-	schedule(offsetTicks: number, context: ScheduleContext): void {
-		if (!isInScope(offsetTicks, this.durationTicks, context)) return;
+	schedule(offsetBeats: number, context: ScheduleContext): void {
+		if (!isInScope(offsetBeats, this.durationBeats, context)) return;
 
-		scheduleNotes(this.notes, offsetTicks, this.outputs, context);
-		this.child.schedule(offsetTicks, context);
+		scheduleNotes(this.notes, offsetBeats, this.outputs, context);
+		this.child.schedule(offsetBeats, context);
 	}
 }
 

@@ -1,12 +1,13 @@
 import type { ScheduleContext } from "../../rendering/schedule-context";
 import { isInScope, prepareNotes, scheduleNotes } from "../../rendering/schedule-notes";
+import { addSteps, pitchKey } from "../../utils/pitch";
 import type { ValidateContext } from "../../validate";
 import type { Pattern, PositionedNote } from "../pattern";
 import { MidiPattern } from "../pattern";
 
 export class InvertPattern extends MidiPattern {
 	readonly type = "invert" as const;
-	readonly durationTicks: number;
+	readonly durationBeats: number;
 	readonly notes: ReadonlyArray<PositionedNote>;
 
 	constructor(
@@ -14,15 +15,15 @@ export class InvertPattern extends MidiPattern {
 		readonly n: number,
 	) {
 		super();
-		this.durationTicks = child.durationTicks;
+		this.durationBeats = child.durationBeats;
 
 		const byTick = new Map<number, Array<PositionedNote>>();
 
 		for (const positionedNote of child.notes) {
-			let group = byTick.get(positionedNote.tick);
+			let group = byTick.get(positionedNote.beat);
 			if (!group) {
 				group = [];
-				byTick.set(positionedNote.tick, group);
+				byTick.set(positionedNote.beat, group);
 			}
 			group.push(positionedNote);
 		}
@@ -30,16 +31,16 @@ export class InvertPattern extends MidiPattern {
 		const result: Array<PositionedNote> = [];
 
 		for (const group of byTick.values()) {
-			const sorted = group.slice().sort((noteA, noteB) => noteA.pitch - noteB.pitch);
+			const sorted = group.slice().sort((noteA, noteB) => pitchKey(noteA.pitch) - pitchKey(noteB.pitch));
 
 			if (n > 0) {
 				for (const [noteIndex, positionedNote] of sorted.entries()) {
-					result.push(noteIndex < n ? { ...positionedNote, pitch: positionedNote.pitch + 12 } : positionedNote);
+					result.push(noteIndex < n ? { ...positionedNote, pitch: addSteps(positionedNote.pitch, positionedNote.pitch.stepsPerOctave) } : positionedNote);
 				}
 			} else if (n < 0) {
 				const count = -n;
 				for (const [noteIndex, positionedNote] of sorted.entries()) {
-					result.push(noteIndex >= sorted.length - count ? { ...positionedNote, pitch: positionedNote.pitch - 12 } : positionedNote);
+					result.push(noteIndex >= sorted.length - count ? { ...positionedNote, pitch: addSteps(positionedNote.pitch, -positionedNote.pitch.stepsPerOctave) } : positionedNote);
 				}
 			} else {
 				result.push(...sorted);
@@ -55,18 +56,18 @@ export class InvertPattern extends MidiPattern {
 		this.child.validate(childContext);
 	}
 
-	prepare(offsetTicks: number, context: ScheduleContext): void {
-		if (!isInScope(offsetTicks, this.durationTicks, context)) return;
+	prepare(offsetBeats: number, context: ScheduleContext): void {
+		if (!isInScope(offsetBeats, this.durationBeats, context)) return;
 
-		prepareNotes(this.notes, offsetTicks, this.outputs, context);
-		this.child.prepare(offsetTicks, context);
+		prepareNotes(this.notes, offsetBeats, this.outputs, context);
+		this.child.prepare(offsetBeats, context);
 	}
 
-	schedule(offsetTicks: number, context: ScheduleContext): void {
-		if (!isInScope(offsetTicks, this.durationTicks, context)) return;
+	schedule(offsetBeats: number, context: ScheduleContext): void {
+		if (!isInScope(offsetBeats, this.durationBeats, context)) return;
 
-		scheduleNotes(this.notes, offsetTicks, this.outputs, context);
-		this.child.schedule(offsetTicks, context);
+		scheduleNotes(this.notes, offsetBeats, this.outputs, context);
+		this.child.schedule(offsetBeats, context);
 	}
 }
 

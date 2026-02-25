@@ -14,9 +14,11 @@ class BitcrushProcessor extends AudioWorkletProcessor {
 		for (let channel = 0; channel < output.length; channel++) {
 			const inputChannel = input?.[channel];
 			const outputChannel = output[channel];
+
 			if (outputChannel) {
 				for (let sample = 0; sample < outputChannel.length; sample++) {
 					const inputSample = inputChannel?.[sample] ?? 0;
+					
 					outputChannel[sample] = Math.round(inputSample / step) * step;
 				}
 			}

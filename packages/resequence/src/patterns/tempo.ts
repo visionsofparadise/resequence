@@ -5,7 +5,7 @@ import type { Pattern, PositionedNote } from "./pattern";
 
 export class TempoPattern implements Pattern {
 	readonly type = "tempo" as const;
-	readonly durationTicks: number;
+	readonly durationBeats: number;
 	readonly notes: ReadonlyArray<PositionedNote>;
 
 	constructor(
@@ -16,7 +16,7 @@ export class TempoPattern implements Pattern {
 			throw new ResequenceError("INVALID_TEMPO", `tempo(): bpm must be greater than 0, got ${bpm}`);
 		}
 
-		this.durationTicks = child.durationTicks;
+		this.durationBeats = child.durationBeats;
 		this.notes = child.notes;
 	}
 
@@ -28,12 +28,12 @@ export class TempoPattern implements Pattern {
 		this.child.setup(context);
 	}
 
-	prepare(offsetTicks: number, context: ScheduleContext): void {
-		this.child.prepare(offsetTicks, context);
+	prepare(offsetBeats: number, context: ScheduleContext): void {
+		this.child.prepare(offsetBeats, context);
 	}
 
-	schedule(offsetTicks: number, context: ScheduleContext): void {
-		this.child.schedule(offsetTicks, context);
+	schedule(offsetBeats: number, context: ScheduleContext): void {
+		this.child.schedule(offsetBeats, context);
 	}
 
 	teardown(context: ScheduleContext): void {

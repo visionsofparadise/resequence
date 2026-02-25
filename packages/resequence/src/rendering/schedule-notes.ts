@@ -1,23 +1,25 @@
 import type { Midi, Node, NoteContext } from "../nodes/node";
 import type { PositionedNote } from "../patterns/pattern";
 import { CC } from "../utils/cc";
+import { CHROMATIC_TUNING } from "../utils/chromatic";
+import type { Pitch, TuningConfig } from "../utils/pitch";
 import type { ScheduleContext } from "./schedule-context";
-import { ticksToSeconds } from "./tempo-map";
+import { beatsToSeconds } from "./tempo-map";
 
-export function isInScope(offsetTicks: number, durationTicks: number, context: ScheduleContext): boolean {
-	return offsetTicks + durationTicks > context.fromTicks && offsetTicks < context.toTicks;
+export function isInScope(offsetBeats: number, durationBeats: number, context: ScheduleContext): boolean {
+	return offsetBeats + durationBeats > context.fromBeats && offsetBeats < context.toBeats;
 }
 
-export function prepareNotes(notes: ReadonlyArray<PositionedNote>, offsetTicks: number, outputs: ReadonlyArray<Node<Midi, ReadonlyArray<unknown>>>, scheduleContext: ScheduleContext): void {
+export function prepareNotes(notes: ReadonlyArray<PositionedNote>, offsetBeats: number, outputs: ReadonlyArray<Node<Midi, ReadonlyArray<unknown>>>, scheduleContext: ScheduleContext): void {
 	if (outputs.length === 0) return;
 
 	for (const positioned of notes) {
-		const noteTick = offsetTicks + positioned.tick;
-		const noteEnd = noteTick + (positioned.durationTicks ?? 0);
+		const noteBeat = offsetBeats + positioned.beat;
+		const noteEnd = noteBeat + (positioned.durationBeats ?? 0);
 
-		if (noteEnd <= scheduleContext.fromTicks || noteTick >= scheduleContext.toTicks) continue;
+		if (noteEnd <= scheduleContext.fromBeats || noteBeat >= scheduleContext.toBeats) continue;
 
-		const noteContext = buildNoteContext(positioned, noteTick, scheduleContext);
+		const noteContext = buildNoteContext(positioned, noteBeat, scheduleContext);
 
 		for (const node of outputs) {
 			node.prepare(noteContext, scheduleContext);
@@ -25,16 +27,16 @@ export function prepareNotes(notes: ReadonlyArray<PositionedNote>, offsetTicks: 
 	}
 }
 
-export function scheduleNotes(notes: ReadonlyArray<PositionedNote>, offsetTicks: number, outputs: ReadonlyArray<Node<Midi, ReadonlyArray<unknown>>>, scheduleContext: ScheduleContext): void {
+export function scheduleNotes(notes: ReadonlyArray<PositionedNote>, offsetBeats: number, outputs: ReadonlyArray<Node<Midi, ReadonlyArray<unknown>>>, scheduleContext: ScheduleContext): void {
 	if (outputs.length === 0) return;
 
 	for (const positioned of notes) {
-		const noteTick = offsetTicks + positioned.tick;
-		const noteEnd = noteTick + (positioned.durationTicks ?? 0);
+		const noteBeat = offsetBeats + positioned.beat;
+		const noteEnd = noteBeat + (positioned.durationBeats ?? 0);
 
-		if (noteEnd <= scheduleContext.fromTicks || noteTick >= scheduleContext.toTicks) continue;
+		if (noteEnd <= scheduleContext.fromBeats || noteBeat >= scheduleContext.toBeats) continue;
 
-		const noteContext = buildNoteContext(positioned, noteTick, scheduleContext);
+		const noteContext = buildNoteContext(positioned, noteBeat, scheduleContext);
 
 		for (const node of outputs) {
 			node.schedule(noteContext, scheduleContext);
@@ -42,15 +44,33 @@ export function scheduleNotes(notes: ReadonlyArray<PositionedNote>, offsetTicks:
 	}
 }
 
-function buildNoteContext(note: PositionedNote, absoluteTick: number, scheduleContext: ScheduleContext): NoteContext {
-	const startTime = ticksToSeconds(absoluteTick, scheduleContext.tempoMap);
-	const stopTime = ticksToSeconds(absoluteTick + (note.durationTicks ?? 0), scheduleContext.tempoMap);
+function buildNoteContext(note: PositionedNote, absoluteBeat: number, scheduleContext: ScheduleContext): NoteContext {
+	const startTime = beatsToSeconds(absoluteBeat, scheduleContext.tempoMap);
+	const stopTime = beatsToSeconds(absoluteBeat + (note.durationBeats ?? 0), scheduleContext.tempoMap);
 
 	const sustainOn = note.cc?.[CC.SUSTAIN] !== undefined && (note.cc[CC.SUSTAIN] ?? 0) >= 64;
 	const releaseSeconds = !sustainOn && note.cc?.[CC.RELEASE] !== undefined ? ((note.cc[CC.RELEASE] ?? 0) / 127) * 4 : 0;
 
+	const tuning = scheduleContext.tuning ?? CHROMATIC_TUNING;
+	let frequency: number;
+
+	const octaveRatio = tuning.octaveRatio ?? 2;
+
+	if (tuning.frequencies) {
+		const className = tuning.classes[note.pitch.class];
+		const baseHz = className !== undefined ? tuning.frequencies[className] : undefined;
+
+		if (baseHz !== undefined) {
+			frequency = baseHz * Math.pow(octaveRatio, note.pitch.octave - tuning.reference.octave);
+		} else {
+			frequency = equalTemperamentHz(note.pitch, tuning.classes, tuning.reference, octaveRatio);
+		}
+	} else {
+		frequency = equalTemperamentHz(note.pitch, tuning.classes, tuning.reference, octaveRatio);
+	}
+
 	return {
-		frequency: midiToFrequency(note.pitch),
+		frequency,
 		velocity: note.velocity ?? 100,
 		startTime,
 		stopTime,
@@ -59,8 +79,11 @@ function buildNoteContext(note: PositionedNote, absoluteTick: number, scheduleCo
 	};
 }
 
-function midiToFrequency(midi: number): number {
-	return 440 * 2 ** ((midi - 69) / 12);
+function equalTemperamentHz(pitch: Pitch, classes: TuningConfig["classes"], reference: TuningConfig["reference"], octaveRatio: number): number {
+	const refClassIdx = classes.indexOf(reference.class);
+	const stepsFromRef = pitch.class - refClassIdx + (pitch.octave - reference.octave) * pitch.stepsPerOctave;
+
+	return reference.hz * Math.pow(octaveRatio, stepsFromRef / pitch.stepsPerOctave);
 }
 
 function createReverbIR(audioContext: BaseAudioContext, durationSeconds: number, decay: number): AudioBuffer {
@@ -213,8 +236,6 @@ export function applyCC(audio: AudioNode, cc: Partial<Record<number, number>> | 
 		nodes.push(wetGain, reverbMerge);
 		current = reverbMerge;
 	}
-
-	// TODO: Discuss whether these should be resequence nodes, or need any other integration of clean up
 
 	return {
 		node: current,

@@ -19,7 +19,7 @@ function mulberry32(seed: number): () => number {
 
 export class JitterPattern extends MidiPattern {
 	readonly type = "jitter" as const;
-	readonly durationTicks: number;
+	readonly durationBeats: number;
 	readonly notes: ReadonlyArray<PositionedNote>;
 
 	constructor(
@@ -29,13 +29,13 @@ export class JitterPattern extends MidiPattern {
 	) {
 		super();
 
-		this.durationTicks = child.durationTicks;
+		this.durationBeats = child.durationBeats;
 
 		const rng = seed !== undefined ? mulberry32(seed) : Math.random.bind(Math);
 
 		this.notes = child.notes.map((positionedNote) => ({
 			...positionedNote,
-			tick: Math.max(0, Math.round(positionedNote.tick + (rng() * 2 - 1) * amount)),
+			beat: Math.max(0, Math.round(positionedNote.beat + (rng() * 2 - 1) * amount)),
 		}));
 	}
 
@@ -45,18 +45,18 @@ export class JitterPattern extends MidiPattern {
 		this.child.validate(childContext);
 	}
 
-	prepare(offsetTicks: number, context: ScheduleContext): void {
-		if (!isInScope(offsetTicks, this.durationTicks, context)) return;
+	prepare(offsetBeats: number, context: ScheduleContext): void {
+		if (!isInScope(offsetBeats, this.durationBeats, context)) return;
 
-		prepareNotes(this.notes, offsetTicks, this.outputs, context);
-		this.child.prepare(offsetTicks, context);
+		prepareNotes(this.notes, offsetBeats, this.outputs, context);
+		this.child.prepare(offsetBeats, context);
 	}
 
-	schedule(offsetTicks: number, context: ScheduleContext): void {
-		if (!isInScope(offsetTicks, this.durationTicks, context)) return;
+	schedule(offsetBeats: number, context: ScheduleContext): void {
+		if (!isInScope(offsetBeats, this.durationBeats, context)) return;
 
-		scheduleNotes(this.notes, offsetTicks, this.outputs, context);
-		this.child.schedule(offsetTicks, context);
+		scheduleNotes(this.notes, offsetBeats, this.outputs, context);
+		this.child.schedule(offsetBeats, context);
 	}
 }
 

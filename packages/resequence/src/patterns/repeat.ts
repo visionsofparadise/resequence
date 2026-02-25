@@ -7,7 +7,7 @@ import { MidiPattern } from "./pattern";
 
 export class RepeatPattern extends MidiPattern {
 	readonly type = "repeat" as const;
-	readonly durationTicks: number;
+	readonly durationBeats: number;
 	readonly notes: ReadonlyArray<PositionedNote>;
 
 	constructor(
@@ -20,15 +20,15 @@ export class RepeatPattern extends MidiPattern {
 			throw new ResequenceError("INVALID_REPEAT_COUNT", `repeat(): count must be a positive integer, got ${count}`);
 		}
 
-		this.durationTicks = child.durationTicks * count;
+		this.durationBeats = child.durationBeats * count;
 
 		const notes: Array<PositionedNote> = [];
 
 		for (let iteration = 0; iteration < count; iteration++) {
-			const offset = child.durationTicks * iteration;
+			const offset = child.durationBeats * iteration;
 
 			for (const childNote of child.notes) {
-				notes.push({ ...childNote, tick: childNote.tick + offset });
+				notes.push({ ...childNote, beat: childNote.beat + offset });
 			}
 		}
 
@@ -45,23 +45,23 @@ export class RepeatPattern extends MidiPattern {
 		this.child.setup(context);
 	}
 
-	prepare(offsetTicks: number, context: ScheduleContext): void {
-		if (!isInScope(offsetTicks, this.durationTicks, context)) return;
+	prepare(offsetBeats: number, context: ScheduleContext): void {
+		if (!isInScope(offsetBeats, this.durationBeats, context)) return;
 
-		prepareNotes(this.notes, offsetTicks, this.outputs, context);
+		prepareNotes(this.notes, offsetBeats, this.outputs, context);
 
 		for (let iteration = 0; iteration < this.count; iteration++) {
-			this.child.prepare(offsetTicks + this.child.durationTicks * iteration, context);
+			this.child.prepare(offsetBeats + this.child.durationBeats * iteration, context);
 		}
 	}
 
-	schedule(offsetTicks: number, context: ScheduleContext): void {
-		if (!isInScope(offsetTicks, this.durationTicks, context)) return;
+	schedule(offsetBeats: number, context: ScheduleContext): void {
+		if (!isInScope(offsetBeats, this.durationBeats, context)) return;
 
-		scheduleNotes(this.notes, offsetTicks, this.outputs, context);
+		scheduleNotes(this.notes, offsetBeats, this.outputs, context);
 
 		for (let iteration = 0; iteration < this.count; iteration++) {
-			this.child.schedule(offsetTicks + this.child.durationTicks * iteration, context);
+			this.child.schedule(offsetBeats + this.child.durationBeats * iteration, context);
 		}
 	}
 

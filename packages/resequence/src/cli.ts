@@ -8,7 +8,7 @@ import { collectMarkers } from "./rendering/collect-markers";
 import { collectRouting } from "./rendering/collect-routing";
 import { encodeWav } from "./rendering/encode-wav";
 import { renderMidi } from "./rendering/render-midi";
-import { buildTempoMap, ticksToSeconds } from "./rendering/tempo-map";
+import { buildTempoMap, beatsToSeconds } from "./rendering/tempo-map";
 
 interface CliOptions {
 	readonly entrypoint: string;
@@ -102,14 +102,14 @@ async function runCli(args: CliOptions): Promise<void> {
 		const pattern = mod.default;
 		// FIX: We may aswell make pattern a class so we can instanceof pattern here and do without the cast
 
-		if (!pattern || typeof pattern !== "object" || !("type" in pattern) || !("durationTicks" in pattern)) {
+		if (!pattern || typeof pattern !== "object" || !("type" in pattern) || !("durationBeats" in pattern)) {
 			process.stderr.write("Error: default export must be a Pattern\n");
 			process.exit(1);
 		}
 
 		const typedPattern = pattern as Pattern;
 
-		process.stdout.write(`Pattern: type=${typedPattern.type}, duration=${typedPattern.durationTicks} ticks\n`);
+		process.stdout.write(`Pattern: type=${typedPattern.type}, duration=${typedPattern.durationBeats} beats\n`);
 
 		const tempoMap = buildTempoMap(typedPattern);
 		const markers = collectMarkers(typedPattern);
@@ -148,7 +148,7 @@ async function runCli(args: CliOptions): Promise<void> {
 			const { default: nodeWebAudio } = (await import("node-web-audio-api")) as { default: { OfflineAudioContext: typeof OfflineAudioContext } };
 			const { OfflineAudioContext: NodeOfflineAudioContext } = nodeWebAudio;
 
-			const totalSeconds = ticksToSeconds(typedPattern.durationTicks, tempoMap);
+			const totalSeconds = beatsToSeconds(typedPattern.durationBeats, tempoMap);
 			const sampleRate = 44100;
 
 			for (const trackName of filteredNames) {
@@ -167,7 +167,7 @@ async function runCli(args: CliOptions): Promise<void> {
 					}),
 				);
 
-				renderer.schedule(0, typedPattern.durationTicks);
+				renderer.schedule(0, typedPattern.durationBeats);
 
 				const rendered = await offlineAudioContext.startRendering();
 
@@ -193,7 +193,7 @@ async function runCli(args: CliOptions): Promise<void> {
 					}),
 				);
 
-				renderer.schedule(0, typedPattern.durationTicks);
+				renderer.schedule(0, typedPattern.durationBeats);
 				const rendered = await offlineCtx.startRendering();
 
 				renderer.teardown();

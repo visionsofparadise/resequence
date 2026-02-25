@@ -2,13 +2,13 @@ import { describe, expect, it } from "vitest";
 import { gap } from "./gap";
 
 describe("GapPattern", () => {
-	describe("durationTicks", () => {
+	describe("durationBeats", () => {
 		it("resolves string duration to ticks", () => {
-			expect(gap("8n").durationTicks).toBe(240);
+			expect(gap("8n").durationBeats).toBe(0.5);
 		});
 
 		it("resolves numeric duration as-is", () => {
-			expect(gap(120).durationTicks).toBe(120);
+			expect(gap(120).durationBeats).toBe(120);
 		});
 	});
 

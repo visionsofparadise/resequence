@@ -6,7 +6,7 @@ import { MidiPattern } from "../pattern";
 
 export class RotatePattern extends MidiPattern {
 	readonly type = "rotate" as const;
-	readonly durationTicks: number;
+	readonly durationBeats: number;
 	readonly notes: ReadonlyArray<PositionedNote>;
 
 	constructor(
@@ -14,16 +14,16 @@ export class RotatePattern extends MidiPattern {
 		readonly steps: number,
 	) {
 		super();
-		this.durationTicks = child.durationTicks;
+		this.durationBeats = child.durationBeats;
 
-		const sorted = child.notes.slice().sort((noteA, noteB) => noteA.tick - noteB.tick);
+		const sorted = child.notes.slice().sort((noteA, noteB) => noteA.beat - noteB.beat);
 
 		if (sorted.length === 0) {
 			this.notes = [];
 			return;
 		}
 
-		const total = child.durationTicks;
+		const total = child.durationBeats;
 		const noteCount = sorted.length;
 
 		// Compute cyclic inter-note gaps
@@ -43,9 +43,9 @@ export class RotatePattern extends MidiPattern {
 			if (gapIndex < noteCount - 1) {
 				const next = sorted[gapIndex + 1];
 				if (next === undefined) continue;
-				gaps.push(next.tick - curr.tick);
+				gaps.push(next.beat - curr.beat);
 			} else {
-				gaps.push(total - curr.tick + firstNote.tick);
+				gaps.push(total - curr.beat + firstNote.beat);
 			}
 		}
 
@@ -56,14 +56,14 @@ export class RotatePattern extends MidiPattern {
 		const rotatedGaps = [...gaps.slice(shift), ...gaps.slice(0, shift)];
 
 		const result: Array<PositionedNote> = [];
-		let tick = 0;
+		let beat = 0;
 
 		for (let noteIndex = 0; noteIndex < noteCount; noteIndex++) {
 			const rotatedNote = rotatedNotes[noteIndex];
 			const rotatedGap = rotatedGaps[noteIndex];
 			if (rotatedNote === undefined || rotatedGap === undefined) continue;
-			result.push({ ...rotatedNote, tick });
-			tick += rotatedGap;
+			result.push({ ...rotatedNote, beat });
+			beat += rotatedGap;
 		}
 
 		this.notes = result;
@@ -74,18 +74,18 @@ export class RotatePattern extends MidiPattern {
 		this.child.validate(childContext);
 	}
 
-	prepare(offsetTicks: number, context: ScheduleContext): void {
-		if (!isInScope(offsetTicks, this.durationTicks, context)) return;
+	prepare(offsetBeats: number, context: ScheduleContext): void {
+		if (!isInScope(offsetBeats, this.durationBeats, context)) return;
 
-		prepareNotes(this.notes, offsetTicks, this.outputs, context);
-		this.child.prepare(offsetTicks, context);
+		prepareNotes(this.notes, offsetBeats, this.outputs, context);
+		this.child.prepare(offsetBeats, context);
 	}
 
-	schedule(offsetTicks: number, context: ScheduleContext): void {
-		if (!isInScope(offsetTicks, this.durationTicks, context)) return;
+	schedule(offsetBeats: number, context: ScheduleContext): void {
+		if (!isInScope(offsetBeats, this.durationBeats, context)) return;
 
-		scheduleNotes(this.notes, offsetTicks, this.outputs, context);
-		this.child.schedule(offsetTicks, context);
+		scheduleNotes(this.notes, offsetBeats, this.outputs, context);
+		this.child.schedule(offsetBeats, context);
 	}
 }
 
