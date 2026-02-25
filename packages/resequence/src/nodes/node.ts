@@ -18,6 +18,7 @@ export abstract class Node<In extends ReadonlyArray<unknown>, Out extends Readon
 
 	to<S extends ReadonlyArray<unknown>>(node: Node<Out, S>): Node<Out, S> {
 		this.outputs.push(node as Node<Out, ReadonlyArray<unknown>>);
+
 		return node;
 	}
 

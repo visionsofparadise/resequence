@@ -8,9 +8,10 @@ export class GainEffectNode extends EffectNode {
 
 	constructor(
 		private readonly level: number,
+		mix?: number,
 		id?: string,
 	) {
-		super(id);
+		super(mix, id);
 	}
 
 	schedule(audio: AudioNode, noteContext: NoteContext, scheduleContext: ScheduleContext): void {
@@ -23,6 +24,7 @@ export class GainEffectNode extends EffectNode {
 
 			if (this.id) {
 				const driver = getOrCreateDriver(`${this.id}.level`, dbToLinear(this.level), scheduleContext);
+
 				gainNode.gain.value = 0;
 				driver.connect(gainNode.gain);
 			} else {
@@ -32,12 +34,14 @@ export class GainEffectNode extends EffectNode {
 			scheduleContext.nodeMap.set(this.effectsId, gainNode);
 		}
 
-		this.forward(audio, gainNode, noteContext, scheduleContext);
+		audio.connect(gainNode);
+
+		this.forward(audio, [gainNode], noteContext, scheduleContext);
 	}
 }
 
-export function gain({ level, id }: { level: number; id?: string }): GainEffectNode {
-	return new GainEffectNode(level, id);
+export function gain({ level, mix, id }: { level: number; mix?: number; id?: string }): GainEffectNode {
+	return new GainEffectNode(level, mix, id);
 }
 
 function dbToLinear(db: number): number {

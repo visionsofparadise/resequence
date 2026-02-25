@@ -7,9 +7,10 @@ export class DelayEffectNode extends EffectNode {
 	constructor(
 		private readonly time: number,
 		private readonly feedback: number | undefined,
+		mix?: number,
 		id?: string,
 	) {
-		super(id);
+		super(mix, id);
 	}
 
 	schedule(audio: AudioNode, noteContext: NoteContext, scheduleContext: ScheduleContext): void {
@@ -37,10 +38,12 @@ export class DelayEffectNode extends EffectNode {
 			scheduleContext.nodeMap.set(this.effectsId, delayNode);
 		}
 
-		this.forward(audio, delayNode, noteContext, scheduleContext);
+		audio.connect(delayNode);
+
+		this.forward(audio, [delayNode], noteContext, scheduleContext);
 	}
 }
 
-export function delay({ time, feedback, id }: { time: number; feedback?: number; id?: string }): DelayEffectNode {
-	return new DelayEffectNode(time, feedback, id);
+export function delay({ time, feedback, mix, id }: { time: number; feedback?: number; mix?: number; id?: string }): DelayEffectNode {
+	return new DelayEffectNode(time, feedback, mix, id);
 }

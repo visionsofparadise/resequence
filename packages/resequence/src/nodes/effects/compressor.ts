@@ -11,9 +11,10 @@ export class CompressorEffectNode extends EffectNode {
 		private readonly ratio: number,
 		private readonly attack: number | undefined,
 		private readonly release: number | undefined,
+		mix?: number,
 		id?: string,
 	) {
-		super(id);
+		super(mix, id);
 	}
 
 	schedule(audio: AudioNode, noteContext: NoteContext, scheduleContext: ScheduleContext): void {
@@ -42,10 +43,11 @@ export class CompressorEffectNode extends EffectNode {
 			scheduleContext.nodeMap.set(this.effectsId, compressorNode);
 		}
 
-		this.forward(audio, compressorNode, noteContext, scheduleContext);
+		audio.connect(compressorNode);
+		this.forward(audio, [compressorNode], noteContext, scheduleContext);
 	}
 }
 
-export function compressor({ threshold, ratio, attack, release, id }: { threshold: number; ratio: number; attack?: number; release?: number; id?: string }): CompressorEffectNode {
-	return new CompressorEffectNode(threshold, ratio, attack, release, id);
+export function compressor({ threshold, ratio, attack, release, mix, id }: { threshold: number; ratio: number; attack?: number; release?: number; mix?: number; id?: string }): CompressorEffectNode {
+	return new CompressorEffectNode(threshold, ratio, attack, release, mix, id);
 }

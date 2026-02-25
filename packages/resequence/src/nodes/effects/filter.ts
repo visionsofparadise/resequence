@@ -12,9 +12,10 @@ export class FilterEffectNode extends EffectNode {
 		private readonly mode: FilterMode,
 		private readonly frequency: number,
 		private readonly resonance: number | undefined,
+		mix?: number,
 		id?: string,
 	) {
-		super(id);
+		super(mix, id);
 	}
 
 	schedule(audio: AudioNode, noteContext: NoteContext, scheduleContext: ScheduleContext): void {
@@ -42,18 +43,20 @@ export class FilterEffectNode extends EffectNode {
 			scheduleContext.nodeMap.set(this.effectsId, filterNode);
 		}
 
-		this.forward(audio, filterNode, noteContext, scheduleContext);
+		audio.connect(filterNode);
+
+		this.forward(audio, [filterNode], noteContext, scheduleContext);
 	}
 }
 
-export function filter({ mode, frequency, resonance, id }: { mode: FilterMode; frequency: number; resonance?: number; id?: string }): FilterEffectNode {
-	return new FilterEffectNode(mode, frequency, resonance, id);
+export function filter({ mode, frequency, resonance, mix, id }: { mode: FilterMode; frequency: number; resonance?: number; mix?: number; id?: string }): FilterEffectNode {
+	return new FilterEffectNode(mode, frequency, resonance, mix, id);
 }
 
-export function highpass({ frequency, resonance, id }: { frequency: number; resonance?: number; id?: string }): FilterEffectNode {
-	return filter({ mode: "highpass", frequency, resonance, id });
+export function highpass({ frequency, resonance, mix, id }: { frequency: number; resonance?: number; mix?: number; id?: string }): FilterEffectNode {
+	return filter({ mode: "highpass", frequency, resonance, mix, id });
 }
 
-export function lowpass({ frequency, resonance, id }: { frequency: number; resonance?: number; id?: string }): FilterEffectNode {
-	return filter({ mode: "lowpass", frequency, resonance, id });
+export function lowpass({ frequency, resonance, mix, id }: { frequency: number; resonance?: number; mix?: number; id?: string }): FilterEffectNode {
+	return filter({ mode: "lowpass", frequency, resonance, mix, id });
 }

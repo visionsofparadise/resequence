@@ -22,7 +22,7 @@ export default tseslint.config(
       "**/postcss.config.*",
       "**/*.test.ts",
       "**/*.test.tsx",
-      "**/envelope-processor.js",
+      "**/*-processor.js",
     ],
   },
 

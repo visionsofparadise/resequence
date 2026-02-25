@@ -35,7 +35,10 @@ export class AudioRenderer {
 			}
 		}
 
-		await this.audioContext.audioWorklet.addModule(buildEnvelopeProcessorBlobUrl());
+		await this.audioContext.audioWorklet.addModule(buildProcessorUrl("../nodes/envelope-processor.js"));
+		await this.audioContext.audioWorklet.addModule(buildProcessorUrl("../nodes/generators/noise-processor.js"));
+		await this.audioContext.audioWorklet.addModule(buildProcessorUrl("../nodes/effects/bitcrush-processor.js"));
+		await this.audioContext.audioWorklet.addModule(buildProcessorUrl("../nodes/effects/downsample-processor.js"));
 
 		const driverMap = new Map<string, ConstantSourceNode>();
 		const nodeMap = new Map<string, AudioNode>();
@@ -83,8 +86,6 @@ export class AudioRenderer {
 	}
 }
 
-function buildEnvelopeProcessorBlobUrl(): string {
-	const processorPath = new URL("../nodes/envelope-processor.js", import.meta.url);
-
-	return processorPath.href;
+function buildProcessorUrl(relativePath: string): string {
+	return new URL(relativePath, import.meta.url).href;
 }

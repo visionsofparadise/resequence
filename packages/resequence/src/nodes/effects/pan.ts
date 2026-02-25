@@ -8,9 +8,10 @@ export class PanEffectNode extends EffectNode {
 
 	constructor(
 		private readonly value: number,
+		mix?: number,
 		id?: string,
 	) {
-		super(id);
+		super(mix, id);
 	}
 
 	schedule(audio: AudioNode, noteContext: NoteContext, scheduleContext: ScheduleContext): void {
@@ -23,6 +24,7 @@ export class PanEffectNode extends EffectNode {
 
 			if (this.id) {
 				const driver = getOrCreateDriver(`${this.id}.value`, this.value, scheduleContext);
+
 				panNode.pan.value = 0;
 				driver.connect(panNode.pan);
 			} else {
@@ -32,10 +34,12 @@ export class PanEffectNode extends EffectNode {
 			scheduleContext.nodeMap.set(this.effectsId, panNode);
 		}
 
-		this.forward(audio, panNode, noteContext, scheduleContext);
+		audio.connect(panNode);
+
+		this.forward(audio, [panNode], noteContext, scheduleContext);
 	}
 }
 
-export function pan({ value, id }: { value: number; id?: string }): PanEffectNode {
-	return new PanEffectNode(value, id);
+export function pan({ value, mix, id }: { value: number; mix?: number; id?: string }): PanEffectNode {
+	return new PanEffectNode(value, mix, id);
 }
