@@ -3,11 +3,12 @@ import type { ScheduleContext } from "../../rendering/schedule-context";
 import { applyCC } from "../../rendering/schedule-notes";
 import type { Pitch } from "../../utils/pitch";
 import { resolvePitch } from "../../utils/pitch";
-import { Node } from "../node";
 import type { Midi, MidiAudio, NoteContext } from "../node";
+import { Node } from "../node";
 
 export interface SamplerZone {
 	readonly sample: string;
+	readonly region?: string;
 	readonly root?: Pitch;
 	readonly velocity?: number;
 	readonly loopStartMs?: number;
@@ -16,6 +17,7 @@ export interface SamplerZone {
 
 export interface SamplerVelocityLayer {
 	readonly sample: string;
+	readonly region?: string;
 	readonly velocity?: number;
 	readonly loopStartMs?: number;
 	readonly loopEndMs?: number;
@@ -26,7 +28,15 @@ export type SamplerMapping = Readonly<Record<string, string | ReadonlyArray<Samp
 type SamplerConfig =
 	| { readonly kind: "single"; readonly path: string; readonly rootMidi?: number; readonly loopStartMs?: number; readonly loopEndMs?: number }
 	| { readonly kind: "mapping"; readonly mapping: SamplerMapping }
-	| { readonly kind: "zones"; readonly zones: ReadonlyArray<SamplerZone> };
+	| { readonly kind: "zones"; readonly zones: ReadonlyArray<NormalizedZone> };
+
+interface NormalizedZone {
+	readonly sample: string;
+	readonly root?: Pitch;
+	readonly velocity?: number;
+	readonly loopStartMs?: number;
+	readonly loopEndMs?: number;
+}
 
 export class SamplerNode extends Node<Midi, MidiAudio> {
 	private readonly config: SamplerConfig;
@@ -36,16 +46,15 @@ export class SamplerNode extends Node<Midi, MidiAudio> {
 		config: SamplerConfig,
 	) {
 		super();
+
 		this.config = config;
 	}
 
 	setup(_context: ScheduleContext): void {
 		return;
 	}
+
 	prepare(_note: NoteContext, _context: ScheduleContext): void {
-		return;
-	}
-	teardown(_context: ScheduleContext): void {
 		return;
 	}
 
@@ -100,6 +109,10 @@ export class SamplerNode extends Node<Midi, MidiAudio> {
 
 		return resolveFromZones(this.config.zones, midiNote, velocity, sampleMap);
 	}
+
+	teardown(_context: ScheduleContext): void {
+		return;
+	}
 }
 
 interface ResolvedSample {
@@ -117,7 +130,9 @@ function resolveFromMapping(mapping: SamplerMapping, midiNote: number, velocity:
 	if (notes.length === 0) return null;
 
 	const firstNote = notes[0];
+
 	if (!firstNote) return null;
+
 	let selected = firstNote;
 
 	for (const note of notes) {
@@ -143,10 +158,10 @@ function resolveFromMapping(mapping: SamplerMapping, midiNote: number, velocity:
 	return buffer ? { buffer, playbackRate: 1, loopStartMs: layer.loopStartMs, loopEndMs: layer.loopEndMs } : null;
 }
 
-function resolveFromZones(zones: ReadonlyArray<SamplerZone>, midiNote: number, velocity: number, sampleMap: ReadonlyMap<string, AudioBuffer>): ResolvedSample | null {
+function resolveFromZones(zones: ReadonlyArray<NormalizedZone>, midiNote: number, velocity: number, sampleMap: ReadonlyMap<string, AudioBuffer>): ResolvedSample | null {
 	if (zones.length === 0) return null;
 
-	const anchored = zones.filter((zone): zone is SamplerZone & { root: Pitch } => zone.root !== undefined).sort((left, right) => resolvePitch(left.root) - resolvePitch(right.root));
+	const anchored = zones.filter((zone): zone is NormalizedZone & { root: Pitch } => zone.root !== undefined).sort((left, right) => resolvePitch(left.root) - resolvePitch(right.root));
 
 	if (anchored.length === 0) {
 		const zone = selectVelocityLayer(zones, velocity);
@@ -159,19 +174,27 @@ function resolveFromZones(zones: ReadonlyArray<SamplerZone>, midiNote: number, v
 	}
 
 	const firstZone = anchored[0];
+
 	if (!firstZone) return null;
-	let selectedZone = firstZone;
+
+	let selectedRoot = resolvePitch(firstZone.root);
 
 	for (const zone of anchored) {
-		if (resolvePitch(zone.root) <= midiNote) selectedZone = zone;
+		const rootMidi = resolvePitch(zone.root);
+
+		if (rootMidi <= midiNote) selectedRoot = rootMidi;
 		else break;
 	}
 
-	const rootMidi = resolvePitch(selectedZone.root);
-	const playbackRate = 2 ** ((midiNote - rootMidi) / 12);
-	const buffer = sampleMap.get(selectedZone.sample);
+	const coRootZones = anchored.filter((zone) => resolvePitch(zone.root) === selectedRoot);
+	const zone = selectVelocityLayer(coRootZones, velocity);
 
-	return buffer ? { buffer, playbackRate, loopStartMs: selectedZone.loopStartMs, loopEndMs: selectedZone.loopEndMs } : null;
+	if (!zone) return null;
+
+	const playbackRate = 2 ** ((midiNote - selectedRoot) / 12);
+	const buffer = sampleMap.get(zone.sample);
+
+	return buffer ? { buffer, playbackRate, loopStartMs: zone.loopStartMs, loopEndMs: zone.loopEndMs } : null;
 }
 
 function selectVelocityLayer<T extends { velocity?: number }>(layers: ReadonlyArray<T>, velocity: number): T | undefined {
@@ -180,7 +203,9 @@ function selectVelocityLayer<T extends { velocity?: number }>(layers: ReadonlyAr
 	const sorted = [...layers].sort((left, right) => (left.velocity ?? 0) - (right.velocity ?? 0));
 
 	const firstLayer = sorted[0];
+
 	if (!firstLayer) return undefined;
+
 	let selected = firstLayer;
 
 	for (const layer of sorted) {
@@ -193,6 +218,16 @@ function selectVelocityLayer<T extends { velocity?: number }>(layers: ReadonlyAr
 
 function frequencyToMidi(frequency: number): number {
 	return Math.round(69 + 12 * Math.log2(frequency / 440));
+}
+
+function normalizeZone(zone: SamplerZone): NormalizedZone {
+	const sample = zone.region && !zone.sample.includes("#") ? `${zone.sample}#${zone.region}` : zone.sample;
+	return { sample, root: zone.root, velocity: zone.velocity, loopStartMs: zone.loopStartMs, loopEndMs: zone.loopEndMs };
+}
+
+function normalizeVelocityLayer(layer: SamplerVelocityLayer): SamplerVelocityLayer {
+	const sample = layer.region && !layer.sample.includes("#") ? `${layer.sample}#${layer.region}` : layer.sample;
+	return { sample, velocity: layer.velocity, loopStartMs: layer.loopStartMs, loopEndMs: layer.loopEndMs };
 }
 
 export function sampler(id: string, path: string, options?: { root: Pitch; loopStartMs?: number; loopEndMs?: number }): SamplerNode;
@@ -209,10 +244,24 @@ export function sampler(id: string, source: string | SamplerMapping | ReadonlyAr
 	if (Array.isArray(source)) {
 		if (source.length === 0) throw new ResequenceError("EMPTY_SAMPLER_ZONES", "sampler(): zones array must not be empty");
 
-		return new SamplerNode(id, { kind: "zones", zones: source });
+		const zones = (source as ReadonlyArray<SamplerZone>).map(normalizeZone);
+
+		return new SamplerNode(id, { kind: "zones", zones });
 	}
 
-	if (Object.keys(source).length === 0) throw new ResequenceError("EMPTY_SAMPLER_MAPPING", "sampler(): mapping must not be empty");
+	const mapping = source as SamplerMapping;
 
-	return new SamplerNode(id, { kind: "mapping", mapping: source as SamplerMapping });
+	if (Object.keys(mapping).length === 0) throw new ResequenceError("EMPTY_SAMPLER_MAPPING", "sampler(): mapping must not be empty");
+
+	const normalizedMapping: Record<string, string | ReadonlyArray<SamplerVelocityLayer>> = {};
+
+	for (const [key, value] of Object.entries(mapping)) {
+		if (typeof value === "string") {
+			normalizedMapping[key] = value;
+		} else {
+			normalizedMapping[key] = value.map(normalizeVelocityLayer);
+		}
+	}
+
+	return new SamplerNode(id, { kind: "mapping", mapping: normalizedMapping as SamplerMapping });
 }

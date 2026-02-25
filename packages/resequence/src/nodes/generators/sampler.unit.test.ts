@@ -75,6 +75,84 @@ describe("sampler", () => {
 		});
 	});
 
+	describe("region normalization", () => {
+		it("normalizes zone region to composite key when sample has no #", () => {
+			const node = sampler("piano", [
+				{ sample: "./piano-all.wav", region: "C4-soft", root: "C4" },
+			]);
+			const config = (node as unknown as { config: { zones: Array<{ sample: string }> } }).config;
+			expect(config.zones[0]?.sample).toBe("./piano-all.wav#C4-soft");
+		});
+
+		it("does not duplicate # when sample already contains it", () => {
+			const node = sampler("piano", [
+				{ sample: "./piano-all.wav#C4-soft", region: "C4-soft", root: "C4" },
+			]);
+			const config = (node as unknown as { config: { zones: Array<{ sample: string }> } }).config;
+			expect(config.zones[0]?.sample).toBe("./piano-all.wav#C4-soft");
+		});
+
+		it("preserves sample as-is when no region property", () => {
+			const node = sampler("piano", [{ sample: "./piano-C4.wav", root: "C4" }]);
+			const config = (node as unknown as { config: { zones: Array<{ sample: string }> } }).config;
+			expect(config.zones[0]?.sample).toBe("./piano-C4.wav");
+		});
+	});
+
+	describe("zone resolution: pitch + velocity", () => {
+		it("selects by pitch then velocity simultaneously", () => {
+			const node = sampler("piano", [
+				{ sample: "./piano-C4-soft.wav", root: "C4", velocity: 0 },
+				{ sample: "./piano-C4-hard.wav", root: "C4", velocity: 64 },
+				{ sample: "./piano-C5-soft.wav", root: "C5", velocity: 0 },
+				{ sample: "./piano-C5-hard.wav", root: "C5", velocity: 64 },
+			]);
+
+			const c4Soft = { id: "c4-soft" } as unknown as AudioBuffer;
+			const c4Hard = { id: "c4-hard" } as unknown as AudioBuffer;
+			const c5Soft = { id: "c5-soft" } as unknown as AudioBuffer;
+			const c5Hard = { id: "c5-hard" } as unknown as AudioBuffer;
+
+			const sampleMap = new Map<string, AudioBuffer>([
+				["./piano-C4-soft.wav", c4Soft],
+				["./piano-C4-hard.wav", c4Hard],
+				["./piano-C5-soft.wav", c5Soft],
+				["./piano-C5-hard.wav", c5Hard],
+			]);
+
+			let assignedBuffer: AudioBuffer | null = null;
+			const mockSourceNode = {
+				get buffer() { return assignedBuffer; },
+				set buffer(v: AudioBuffer | null) { assignedBuffer = v; },
+				playbackRate: { value: 1 },
+				loop: false, loopStart: 0, loopEnd: 0,
+				start: () => undefined, stop: () => undefined,
+				connect: (dest: unknown) => dest,
+				disconnect: () => undefined,
+				addEventListener: () => undefined,
+			};
+
+			const mockContext = {
+				audioContext: { createBufferSource: () => mockSourceNode, destination: {} },
+				sampleMap,
+				nodeMap: new Map(),
+				driverMap: new Map(),
+				tempoMap: [],
+				fromTicks: 0,
+				toTicks: Infinity,
+			} as unknown as import("../../rendering/schedule-context").ScheduleContext;
+
+			const c4Freq = 440 * 2 ** ((60 - 69) / 12);
+
+			node.schedule({ frequency: c4Freq, velocity: 30, startTime: 0, stopTime: 1, cleanupTime: 1.5 } as import("../node").NoteContext, mockContext);
+			expect(assignedBuffer).toBe(c4Soft);
+
+			assignedBuffer = null;
+			node.schedule({ frequency: c4Freq, velocity: 100, startTime: 0, stopTime: 1, cleanupTime: 1.5 } as import("../node").NoteContext, mockContext);
+			expect(assignedBuffer).toBe(c4Hard);
+		});
+	});
+
 	describe(".to()", () => {
 		it("returns the connected downstream node", () => {
 			const node = sampler("bass", "./bass.wav");

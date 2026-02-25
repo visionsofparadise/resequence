@@ -6,53 +6,49 @@ import { sequence } from "../patterns/sequence";
 import { layer } from "../patterns/layer";
 
 describe("extractMetadata", () => {
-	it("returns defaults when no metadata present", () => {
+	it("returns empty object when no metadata present", () => {
 		const pattern = note("C4", "4n");
 		const result = extractMetadata(pattern);
 
-		expect(result.tempo).toBe(120);
-		expect(result.key).toBeUndefined();
-		expect(result.timeSignature).toEqual([4, 4]);
+		expect(result.name).toBeUndefined();
+		expect(result.description).toBeUndefined();
 	});
 
-	it("extracts tempo, key, and timeSignature from metadata wrapper", () => {
-		const pattern = metadata(note("C4", "4n"), { tempo: 140, key: "Dm", timeSignature: [3, 4] });
+	it("extracts name and description from metadata wrapper", () => {
+		const pattern = metadata(note("C4", "4n"), { name: "My Track", description: "A test" });
 		const result = extractMetadata(pattern);
 
-		expect(result.tempo).toBe(140);
-		expect(result.key).toBe("Dm");
-		expect(result.timeSignature).toEqual([3, 4]);
+		expect(result.name).toBe("My Track");
+		expect(result.description).toBe("A test");
 	});
 
 	it("applies defaults for missing metadata fields", () => {
-		const pattern = metadata(note("C4", "4n"), { key: "Am" });
+		const pattern = metadata(note("C4", "4n"), { name: "Only Name" });
 		const result = extractMetadata(pattern);
 
-		expect(result.tempo).toBe(120);
-		expect(result.key).toBe("Am");
-		expect(result.timeSignature).toEqual([4, 4]);
+		expect(result.name).toBe("Only Name");
+		expect(result.description).toBeUndefined();
 	});
 
 	it("uses outermost metadata when nested", () => {
-		const inner = metadata(note("C4", "4n"), { tempo: 90, key: "Gm" });
-		const outer = metadata(inner, { tempo: 140, key: "Am" });
+		const inner = metadata(note("C4", "4n"), { name: "inner" });
+		const outer = metadata(inner, { name: "outer" });
 		const result = extractMetadata(outer);
 
-		expect(result.tempo).toBe(140);
-		expect(result.key).toBe("Am");
+		expect(result.name).toBe("outer");
 	});
 
 	it("finds metadata inside sequence", () => {
-		const pattern = sequence(note("C4", "4n"), metadata(note("D4", "4n"), { tempo: 100 }));
+		const pattern = sequence(note("C4", "4n"), metadata(note("D4", "4n"), { name: "seq-meta" }));
 		const result = extractMetadata(pattern);
 
-		expect(result.tempo).toBe(100);
+		expect(result.name).toBe("seq-meta");
 	});
 
 	it("finds metadata inside layer", () => {
-		const pattern = layer(note("C4", "4n"), metadata(note("D4", "4n"), { tempo: 88 }));
+		const pattern = layer(note("C4", "4n"), metadata(note("D4", "4n"), { name: "layer-meta" }));
 		const result = extractMetadata(pattern);
 
-		expect(result.tempo).toBe(88);
+		expect(result.name).toBe("layer-meta");
 	});
 });

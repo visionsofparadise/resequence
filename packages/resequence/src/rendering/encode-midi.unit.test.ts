@@ -4,6 +4,9 @@ import { PPQ } from "../utils/duration";
 import { encodeMidi } from "./encode-midi";
 import type { MidiNote } from "./encode-midi";
 
+const noTempoChanges = [] as const;
+const noMarkers = [] as const;
+
 describe("encodeMidi", () => {
 	it("encodes a single track", () => {
 		const notes: Array<MidiNote> = [
@@ -12,7 +15,7 @@ describe("encodeMidi", () => {
 		];
 
 		const tracks = new Map([["piano", notes]]);
-		const result = encodeMidi(tracks, { ppq: PPQ, tempo: 120 });
+		const result = encodeMidi(tracks, { ppq: PPQ, tempoChanges: noTempoChanges, markers: noMarkers });
 
 		const parsed = parseMidi(result);
 		expect(parsed.header.format).toBe(1);
@@ -21,9 +24,9 @@ describe("encodeMidi", () => {
 		expect(parsed.tracks).toHaveLength(2);
 	});
 
-	it("encodes tempo in tempo track", () => {
+	it("encodes a single tempo change at tick 0", () => {
 		const tracks = new Map([["test", [{ tick: 0, pitch: 60, durationTicks: 480, velocity: 100 }]]]);
-		const result = encodeMidi(tracks, { ppq: PPQ, tempo: 140 });
+		const result = encodeMidi(tracks, { ppq: PPQ, tempoChanges: [{ tick: 0, bpm: 140 }], markers: noMarkers });
 
 		const parsed = parseMidi(result);
 		const tempoTrack = parsed.tracks[0];
@@ -34,9 +37,45 @@ describe("encodeMidi", () => {
 		}
 	});
 
+	it("defaults to 120 bpm when no tempo changes provided", () => {
+		const tracks = new Map([["test", [{ tick: 0, pitch: 60, durationTicks: 480, velocity: 100 }]]]);
+		const result = encodeMidi(tracks, { ppq: PPQ, tempoChanges: noTempoChanges, markers: noMarkers });
+
+		const parsed = parseMidi(result);
+		const tempoTrack = parsed.tracks[0];
+		const tempoEvent = tempoTrack.find((ev) => ev.type === "setTempo");
+		expect(tempoEvent).toBeDefined();
+		if (tempoEvent?.type === "setTempo") {
+			expect(tempoEvent.microsecondsPerBeat).toBe(Math.round(60_000_000 / 120));
+		}
+	});
+
+	it("encodes multiple tempo changes", () => {
+		const tracks = new Map([["test", [{ tick: 0, pitch: 60, durationTicks: 960, velocity: 100 }]]]);
+		const result = encodeMidi(tracks, { ppq: PPQ, tempoChanges: [{ tick: 0, bpm: 120 }, { tick: 480, bpm: 100 }], markers: noMarkers });
+
+		const parsed = parseMidi(result);
+		const tempoTrack = parsed.tracks[0];
+		const tempoEvents = tempoTrack.filter((ev) => ev.type === "setTempo");
+		expect(tempoEvents).toHaveLength(2);
+	});
+
+	it("encodes marker meta events", () => {
+		const tracks = new Map([["test", [{ tick: 0, pitch: 60, durationTicks: 480, velocity: 100 }]]]);
+		const result = encodeMidi(tracks, { ppq: PPQ, tempoChanges: noTempoChanges, markers: [{ tick: 0, name: "intro" }, { tick: 480, name: "verse" }] });
+
+		const parsed = parseMidi(result);
+		const tempoTrack = parsed.tracks[0];
+		const markerEvents = tempoTrack.filter((ev) => ev.type === "marker");
+		expect(markerEvents).toHaveLength(2);
+		if (markerEvents[0]?.type === "marker") {
+			expect(markerEvents[0].text).toBe("intro");
+		}
+	});
+
 	it("encodes time signature", () => {
 		const tracks = new Map([["test", [{ tick: 0, pitch: 60, durationTicks: 480, velocity: 100 }]]]);
-		const result = encodeMidi(tracks, { ppq: PPQ, tempo: 120, timeSignature: [3, 4] });
+		const result = encodeMidi(tracks, { ppq: PPQ, tempoChanges: noTempoChanges, markers: noMarkers, timeSignature: [3, 4] });
 
 		const parsed = parseMidi(result);
 		const tempoTrack = parsed.tracks[0];
@@ -50,7 +89,7 @@ describe("encodeMidi", () => {
 
 	it("encodes track name", () => {
 		const tracks = new Map([["bass", [{ tick: 0, pitch: 36, durationTicks: 480, velocity: 100 }]]]);
-		const result = encodeMidi(tracks, { ppq: PPQ, tempo: 120 });
+		const result = encodeMidi(tracks, { ppq: PPQ, tempoChanges: noTempoChanges, markers: noMarkers });
 
 		const parsed = parseMidi(result);
 		const noteTrack = parsed.tracks[1];
@@ -66,7 +105,7 @@ describe("encodeMidi", () => {
 			{ tick: 0, pitch: 60, durationTicks: 480, velocity: 100 },
 			{ tick: 480, pitch: 64, durationTicks: 480, velocity: 90 },
 		]]]);
-		const result = encodeMidi(tracks, { ppq: PPQ, tempo: 120 });
+		const result = encodeMidi(tracks, { ppq: PPQ, tempoChanges: noTempoChanges, markers: noMarkers });
 
 		const parsed = parseMidi(result);
 		const noteTrack = parsed.tracks[1];
@@ -79,7 +118,7 @@ describe("encodeMidi", () => {
 			["bass", [{ tick: 0, pitch: 36, durationTicks: 480, velocity: 100 }]],
 			["drums", [{ tick: 0, pitch: 24, durationTicks: 240, velocity: 127 }]],
 		]);
-		const result = encodeMidi(tracks, { ppq: PPQ, tempo: 120 });
+		const result = encodeMidi(tracks, { ppq: PPQ, tempoChanges: noTempoChanges, markers: noMarkers });
 
 		const parsed = parseMidi(result);
 		expect(parsed.header.numTracks).toBe(3);
@@ -91,7 +130,7 @@ describe("encodeMidi", () => {
 			{ tick: 0, pitch: 60, durationTicks: 480, velocity: 100, lyric: "hel" },
 			{ tick: 480, pitch: 62, durationTicks: 480, velocity: 100, lyric: "lo" },
 		]]]);
-		const result = encodeMidi(tracks, { ppq: PPQ, tempo: 120 });
+		const result = encodeMidi(tracks, { ppq: PPQ, tempoChanges: noTempoChanges, markers: noMarkers });
 
 		const parsed = parseMidi(result);
 		const noteTrack = parsed.tracks[1];
@@ -106,7 +145,7 @@ describe("encodeMidi", () => {
 		const tracks = new Map([["test", [
 			{ tick: 0, pitch: 60, durationTicks: 480, velocity: 100, cc: { 7: 64, 10: 0 } },
 		]]]);
-		const result = encodeMidi(tracks, { ppq: PPQ, tempo: 120 });
+		const result = encodeMidi(tracks, { ppq: PPQ, tempoChanges: noTempoChanges, markers: noMarkers });
 
 		const parsed = parseMidi(result);
 		const noteTrack = parsed.tracks[1];
@@ -132,7 +171,7 @@ describe("encodeMidi", () => {
 		const tracks = new Map([["test", [
 			{ tick: 0, pitch: 60, durationTicks: 480, velocity: 100, cc: { 7: 64 } },
 		]]]);
-		const result = encodeMidi(tracks, { ppq: PPQ, tempo: 120 });
+		const result = encodeMidi(tracks, { ppq: PPQ, tempoChanges: noTempoChanges, markers: noMarkers });
 
 		const parsed = parseMidi(result);
 		const noteTrack = parsed.tracks[1];
@@ -146,7 +185,7 @@ describe("encodeMidi", () => {
 		const tracks = new Map([["test", [
 			{ tick: 0, pitch: 60, durationTicks: 480, velocity: 100 },
 		]]]);
-		const result = encodeMidi(tracks, { ppq: PPQ, tempo: 120 });
+		const result = encodeMidi(tracks, { ppq: PPQ, tempoChanges: noTempoChanges, markers: noMarkers });
 
 		const parsed = parseMidi(result);
 		const noteTrack = parsed.tracks[1];
@@ -158,9 +197,9 @@ describe("encodeMidi", () => {
 		const tracks = new Map([["piano", [
 			{ tick: 0, pitch: 60, durationTicks: 480, velocity: 100 },
 		]]]);
-		const encoded = encodeMidi(tracks, { ppq: PPQ, tempo: 120 });
+		const encoded = encodeMidi(tracks, { ppq: PPQ, tempoChanges: noTempoChanges, markers: noMarkers });
 		const parsed = parseMidi(encoded);
-		const reEncoded = encodeMidi(tracks, { ppq: PPQ, tempo: 120 });
+		const reEncoded = encodeMidi(tracks, { ppq: PPQ, tempoChanges: noTempoChanges, markers: noMarkers });
 
 		expect(reEncoded).toEqual(encoded);
 		expect(parsed.header.format).toBe(1);

@@ -1,6 +1,6 @@
 import { ResequenceError } from "../error";
 import type { ScheduleContext } from "../rendering/schedule-context";
-import { ticksToSeconds } from "../rendering/ticks-to-seconds";
+import { ticksToSeconds } from "../rendering/tempo-map";
 import type { Duration } from "../utils/duration";
 import { resolveDuration } from "../utils/duration";
 import type { Lfo } from "../utils/lfo";
@@ -73,7 +73,7 @@ export class AutomatePattern implements Pattern {
 		this.paths = typeof paths === "string" ? [paths] : paths;
 
 		if (Array.isArray(source)) {
-			const keyframes = source as ReadonlyArray<AnyKeyframe>;
+			const keyframes = source;
 
 			if (keyframes.length === 0) {
 				throw new ResequenceError("EMPTY_KEYFRAMES", "automate(): keyframes array must not be empty");
@@ -116,10 +116,10 @@ export class AutomatePattern implements Pattern {
 				const keyframes = this.source as ReadonlyArray<AnyResolvedKeyframe>;
 
 				for (const keyframe of keyframes) {
-					const timeSeconds = ticksToSeconds(keyframe.timeTicks, context.tempo);
+					const timeSeconds = ticksToSeconds(keyframe.timeTicks, context.tempoMap);
 
 					if (keyframe.kind === "curve") {
-						const durationSeconds = ticksToSeconds(keyframe.durationTicks, context.tempo);
+						const durationSeconds = ticksToSeconds(keyframe.durationTicks, context.tempoMap);
 						constant.offset.setValueCurveAtTime(keyframe.values, timeSeconds, durationSeconds);
 					} else {
 						const curve = keyframe.curve ?? "step";
@@ -138,7 +138,7 @@ export class AutomatePattern implements Pattern {
 			} else {
 				const lfo = this.source as Lfo;
 				constant.offset.value = 0;
-				scheduleLfo(lfo, constant.offset, context.audioContext, 0, Infinity, 1, context.tempo);
+				scheduleLfo(lfo, constant.offset, context.audioContext, 0, Infinity, 1, context.tempoMap);
 				constant.start(0);
 			}
 		}
@@ -149,20 +149,23 @@ export class AutomatePattern implements Pattern {
 	}
 
 	schedule(_offsetTicks: number, _context: ScheduleContext): void {
-		// no-op: automation is fully scheduled in setup()
+		return;
 	}
 
 	teardown(context: ScheduleContext): void {
 		for (const path of this.paths) {
 			const constant = context.driverMap.get(path);
+
 			if (constant) {
 				try {
 					constant.stop();
 				} catch {
 					/* already stopped */
 				}
+
 				constant.disconnect();
 			}
+
 			context.driverMap.delete(path);
 		}
 	}

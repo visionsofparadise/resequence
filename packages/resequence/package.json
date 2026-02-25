@@ -47,6 +47,6 @@
     "node-web-audio-api": "^1.0.8",
     "tonal": "^6.4.3",
     "tsx": "^4.21.0",
-    "wav-file-encoder": "^1.0.4"
+    "wavefile": "^11.0.0"
   }
 }

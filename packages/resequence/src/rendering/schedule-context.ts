@@ -1,10 +1,11 @@
+import type { TempoMap } from "./tempo-map";
 
 export interface ScheduleContext {
 	readonly audioContext: BaseAudioContext;
 	readonly sampleMap: ReadonlyMap<string, AudioBuffer>;
 	readonly nodeMap: Map<string, AudioNode>;
 	readonly driverMap: Map<string, ConstantSourceNode>;
-	readonly tempo: number;
+	readonly tempoMap: TempoMap;
 	readonly fromTicks: number;
 	readonly toTicks: number;
 	readonly trackFilter?: ReadonlySet<string>;

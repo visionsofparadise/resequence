@@ -1,5 +1,7 @@
 import type { MidiData, MidiEvent } from "midi-file";
 import { writeMidi } from "midi-file";
+import type { MarkerPoint } from "./collect-markers";
+import type { TempoPoint } from "./tempo-map";
 
 export interface MidiNote {
 	readonly tick: number;
@@ -10,16 +12,44 @@ export interface MidiNote {
 	readonly cc?: Partial<Record<number, number>>;
 }
 
-export function encodeMidi(tracks: Map<string, ReadonlyArray<MidiNote>>, options: { ppq: number; tempo: number; timeSignature?: [number, number] }): Uint8Array {
-	const microsecondsPerBeat = Math.round(60_000_000 / options.tempo);
+export function encodeMidi(
+	tracks: Map<string, ReadonlyArray<MidiNote>>,
+	options: { ppq: number; tempoChanges: ReadonlyArray<TempoPoint>; markers: ReadonlyArray<MarkerPoint>; timeSignature?: [number, number] },
+): Uint8Array {
 	const [numerator, denominator] = options.timeSignature ?? [4, 4];
 	const denominatorPower = Math.log2(denominator);
 
+	const tempoChanges = options.tempoChanges.length > 0 ? [...options.tempoChanges] : [{ tick: 0, bpm: 120 }];
+
+	if (tempoChanges[0]!.tick !== 0) {
+		tempoChanges.unshift({ tick: 0, bpm: 120 });
+	}
+
+	const tempoTimeEvents: Array<{ tick: number; event: MidiEvent }> = [];
+
+	for (const point of tempoChanges) {
+		tempoTimeEvents.push({ tick: point.tick, event: { deltaTime: 0, type: "setTempo", microsecondsPerBeat: Math.round(60_000_000 / point.bpm), meta: true } });
+	}
+
+	for (const marker of options.markers) {
+		tempoTimeEvents.push({ tick: marker.tick, event: { deltaTime: 0, type: "marker", text: marker.name, meta: true } });
+	}
+
+	tempoTimeEvents.sort((left, right) => left.tick - right.tick);
+
 	const tempoTrack: Array<MidiEvent> = [
-		{ deltaTime: 0, type: "setTempo", microsecondsPerBeat, meta: true },
 		{ deltaTime: 0, type: "timeSignature", numerator, denominator: denominatorPower, metronome: 24, thirtyseconds: 8, meta: true },
-		{ deltaTime: 0, type: "endOfTrack", meta: true },
 	];
+
+	let lastTick = 0;
+
+	for (const { tick, event } of tempoTimeEvents) {
+		event.deltaTime = tick - lastTick;
+		lastTick = tick;
+		tempoTrack.push(event);
+	}
+
+	tempoTrack.push({ deltaTime: 0, type: "endOfTrack", meta: true });
 
 	const noteTracks: Array<Array<MidiEvent>> = [];
 

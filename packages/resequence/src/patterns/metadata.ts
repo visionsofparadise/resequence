@@ -1,4 +1,3 @@
-import { ResequenceError } from "../error";
 import type { ScheduleContext } from "../rendering/schedule-context";
 import type { ValidateContext } from "../validate";
 import type { Pattern, PositionedNote } from "./pattern";
@@ -10,21 +9,9 @@ export class MetadataPattern implements Pattern {
 
 	constructor(
 		readonly child: Pattern,
-		readonly tempo?: number,
-		readonly key?: string,
-		readonly timeSignature?: [number, number],
+		readonly name?: string,
+		readonly description?: string,
 	) {
-		if (tempo !== undefined && tempo <= 0) {
-			throw new ResequenceError("INVALID_TEMPO", `metadata(): tempo must be greater than 0, got ${tempo}`);
-		}
-
-		if (timeSignature !== undefined) {
-			const [numerator, denominator] = timeSignature;
-			if (numerator <= 0 || !Number.isInteger(numerator) || denominator <= 0 || !Number.isInteger(denominator)) {
-				throw new ResequenceError("INVALID_TIME_SIGNATURE", `metadata(): time signature values must be positive integers, got [${numerator}, ${denominator}]`);
-			}
-		}
-
 		this.durationTicks = child.durationTicks;
 		this.notes = child.notes;
 	}
@@ -50,6 +37,6 @@ export class MetadataPattern implements Pattern {
 	}
 }
 
-export function metadata(pattern: Pattern, config: { tempo?: number; key?: string; timeSignature?: [number, number] }): MetadataPattern {
-	return new MetadataPattern(pattern, config.tempo, config.key, config.timeSignature);
+export function metadata(pattern: Pattern, config: { name?: string; description?: string }): MetadataPattern {
+	return new MetadataPattern(pattern, config.name, config.description);
 }

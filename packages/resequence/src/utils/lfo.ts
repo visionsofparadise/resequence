@@ -1,4 +1,5 @@
-import { ticksToSeconds } from "../rendering/ticks-to-seconds";
+import { ticksToSeconds } from "../rendering/tempo-map";
+import type { TempoMap } from "../rendering/tempo-map";
 import type { Duration } from "./duration";
 import { resolveDuration } from "./duration";
 
@@ -27,11 +28,11 @@ export function resolveLfo(lfo: { shape: LfoShape; value: number; frequency: num
 	};
 }
 
-export function scheduleLfo(lfo: Lfo, target: AudioParam, audioContext: BaseAudioContext, startTime: number, stopTime: number, depthScale: number, tempo: number): void {
+export function scheduleLfo(lfo: Lfo, target: AudioParam, audioContext: BaseAudioContext, startTime: number, stopTime: number, depthScale: number, tempoMap: TempoMap): void {
 	const osc = audioContext.createOscillator();
 
 	osc.type = lfo.shape;
-	osc.frequency.value = lfo.frequency ?? (lfo.speedTicks !== undefined ? 1 / ticksToSeconds(lfo.speedTicks, tempo) : 0);
+	osc.frequency.value = lfo.frequency ?? (lfo.speedTicks !== undefined ? 1 / ticksToSeconds(lfo.speedTicks, tempoMap) : 0);
 
 	const depthGain = audioContext.createGain();
 	const fullDepth = lfo.value * depthScale;

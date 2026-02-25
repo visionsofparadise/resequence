@@ -4,10 +4,10 @@ import { sampler } from "../nodes/generators/sampler";
 import { level } from "../patterns/modifiers/level";
 import { transpose } from "../patterns/modifiers/transpose";
 import { layer } from "../patterns/layer";
-import { metadata } from "../patterns/metadata";
 import { note } from "../patterns/note";
 import { repeat } from "../patterns/repeat";
 import { sequence } from "../patterns/sequence";
+import { tempo } from "../patterns/tempo";
 import { CC } from "../utils/cc";
 import { renderMidi } from "./render-midi";
 
@@ -16,7 +16,7 @@ describe("renderMidi", () => {
 	const drums = sampler("drums", { C1: "./kick.wav", D1: "./snare.wav" });
 
 	it("renders per-track MIDI files", () => {
-		const pattern = metadata(layer(note("C2", "4n").route(bass), note("C1", "4n").route(drums)), { tempo: 120 });
+		const pattern = tempo(layer(note("C2", "4n").route(bass), note("C1", "4n").route(drums)), 120);
 
 		const result = renderMidi(pattern);
 		expect(result.tracks.size).toBe(2);
@@ -75,8 +75,8 @@ describe("renderMidi", () => {
 		expect(result.tracks.size).toBe(0);
 	});
 
-	it("preserves tempo from metadata", () => {
-		const pattern = metadata(note("C2", "4n").route(bass), { tempo: 140 });
+	it("preserves tempo from tempo wrapper", () => {
+		const pattern = tempo(note("C2", "4n").route(bass), 140);
 		const result = renderMidi(pattern);
 
 		const parsed = parseMidi(result.tracks.get("bass")!);
@@ -117,7 +117,7 @@ describe("renderMidi", () => {
 		const noteOns = noteTrack.filter((ev) => ev.type === "noteOn");
 		expect(noteOns).toHaveLength(1);
 		if (noteOns[0]?.type === "noteOn") {
-			expect(noteOns[0].noteNumber).toBe(67); // C4 + 7 semitones = G4
+			expect(noteOns[0].noteNumber).toBe(67);
 		}
 	});
 
@@ -145,7 +145,7 @@ describe("renderMidi", () => {
 		const bassLine = sequence(note("C2", "8n"), note("E2", "8n"), note("G2", "8n"), note("C3", "8n"));
 		const kickPattern = repeat(note("C1", "4n"), 4);
 
-		const pattern = metadata(layer(bassLine.route(bass), kickPattern.route(drums)), { tempo: 126 });
+		const pattern = tempo(layer(bassLine.route(bass), kickPattern.route(drums)), 126);
 
 		const result = renderMidi(pattern, { master: true });
 		expect(result.tracks.size).toBe(2);

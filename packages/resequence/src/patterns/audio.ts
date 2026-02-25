@@ -13,7 +13,7 @@ export class AudioPattern implements Pattern {
 
 	constructor(
 		readonly name: string,
-		readonly path: string,
+		readonly path: string, // FIX: We should support regions here too
 		readonly duration: Duration | undefined,
 		readonly transposeSemitones: number,
 		readonly reversed: boolean,
@@ -50,7 +50,7 @@ export class AudioPattern implements Pattern {
 		const buffer = context.sampleMap.get(this.path);
 		if (!buffer) return;
 
-		const offsetSeconds = ticksToSeconds(offsetTicks, context.tempo);
+		const offsetSeconds = ticksToSeconds(offsetTicks, context.tempoMap);
 		const source = context.audioContext.createBufferSource();
 
 		if (this.reversed) {
@@ -70,7 +70,7 @@ export class AudioPattern implements Pattern {
 		}
 
 		const destination = context.nodeMap.get(this.name) ?? context.audioContext.destination;
-		const durationSeconds = this.durationTicks > 0 ? ticksToSeconds(this.durationTicks, context.tempo) : buffer.duration;
+		const durationSeconds = this.durationTicks > 0 ? ticksToSeconds(this.durationTicks, context.tempoMap) : buffer.duration;
 
 		source.connect(destination);
 		source.start(offsetSeconds);

@@ -2,7 +2,7 @@ import type { Midi, Node, NoteContext } from "../nodes/node";
 import type { PositionedNote } from "../patterns/pattern";
 import { CC } from "../utils/cc";
 import type { ScheduleContext } from "./schedule-context";
-import { ticksToSeconds } from "./ticks-to-seconds";
+import { ticksToSeconds } from "./tempo-map";
 
 export function isInScope(offsetTicks: number, durationTicks: number, context: ScheduleContext): boolean {
 	return offsetTicks + durationTicks > context.fromTicks && offsetTicks < context.toTicks;
@@ -43,8 +43,8 @@ export function scheduleNotes(notes: ReadonlyArray<PositionedNote>, offsetTicks:
 }
 
 function buildNoteContext(note: PositionedNote, absoluteTick: number, scheduleContext: ScheduleContext): NoteContext {
-	const startTime = ticksToSeconds(absoluteTick, scheduleContext.tempo);
-	const stopTime = ticksToSeconds(absoluteTick + (note.durationTicks ?? 0), scheduleContext.tempo);
+	const startTime = ticksToSeconds(absoluteTick, scheduleContext.tempoMap);
+	const stopTime = ticksToSeconds(absoluteTick + (note.durationTicks ?? 0), scheduleContext.tempoMap);
 
 	const sustainOn = note.cc?.[CC.SUSTAIN] !== undefined && (note.cc[CC.SUSTAIN] ?? 0) >= 64;
 	const releaseSeconds = !sustainOn && note.cc?.[CC.RELEASE] !== undefined ? ((note.cc[CC.RELEASE] ?? 0) / 127) * 4 : 0;

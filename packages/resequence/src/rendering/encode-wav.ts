@@ -1,11 +1,27 @@
-import { encodeWavFileFromArrays } from "wav-file-encoder";
+import { WaveFile } from "wavefile";
+import type { MarkerPoint } from "./collect-markers";
+import type { TempoMap } from "./tempo-map";
+import { ticksToSeconds } from "./tempo-map";
 
-export function encodeWav(buffer: AudioBuffer): ArrayBuffer {
+export function encodeWav(buffer: AudioBuffer, markers?: ReadonlyArray<MarkerPoint>, tempoMap?: TempoMap): ArrayBuffer {
 	const channels: Array<Float32Array> = [];
 
-	for (let ch = 0; ch < buffer.numberOfChannels; ch++) {
-		channels.push(buffer.getChannelData(ch));
+	for (let channel = 0; channel < buffer.numberOfChannels; channel++) {
+		channels.push(buffer.getChannelData(channel));
 	}
 
-	return encodeWavFileFromArrays(channels, buffer.sampleRate, 0);
+	const wav = new WaveFile();
+	wav.fromScratch(buffer.numberOfChannels, buffer.sampleRate, "32f", channels);
+
+	if (markers && markers.length > 0 && tempoMap) {
+		for (const markerPoint of markers) {
+			const positionMs = ticksToSeconds(markerPoint.tick, tempoMap) * 1000;
+			wav.setCuePoint({ position: positionMs, label: markerPoint.name });
+		}
+	}
+
+	const bytes = wav.toBuffer();
+	const result = new ArrayBuffer(bytes.byteLength);
+	new Uint8Array(result).set(bytes);
+	return result;
 }

@@ -1,14 +1,14 @@
-import { parseArgs } from "node:util";
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { readFile } from "node:fs/promises";
-import { resolve, dirname } from "node:path";
+import { dirname, resolve } from "node:path";
+import { parseArgs } from "node:util";
+import type { Pattern } from "./patterns/pattern";
 import { AudioRenderer } from "./rendering/audio-renderer";
+import { collectMarkers } from "./rendering/collect-markers";
 import { collectRouting } from "./rendering/collect-routing";
 import { encodeWav } from "./rendering/encode-wav";
-import { extractMetadata } from "./rendering/extract-metadata";
 import { renderMidi } from "./rendering/render-midi";
-import { ticksToSeconds } from "./rendering/ticks-to-seconds";
-import type { Pattern } from "./patterns/pattern";
+import { buildTempoMap, ticksToSeconds } from "./rendering/tempo-map";
 
 interface CliOptions {
 	readonly entrypoint: string;
@@ -89,6 +89,7 @@ async function runCli(args: CliOptions): Promise<void> {
 
 	const projectDir = dirname(entrypoint);
 	const outDir = resolve(args.out);
+
 	mkdirSync(outDir, { recursive: true });
 
 	process.stdout.write(`Evaluating ${entrypoint}...\n`);
@@ -97,8 +98,9 @@ async function runCli(args: CliOptions): Promise<void> {
 	const unregister = register();
 
 	try {
-		const mod = await import(entrypoint) as Record<string, unknown>;
+		const mod = (await import(entrypoint)) as Record<string, unknown>;
 		const pattern = mod.default;
+		// FIX: We may aswell make pattern a class so we can instanceof pattern here and do without the cast
 
 		if (!pattern || typeof pattern !== "object" || !("type" in pattern) || !("durationTicks" in pattern)) {
 			process.stderr.write("Error: default export must be a Pattern\n");
@@ -109,13 +111,14 @@ async function runCli(args: CliOptions): Promise<void> {
 
 		process.stdout.write(`Pattern: type=${typedPattern.type}, duration=${typedPattern.durationTicks} ticks\n`);
 
-		const meta = extractMetadata(typedPattern);
+		const tempoMap = buildTempoMap(typedPattern);
+		const markers = collectMarkers(typedPattern);
 		const routing = collectRouting(typedPattern);
 
 		const trackNames = [...routing.keys()];
 		const filteredNames = filterNames(trackNames, args.include, args.exclude);
 
-		process.stdout.write(`Tempo: ${meta.tempo} bpm, Tracks: ${filteredNames.join(", ")}\n`);
+		process.stdout.write(`Tracks: ${filteredNames.join(", ")}\n`);
 
 		if (!args.audioOnly) {
 			const midiResult = renderMidi(typedPattern, {
@@ -126,66 +129,80 @@ async function runCli(args: CliOptions): Promise<void> {
 
 			for (const [name, data] of midiResult.tracks) {
 				const filePath = resolve(outDir, `${name}.mid`);
+
 				writeFileSync(filePath, data);
+
 				process.stdout.write(`  MIDI: ${name}.mid\n`);
 			}
 
 			if (midiResult.master) {
 				const filePath = resolve(outDir, "master.mid");
+
 				writeFileSync(filePath, midiResult.master);
+
 				process.stdout.write(`  MIDI: master.mid\n`);
 			}
 		}
 
 		if (!args.midiOnly) {
-			const { default: nodeWebAudio } = await import("node-web-audio-api") as { default: { OfflineAudioContext: typeof OfflineAudioContext } };
+			const { default: nodeWebAudio } = (await import("node-web-audio-api")) as { default: { OfflineAudioContext: typeof OfflineAudioContext } };
 			const { OfflineAudioContext: NodeOfflineAudioContext } = nodeWebAudio;
 
-			const totalSeconds = ticksToSeconds(typedPattern.durationTicks, meta.tempo);
+			const totalSeconds = ticksToSeconds(typedPattern.durationTicks, tempoMap);
 			const sampleRate = 44100;
 
 			for (const trackName of filteredNames) {
-				const offlineCtx = new NodeOfflineAudioContext(2, Math.ceil(totalSeconds * sampleRate), sampleRate);
-				const renderer = new AudioRenderer(typedPattern, offlineCtx as unknown as BaseAudioContext, {
-					tempo: meta.tempo,
+				const offlineAudioContext = new NodeOfflineAudioContext(2, Math.ceil(totalSeconds * sampleRate), sampleRate);
+				const renderer = new AudioRenderer(typedPattern, offlineAudioContext, {
 					trackFilter: new Set([trackName]),
 				});
 
-				await renderer.setup((path) => readFile(resolve(projectDir, path)).then((data) => {
-					const copy = new ArrayBuffer(data.byteLength);
-					new Uint8Array(copy).set(new Uint8Array(data.buffer, data.byteOffset, data.byteLength));
-					return copy;
-				}));
+				await renderer.setup((path) =>
+					readFile(resolve(projectDir, path)).then((data) => {
+						const copy = new ArrayBuffer(data.byteLength);
+
+						new Uint8Array(copy).set(new Uint8Array(data.buffer, data.byteOffset, data.byteLength));
+
+						return copy;
+					}),
+				);
 
 				renderer.schedule(0, typedPattern.durationTicks);
-				const rendered = await offlineCtx.startRendering();
+
+				const rendered = await offlineAudioContext.startRendering();
+
 				renderer.teardown();
 
-				const wav = encodeWav(rendered as unknown as AudioBuffer);
+				const wav = encodeWav(rendered, markers, tempoMap);
 				const filePath = resolve(outDir, `${trackName}.wav`);
+
 				writeFileSync(filePath, Buffer.from(wav));
+
 				process.stdout.write(`  Audio: ${trackName}.wav\n`);
 			}
 
 			if (args.master) {
 				const offlineCtx = new NodeOfflineAudioContext(2, Math.ceil(totalSeconds * sampleRate), sampleRate);
-				const renderer = new AudioRenderer(typedPattern, offlineCtx as unknown as BaseAudioContext, {
-					tempo: meta.tempo,
-				});
+				const renderer = new AudioRenderer(typedPattern, offlineCtx as unknown as BaseAudioContext);
 
-				await renderer.setup((path) => readFile(resolve(projectDir, path)).then((data) => {
-					const copy = new ArrayBuffer(data.byteLength);
-					new Uint8Array(copy).set(new Uint8Array(data.buffer, data.byteOffset, data.byteLength));
-					return copy;
-				}));
+				await renderer.setup((path) =>
+					readFile(resolve(projectDir, path)).then((data) => {
+						const copy = new ArrayBuffer(data.byteLength);
+						new Uint8Array(copy).set(new Uint8Array(data.buffer, data.byteOffset, data.byteLength));
+						return copy;
+					}),
+				);
 
 				renderer.schedule(0, typedPattern.durationTicks);
 				const rendered = await offlineCtx.startRendering();
+
 				renderer.teardown();
 
-				const wav = encodeWav(rendered as unknown as AudioBuffer);
+				const wav = encodeWav(rendered as unknown as AudioBuffer, markers, tempoMap);
 				const filePath = resolve(outDir, "master.wav");
+
 				writeFileSync(filePath, Buffer.from(wav));
+
 				process.stdout.write(`  Audio: master.wav\n`);
 			}
 		}
@@ -196,20 +213,18 @@ async function runCli(args: CliOptions): Promise<void> {
 	}
 }
 
-function filterNames(
-	names: ReadonlyArray<string>,
-	include?: ReadonlyArray<string>,
-	exclude?: ReadonlyArray<string>,
-): ReadonlyArray<string> {
+function filterNames(names: ReadonlyArray<string>, include?: ReadonlyArray<string>, exclude?: ReadonlyArray<string>): ReadonlyArray<string> {
 	let filtered = [...names];
 
 	if (include && include.length > 0) {
 		const includeSet = new Set(include);
+
 		filtered = filtered.filter((name) => includeSet.has(name));
 	}
 
 	if (exclude && exclude.length > 0) {
 		const excludeSet = new Set(exclude);
+
 		filtered = filtered.filter((name) => !excludeSet.has(name));
 	}
 
@@ -218,5 +233,6 @@ function filterNames(
 
 main().catch((error: unknown) => {
 	process.stderr.write(`Error: ${error instanceof Error ? error.message : String(error)}\n`);
+
 	process.exit(1);
 });

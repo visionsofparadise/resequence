@@ -93,10 +93,9 @@ describe('integration', () => {
       { time: 0, value: 80 },
       { time: bars(2), value: 2000 },
     ])
-    const song = metadata(layer(kickPart, filterSweep), { tempo: 126, key: 'Cm' })
+    const song = metadata(layer(kickPart, filterSweep), { name: 'Cm groove' })
     expect(song).toBeInstanceOf(MetadataPattern)
-    expect(song.tempo).toBe(126)
-    expect(song.key).toBe('Cm')
+    expect(song.name).toBe('Cm groove')
   })
 
   it('uses chord with routing', () => {
@@ -126,10 +125,10 @@ describe('integration', () => {
     const verse = layer(kickPattern.route(drums), snarePattern.route(drums), bassRiff.route(bass))
     const song = repeat(verse, 8)
 
-    const composition = metadata(layer(song, filterSweep, breakLoop), { tempo: 126, key: 'Cm' })
+    const composition = metadata(layer(song, filterSweep, breakLoop), { name: 'Song' })
 
     expect(composition).toBeInstanceOf(MetadataPattern)
-    expect(composition.tempo).toBe(126)
+    expect(composition.name).toBe('Song')
     expect(composition.durationTicks).toBe(480 * 4 * 8)
   })
 

@@ -1,10 +1,10 @@
 import type { Pattern } from "../patterns/pattern";
-import { collectRouting } from "./collect-routing";
-import { extractMetadata } from "./extract-metadata";
+import { collectSampleKeys } from "./collect-sample-keys";
+import { loadSample } from "./load-sample";
+import { buildTempoMap } from "./tempo-map";
 import type { ScheduleContext } from "./schedule-context";
 
 interface AudioRendererOptions {
-	readonly tempo?: number;
 	readonly trackFilter?: ReadonlySet<string>;
 }
 
@@ -20,24 +20,16 @@ export class AudioRenderer {
 		this.options = options;
 	}
 
-	async setup(loadSample: (path: string) => Promise<ArrayBuffer>): Promise<void> {
-		const routing = collectRouting(this.pattern);
-		const meta = extractMetadata(this.pattern);
-		const tempo = this.options.tempo ?? meta.tempo;
-
-		const samplePaths = new Set<string>();
-
-		for (const entry of routing.values()) {
-			samplePaths.add(entry.path);
-		}
+	async setup(fetchBuffer: (path: string) => Promise<ArrayBuffer>): Promise<void> {
+		const sampleKeys = collectSampleKeys(this.pattern);
+		const tempoMap = buildTempoMap(this.pattern);
 
 		const sampleMap = new Map<string, AudioBuffer>();
 
-		for (const samplePath of samplePaths) {
+		for (const key of sampleKeys) {
 			try {
-				const buffer = await loadSample(samplePath);
-				const audioBuffer = await this.audioContext.decodeAudioData(buffer);
-				sampleMap.set(samplePath, audioBuffer);
+				const audioBuffer = await loadSample(key, this.audioContext, fetchBuffer);
+				sampleMap.set(key, audioBuffer);
 			} catch {
 				// sample not loadable — skip
 			}
@@ -53,7 +45,7 @@ export class AudioRenderer {
 			sampleMap,
 			nodeMap,
 			driverMap,
-			tempo,
+			tempoMap,
 			fromTicks: 0,
 			toTicks: Infinity,
 			trackFilter: this.options.trackFilter,

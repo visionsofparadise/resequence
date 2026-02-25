@@ -1,8 +1,9 @@
 import type { Pattern } from "../patterns/pattern";
 import { PPQ } from "../utils/duration";
+import { collectMarkers } from "./collect-markers";
 import type { MidiNote } from "./encode-midi";
 import { encodeMidi } from "./encode-midi";
-import { extractMetadata } from "./extract-metadata";
+import { buildTempoMap } from "./tempo-map";
 
 export interface MidiRenderOptions {
 	readonly include?: ReadonlyArray<string>;
@@ -16,7 +17,8 @@ export interface MidiRenderResult {
 }
 
 export function renderMidi(pattern: Pattern, options?: MidiRenderOptions): MidiRenderResult {
-	const meta = extractMetadata(pattern);
+	const tempoChanges = buildTempoMap(pattern); // FIX: We already created the tempo map in the caller
+	const markers = collectMarkers(pattern);
 	const grouped = groupByTrack(pattern);
 
 	const filteredNames = filterTrackNames([...grouped.keys()], options?.include, options?.exclude);
@@ -28,7 +30,7 @@ export function renderMidi(pattern: Pattern, options?: MidiRenderOptions): MidiR
 		if (!trackNotes || trackNotes.length === 0) continue;
 
 		const singleTrack = new Map([[name, trackNotes]]);
-		tracks.set(name, encodeMidi(singleTrack, { ppq: PPQ, tempo: meta.tempo, timeSignature: meta.timeSignature }));
+		tracks.set(name, encodeMidi(singleTrack, { ppq: PPQ, tempoChanges, markers }));
 	}
 
 	let master: Uint8Array | undefined;
@@ -45,7 +47,7 @@ export function renderMidi(pattern: Pattern, options?: MidiRenderOptions): MidiR
 		}
 
 		if (masterTracks.size > 0) {
-			master = encodeMidi(masterTracks, { ppq: PPQ, tempo: meta.tempo, timeSignature: meta.timeSignature });
+			master = encodeMidi(masterTracks, { ppq: PPQ, tempoChanges, markers });
 		}
 	}
 
