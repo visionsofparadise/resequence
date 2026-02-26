@@ -24,7 +24,11 @@ export class HarmonizePattern extends MidiPattern {
 
 		for (const positionedNote of child.notes) {
 			result.push(positionedNote);
-			result.push({ ...positionedNote, pitch: addSteps(positionedNote.pitch, interval) });
+			result.push({
+				...positionedNote,
+				pitch: addSteps(positionedNote.pitch, interval),
+				slides: positionedNote.slides?.map((sl) => ({ ...sl, pitch: addSteps(sl.pitch, interval) })),
+			});
 		}
 
 		this.notes = result;

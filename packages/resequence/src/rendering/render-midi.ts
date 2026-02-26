@@ -1,8 +1,9 @@
 import type { Pattern } from "../patterns/pattern";
 import { PPQ } from "../utils/duration";
 import { pitchToMidi } from "../utils/pitch";
+import { evaluateSlideCents } from "../utils/slide";
 import { collectMarkers } from "./collect-markers";
-import type { MidiNote } from "./encode-midi";
+import type { MidiNote, MidiPitchBend } from "./encode-midi";
 import { encodeMidi } from "./encode-midi";
 import { buildTempoMap, buildTimeSignatureMap } from "./tempo-map";
 
@@ -72,14 +73,33 @@ function groupByTrack(pattern: Pattern): Map<string, Array<MidiNote>> {
 
 			const { note: midiNote, bend } = pitchToMidi(pn.pitch);
 
+			let pitchBends: ReadonlyArray<MidiPitchBend> | undefined;
+
+			if (pn.slides && pn.slides.length > 0) {
+				const noteTick = Math.round(pn.beat * PPQ);
+				const durationTicks = Math.round((pn.durationBeats ?? 0) * PPQ);
+				const sampleInterval = 10;
+				const bends: Array<MidiPitchBend> = [];
+
+				for (let tickOffset = 0; tickOffset <= durationTicks; tickOffset += sampleInterval) {
+					const beatOffset = tickOffset / PPQ;
+					const slideCents = evaluateSlideCents(pn.pitch, pn.slides, beatOffset);
+					const totalCents = (bend || 0) + slideCents;
+					bends.push({ tick: noteTick + tickOffset, bend: totalCents });
+				}
+
+				pitchBends = bends;
+			}
+
 			track.push({
 				tick: Math.round(pn.beat * PPQ),
 				note: midiNote,
-				bend: bend !== 0 ? bend : undefined,
+				bend: !pitchBends && bend !== 0 ? bend : undefined,
 				durationTicks: Math.round((pn.durationBeats ?? 0) * PPQ),
 				velocity: pn.velocity ?? 100,
 				lyric: pn.lyric,
 				cc: pn.cc,
+				pitchBends,
 			});
 		}
 	}

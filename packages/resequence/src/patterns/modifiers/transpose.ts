@@ -19,7 +19,11 @@ export class TransposePattern extends MidiPattern {
 		super();
 
 		this.durationBeats = child.durationBeats;
-		this.notes = child.notes.map((positionedNote) => ({ ...positionedNote, pitch: addSteps(positionedNote.pitch, interval) }));
+		this.notes = child.notes.map((positionedNote) => ({
+			...positionedNote,
+			pitch: addSteps(positionedNote.pitch, interval),
+			slides: positionedNote.slides?.map((sl) => ({ ...sl, pitch: addSteps(sl.pitch, interval) })),
+		}));
 		this.metadatas = child.metadatas;
 		this.automations = child.automations;
 	}

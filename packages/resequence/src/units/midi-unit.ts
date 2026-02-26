@@ -2,6 +2,12 @@ import type { ScheduleContext } from "../rendering/schedule-context";
 import type { Pitch } from "../utils/pitch";
 import { Unit } from "./unit";
 
+export interface VoiceSlide {
+	readonly timeMs: number;
+	readonly cents: number;
+	readonly curve: number;
+}
+
 export interface VoiceNote {
 	readonly note: number;
 	readonly bend: number;
@@ -11,6 +17,7 @@ export interface VoiceNote {
 	readonly cleanupMs: number;
 	readonly lyric?: string;
 	readonly pitch?: Pitch;
+	readonly slides?: ReadonlyArray<VoiceSlide>;
 	readonly attack?: number;
 	readonly release?: number;
 	readonly sustain?: number;

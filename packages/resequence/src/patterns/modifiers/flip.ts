@@ -37,7 +37,12 @@ export class FlipPattern extends MidiPattern {
 				while (pitchKey(pitch) > rangeMaxKey) pitch = addSteps(pitch, -spo);
 			}
 
-			return { ...positionedNote, pitch };
+			const shift = pitchKey(pitch) - pitchKey(positionedNote.pitch);
+			return {
+				...positionedNote,
+				pitch,
+				slides: positionedNote.slides?.map((sl) => ({ ...sl, pitch: addSteps(sl.pitch, shift) })),
+			};
 		});
 		this.metadatas = child.metadatas;
 		this.automations = child.automations;

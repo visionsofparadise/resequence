@@ -21,10 +21,14 @@ export class LengthPattern extends MidiPattern {
 
 		this.durationBeats = child.durationBeats;
 
-		this.notes = child.notes.map((positionedNote) => ({
-			...positionedNote,
-			durationBeats: noteDuration,
-		}));
+		this.notes = child.notes.map((positionedNote) => {
+			const truncatedSlides = positionedNote.slides?.filter((sl) => sl.beat <= noteDuration);
+			return {
+				...positionedNote,
+				durationBeats: noteDuration,
+				slides: truncatedSlides && truncatedSlides.length > 0 ? truncatedSlides : undefined,
+			};
+		});
 		this.metadatas = child.metadatas;
 		this.automations = child.automations;
 	}

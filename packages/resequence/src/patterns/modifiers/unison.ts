@@ -34,6 +34,7 @@ export class UnisonPattern extends MidiPattern {
 				const voiceNote: ScoreNote = {
 					...positionedNote,
 					pitch: addSteps(positionedNote.pitch, offset),
+					slides: positionedNote.slides?.map((sl) => ({ ...sl, pitch: addSteps(sl.pitch, offset) })),
 				};
 
 				if (spread.cc) {

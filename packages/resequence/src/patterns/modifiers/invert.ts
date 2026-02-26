@@ -37,12 +37,30 @@ export class InvertPattern extends MidiPattern {
 
 			if (n > 0) {
 				for (const [noteIndex, positionedNote] of sorted.entries()) {
-					result.push(noteIndex < n ? { ...positionedNote, pitch: addSteps(positionedNote.pitch, positionedNote.pitch.stepsPerOctave) } : positionedNote);
+					if (noteIndex < n) {
+						const shift = positionedNote.pitch.stepsPerOctave;
+						result.push({
+							...positionedNote,
+							pitch: addSteps(positionedNote.pitch, shift),
+							slides: positionedNote.slides?.map((sl) => ({ ...sl, pitch: addSteps(sl.pitch, shift) })),
+						});
+					} else {
+						result.push(positionedNote);
+					}
 				}
 			} else if (n < 0) {
 				const count = -n;
 				for (const [noteIndex, positionedNote] of sorted.entries()) {
-					result.push(noteIndex >= sorted.length - count ? { ...positionedNote, pitch: addSteps(positionedNote.pitch, -positionedNote.pitch.stepsPerOctave) } : positionedNote);
+					if (noteIndex >= sorted.length - count) {
+						const shift = -positionedNote.pitch.stepsPerOctave;
+						result.push({
+							...positionedNote,
+							pitch: addSteps(positionedNote.pitch, shift),
+							slides: positionedNote.slides?.map((sl) => ({ ...sl, pitch: addSteps(sl.pitch, shift) })),
+						});
+					} else {
+						result.push(positionedNote);
+					}
 				}
 			} else {
 				result.push(...sorted);

@@ -1,6 +1,6 @@
 import type { ScheduleContext } from "../../rendering/schedule-context";
 import { isInScope, scheduleNotes } from "../../rendering/schedule-notes";
-import { pitchKey } from "../../utils/pitch";
+import { addSteps, pitchKey } from "../../utils/pitch";
 import type { Pitch } from "../../utils/pitch";
 import type { ValidateContext } from "../../validate";
 import type { Pattern, PositionedAutomation, PositionedMetadata, ScoreNote } from "../pattern";
@@ -40,10 +40,15 @@ export class SortPattern extends MidiPattern {
 			pitches = byTick.map((positionedNote) => positionedNote.pitch).sort((pitchA, pitchB) => pitchKey(pitchA) - pitchKey(pitchB));
 		}
 
-		this.notes = byTick.map((positionedNote, noteIndex) => ({
-			...positionedNote,
-			pitch: pitches[noteIndex] ?? positionedNote.pitch,
-		}));
+		this.notes = byTick.map((positionedNote, noteIndex) => {
+			const newPitch = pitches[noteIndex] ?? positionedNote.pitch;
+			const shift = pitchKey(newPitch) - pitchKey(positionedNote.pitch);
+			return {
+				...positionedNote,
+				pitch: newPitch,
+				slides: positionedNote.slides?.map((sl) => ({ ...sl, pitch: addSteps(sl.pitch, shift) })),
+			};
+		});
 		this.metadatas = child.metadatas;
 		this.automations = child.automations;
 	}

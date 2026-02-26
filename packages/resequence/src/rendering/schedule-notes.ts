@@ -1,8 +1,9 @@
 import type { ScoreNote } from "../patterns/pattern";
-import type { MidiUnit, VoiceNote } from "../units/midi-unit";
+import type { MidiUnit, VoiceNote, VoiceSlide } from "../units/midi-unit";
 import { CC } from "../utils/cc";
 import { CHROMATIC_TUNING } from "../utils/chromatic";
 import type { Pitch } from "../utils/pitch";
+import { pitchToCents } from "../utils/pitch";
 import type { ScheduleContext } from "./schedule-context";
 import { beatsToSeconds } from "./tempo-map";
 
@@ -40,6 +41,16 @@ function buildVoiceNote(scoreNote: ScoreNote, absoluteBeat: number, scheduleCont
 	const frequency = pitchToFrequency(scoreNote.pitch, scheduleContext);
 	const { note, bend } = frequencyToNoteAndBend(frequency);
 
+	let slides: ReadonlyArray<VoiceSlide> | undefined;
+	if (scoreNote.slides && scoreNote.slides.length > 0) {
+		slides = scoreNote.slides.map((slide) => {
+			const slideAbsoluteBeat = absoluteBeat + slide.beat;
+			const slideTimeMs = beatsToSeconds(slideAbsoluteBeat, scheduleContext.tempoMap) * 1000;
+			const cents = pitchToCents(scoreNote.pitch, slide.pitch, scheduleContext.tuning);
+			return { timeMs: slideTimeMs - startMs, cents, curve: slide.curve };
+		});
+	}
+
 	return {
 		note,
 		bend,
@@ -49,6 +60,7 @@ function buildVoiceNote(scoreNote: ScoreNote, absoluteBeat: number, scheduleCont
 		cleanupMs: stopMs + releaseMs + 500,
 		lyric: scoreNote.lyric,
 		pitch: scoreNote.pitch,
+		slides,
 		attack: cc?.[CC.ATTACK],
 		release: cc?.[CC.RELEASE],
 		sustain: cc?.[CC.SUSTAIN],

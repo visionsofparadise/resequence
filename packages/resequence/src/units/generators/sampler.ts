@@ -2,6 +2,7 @@ import { ResequenceError } from "../../error";
 import type { ScheduleContext } from "../../rendering/schedule-context";
 import type { Pitch } from "../../utils/pitch";
 import { pitchToMidi, resolvePitch } from "../../utils/pitch";
+import { scheduleSlideRamps } from "../../utils/schedule-slides";
 import type { VoiceNote } from "../midi-unit";
 import { GeneratorUnit } from "./generator";
 
@@ -78,6 +79,16 @@ export class SamplerUnit extends GeneratorUnit {
 		const source = scheduleContext.audioContext.createBufferSource();
 		source.buffer = result.buffer;
 		source.playbackRate.value = result.playbackRate;
+
+		if (voiceNote.slides && voiceNote.slides.length > 0) {
+			scheduleSlideRamps(
+				source.playbackRate,
+				result.playbackRate,
+				voiceNote.slides,
+				voiceNote.startMs / 1000,
+				(cents) => result.playbackRate * 2 ** (cents / 1200),
+			);
+		}
 
 		if (result.loopStartMs !== undefined && result.loopEndMs !== undefined) {
 			source.loop = true;

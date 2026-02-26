@@ -78,7 +78,12 @@ function applyVoicing(group: ReadonlyArray<ScoreNote>, style: VoicingStyle): Arr
 		while (pitchKey(pitch) > baseKey + spo) pitch = addSteps(pitch, -spo);
 		while (pitchKey(pitch) <= baseKey) pitch = addSteps(pitch, spo);
 
-		return { ...positionedNote, pitch };
+		const shift = pitchKey(pitch) - pitchKey(positionedNote.pitch);
+		return {
+			...positionedNote,
+			pitch,
+			slides: positionedNote.slides?.map((sl) => ({ ...sl, pitch: addSteps(sl.pitch, shift) })),
+		};
 	});
 
 	if (style === "close") return close;
@@ -88,7 +93,11 @@ function applyVoicing(group: ReadonlyArray<ScoreNote>, style: VoicingStyle): Arr
 		const secondFromTop = voiced[voiced.length - 2];
 
 		if (secondFromTop) {
-			voiced[voiced.length - 2] = { ...secondFromTop, pitch: addSteps(secondFromTop.pitch, -spo) };
+			voiced[voiced.length - 2] = {
+				...secondFromTop,
+				pitch: addSteps(secondFromTop.pitch, -spo),
+				slides: secondFromTop.slides?.map((sl) => ({ ...sl, pitch: addSteps(sl.pitch, -spo) })),
+			};
 		}
 
 		return voiced;
@@ -99,7 +108,11 @@ function applyVoicing(group: ReadonlyArray<ScoreNote>, style: VoicingStyle): Arr
 
 		const thirdFromTop = voiced[voiced.length - 3];
 		if (thirdFromTop) {
-			voiced[voiced.length - 3] = { ...thirdFromTop, pitch: addSteps(thirdFromTop.pitch, -spo) };
+			voiced[voiced.length - 3] = {
+				...thirdFromTop,
+				pitch: addSteps(thirdFromTop.pitch, -spo),
+				slides: thirdFromTop.slides?.map((sl) => ({ ...sl, pitch: addSteps(sl.pitch, -spo) })),
+			};
 		}
 
 		return voiced;
@@ -111,7 +124,11 @@ function applyVoicing(group: ReadonlyArray<ScoreNote>, style: VoicingStyle): Arr
 	for (let noteIndex = voiced.length - 1; noteIndex >= 0; noteIndex -= 2) {
 		const positionedNote = voiced[noteIndex];
 		if (positionedNote === undefined) continue;
-		voiced[noteIndex] = { ...positionedNote, pitch: addSteps(positionedNote.pitch, spo) };
+		voiced[noteIndex] = {
+			...positionedNote,
+			pitch: addSteps(positionedNote.pitch, spo),
+			slides: positionedNote.slides?.map((sl) => ({ ...sl, pitch: addSteps(sl.pitch, spo) })),
+		};
 	}
 
 	return voiced;

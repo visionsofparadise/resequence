@@ -6,8 +6,14 @@ import { resolveDuration } from "../utils/duration";
 import type { Pitch } from "../utils/pitch";
 import { resolvePitch } from "../utils/pitch";
 import type { ValidateContext } from "../validate";
-import type { ScoreNote } from "./pattern";
+import type { ScoreNote, ScoreSlide } from "./pattern";
 import { MidiPattern } from "./pattern";
+
+export interface SlideInput {
+	readonly time: Duration;
+	readonly pitch: Pitch;
+	readonly curve?: number;
+}
 
 export class NotePattern extends MidiPattern {
 	readonly type = "note" as const;
@@ -20,6 +26,7 @@ export class NotePattern extends MidiPattern {
 		readonly velocity: number,
 		readonly lyric?: string,
 		readonly cc?: Partial<Record<number, number>>,
+		readonly slideInputs?: ReadonlyArray<SlideInput>,
 	) {
 		super();
 
@@ -28,7 +35,28 @@ export class NotePattern extends MidiPattern {
 		}
 
 		this.durationBeats = resolveDuration(duration);
-		this.notes = [{ beat: 0, pitch: resolvePitch(this.pitch), durationBeats: this.durationBeats, velocity: this.velocity, lyric: this.lyric, cc: this.cc, outputs: [] }];
+
+		const slides = this.slideInputs ? this.resolveSlides(this.slideInputs, this.durationBeats) : undefined;
+
+		this.notes = [{ beat: 0, pitch: resolvePitch(this.pitch), durationBeats: this.durationBeats, velocity: this.velocity, lyric: this.lyric, cc: this.cc, slides, outputs: [] }];
+	}
+
+	private resolveSlides(inputs: ReadonlyArray<SlideInput>, durationBeats: number): ReadonlyArray<ScoreSlide> {
+		const resolved = inputs.map((input) => {
+			const beat = resolveDuration(input.time);
+			const curve = Math.max(-1, Math.min(1, input.curve ?? 0));
+
+			if (beat < 0) {
+				throw new ResequenceError("INVALID_SLIDE", `note(): slide time must not be negative, got ${beat}`);
+			}
+			if (beat > durationBeats) {
+				throw new ResequenceError("INVALID_SLIDE", `note(): slide time ${beat} exceeds note duration ${durationBeats}`);
+			}
+
+			return { beat, pitch: input.pitch, curve };
+		});
+
+		return resolved.sort((s1, s2) => s1.beat - s2.beat);
 	}
 
 	validate(context: ValidateContext): void {
@@ -48,6 +76,6 @@ export class NotePattern extends MidiPattern {
 	}
 }
 
-export function note(pitch: string | number | Pitch, duration: Duration, options?: { velocity?: number; lyric?: string; cc?: Partial<Record<number, number>> }): NotePattern {
-	return new NotePattern(pitch, duration, options?.velocity ?? 100, options?.lyric, options?.cc);
+export function note(pitch: string | number | Pitch, duration: Duration, options?: { velocity?: number; lyric?: string; cc?: Partial<Record<number, number>>; slides?: ReadonlyArray<SlideInput> }): NotePattern {
+	return new NotePattern(pitch, duration, options?.velocity ?? 100, options?.lyric, options?.cc, options?.slides);
 }

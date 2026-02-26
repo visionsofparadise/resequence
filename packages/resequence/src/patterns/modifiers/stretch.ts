@@ -23,6 +23,7 @@ export class StretchPattern extends MidiPattern {
 			...positionedNote,
 			beat: positionedNote.beat * factor,
 			durationBeats: positionedNote.durationBeats !== undefined ? positionedNote.durationBeats * factor : undefined,
+			slides: positionedNote.slides?.map((sl) => ({ ...sl, beat: sl.beat * factor })),
 		}));
 		this.metadatas = child.metadatas;
 		this.automations = child.automations;

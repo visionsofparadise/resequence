@@ -24,6 +24,12 @@ export interface PositionedAutomation {
 	readonly automation: AutomatePattern;
 }
 
+export interface ScoreSlide {
+	readonly beat: number;
+	readonly pitch: Pitch;
+	readonly curve: number;
+}
+
 export interface ScoreNote {
 	readonly beat: number;
 	readonly pitch: Pitch;
@@ -31,6 +37,7 @@ export interface ScoreNote {
 	readonly velocity?: number;
 	readonly lyric?: string;
 	readonly cc?: Partial<Record<number, number>>;
+	readonly slides?: ReadonlyArray<ScoreSlide>;
 	outputs: Array<string | undefined>;
 }
 
