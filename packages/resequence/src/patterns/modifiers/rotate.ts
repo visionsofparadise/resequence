@@ -1,13 +1,15 @@
 import type { ScheduleContext } from "../../rendering/schedule-context";
-import { isInScope, prepareNotes, scheduleNotes } from "../../rendering/schedule-notes";
+import { isInScope, scheduleNotes } from "../../rendering/schedule-notes";
 import type { ValidateContext } from "../../validate";
-import type { Pattern, PositionedNote } from "../pattern";
+import type { Pattern, PositionedAutomation, PositionedMetadata, ScoreNote } from "../pattern";
 import { MidiPattern } from "../pattern";
 
 export class RotatePattern extends MidiPattern {
 	readonly type = "rotate" as const;
 	readonly durationBeats: number;
-	readonly notes: ReadonlyArray<PositionedNote>;
+	readonly notes: ReadonlyArray<ScoreNote>;
+	readonly metadatas: ReadonlyArray<PositionedMetadata>;
+	readonly automations: ReadonlyArray<PositionedAutomation>;
 
 	constructor(
 		readonly child: Pattern,
@@ -15,6 +17,8 @@ export class RotatePattern extends MidiPattern {
 	) {
 		super();
 		this.durationBeats = child.durationBeats;
+		this.metadatas = child.metadatas;
+		this.automations = child.automations;
 
 		const sorted = child.notes.slice().sort((noteA, noteB) => noteA.beat - noteB.beat);
 
@@ -55,7 +59,7 @@ export class RotatePattern extends MidiPattern {
 		const rotatedNotes = [...sorted.slice(shift), ...sorted.slice(0, shift)];
 		const rotatedGaps = [...gaps.slice(shift), ...gaps.slice(0, shift)];
 
-		const result: Array<PositionedNote> = [];
+		const result: Array<ScoreNote> = [];
 		let beat = 0;
 
 		for (let noteIndex = 0; noteIndex < noteCount; noteIndex++) {
@@ -74,12 +78,6 @@ export class RotatePattern extends MidiPattern {
 		this.child.validate(childContext);
 	}
 
-	prepare(offsetBeats: number, context: ScheduleContext): void {
-		if (!isInScope(offsetBeats, this.durationBeats, context)) return;
-
-		prepareNotes(this.notes, offsetBeats, this.outputs, context);
-		this.child.prepare(offsetBeats, context);
-	}
 
 	schedule(offsetBeats: number, context: ScheduleContext): void {
 		if (!isInScope(offsetBeats, this.durationBeats, context)) return;

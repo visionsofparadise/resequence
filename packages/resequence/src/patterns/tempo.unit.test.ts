@@ -1,16 +1,16 @@
 import { describe, expect, it } from "vitest";
 import { ResequenceError } from "../error";
 import { resolvePitch } from "../utils/pitch";
+import { MetadataPattern, tempo } from "./metadata";
 import { note } from "./note";
 import { sequence } from "./sequence";
-import { tempo, TempoPattern } from "./tempo";
 
-describe("TempoPattern", () => {
-	it("creates with valid bpm", () => {
+describe("tempo alias", () => {
+	it("creates MetadataPattern with tempo bpm", () => {
 		const t = tempo(note("C4", "4n"), 140);
-		expect(t).toBeInstanceOf(TempoPattern);
-		expect(t.bpm).toBe(140);
-		expect(t.type).toBe("tempo");
+		expect(t).toBeInstanceOf(MetadataPattern);
+		expect(t.meta.tempo).toBe(140);
+		expect(t.type).toBe("metadata");
 	});
 
 	it("throws for bpm <= 0", () => {
@@ -31,5 +31,10 @@ describe("TempoPattern", () => {
 	it("delegates notes to child", () => {
 		const t = tempo(note("C4", "4n"), 120);
 		expect(t.notes).toMatchObject([{ beat: 0, pitch: resolvePitch("C4") }]);
+	});
+
+	it("appears in metadatas aggregation", () => {
+		const t = tempo(note("C4", "4n"), 120);
+		expect(t.metadatas).toEqual([{ beat: 0, meta: { tempo: 120 } }]);
 	});
 });

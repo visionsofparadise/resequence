@@ -3,7 +3,7 @@ import { note } from "../patterns/note";
 import { sequence } from "../patterns/sequence";
 import { layer } from "../patterns/layer";
 import { repeat } from "../patterns/repeat";
-import { tempo } from "../patterns/tempo";
+import { tempo } from "../patterns/metadata";
 import { beatsToSeconds, buildTempoMap } from "./tempo-map";
 
 describe("buildTempoMap", () => {

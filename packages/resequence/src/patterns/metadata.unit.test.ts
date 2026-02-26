@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
+import { sampler } from "../units/generators/sampler";
 import { resolvePitch } from "../utils/pitch";
-import { sampler } from "../nodes/generators/sampler";
 import { gap } from "./gap";
 import { layer } from "./layer";
-import { metadata, MetadataPattern } from "./metadata";
+import { metadata } from "./metadata";
 import { note } from "./note";
 import { repeat } from "./repeat";
 import { sequence } from "./sequence";
@@ -13,20 +13,42 @@ describe("MetadataPattern", () => {
 		it("wraps pattern with name and description", () => {
 			const m = metadata(note("C4", "4n"), { name: "My Song", description: "A test song" });
 			expect(m.type).toBe("metadata");
-			expect(m.name).toBe("My Song");
-			expect(m.description).toBe("A test song");
+			expect(m.meta.name).toBe("My Song");
+			expect(m.meta.description).toBe("A test song");
 		});
 
 		it("supports partial metadata", () => {
 			const m = metadata(note("C4", "4n"), { name: "Test" });
-			expect(m.name).toBe("Test");
-			expect(m.description).toBeUndefined();
+			expect(m.meta.name).toBe("Test");
+			expect(m.meta.description).toBeUndefined();
 		});
 
 		it("supports empty config", () => {
 			const m = metadata(note("C4", "4n"), {});
-			expect(m.name).toBeUndefined();
-			expect(m.description).toBeUndefined();
+			expect(m.meta.name).toBeUndefined();
+			expect(m.meta.description).toBeUndefined();
+		});
+
+		it("supports all metadata fields", () => {
+			const config = {
+				classes: ["C"],
+				octaveRatio: 2 as const,
+				reference: { class: "C", octave: 4, hz: 264 },
+			};
+			const m = metadata(note("C4", "4n"), {
+				name: "Song",
+				description: "desc",
+				tempo: 120,
+				timeSignature: [4, 4] as const,
+				tuning: config,
+				marker: "intro",
+				region: "verse",
+			});
+			expect(m.meta.tempo).toBe(120);
+			expect(m.meta.timeSignature).toEqual([4, 4]);
+			expect(m.meta.tuning).toEqual(config);
+			expect(m.meta.marker).toBe("intro");
+			expect(m.meta.region).toBe("verse");
 		});
 	});
 
@@ -63,6 +85,27 @@ describe("MetadataPattern", () => {
 				{ beat: 1, pitch: resolvePitch("D1") },
 				{ beat: 3, pitch: resolvePitch("D1") },
 			]);
+		});
+	});
+
+	describe("metadatas aggregation", () => {
+		it("includes own metadata at beat 0", () => {
+			const m = metadata(note("C4", "4n"), { tempo: 120 });
+			expect(m.metadatas).toEqual([{ beat: 0, meta: { tempo: 120 } }]);
+		});
+
+		it("accumulates child metadatas through sequence", () => {
+			const m = metadata(sequence(metadata(note("C4", "4n"), { marker: "intro" }), metadata(note("E4", "4n"), { marker: "verse" })), { tempo: 120 });
+			expect(m.metadatas).toEqual([
+				{ beat: 0, meta: { tempo: 120 } },
+				{ beat: 0, meta: { marker: "intro" } },
+				{ beat: 1, meta: { marker: "verse" } },
+			]);
+		});
+
+		it("leaf patterns return empty metadatas", () => {
+			expect(note("C4", "4n").metadatas).toEqual([]);
+			expect(gap("4n").metadatas).toEqual([]);
 		});
 	});
 });

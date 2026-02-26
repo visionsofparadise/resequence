@@ -1,11 +1,11 @@
 import type { ScheduleContext } from "../../rendering/schedule-context";
-import { isInScope, prepareNotes, scheduleNotes } from "../../rendering/schedule-notes";
+import { isInScope, scheduleNotes } from "../../rendering/schedule-notes";
 import type { Duration } from "../../utils/duration";
 import { resolveDuration } from "../../utils/duration";
 import type { Pitch } from "../../utils/pitch";
 import { resolvePitch } from "../../utils/pitch";
 import type { ValidateContext } from "../../validate";
-import type { PositionedNote } from "../pattern";
+import type { ScoreNote } from "../pattern";
 import { MidiPattern } from "../pattern";
 
 export interface RandomVelocityRange {
@@ -37,7 +37,7 @@ function mulberry32(seed: number): () => number {
 export class RandomPattern extends MidiPattern {
 	readonly type = "random" as const;
 	readonly durationBeats: number;
-	readonly notes: ReadonlyArray<PositionedNote>;
+	readonly notes: ReadonlyArray<ScoreNote>;
 
 	constructor(readonly options: RandomOptions) {
 		super();
@@ -46,7 +46,7 @@ export class RandomPattern extends MidiPattern {
 		this.durationBeats = options.count * stepDurationBeats;
 
 		const rng = options.seed !== undefined ? mulberry32(options.seed) : Math.random.bind(Math);
-		const result: Array<PositionedNote> = [];
+		const result: Array<ScoreNote> = [];
 		const firstRaw = options.pitches[0];
 
 		if (firstRaw === undefined) {
@@ -79,11 +79,6 @@ export class RandomPattern extends MidiPattern {
 		return;
 	}
 
-	prepare(offsetBeats: number, context: ScheduleContext): void {
-		if (!isInScope(offsetBeats, this.durationBeats, context)) return;
-
-		prepareNotes(this.notes, offsetBeats, this.outputs, context);
-	}
 
 	schedule(offsetBeats: number, context: ScheduleContext): void {
 		if (!isInScope(offsetBeats, this.durationBeats, context)) return;

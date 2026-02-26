@@ -3,10 +3,10 @@ import { readFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { parseArgs } from "node:util";
 import type { Pattern } from "./patterns/pattern";
-import { AudioRenderer } from "./rendering/audio-renderer";
 import { collectMarkers } from "./rendering/collect-markers";
 import { collectRouting } from "./rendering/collect-routing";
 import { encodeWav } from "./rendering/encode-wav";
+import { renderAudio } from "./rendering/render-audio";
 import { renderMidi } from "./rendering/render-midi";
 import { buildTempoMap, beatsToSeconds } from "./rendering/tempo-map";
 
@@ -151,29 +151,21 @@ async function runCli(args: CliOptions): Promise<void> {
 			const totalSeconds = beatsToSeconds(typedPattern.durationBeats, tempoMap);
 			const sampleRate = 44100;
 
+			const fetchProjectBuffer = (path: string) =>
+				readFile(resolve(projectDir, path)).then((data) => {
+					const copy = new ArrayBuffer(data.byteLength);
+					new Uint8Array(copy).set(new Uint8Array(data.buffer, data.byteOffset, data.byteLength));
+					return copy;
+				});
+
 			for (const trackName of filteredNames) {
-				const offlineAudioContext = new NodeOfflineAudioContext(2, Math.ceil(totalSeconds * sampleRate), sampleRate);
-				const renderer = new AudioRenderer(typedPattern, offlineAudioContext, {
+				const offlineCtx = new NodeOfflineAudioContext(2, Math.ceil(totalSeconds * sampleRate), sampleRate);
+
+				const rendered = await renderAudio(typedPattern, offlineCtx as unknown as OfflineAudioContext, fetchProjectBuffer, {
 					trackFilter: new Set([trackName]),
 				});
 
-				await renderer.setup((path) =>
-					readFile(resolve(projectDir, path)).then((data) => {
-						const copy = new ArrayBuffer(data.byteLength);
-
-						new Uint8Array(copy).set(new Uint8Array(data.buffer, data.byteOffset, data.byteLength));
-
-						return copy;
-					}),
-				);
-
-				renderer.schedule(0, typedPattern.durationBeats);
-
-				const rendered = await offlineAudioContext.startRendering();
-
-				renderer.teardown();
-
-				const wav = encodeWav(rendered, markers, tempoMap);
+				const wav = encodeWav(rendered as unknown as AudioBuffer, markers, tempoMap);
 				const filePath = resolve(outDir, `${trackName}.wav`);
 
 				writeFileSync(filePath, Buffer.from(wav));
@@ -183,20 +175,8 @@ async function runCli(args: CliOptions): Promise<void> {
 
 			if (args.master) {
 				const offlineCtx = new NodeOfflineAudioContext(2, Math.ceil(totalSeconds * sampleRate), sampleRate);
-				const renderer = new AudioRenderer(typedPattern, offlineCtx as unknown as BaseAudioContext);
 
-				await renderer.setup((path) =>
-					readFile(resolve(projectDir, path)).then((data) => {
-						const copy = new ArrayBuffer(data.byteLength);
-						new Uint8Array(copy).set(new Uint8Array(data.buffer, data.byteOffset, data.byteLength));
-						return copy;
-					}),
-				);
-
-				renderer.schedule(0, typedPattern.durationBeats);
-				const rendered = await offlineCtx.startRendering();
-
-				renderer.teardown();
+				const rendered = await renderAudio(typedPattern, offlineCtx as unknown as OfflineAudioContext, fetchProjectBuffer);
 
 				const wav = encodeWav(rendered as unknown as AudioBuffer, markers, tempoMap);
 				const filePath = resolve(outDir, "master.wav");

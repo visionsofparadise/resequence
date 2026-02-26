@@ -1,17 +1,17 @@
 import type { ScheduleContext } from "../../rendering/schedule-context";
-import { isInScope, prepareNotes, scheduleNotes } from "../../rendering/schedule-notes";
+import { isInScope, scheduleNotes } from "../../rendering/schedule-notes";
 import type { Duration } from "../../utils/duration";
 import { resolveDuration } from "../../utils/duration";
 import type { ValidateContext } from "../../validate";
-import type { PositionedNote } from "../pattern";
+import type { ScoreNote } from "../pattern";
 import { MidiPattern } from "../pattern";
 
-export type FormulaCallback = (accumulator: Array<PositionedNote>, index: number, total: number) => Array<PositionedNote>;
+export type FormulaCallback = (accumulator: Array<ScoreNote>, index: number, total: number) => Array<ScoreNote>;
 
 export class FormulaPattern extends MidiPattern {
 	readonly type = "formula" as const;
 	readonly durationBeats: number;
-	readonly notes: ReadonlyArray<PositionedNote>;
+	readonly notes: ReadonlyArray<ScoreNote>;
 
 	constructor(
 		readonly callback: FormulaCallback,
@@ -21,7 +21,7 @@ export class FormulaPattern extends MidiPattern {
 		super();
 		this.durationBeats = count * stepDuration;
 
-		let acc: Array<PositionedNote> = [];
+		let acc: Array<ScoreNote> = [];
 		for (let stepIndex = 0; stepIndex < count; stepIndex++) {
 			acc = callback(acc, stepIndex, count);
 		}
@@ -32,11 +32,6 @@ export class FormulaPattern extends MidiPattern {
 		return;
 	}
 
-	prepare(offsetBeats: number, context: ScheduleContext): void {
-		if (!isInScope(offsetBeats, this.durationBeats, context)) return;
-
-		prepareNotes(this.notes, offsetBeats, this.outputs, context);
-	}
 
 	schedule(offsetBeats: number, context: ScheduleContext): void {
 		if (!isInScope(offsetBeats, this.durationBeats, context)) return;

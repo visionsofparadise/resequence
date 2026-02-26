@@ -1,14 +1,16 @@
 import { ResequenceError } from "../error";
 import type { ScheduleContext } from "../rendering/schedule-context";
-import { isInScope, prepareNotes, scheduleNotes } from "../rendering/schedule-notes";
+import { isInScope, scheduleNotes } from "../rendering/schedule-notes";
 import type { ValidateContext } from "../validate";
-import type { Pattern, PositionedNote } from "./pattern";
+import type { Pattern, PositionedAutomation, PositionedMetadata, ScoreNote } from "./pattern";
 import { MidiPattern } from "./pattern";
 
 export class RepeatPattern extends MidiPattern {
 	readonly type = "repeat" as const;
 	readonly durationBeats: number;
-	readonly notes: ReadonlyArray<PositionedNote>;
+	readonly notes: ReadonlyArray<ScoreNote>;
+	readonly metadatas: ReadonlyArray<PositionedMetadata>;
+	readonly automations: ReadonlyArray<PositionedAutomation>;
 
 	constructor(
 		readonly child: Pattern,
@@ -22,7 +24,9 @@ export class RepeatPattern extends MidiPattern {
 
 		this.durationBeats = child.durationBeats * count;
 
-		const notes: Array<PositionedNote> = [];
+		const notes: Array<ScoreNote> = [];
+		const metadatas: Array<PositionedMetadata> = [];
+		const automations: Array<PositionedAutomation> = [];
 
 		for (let iteration = 0; iteration < count; iteration++) {
 			const offset = child.durationBeats * iteration;
@@ -30,9 +34,19 @@ export class RepeatPattern extends MidiPattern {
 			for (const childNote of child.notes) {
 				notes.push({ ...childNote, beat: childNote.beat + offset });
 			}
+
+			for (const positioned of child.metadatas) {
+				metadatas.push({ beat: positioned.beat + offset, meta: positioned.meta });
+			}
+
+			for (const positioned of child.automations) {
+				automations.push({ beat: positioned.beat + offset, automation: positioned.automation });
+			}
 		}
 
 		this.notes = notes;
+		this.metadatas = metadatas;
+		this.automations = automations;
 	}
 
 	validate(context: ValidateContext): void {
@@ -45,15 +59,6 @@ export class RepeatPattern extends MidiPattern {
 		this.child.setup(context);
 	}
 
-	prepare(offsetBeats: number, context: ScheduleContext): void {
-		if (!isInScope(offsetBeats, this.durationBeats, context)) return;
-
-		prepareNotes(this.notes, offsetBeats, this.outputs, context);
-
-		for (let iteration = 0; iteration < this.count; iteration++) {
-			this.child.prepare(offsetBeats + this.child.durationBeats * iteration, context);
-		}
-	}
 
 	schedule(offsetBeats: number, context: ScheduleContext): void {
 		if (!isInScope(offsetBeats, this.durationBeats, context)) return;

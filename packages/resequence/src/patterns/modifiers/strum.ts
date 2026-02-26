@@ -1,8 +1,8 @@
 import type { ScheduleContext } from "../../rendering/schedule-context";
-import { isInScope, prepareNotes, scheduleNotes } from "../../rendering/schedule-notes";
+import { isInScope, scheduleNotes } from "../../rendering/schedule-notes";
 import { pitchKey } from "../../utils/pitch";
 import type { ValidateContext } from "../../validate";
-import type { Pattern, PositionedNote } from "../pattern";
+import type { Pattern, PositionedAutomation, PositionedMetadata, ScoreNote } from "../pattern";
 import { MidiPattern } from "../pattern";
 
 export interface StrumOptions {
@@ -13,7 +13,9 @@ export interface StrumOptions {
 export class StrumPattern extends MidiPattern {
 	readonly type = "strum" as const;
 	readonly durationBeats: number;
-	readonly notes: ReadonlyArray<PositionedNote>;
+	readonly notes: ReadonlyArray<ScoreNote>;
+	readonly metadatas: ReadonlyArray<PositionedMetadata>;
+	readonly automations: ReadonlyArray<PositionedAutomation>;
 
 	constructor(
 		readonly child: Pattern,
@@ -26,7 +28,7 @@ export class StrumPattern extends MidiPattern {
 		const strumOffset = options.strumOffset ?? 15;
 		const direction = options.direction ?? "up";
 
-		const byTick = new Map<number, Array<PositionedNote>>();
+		const byTick = new Map<number, Array<ScoreNote>>();
 
 		for (const positionedNote of child.notes) {
 			let group = byTick.get(positionedNote.beat);
@@ -38,7 +40,7 @@ export class StrumPattern extends MidiPattern {
 			group.push(positionedNote);
 		}
 
-		const result: Array<PositionedNote> = [];
+		const result: Array<ScoreNote> = [];
 
 		for (const group of byTick.values()) {
 			const sorted = direction === "up" ? group.slice().sort((noteA, noteB) => pitchKey(noteA.pitch) - pitchKey(noteB.pitch)) : group.slice().sort((noteA, noteB) => pitchKey(noteB.pitch) - pitchKey(noteA.pitch));
@@ -49,6 +51,8 @@ export class StrumPattern extends MidiPattern {
 		}
 
 		this.notes = result;
+		this.metadatas = child.metadatas;
+		this.automations = child.automations;
 	}
 
 	validate(context: ValidateContext): void {
@@ -57,13 +61,6 @@ export class StrumPattern extends MidiPattern {
 		this.child.validate(childContext);
 	}
 
-	prepare(offsetBeats: number, context: ScheduleContext): void {
-		if (!isInScope(offsetBeats, this.durationBeats, context)) return;
-
-		prepareNotes(this.notes, offsetBeats, this.outputs, context);
-
-		this.child.prepare(offsetBeats, context);
-	}
 
 	schedule(offsetBeats: number, context: ScheduleContext): void {
 		if (!isInScope(offsetBeats, this.durationBeats, context)) return;

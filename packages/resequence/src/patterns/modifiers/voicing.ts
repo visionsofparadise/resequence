@@ -1,8 +1,8 @@
 import type { ScheduleContext } from "../../rendering/schedule-context";
-import { isInScope, prepareNotes, scheduleNotes } from "../../rendering/schedule-notes";
+import { isInScope, scheduleNotes } from "../../rendering/schedule-notes";
 import { addSteps, pitchKey } from "../../utils/pitch";
 import type { ValidateContext } from "../../validate";
-import type { Pattern, PositionedNote } from "../pattern";
+import type { Pattern, PositionedAutomation, PositionedMetadata, ScoreNote } from "../pattern";
 import { MidiPattern } from "../pattern";
 
 export type VoicingStyle = "close" | "drop2" | "drop3" | "open";
@@ -10,7 +10,9 @@ export type VoicingStyle = "close" | "drop2" | "drop3" | "open";
 export class VoicingPattern extends MidiPattern {
 	readonly type = "voicing" as const;
 	readonly durationBeats: number;
-	readonly notes: ReadonlyArray<PositionedNote>;
+	readonly notes: ReadonlyArray<ScoreNote>;
+	readonly metadatas: ReadonlyArray<PositionedMetadata>;
+	readonly automations: ReadonlyArray<PositionedAutomation>;
 
 	constructor(
 		readonly child: Pattern,
@@ -20,7 +22,7 @@ export class VoicingPattern extends MidiPattern {
 
 		this.durationBeats = child.durationBeats;
 
-		const byTick = new Map<number, Array<PositionedNote>>();
+		const byTick = new Map<number, Array<ScoreNote>>();
 
 		for (const positionedNote of child.notes) {
 			let group = byTick.get(positionedNote.beat);
@@ -33,13 +35,15 @@ export class VoicingPattern extends MidiPattern {
 			group.push(positionedNote);
 		}
 
-		const result: Array<PositionedNote> = [];
+		const result: Array<ScoreNote> = [];
 
 		for (const group of byTick.values()) {
 			result.push(...applyVoicing(group, style));
 		}
 
 		this.notes = result;
+		this.metadatas = child.metadatas;
+		this.automations = child.automations;
 	}
 
 	validate(context: ValidateContext): void {
@@ -48,13 +52,6 @@ export class VoicingPattern extends MidiPattern {
 		this.child.validate(childContext);
 	}
 
-	prepare(offsetBeats: number, context: ScheduleContext): void {
-		if (!isInScope(offsetBeats, this.durationBeats, context)) return;
-
-		prepareNotes(this.notes, offsetBeats, this.outputs, context);
-
-		this.child.prepare(offsetBeats, context);
-	}
 
 	schedule(offsetBeats: number, context: ScheduleContext): void {
 		if (!isInScope(offsetBeats, this.durationBeats, context)) return;
@@ -65,7 +62,7 @@ export class VoicingPattern extends MidiPattern {
 	}
 }
 
-function applyVoicing(group: ReadonlyArray<PositionedNote>, style: VoicingStyle): Array<PositionedNote> {
+function applyVoicing(group: ReadonlyArray<ScoreNote>, style: VoicingStyle): Array<ScoreNote> {
 	if (group.length < 2) return group.slice();
 	const sorted = group.slice().sort((noteA, noteB) => pitchKey(noteA.pitch) - pitchKey(noteB.pitch));
 	const firstSorted = sorted[0];

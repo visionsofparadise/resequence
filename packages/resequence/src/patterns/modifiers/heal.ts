@@ -1,16 +1,18 @@
 import type { ScheduleContext } from "../../rendering/schedule-context";
-import { isInScope, prepareNotes, scheduleNotes } from "../../rendering/schedule-notes";
+import { isInScope, scheduleNotes } from "../../rendering/schedule-notes";
 import type { Duration } from "../../utils/duration";
 import { resolveDuration } from "../../utils/duration";
 import { pitchKey } from "../../utils/pitch";
 import type { ValidateContext } from "../../validate";
-import type { Pattern, PositionedNote } from "../pattern";
+import type { Pattern, PositionedAutomation, PositionedMetadata, ScoreNote } from "../pattern";
 import { MidiPattern } from "../pattern";
 
 export class HealPattern extends MidiPattern {
 	readonly type = "heal" as const;
 	readonly durationBeats: number;
-	readonly notes: ReadonlyArray<PositionedNote>;
+	readonly notes: ReadonlyArray<ScoreNote>;
+	readonly metadatas: ReadonlyArray<PositionedMetadata>;
+	readonly automations: ReadonlyArray<PositionedAutomation>;
 
 	constructor(
 		readonly child: Pattern,
@@ -22,7 +24,7 @@ export class HealPattern extends MidiPattern {
 
 		const sorted = child.notes.slice().sort((noteA, noteB) => noteA.beat - noteB.beat || pitchKey(noteA.pitch) - pitchKey(noteB.pitch));
 
-		const result: Array<PositionedNote> = [];
+		const result: Array<ScoreNote> = [];
 
 		for (const positionedNote of sorted) {
 			const last = result[result.length - 1];
@@ -40,6 +42,8 @@ export class HealPattern extends MidiPattern {
 		}
 
 		this.notes = result;
+		this.metadatas = child.metadatas;
+		this.automations = child.automations;
 	}
 
 	validate(context: ValidateContext): void {
@@ -48,12 +52,6 @@ export class HealPattern extends MidiPattern {
 		this.child.validate(childContext);
 	}
 
-	prepare(offsetBeats: number, context: ScheduleContext): void {
-		if (!isInScope(offsetBeats, this.durationBeats, context)) return;
-
-		prepareNotes(this.notes, offsetBeats, this.outputs, context);
-		this.child.prepare(offsetBeats, context);
-	}
 
 	schedule(offsetBeats: number, context: ScheduleContext): void {
 		if (!isInScope(offsetBeats, this.durationBeats, context)) return;

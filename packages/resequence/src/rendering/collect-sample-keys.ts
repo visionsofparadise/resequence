@@ -1,7 +1,7 @@
 import { AudioPattern } from "../patterns/audio";
 import type { Pattern } from "../patterns/pattern";
-import { SamplerNode } from "../nodes/generators/sampler";
-import type { SamplerMapping, SamplerVelocityLayer } from "../nodes/generators/sampler";
+import type { SamplerMapping, SamplerVelocityLayer } from "../units/generators/sampler";
+import { SamplerUnit } from "../units/generators/sampler";
 
 export function collectSampleKeys(pattern: Pattern): ReadonlySet<string> {
 	const keys = new Set<string>();
@@ -34,7 +34,7 @@ function collectNodeKeys(pattern: Pattern, keys: Set<string>): void {
 }
 
 function walkNode(node: unknown, keys: Set<string>): void {
-	if (!(node instanceof SamplerNode)) {
+	if (!(node instanceof SamplerUnit)) {
 		if (node instanceof Object && "outputs" in node && Array.isArray((node as { outputs: unknown }).outputs)) {
 			for (const output of (node as { outputs: ReadonlyArray<unknown> }).outputs) {
 				walkNode(output, keys);
@@ -66,8 +66,8 @@ function walkNode(node: unknown, keys: Set<string>): void {
 		}
 	}
 
-	for (const output of node.outputs) {
-		walkNode(output, keys);
+	for (const target of node.targets) {
+		walkNode(target, keys);
 	}
 }
 

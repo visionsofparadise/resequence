@@ -1,19 +1,37 @@
+import { ResequenceError } from "../error";
 import type { ScheduleContext } from "../rendering/schedule-context";
 import type { ValidateContext } from "../validate";
-import type { Pattern, PositionedNote } from "./pattern";
+import type { Metadata, Pattern, PositionedAutomation, PositionedMetadata, ScoreNote } from "./pattern";
+
+export type { Metadata, PositionedMetadata };
 
 export class MetadataPattern implements Pattern {
 	readonly type = "metadata" as const;
 	readonly durationBeats: number;
-	readonly notes: ReadonlyArray<PositionedNote>;
+	readonly notes: ReadonlyArray<ScoreNote>;
+	readonly metadatas: ReadonlyArray<PositionedMetadata>;
+	readonly automations: ReadonlyArray<PositionedAutomation>;
 
 	constructor(
 		readonly child: Pattern,
-		readonly name?: string,
-		readonly description?: string,
+		readonly meta: Metadata,
 	) {
+		if (meta.tempo !== undefined && meta.tempo <= 0) {
+			throw new ResequenceError("INVALID_TEMPO", `tempo(): bpm must be greater than 0, got ${meta.tempo}`);
+		}
+
+		if (meta.timeSignature !== undefined && (meta.timeSignature[0] < 1 || meta.timeSignature[1] < 1)) {
+			throw new ResequenceError("INVALID_TIME_SIGNATURE", `timeSignature(): values must be >= 1, got [${meta.timeSignature[0]}, ${meta.timeSignature[1]}]`);
+		}
+
 		this.durationBeats = child.durationBeats;
 		this.notes = child.notes;
+		this.metadatas = [{ beat: 0, meta }, ...child.metadatas];
+		this.automations = child.automations;
+	}
+
+	get sampleKeys(): ReadonlySet<string> {
+		return this.child.sampleKeys;
 	}
 
 	validate(context: ValidateContext): void {
@@ -21,22 +39,26 @@ export class MetadataPattern implements Pattern {
 	}
 
 	setup(context: ScheduleContext): void {
-		this.child.setup(context);
+		this.child.setup(this.meta.tuning ? { ...context, tuning: this.meta.tuning } : context);
 	}
 
-	prepare(offsetBeats: number, context: ScheduleContext): void {
-		this.child.prepare(offsetBeats, context);
-	}
 
 	schedule(offsetBeats: number, context: ScheduleContext): void {
-		this.child.schedule(offsetBeats, context);
+		this.child.schedule(offsetBeats, this.meta.tuning ? { ...context, tuning: this.meta.tuning } : context);
 	}
 
 	teardown(context: ScheduleContext): void {
-		this.child.teardown(context);
+		this.child.teardown(this.meta.tuning ? { ...context, tuning: this.meta.tuning } : context);
 	}
 }
 
-export function metadata(pattern: Pattern, config: { name?: string; description?: string }): MetadataPattern {
-	return new MetadataPattern(pattern, config.name, config.description);
+export function metadata(pattern: Pattern, meta: Metadata): MetadataPattern {
+	return new MetadataPattern(pattern, meta);
 }
+
+export const tempo = (pattern: Pattern, bpm: number): MetadataPattern => metadata(pattern, { tempo: bpm });
+export const tuning = (pattern: Pattern, config: NonNullable<Metadata["tuning"]>): MetadataPattern => metadata(pattern, { tuning: config });
+export const timeSignature = (pattern: Pattern, sig: readonly [number, number]): MetadataPattern => metadata(pattern, { timeSignature: sig });
+export const marker = (pattern: Pattern, name: string): MetadataPattern => metadata(pattern, { marker: name });
+export const cue = marker;
+export const region = (pattern: Pattern, name: string): MetadataPattern => metadata(pattern, { region: name });

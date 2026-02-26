@@ -6,7 +6,7 @@ import { PPQ } from "../utils/duration";
 
 export interface MidiNote {
 	readonly tick: number;
-	readonly pitch: number;
+	readonly note: number;
 	readonly bend?: number;
 	readonly durationTicks: number;
 	readonly velocity: number;
@@ -104,8 +104,8 @@ function buildTrackEvents(name: string, notes: ReadonlyArray<MidiNote>): Array<M
 			}
 		}
 
-		timeEvents.push({ tick: mn.tick, event: { deltaTime: 0, type: "noteOn", channel: 0, noteNumber: mn.pitch, velocity: mn.velocity } });
-		timeEvents.push({ tick: mn.tick + mn.durationTicks, event: { deltaTime: 0, type: "noteOff", channel: 0, noteNumber: mn.pitch, velocity: 0 } });
+		timeEvents.push({ tick: mn.tick, event: { deltaTime: 0, type: "noteOn", channel: 0, noteNumber: mn.note, velocity: mn.velocity } });
+		timeEvents.push({ tick: mn.tick + mn.durationTicks, event: { deltaTime: 0, type: "noteOff", channel: 0, noteNumber: mn.note, velocity: 0 } });
 	}
 
 	timeEvents.sort((left, right) => left.tick - right.tick);

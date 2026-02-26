@@ -1,19 +1,19 @@
 import { parseMidi } from "midi-file";
 import { describe, expect, it } from "vitest";
-import { sampler } from "../nodes/generators/sampler";
+import { layer } from "../patterns/layer";
+import { tempo } from "../patterns/metadata";
 import { level } from "../patterns/modifiers/level";
 import { transpose } from "../patterns/modifiers/transpose";
-import { layer } from "../patterns/layer";
 import { note } from "../patterns/note";
 import { repeat } from "../patterns/repeat";
 import { sequence } from "../patterns/sequence";
-import { tempo } from "../patterns/tempo";
+import { sampler } from "../units/generators/sampler";
 import { CC } from "../utils/cc";
 import { renderMidi } from "./render-midi";
 
 describe("renderMidi", () => {
-	const bass = sampler("bass", "./bass.wav", { root: "C2" });
-	const drums = sampler("drums", { C1: "./kick.wav", D1: "./snare.wav" });
+	const bass = sampler("./bass.wav", { root: "C2", id: "bass" });
+	const drums = sampler({ C1: "./kick.wav", D1: "./snare.wav" }, { id: "drums" });
 
 	it("renders per-track MIDI files", () => {
 		const pattern = tempo(layer(note("C2", "4n").route(bass), note("C1", "4n").route(drums)), 120);
@@ -163,7 +163,7 @@ describe("renderMidi", () => {
 	});
 
 	it("appears in multiple tracks when routed to multiple outputs", () => {
-		const bass2 = sampler("bass2", "./bass2.wav", { root: "C2" });
+		const bass2 = sampler("./bass2.wav", { root: "C2", id: "bass2" });
 		const pattern = note("C2", "4n").route(bass).route(bass2);
 		const result = renderMidi(pattern);
 		expect(result.tracks.has("bass")).toBe(true);

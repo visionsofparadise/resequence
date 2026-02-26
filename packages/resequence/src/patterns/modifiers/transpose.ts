@@ -1,14 +1,16 @@
 import type { ScheduleContext } from "../../rendering/schedule-context";
-import { isInScope, prepareNotes, scheduleNotes } from "../../rendering/schedule-notes";
+import { isInScope, scheduleNotes } from "../../rendering/schedule-notes";
 import { addSteps } from "../../utils/pitch";
 import type { ValidateContext } from "../../validate";
-import type { Pattern, PositionedNote } from "../pattern";
+import type { Pattern, PositionedAutomation, PositionedMetadata, ScoreNote } from "../pattern";
 import { MidiPattern } from "../pattern";
 
 export class TransposePattern extends MidiPattern {
 	readonly type = "transpose" as const;
 	readonly durationBeats: number;
-	readonly notes: ReadonlyArray<PositionedNote>;
+	readonly notes: ReadonlyArray<ScoreNote>;
+	readonly metadatas: ReadonlyArray<PositionedMetadata>;
+	readonly automations: ReadonlyArray<PositionedAutomation>;
 
 	constructor(
 		readonly child: Pattern,
@@ -18,6 +20,8 @@ export class TransposePattern extends MidiPattern {
 
 		this.durationBeats = child.durationBeats;
 		this.notes = child.notes.map((positionedNote) => ({ ...positionedNote, pitch: addSteps(positionedNote.pitch, interval) }));
+		this.metadatas = child.metadatas;
+		this.automations = child.automations;
 	}
 
 	validate(context: ValidateContext): void {
@@ -26,13 +30,6 @@ export class TransposePattern extends MidiPattern {
 		this.child.validate(childContext);
 	}
 
-	prepare(offsetBeats: number, context: ScheduleContext): void {
-		if (!isInScope(offsetBeats, this.durationBeats, context)) return;
-
-		prepareNotes(this.notes, offsetBeats, this.outputs, context);
-
-		this.child.prepare(offsetBeats, context);
-	}
 
 	schedule(offsetBeats: number, context: ScheduleContext): void {
 		if (!isInScope(offsetBeats, this.durationBeats, context)) return;

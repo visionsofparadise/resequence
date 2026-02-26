@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import {
   note, gap, sequence, layer, repeat,
-  sampler, SamplerNode,
+  sampler, SamplerUnit,
   gain, pan, highpass, compressor,
-  env, EnvNode,
+  env, EnvelopeUnit,
   audio, metadata, automate,
   bars,
   N, Chromatic,
@@ -13,29 +13,29 @@ import {
 } from './index'
 
 describe('integration', () => {
-  const bass = sampler('bass', './samples/bass-C2.wav', { root: 'C2' })
-  const pad = sampler('pad', './samples/pad-C3.wav', { root: 'C3' })
-  const drums = sampler('drums', {
+  const bass = sampler('./samples/bass-C2.wav', { root: 'C2', id: 'bass' })
+  const pad = sampler('./samples/pad-C3.wav', { root: 'C3', id: 'pad' })
+  const drums = sampler({
     C1: './samples/kick.wav',
     D1: './samples/snare.wav',
     'F#1': './samples/hat-closed.wav',
-  })
+  }, { id: 'drums' })
 
   it('creates samplers', () => {
-    expect(bass).toBeInstanceOf(SamplerNode)
+    expect(bass).toBeInstanceOf(SamplerUnit)
     expect(bass.id).toBe('bass')
-    expect(drums).toBeInstanceOf(SamplerNode)
+    expect(drums).toBeInstanceOf(SamplerUnit)
     expect(drums.id).toBe('drums')
   })
 
   it('chains effects on instrument via .to()', () => {
-    const inst = sampler('test-inst', './samples/bass-C2.wav', { root: 'C2' })
+    const inst = sampler('./samples/bass-C2.wav', { root: 'C2', id: 'test-inst' })
     const hp = highpass({ frequency: 80 })
     const comp = compressor({ threshold: -20, ratio: 4 })
     const g = gain({ level: -3 })
     inst.to(hp).to(comp).to(g)
-    expect(inst.outputs).toHaveLength(1)
-    expect(inst.outputs[0]).toBe(hp)
+    expect(inst.targets).toHaveLength(1)
+    expect(inst.targets[0]).toBe(hp)
   })
 
   it('routes pattern to instrument with .route()', () => {
@@ -96,7 +96,7 @@ describe('integration', () => {
     ])
     const song = metadata(layer(kickPart, filterSweep), { name: 'Cm groove' })
     expect(song).toBeInstanceOf(MetadataPattern)
-    expect(song.name).toBe('Cm groove')
+    expect(song.meta.name).toBe('Cm groove')
   })
 
   it('uses chord with routing', () => {
@@ -129,7 +129,7 @@ describe('integration', () => {
     const composition = metadata(layer(song, filterSweep, breakLoop), { name: 'Song' })
 
     expect(composition).toBeInstanceOf(MetadataPattern)
-    expect(composition.name).toBe('Song')
+    expect(composition.meta.name).toBe('Song')
     expect(composition.durationBeats).toBe(32)
   })
 
@@ -206,8 +206,8 @@ describe('integration', () => {
   })
 
   it('creates env node for ADSR modulation', () => {
-    const ampEnv = env('bass.level', { attack: 0.01, decay: 0.1, sustain: 0.8, release: 0.3 })
-    expect(ampEnv).toBeInstanceOf(EnvNode)
-    expect(ampEnv.path).toBe('bass.level')
+    const ampEnv = env({ attack: 0.01, decay: 0.1, sustain: 0.8, release: 0.3, id: 'bass.level' })
+    expect(ampEnv).toBeInstanceOf(EnvelopeUnit)
+    expect(ampEnv.id).toBe('bass.level')
   })
 })

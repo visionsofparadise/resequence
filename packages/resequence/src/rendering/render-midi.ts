@@ -74,7 +74,7 @@ function groupByTrack(pattern: Pattern): Map<string, Array<MidiNote>> {
 
 			track.push({
 				tick: Math.round(pn.beat * PPQ),
-				pitch: midiNote,
+				note: midiNote,
 				bend: bend !== 0 ? bend : undefined,
 				durationTicks: Math.round((pn.durationBeats ?? 0) * PPQ),
 				velocity: pn.velocity ?? 100,

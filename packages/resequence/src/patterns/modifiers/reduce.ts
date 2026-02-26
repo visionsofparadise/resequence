@@ -1,10 +1,10 @@
 import type { ScheduleContext } from "../../rendering/schedule-context";
-import { isInScope, prepareNotes, scheduleNotes } from "../../rendering/schedule-notes";
+import { isInScope, scheduleNotes } from "../../rendering/schedule-notes";
 import type { ValidateContext } from "../../validate";
-import type { Pattern, PositionedNote } from "../pattern";
+import type { Pattern, PositionedAutomation, PositionedMetadata, ScoreNote } from "../pattern";
 import { MidiPattern } from "../pattern";
 
-export type ReduceFn = (acc: Array<PositionedNote>, positionedNote: PositionedNote, noteIndex: number, all: ReadonlyArray<PositionedNote>) => Array<PositionedNote>;
+export type ReduceFn = (acc: Array<ScoreNote>, positionedNote: ScoreNote, noteIndex: number, all: ReadonlyArray<ScoreNote>) => Array<ScoreNote>;
 
 function mulberry32(seed: number): () => number {
 	let state = seed;
@@ -23,7 +23,9 @@ function mulberry32(seed: number): () => number {
 export class ReducePattern extends MidiPattern {
 	readonly type = "reduce" as const;
 	readonly durationBeats: number;
-	readonly notes: ReadonlyArray<PositionedNote>;
+	readonly notes: ReadonlyArray<ScoreNote>;
+	readonly metadatas: ReadonlyArray<PositionedMetadata>;
+	readonly automations: ReadonlyArray<PositionedAutomation>;
 
 	constructor(
 		readonly child: Pattern,
@@ -32,7 +34,9 @@ export class ReducePattern extends MidiPattern {
 		super();
 
 		this.durationBeats = child.durationBeats;
-		this.notes = child.notes.reduce<Array<PositionedNote>>(callback, []);
+		this.notes = child.notes.reduce<Array<ScoreNote>>(callback, []);
+		this.metadatas = child.metadatas;
+		this.automations = child.automations;
 	}
 
 	validate(context: ValidateContext): void {
@@ -41,12 +45,6 @@ export class ReducePattern extends MidiPattern {
 		this.child.validate(childContext);
 	}
 
-	prepare(offsetBeats: number, context: ScheduleContext): void {
-		if (!isInScope(offsetBeats, this.durationBeats, context)) return;
-
-		prepareNotes(this.notes, offsetBeats, this.outputs, context);
-		this.child.prepare(offsetBeats, context);
-	}
 
 	schedule(offsetBeats: number, context: ScheduleContext): void {
 		if (!isInScope(offsetBeats, this.durationBeats, context)) return;
@@ -60,14 +58,14 @@ export function reduce(pattern: Pattern, callback: ReduceFn): ReducePattern {
 	return new ReducePattern(pattern, callback);
 }
 
-export function map(pattern: Pattern, callback: (positionedNote: PositionedNote, noteIndex: number, all: ReadonlyArray<PositionedNote>) => PositionedNote): ReducePattern {
+export function map(pattern: Pattern, callback: (positionedNote: ScoreNote, noteIndex: number, all: ReadonlyArray<ScoreNote>) => ScoreNote): ReducePattern {
 	return reduce(pattern, (acc, positionedNote, noteIndex, all) => {
 		acc.push(callback(positionedNote, noteIndex, all));
 		return acc;
 	});
 }
 
-export function filter(pattern: Pattern, callback: (positionedNote: PositionedNote, noteIndex: number, all: ReadonlyArray<PositionedNote>) => boolean): ReducePattern {
+export function filter(pattern: Pattern, callback: (positionedNote: ScoreNote, noteIndex: number, all: ReadonlyArray<ScoreNote>) => boolean): ReducePattern {
 	return reduce(pattern, (acc, positionedNote, noteIndex, all) => {
 		if (callback(positionedNote, noteIndex, all)) {
 			acc.push(positionedNote);
@@ -76,7 +74,7 @@ export function filter(pattern: Pattern, callback: (positionedNote: PositionedNo
 	});
 }
 
-export function flatMap(pattern: Pattern, callback: (positionedNote: PositionedNote, noteIndex: number, all: ReadonlyArray<PositionedNote>) => ReadonlyArray<PositionedNote>): ReducePattern {
+export function flatMap(pattern: Pattern, callback: (positionedNote: ScoreNote, noteIndex: number, all: ReadonlyArray<ScoreNote>) => ReadonlyArray<ScoreNote>): ReducePattern {
 	return reduce(pattern, (acc, positionedNote, noteIndex, all) => {
 		for (const resultNote of callback(positionedNote, noteIndex, all)) {
 			acc.push(resultNote);

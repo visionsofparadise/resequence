@@ -1,0 +1,70 @@
+import type { ScheduleContext } from "../rendering/schedule-context";
+import { driveParam, getOrCreateDriver, proxyDriver } from "../utils/driver";
+import { linearGain, type GainEffectUnit } from "./effects/gain";
+import { Unit } from "./unit";
+
+export type WaveShape = "sine" | "square" | "sawtooth" | "triangle";
+
+export interface LfoOptions {
+	readonly shape: WaveShape;
+	readonly rate: number;
+	readonly depth: number;
+}
+
+export class LfoUnit extends Unit {
+	private readonly path: string;
+	private readonly shape: WaveShape;
+	private readonly rate: number;
+	private readonly depth: number;
+	public readonly id?: string;
+
+	private oscillatorNode: OscillatorNode | undefined;
+	private depthUnit: GainEffectUnit | undefined;
+
+	constructor({ path, shape, rate, depth, id }: { path: string; shape: WaveShape; rate: number; depth: number; id?: string }) {
+		super();
+		this.path = path;
+		this.shape = shape;
+		this.rate = rate;
+		this.depth = depth;
+		this.id = id;
+	}
+
+	protected _setup(context: ScheduleContext): void {
+		const driver = getOrCreateDriver(this.path, 0, context);
+
+		const oscillatorNode = context.audioContext.createOscillator();
+		oscillatorNode.type = this.shape;
+
+		driveParam(oscillatorNode.frequency, this.id, "rate", this.rate, context);
+
+		const depthId = crypto.randomUUID();
+		const depthUnit = linearGain({ level: this.depth, id: depthId });
+		depthUnit.setup(context);
+
+		if (!depthUnit.gainNode) throw new Error();
+
+		oscillatorNode.connect(depthUnit.gainNode);
+		depthUnit.gainNode.connect(driver.offset);
+
+		oscillatorNode.start();
+
+		proxyDriver(this.id, "depth", `${depthId}.level`, context);
+
+		this.oscillatorNode = oscillatorNode;
+		this.depthUnit = depthUnit;
+	}
+
+	protected _teardown(context: ScheduleContext): void {
+		this.oscillatorNode?.stop();
+		this.oscillatorNode?.disconnect();
+		this.oscillatorNode = undefined;
+		this.depthUnit?.gainNode?.disconnect();
+		this.depthUnit?.teardown(context);
+		this.depthUnit = undefined;
+	}
+}
+
+export function lfo({ path, shape, rate, depth, id }: { path: string; shape: WaveShape; rate: number; depth: number; id?: string }): LfoUnit {
+	return new LfoUnit({ path, shape, rate, depth, id });
+}

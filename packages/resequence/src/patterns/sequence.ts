@@ -1,20 +1,24 @@
 import type { ScheduleContext } from "../rendering/schedule-context";
-import { isInScope, prepareNotes, scheduleNotes } from "../rendering/schedule-notes";
+import { isInScope, scheduleNotes } from "../rendering/schedule-notes";
 import type { ValidateContext } from "../validate";
-import type { Pattern, PositionedNote } from "./pattern";
+import type { Pattern, PositionedAutomation, PositionedMetadata, ScoreNote } from "./pattern";
 import { MidiPattern } from "./pattern";
 
 export class SequencePattern extends MidiPattern {
 	readonly type = "sequence" as const;
 	readonly durationBeats: number;
-	readonly notes: ReadonlyArray<PositionedNote>;
+	readonly notes: ReadonlyArray<ScoreNote>;
+	readonly metadatas: ReadonlyArray<PositionedMetadata>;
+	readonly automations: ReadonlyArray<PositionedAutomation>;
 
 	constructor(readonly children: ReadonlyArray<Pattern>) {
 		super();
 
 		this.durationBeats = children.reduce((sum, child) => sum + child.durationBeats, 0);
 
-		const notes: Array<PositionedNote> = [];
+		const notes: Array<ScoreNote> = [];
+		const metadatas: Array<PositionedMetadata> = [];
+		const automations: Array<PositionedAutomation> = [];
 
 		let cursor = 0;
 
@@ -23,10 +27,20 @@ export class SequencePattern extends MidiPattern {
 				notes.push({ ...childNote, beat: childNote.beat + cursor });
 			}
 
+			for (const positioned of child.metadatas) {
+				metadatas.push({ beat: positioned.beat + cursor, meta: positioned.meta });
+			}
+
+			for (const positioned of child.automations) {
+				automations.push({ beat: positioned.beat + cursor, automation: positioned.automation });
+			}
+
 			cursor += child.durationBeats;
 		}
 
 		this.notes = notes;
+		this.metadatas = metadatas;
+		this.automations = automations;
 	}
 
 	validate(context: ValidateContext): void {
@@ -47,18 +61,6 @@ export class SequencePattern extends MidiPattern {
 		}
 	}
 
-	prepare(offsetBeats: number, context: ScheduleContext): void {
-		if (!isInScope(offsetBeats, this.durationBeats, context)) return;
-
-		prepareNotes(this.notes, offsetBeats, this.outputs, context);
-
-		let cursor = offsetBeats;
-
-		for (const child of this.children) {
-			child.prepare(cursor, context);
-			cursor += child.durationBeats;
-		}
-	}
 
 	schedule(offsetBeats: number, context: ScheduleContext): void {
 		if (!isInScope(offsetBeats, this.durationBeats, context)) return;

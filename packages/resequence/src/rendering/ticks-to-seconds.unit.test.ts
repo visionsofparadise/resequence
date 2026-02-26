@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { beatsToSeconds } from "./ticks-to-seconds";
+import { beatsToSeconds } from "./tempo-map";
 
 describe("beatsToSeconds", () => {
 	it("converts beats to seconds at 120 bpm", () => {

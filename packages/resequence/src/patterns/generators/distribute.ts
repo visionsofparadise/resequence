@@ -1,11 +1,11 @@
 import type { ScheduleContext } from "../../rendering/schedule-context";
-import { isInScope, prepareNotes, scheduleNotes } from "../../rendering/schedule-notes";
+import { isInScope, scheduleNotes } from "../../rendering/schedule-notes";
 import type { Duration } from "../../utils/duration";
 import { resolveDuration } from "../../utils/duration";
 import type { Pitch } from "../../utils/pitch";
 import { resolvePitch } from "../../utils/pitch";
 import type { ValidateContext } from "../../validate";
-import type { PositionedNote } from "../pattern";
+import type { ScoreNote } from "../pattern";
 import { MidiPattern } from "../pattern";
 
 function euclidean(hits: number, steps: number, rotate: number): ReadonlyArray<boolean> {
@@ -21,7 +21,7 @@ function euclidean(hits: number, steps: number, rotate: number): ReadonlyArray<b
 export class DistributePattern extends MidiPattern {
 	readonly type = "distribute" as const;
 	readonly durationBeats: number;
-	readonly notes: ReadonlyArray<PositionedNote>;
+	readonly notes: ReadonlyArray<ScoreNote>;
 
 	constructor(
 		readonly hits: number,
@@ -35,7 +35,7 @@ export class DistributePattern extends MidiPattern {
 		this.durationBeats = steps * stepDuration;
 
 		const pattern = euclidean(hits, steps, rotate);
-		const result: Array<PositionedNote> = [];
+		const result: Array<ScoreNote> = [];
 
 		for (let stepIndex = 0; stepIndex < steps; stepIndex++) {
 			if (pattern[stepIndex]) {
@@ -55,11 +55,6 @@ export class DistributePattern extends MidiPattern {
 		return;
 	}
 
-	prepare(offsetBeats: number, context: ScheduleContext): void {
-		if (!isInScope(offsetBeats, this.durationBeats, context)) return;
-
-		prepareNotes(this.notes, offsetBeats, this.outputs, context);
-	}
 
 	schedule(offsetBeats: number, context: ScheduleContext): void {
 		if (!isInScope(offsetBeats, this.durationBeats, context)) return;

@@ -1,9 +1,9 @@
 import type { ScheduleContext } from "../../rendering/schedule-context";
-import { isInScope, prepareNotes, scheduleNotes } from "../../rendering/schedule-notes";
+import { isInScope, scheduleNotes } from "../../rendering/schedule-notes";
 import type { Duration } from "../../utils/duration";
 import { resolveDuration } from "../../utils/duration";
 import type { ValidateContext } from "../../validate";
-import type { Pattern, PositionedNote } from "../pattern";
+import type { Pattern, PositionedAutomation, PositionedMetadata, ScoreNote } from "../pattern";
 import { MidiPattern } from "../pattern";
 
 export interface SpliceOptions {
@@ -21,7 +21,9 @@ export interface InsertOptions {
 export class SplicePattern extends MidiPattern {
 	readonly type = "splice" as const;
 	readonly durationBeats: number;
-	readonly notes: ReadonlyArray<PositionedNote>;
+	readonly notes: ReadonlyArray<ScoreNote>;
+	readonly metadatas: ReadonlyArray<PositionedMetadata>;
+	readonly automations: ReadonlyArray<PositionedAutomation>;
 
 	constructor(
 		readonly child: Pattern,
@@ -57,6 +59,8 @@ export class SplicePattern extends MidiPattern {
 		}));
 
 		this.notes = [...before, ...insertedNotes, ...afterNotes];
+		this.metadatas = child.metadatas;
+		this.automations = child.automations;
 		this.durationBeats = child.durationBeats + shift;
 	}
 
@@ -66,13 +70,6 @@ export class SplicePattern extends MidiPattern {
 		this.child.validate(childContext);
 	}
 
-	prepare(offsetBeats: number, context: ScheduleContext): void {
-		if (!isInScope(offsetBeats, this.durationBeats, context)) return;
-
-		prepareNotes(this.notes, offsetBeats, this.outputs, context);
-
-		this.child.prepare(offsetBeats, context);
-	}
 
 	schedule(offsetBeats: number, context: ScheduleContext): void {
 		if (!isInScope(offsetBeats, this.durationBeats, context)) return;
@@ -86,7 +83,9 @@ export class SplicePattern extends MidiPattern {
 export class InsertPattern extends MidiPattern {
 	readonly type = "insert" as const;
 	readonly durationBeats: number;
-	readonly notes: ReadonlyArray<PositionedNote>;
+	readonly notes: ReadonlyArray<ScoreNote>;
+	readonly metadatas: ReadonlyArray<PositionedMetadata>;
+	readonly automations: ReadonlyArray<PositionedAutomation>;
 
 	constructor(
 		readonly child: Pattern,
@@ -109,6 +108,8 @@ export class InsertPattern extends MidiPattern {
 		}));
 
 		this.notes = [...before, ...insertedNotes, ...afterNotes];
+		this.metadatas = child.metadatas;
+		this.automations = child.automations;
 		this.durationBeats = child.durationBeats + shift;
 	}
 
@@ -118,13 +119,6 @@ export class InsertPattern extends MidiPattern {
 		this.child.validate(childContext);
 	}
 
-	prepare(offsetBeats: number, context: ScheduleContext): void {
-		if (!isInScope(offsetBeats, this.durationBeats, context)) return;
-
-		prepareNotes(this.notes, offsetBeats, this.outputs, context);
-
-		this.child.prepare(offsetBeats, context);
-	}
 
 	schedule(offsetBeats: number, context: ScheduleContext): void {
 		if (!isInScope(offsetBeats, this.durationBeats, context)) return;

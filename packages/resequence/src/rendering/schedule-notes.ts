@@ -1,8 +1,8 @@
-import type { Midi, Node, NoteContext } from "../nodes/node";
-import type { PositionedNote } from "../patterns/pattern";
+import type { ScoreNote } from "../patterns/pattern";
+import type { MidiUnit, VoiceNote } from "../units/midi-unit";
 import { CC } from "../utils/cc";
 import { CHROMATIC_TUNING } from "../utils/chromatic";
-import type { Pitch, TuningConfig } from "../utils/pitch";
+import type { Pitch } from "../utils/pitch";
 import type { ScheduleContext } from "./schedule-context";
 import { beatsToSeconds } from "./tempo-map";
 
@@ -10,237 +10,82 @@ export function isInScope(offsetBeats: number, durationBeats: number, context: S
 	return offsetBeats + durationBeats > context.fromBeats && offsetBeats < context.toBeats;
 }
 
-export function prepareNotes(notes: ReadonlyArray<PositionedNote>, offsetBeats: number, outputs: ReadonlyArray<Node<Midi, ReadonlyArray<unknown>>>, scheduleContext: ScheduleContext): void {
+export function scheduleNotes(notes: ReadonlyArray<ScoreNote>, offsetBeats: number, outputs: ReadonlyArray<MidiUnit>, scheduleContext: ScheduleContext): void {
 	if (outputs.length === 0) return;
 
-	for (const positioned of notes) {
-		const noteBeat = offsetBeats + positioned.beat;
-		const noteEnd = noteBeat + (positioned.durationBeats ?? 0);
+	for (const scoreNote of notes) {
+		const noteBeat = offsetBeats + scoreNote.beat;
+		const noteEnd = noteBeat + (scoreNote.durationBeats ?? 0);
 
 		if (noteEnd <= scheduleContext.fromBeats || noteBeat >= scheduleContext.toBeats) continue;
 
-		const noteContext = buildNoteContext(positioned, noteBeat, scheduleContext);
+		const voiceNote = buildVoiceNote(scoreNote, noteBeat, scheduleContext);
 
 		for (const node of outputs) {
-			node.prepare(noteContext, scheduleContext);
+			node.schedule(voiceNote, scheduleContext);
 		}
 	}
 }
 
-export function scheduleNotes(notes: ReadonlyArray<PositionedNote>, offsetBeats: number, outputs: ReadonlyArray<Node<Midi, ReadonlyArray<unknown>>>, scheduleContext: ScheduleContext): void {
-	if (outputs.length === 0) return;
+function buildVoiceNote(scoreNote: ScoreNote, absoluteBeat: number, scheduleContext: ScheduleContext): VoiceNote {
+	const startMs = beatsToSeconds(absoluteBeat, scheduleContext.tempoMap) * 1000;
+	const stopMs = beatsToSeconds(absoluteBeat + (scoreNote.durationBeats ?? 0), scheduleContext.tempoMap) * 1000;
 
-	for (const positioned of notes) {
-		const noteBeat = offsetBeats + positioned.beat;
-		const noteEnd = noteBeat + (positioned.durationBeats ?? 0);
+	const cc = scoreNote.cc;
+	const sustainValue = cc?.[CC.SUSTAIN];
+	const releaseValue = cc?.[CC.RELEASE];
+	const sustainOn = sustainValue !== undefined && sustainValue >= 64;
+	const releaseMs = !sustainOn && releaseValue !== undefined ? (releaseValue / 127) * 4000 : 0;
 
-		if (noteEnd <= scheduleContext.fromBeats || noteBeat >= scheduleContext.toBeats) continue;
+	const frequency = pitchToFrequency(scoreNote.pitch, scheduleContext);
+	const { note, bend } = frequencyToNoteAndBend(frequency);
 
-		const noteContext = buildNoteContext(positioned, noteBeat, scheduleContext);
-
-		for (const node of outputs) {
-			node.schedule(noteContext, scheduleContext);
-		}
-	}
+	return {
+		note,
+		bend,
+		velocity: scoreNote.velocity ?? 100,
+		startMs,
+		stopMs,
+		cleanupMs: stopMs + releaseMs + 500,
+		lyric: scoreNote.lyric,
+		pitch: scoreNote.pitch,
+		attack: cc?.[CC.ATTACK],
+		release: cc?.[CC.RELEASE],
+		sustain: cc?.[CC.SUSTAIN],
+		cutoff: cc?.[CC.CUTOFF],
+		resonance: cc?.[CC.RESONANCE],
+		volume: cc?.[CC.VOLUME],
+		expression: cc?.[CC.EXPRESSION],
+		pan: cc?.[CC.PAN],
+		chorus: cc?.[CC.CHORUS],
+		reverb: cc?.[CC.REVERB],
+		cc,
+	};
 }
 
-function buildNoteContext(note: PositionedNote, absoluteBeat: number, scheduleContext: ScheduleContext): NoteContext {
-	const startTime = beatsToSeconds(absoluteBeat, scheduleContext.tempoMap);
-	const stopTime = beatsToSeconds(absoluteBeat + (note.durationBeats ?? 0), scheduleContext.tempoMap);
-
-	const sustainOn = note.cc?.[CC.SUSTAIN] !== undefined && (note.cc[CC.SUSTAIN] ?? 0) >= 64;
-	const releaseSeconds = !sustainOn && note.cc?.[CC.RELEASE] !== undefined ? ((note.cc[CC.RELEASE] ?? 0) / 127) * 4 : 0;
-
+function pitchToFrequency(pitch: Pitch, scheduleContext: ScheduleContext): number {
 	const tuning = scheduleContext.tuning ?? CHROMATIC_TUNING;
-	let frequency: number;
-
 	const octaveRatio = tuning.octaveRatio ?? 2;
 
 	if (tuning.frequencies) {
-		const className = tuning.classes[note.pitch.class];
+		const className = tuning.classes[pitch.class];
 		const baseHz = className !== undefined ? tuning.frequencies[className] : undefined;
 
 		if (baseHz !== undefined) {
-			frequency = baseHz * Math.pow(octaveRatio, note.pitch.octave - tuning.reference.octave);
-		} else {
-			frequency = equalTemperamentHz(note.pitch, tuning.classes, tuning.reference, octaveRatio);
+			return baseHz * Math.pow(octaveRatio, pitch.octave - tuning.reference.octave);
 		}
-	} else {
-		frequency = equalTemperamentHz(note.pitch, tuning.classes, tuning.reference, octaveRatio);
 	}
 
-	return {
-		frequency,
-		velocity: note.velocity ?? 100,
-		startTime,
-		stopTime,
-		cleanupTime: stopTime + releaseSeconds + 0.5,
-		cc: note.cc,
-	};
+	const refClassIndex = tuning.classes.indexOf(tuning.reference.class);
+	const stepsFromReference = pitch.class - refClassIndex + (pitch.octave - tuning.reference.octave) * pitch.stepsPerOctave;
+
+	return tuning.reference.hz * Math.pow(octaveRatio, stepsFromReference / pitch.stepsPerOctave);
 }
 
-function equalTemperamentHz(pitch: Pitch, classes: TuningConfig["classes"], reference: TuningConfig["reference"], octaveRatio: number): number {
-	const refClassIdx = classes.indexOf(reference.class);
-	const stepsFromRef = pitch.class - refClassIdx + (pitch.octave - reference.octave) * pitch.stepsPerOctave;
+function frequencyToNoteAndBend(frequency: number): { note: number; bend: number } {
+	const midiFloat = 69 + 12 * Math.log2(frequency / 440);
+	const note = Math.round(midiFloat);
+	const bend = (midiFloat - note) * 100;
 
-	return reference.hz * Math.pow(octaveRatio, stepsFromRef / pitch.stepsPerOctave);
-}
-
-function createReverbIR(audioContext: BaseAudioContext, durationSeconds: number, decay: number): AudioBuffer {
-	const sampleRate = audioContext.sampleRate;
-	const length = Math.floor(sampleRate * durationSeconds);
-	const buffer = audioContext.createBuffer(2, length, sampleRate);
-
-	for (let channel = 0; channel < 2; channel++) {
-		const channelData = buffer.getChannelData(channel);
-
-		for (let sampleIndex = 0; sampleIndex < length; sampleIndex++) {
-			channelData[sampleIndex] = (Math.random() * 2 - 1) * Math.pow(1 - sampleIndex / length, decay);
-		}
-	}
-
-	return buffer;
-}
-
-export function applyCC(audio: AudioNode, cc: Partial<Record<number, number>> | undefined, noteContext: NoteContext, scheduleContext: ScheduleContext): { node: AudioNode; cleanup: () => void } {
-	if (!cc) return { node: audio, cleanup: () => undefined };
-
-	const nodes: Array<AudioNode> = [];
-
-	let current: AudioNode = audio;
-
-	const attack = cc[CC.ATTACK];
-	const release = cc[CC.RELEASE];
-	const sustain = cc[CC.SUSTAIN];
-	const sustainOn = sustain !== undefined && sustain >= 64;
-
-	if (attack !== undefined || (release !== undefined && !sustainOn)) {
-		const envNode = scheduleContext.audioContext.createGain();
-		const attackSeconds = attack !== undefined ? (attack / 127) * 2 : 0;
-		const releaseSeconds = release !== undefined && !sustainOn ? (release / 127) * 4 : 0;
-
-		if (attackSeconds > 0) {
-			envNode.gain.setValueAtTime(0, noteContext.startTime);
-			envNode.gain.linearRampToValueAtTime(1, noteContext.startTime + attackSeconds);
-		} else {
-			envNode.gain.setValueAtTime(1, noteContext.startTime);
-		}
-
-		if (releaseSeconds > 0) {
-			envNode.gain.setValueAtTime(1, noteContext.stopTime);
-			envNode.gain.linearRampToValueAtTime(0, noteContext.stopTime + releaseSeconds);
-		}
-
-		current.connect(envNode);
-		nodes.push(envNode);
-		current = envNode;
-	}
-
-	const cutoff = cc[CC.CUTOFF];
-	const resonance = cc[CC.RESONANCE];
-
-	if (cutoff !== undefined || resonance !== undefined) {
-		const filterNode = scheduleContext.audioContext.createBiquadFilter();
-		filterNode.type = "lowpass";
-
-		if (cutoff !== undefined) {
-			filterNode.frequency.value = 20 * Math.pow(1000, cutoff / 127);
-		}
-
-		if (resonance !== undefined) {
-			filterNode.Q.value = (resonance / 127) * 20;
-		}
-
-		current.connect(filterNode);
-		nodes.push(filterNode);
-		current = filterNode;
-	}
-
-	const volume = cc[CC.VOLUME];
-	const expression = cc[CC.EXPRESSION];
-
-	if (volume !== undefined || expression !== undefined) {
-		const gainNode = scheduleContext.audioContext.createGain();
-		gainNode.gain.value = (volume !== undefined ? volume / 127 : 1) * (expression !== undefined ? expression / 127 : 1);
-		current.connect(gainNode);
-		nodes.push(gainNode);
-		current = gainNode;
-	}
-
-	const chorusAmount = cc[CC.CHORUS];
-
-	if (chorusAmount !== undefined && chorusAmount > 0) {
-		const delayNode = scheduleContext.audioContext.createDelay(0.1);
-		delayNode.delayTime.value = 0.015;
-
-		const lfo = scheduleContext.audioContext.createOscillator();
-		lfo.frequency.value = 0.5;
-
-		const lfoGain = scheduleContext.audioContext.createGain();
-		lfoGain.gain.value = 0.005;
-
-		lfo.connect(lfoGain);
-		lfoGain.connect(delayNode.delayTime);
-		lfo.start(noteContext.startTime);
-		lfo.stop(noteContext.cleanupTime);
-
-		current.connect(delayNode);
-
-		const chorusWetGain = scheduleContext.audioContext.createGain();
-		chorusWetGain.gain.value = chorusAmount / 127;
-		delayNode.connect(chorusWetGain);
-
-		const chorusMerge = scheduleContext.audioContext.createGain();
-		chorusMerge.gain.value = 1;
-		current.connect(chorusMerge);
-		chorusWetGain.connect(chorusMerge);
-
-		nodes.push(delayNode, lfo, lfoGain, chorusWetGain, chorusMerge);
-		current = chorusMerge;
-	}
-
-	const panValue = cc[CC.PAN];
-
-	if (panValue !== undefined) {
-		const pannerNode = scheduleContext.audioContext.createStereoPanner();
-		pannerNode.pan.value = (panValue / 127) * 2 - 1;
-		current.connect(pannerNode);
-		nodes.push(pannerNode);
-		current = pannerNode;
-	}
-
-	const reverbAmount = cc[CC.REVERB];
-
-	if (reverbAmount !== undefined && reverbAmount > 0) {
-		const existing = scheduleContext.nodeMap.get("__cc91_convolver");
-		let convolver: ConvolverNode;
-
-		if (existing instanceof ConvolverNode) {
-			convolver = existing;
-		} else {
-			convolver = scheduleContext.audioContext.createConvolver();
-			convolver.buffer = createReverbIR(scheduleContext.audioContext, 2, 3);
-			scheduleContext.nodeMap.set("__cc91_convolver", convolver);
-		}
-
-		const wetGain = scheduleContext.audioContext.createGain();
-		wetGain.gain.value = reverbAmount / 127;
-		current.connect(convolver);
-		convolver.connect(wetGain);
-
-		const reverbMerge = scheduleContext.audioContext.createGain();
-		reverbMerge.gain.value = 1;
-		current.connect(reverbMerge);
-		wetGain.connect(reverbMerge);
-
-		nodes.push(wetGain, reverbMerge);
-		current = reverbMerge;
-	}
-
-	return {
-		node: current,
-		cleanup: () => {
-			for (const node of nodes) node.disconnect();
-		},
-	};
+	return { note, bend };
 }

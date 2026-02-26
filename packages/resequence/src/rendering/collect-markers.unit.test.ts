@@ -1,9 +1,8 @@
 import { describe, expect, it } from "vitest";
+import { marker, tempo } from "../patterns/metadata";
 import { note } from "../patterns/note";
 import { sequence } from "../patterns/sequence";
 import { layer } from "../patterns/layer";
-import { marker } from "../patterns/marker";
-import { tempo } from "../patterns/tempo";
 import { collectMarkers } from "./collect-markers";
 
 describe("collectMarkers", () => {

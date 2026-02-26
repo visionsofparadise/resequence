@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { sampler } from "./nodes/generators/sampler";
-import { automate } from "./patterns/automate";
 import { audio } from "./patterns/audio";
+import { automate } from "./patterns/automate";
 import { layer } from "./patterns/layer";
 import { metadata } from "./patterns/metadata";
 import { note } from "./patterns/note";
 import { repeat } from "./patterns/repeat";
 import { sequence } from "./patterns/sequence";
+import { sampler } from "./units/generators/sampler";
 import { validate } from "./validate";
 
 describe("validate", () => {

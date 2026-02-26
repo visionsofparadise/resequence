@@ -4,12 +4,15 @@ import { beatsToSeconds } from "../rendering/tempo-map";
 import type { Duration } from "../utils/duration";
 import { resolveDuration } from "../utils/duration";
 import type { ValidateContext } from "../validate";
-import type { Pattern, PositionedNote } from "./pattern";
+import type { Pattern, PositionedAutomation, ScoreNote } from "./pattern";
 
 export class AudioPattern implements Pattern {
 	readonly type = "audio" as const;
 	readonly durationBeats: number;
-	readonly notes: ReadonlyArray<PositionedNote> = [];
+	readonly notes: ReadonlyArray<ScoreNote> = [];
+	readonly metadatas: [] = [];
+	readonly automations: ReadonlyArray<PositionedAutomation> = [];
+	readonly sampleKeys: ReadonlySet<string>;
 
 	constructor(
 		readonly name: string,
@@ -25,6 +28,7 @@ export class AudioPattern implements Pattern {
 		}
 
 		this.durationBeats = duration !== undefined ? resolveDuration(duration) : 0; // FIX duration 0 is a problem
+		this.sampleKeys = new Set([this.path]);
 	}
 
 	validate(_context: ValidateContext): void {
@@ -35,9 +39,6 @@ export class AudioPattern implements Pattern {
 		return;
 	}
 
-	prepare(_offsetBeats: number, _context: ScheduleContext): void {
-		return;
-	}
 
 	teardown(_context: ScheduleContext): void {
 		return;
@@ -69,7 +70,7 @@ export class AudioPattern implements Pattern {
 			source.loopEnd = this.loopEndMs / 1000;
 		}
 
-		const destination = context.nodeMap.get(this.name) ?? context.audioContext.destination;
+		const destination = context.audioContext.destination;
 		const durationSeconds = this.durationBeats > 0 ? beatsToSeconds(this.durationBeats, context.tempoMap) : buffer.duration;
 
 		source.connect(destination);

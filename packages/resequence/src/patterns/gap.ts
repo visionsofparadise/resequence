@@ -2,12 +2,15 @@ import type { ScheduleContext } from "../rendering/schedule-context";
 import type { Duration } from "../utils/duration";
 import { resolveDuration } from "../utils/duration";
 import type { ValidateContext } from "../validate";
-import type { Pattern, PositionedNote } from "./pattern";
+import type { Pattern, PositionedAutomation, PositionedMetadata, ScoreNote } from "./pattern";
 
 export class GapPattern implements Pattern {
 	readonly type = "gap" as const;
 	readonly durationBeats: number;
-	readonly notes: ReadonlyArray<PositionedNote> = [];
+	readonly notes: ReadonlyArray<ScoreNote> = [];
+	readonly metadatas: ReadonlyArray<PositionedMetadata> = [];
+	readonly automations: ReadonlyArray<PositionedAutomation> = [];
+	readonly sampleKeys: ReadonlySet<string> = new Set();
 
 	constructor(readonly duration: Duration) {
 		this.durationBeats = resolveDuration(duration);
@@ -21,9 +24,6 @@ export class GapPattern implements Pattern {
 		return;
 	}
 
-	prepare(_offsetBeats: number, _context: ScheduleContext): void {
-		return;
-	}
 
 	schedule(_offsetBeats: number, _context: ScheduleContext): void {
 		return;

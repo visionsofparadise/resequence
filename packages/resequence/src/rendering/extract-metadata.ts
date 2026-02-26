@@ -10,8 +10,8 @@ export function extractMetadata(pattern: Pattern): ExtractedMetadata {
 	const found = findMetadata(pattern);
 
 	return {
-		name: found?.name,
-		description: found?.description,
+		name: found?.meta.name,
+		description: found?.meta.description,
 	};
 }
 

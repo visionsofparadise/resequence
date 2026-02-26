@@ -1,15 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { resolvePitch } from "../utils/pitch";
+import { marker, MetadataPattern } from "./metadata";
 import { note } from "./note";
 import { sequence } from "./sequence";
-import { marker, MarkerPattern } from "./marker";
 
-describe("MarkerPattern", () => {
-	it("creates with name", () => {
+describe("marker alias", () => {
+	it("creates MetadataPattern with marker name", () => {
 		const m = marker(note("C4", "4n"), "intro");
-		expect(m).toBeInstanceOf(MarkerPattern);
-		expect(m.name).toBe("intro");
-		expect(m.type).toBe("marker");
+		expect(m).toBeInstanceOf(MetadataPattern);
+		expect(m.meta.marker).toBe("intro");
+		expect(m.type).toBe("metadata");
 	});
 
 	it("delegates durationBeats to child", () => {
@@ -25,5 +25,10 @@ describe("MarkerPattern", () => {
 	it("delegates notes to child", () => {
 		const m = marker(note("C4", "4n"), "start");
 		expect(m.notes).toMatchObject([{ beat: 0, pitch: resolvePitch("C4") }]);
+	});
+
+	it("appears in metadatas aggregation", () => {
+		const m = marker(note("C4", "4n"), "chorus");
+		expect(m.metadatas).toEqual([{ beat: 0, meta: { marker: "chorus" } }]);
 	});
 });
