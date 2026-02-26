@@ -1,12 +1,11 @@
+import { AutomationScheduler } from "../automation/scheduler";
 import type { Pattern, ScoreNote } from "../patterns/pattern";
-import { AutomationScheduler } from "./automation-scheduler";
-import { collectMarkers } from "./collect-markers";
 import type { MarkerPoint } from "./collect-markers";
+import { collectMarkers } from "./collect-markers";
 import { loadSample } from "./load-sample";
 import type { ScheduleContext } from "./schedule-context";
 import { buildTempoLog } from "./tempo-log";
-import { buildProcessorUrl, lowerBound } from "./utils";
-
+import { lowerBound } from "../utils/sorted";
 
 export type PlaybackState = "playing" | "paused" | "stopped";
 
@@ -86,10 +85,9 @@ export class Playback {
 			}
 		}
 
-		await this.audioContext.audioWorklet.addModule(buildProcessorUrl("../nodes/envelope-processor.js"));
-		await this.audioContext.audioWorklet.addModule(buildProcessorUrl("../nodes/generators/noise-processor.js"));
-		await this.audioContext.audioWorklet.addModule(buildProcessorUrl("../nodes/effects/bitcrush-processor.js"));
-		await this.audioContext.audioWorklet.addModule(buildProcessorUrl("../nodes/effects/downsample-processor.js"));
+		for (const url of this.pattern.moduleUrls) {
+			await this.audioContext.audioWorklet.addModule(url);
+		}
 
 		const driverMap = new Map<string, ConstantSourceNode>();
 
@@ -250,7 +248,7 @@ function secondsToBeats(fromBeat: number, elapsedSeconds: number, tempoMap: Read
 			continue;
 		}
 		if (point.beat > currentBeat) {
-			const beatsAtTempo = (point.beat - currentBeat);
+			const beatsAtTempo = point.beat - currentBeat;
 			const secondsAtTempo = beatsAtTempo * (60 / bpm);
 			if (remaining <= secondsAtTempo) {
 				return currentBeat + remaining / (60 / bpm);
@@ -263,4 +261,3 @@ function secondsToBeats(fromBeat: number, elapsedSeconds: number, tempoMap: Read
 
 	return currentBeat + remaining / (60 / bpm);
 }
-

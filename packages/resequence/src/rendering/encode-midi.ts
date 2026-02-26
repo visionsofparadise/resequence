@@ -170,12 +170,13 @@ function hasOverlappingSlides(notes: ReadonlyArray<MidiNote>): boolean {
 		.sort((na, nb) => na.tick - nb.tick);
 
 	for (let ni = 0; ni < sliding.length; ni++) {
-		const noteA = sliding[ni]!;
+		const noteA = sliding[ni];
+		if (!noteA) continue;
 		const aEnd = noteA.tick + noteA.durationTicks;
 
 		for (let nj = ni + 1; nj < sliding.length; nj++) {
-			const noteB = sliding[nj]!;
-			if (noteB.tick >= aEnd) break;
+			const noteB = sliding[nj];
+			if (!noteB || noteB.tick >= aEnd) break;
 			return true;
 		}
 	}
@@ -203,7 +204,7 @@ function allocateChannels(notes: ReadonlyArray<MidiNote>): Map<number, number> {
 		let assignedChannel = 0;
 		for (let ch = 0; ch < 16; ch++) {
 			if (ch === 9) continue; // Skip percussion channel
-			if (channelFreeAt[ch]! <= mn.tick) {
+			if ((channelFreeAt[ch] ?? 0) <= mn.tick) {
 				assignedChannel = ch;
 				break;
 			}

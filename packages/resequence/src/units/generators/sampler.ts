@@ -4,6 +4,7 @@ import type { Pitch } from "../../utils/pitch";
 import { pitchToMidi, resolvePitch } from "../../utils/pitch";
 import { scheduleSlideRamps } from "../../utils/schedule-slides";
 import type { VoiceNote } from "../midi-unit";
+import type { Unit } from "../unit";
 import { GeneratorUnit } from "./generator";
 
 export interface SamplerZone {
@@ -39,6 +40,8 @@ interface NormalizedZone {
 }
 
 export class SamplerUnit extends GeneratorUnit {
+	protected readonly innerUnits: ReadonlyArray<Unit> = [];
+
 	private readonly config: SamplerConfig;
 
 	constructor(

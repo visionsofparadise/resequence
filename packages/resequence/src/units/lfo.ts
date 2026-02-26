@@ -1,5 +1,5 @@
 import type { ScheduleContext } from "../rendering/schedule-context";
-import { driveParam, getOrCreateDriver, proxyDriver } from "../utils/driver";
+import { driveParam, proxyDriver } from "../utils/driver";
 import { linearGain, type GainEffectUnit } from "./effects/gain";
 import { Unit } from "./unit";
 
@@ -12,7 +12,8 @@ export interface LfoOptions {
 }
 
 export class LfoUnit extends Unit {
-	private readonly path: string;
+	protected readonly innerUnits: ReadonlyArray<Unit> = [];
+
 	private readonly shape: WaveShape;
 	private readonly rate: number;
 	private readonly depth: number;
@@ -23,20 +24,19 @@ export class LfoUnit extends Unit {
 
 	constructor({ path, shape, rate, depth, id }: { path: string; shape: WaveShape; rate: number; depth: number; id?: string }) {
 		super();
-		this.path = path;
 		this.shape = shape;
 		this.rate = rate;
 		this.depth = depth;
 		this.id = id;
+
+		this.mod([path]);
 	}
 
 	protected _setup(context: ScheduleContext): void {
-		const driver = getOrCreateDriver(this.path, 0, context);
-
 		const oscillatorNode = context.audioContext.createOscillator();
 		oscillatorNode.type = this.shape;
 
-		driveParam(oscillatorNode.frequency, this.id, "rate", this.rate, context);
+		driveParam(oscillatorNode.frequency, this.id, "rate", this.rate, context, [0.01, 100]);
 
 		const depthId = crypto.randomUUID();
 		const depthUnit = linearGain({ level: this.depth, id: depthId });
@@ -45,11 +45,11 @@ export class LfoUnit extends Unit {
 		if (!depthUnit.gainNode) throw new Error();
 
 		oscillatorNode.connect(depthUnit.gainNode);
-		depthUnit.gainNode.connect(driver.offset);
-
 		oscillatorNode.start();
 
 		proxyDriver(this.id, "depth", `${depthId}.level`, context);
+
+		this.exitNodes.push(depthUnit.gainNode);
 
 		this.oscillatorNode = oscillatorNode;
 		this.depthUnit = depthUnit;

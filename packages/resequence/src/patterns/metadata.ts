@@ -34,6 +34,10 @@ export class MetadataPattern implements Pattern {
 		return this.child.sampleKeys;
 	}
 
+	get moduleUrls(): ReadonlySet<string> {
+		return this.child.moduleUrls;
+	}
+
 	validate(context: ValidateContext): void {
 		this.child.validate(context);
 	}

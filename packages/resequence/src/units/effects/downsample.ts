@@ -4,6 +4,7 @@ import { Unit } from "../unit";
 
 export class DownsampleEffectUnit extends Unit {
 	readonly type = "downsample" as const;
+	protected readonly innerUnits: ReadonlyArray<Unit> = [];
 
 	public downsampleNode: AudioWorkletNode | undefined;
 
@@ -14,11 +15,17 @@ export class DownsampleEffectUnit extends Unit {
 		super();
 	}
 
+	collectModuleUrls(): Set<string> {
+		const urls = super.collectModuleUrls();
+		urls.add(new URL("./downsample-processor.js", import.meta.url).href);
+		return urls;
+	}
+
 	protected _setup(context: ScheduleContext): void {
 		const downsampleNode = new AudioWorkletNode(context.audioContext, "downsample-processor");
 
 		downsampleNode.parameters.forEach((param, name) => {
-			if (name === "targetRate") driveParam(param, this.id, "rate", this.rate, context);
+			if (name === "targetRate") driveParam(param, this.id, "rate", this.rate, context, [100, 44100]);
 		});
 
 		this.downsampleNode = downsampleNode;

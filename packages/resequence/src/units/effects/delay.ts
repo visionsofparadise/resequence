@@ -4,6 +4,7 @@ import { Unit } from "../unit";
 
 export class DelayEffectUnit extends Unit {
 	readonly type = "delay" as const;
+	protected readonly innerUnits: ReadonlyArray<Unit> = [];
 
 	private readonly time: number;
 	private readonly feedback: number | undefined;
@@ -20,7 +21,7 @@ export class DelayEffectUnit extends Unit {
 	protected _setup(context: ScheduleContext): void {
 		const timeSeconds = this.time / 1000;
 		const delayNode = context.audioContext.createDelay(timeSeconds + 1);
-		driveParam(delayNode.delayTime, this.id, "time", timeSeconds, context);
+		driveParam(delayNode.delayTime, this.id, "time", timeSeconds, context, [0, 5]);
 
 		if (this.feedback !== undefined && this.feedback > 0) {
 			const feedbackGain = context.audioContext.createGain();

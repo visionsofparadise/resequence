@@ -1,18 +1,24 @@
 import type { ScheduleContext } from "../../rendering/schedule-context";
+import { getOrCreateDriver } from "../../utils/driver";
 import { CCEffectUnit } from "../effects/cc";
 import { linearGain, type GainEffectUnit } from "../effects/gain";
 import type { VoiceNote } from "../midi-unit";
 import { MidiUnit } from "../midi-unit";
-import type { Unit } from "../unit";
+import type { ModDeclaration, Unit } from "../unit";
 
 export abstract class GeneratorUnit extends MidiUnit {
 	public mergeUnit: GainEffectUnit | undefined;
 
-	private voiceToCallbacks: Array<(voiceNote: VoiceNote) => Unit> = [];
+	private readonly voiceToCallbacks: Array<(voiceNote: VoiceNote) => Unit> = [];
+	private readonly voiceModDeclarations: Array<ModDeclaration> = [];
 
 	voiceTo(callback: (voiceNote: VoiceNote) => Unit): this {
 		this.voiceToCallbacks.push(callback);
 		return this;
+	}
+
+	voiceMod(paths: Array<string>, transform?: (value: number) => number): void {
+		this.voiceModDeclarations.push({ paths, transform });
 	}
 
 	protected _setup(context: ScheduleContext): void {
@@ -54,10 +60,23 @@ export abstract class GeneratorUnit extends MidiUnit {
 			}
 		}
 
+		if (this.voiceModDeclarations.length > 0) {
+			for (const decl of this.voiceModDeclarations) {
+				for (const path of decl.paths) {
+					const driver = getOrCreateDriver(path, 0, scheduleContext);
+
+					for (const source of sourceNodes) {
+						source.connect(driver.offset);
+					}
+				}
+			}
+		}
+
 		return (): void => {
 			for (const source of sourceNodes) {
 				source.disconnect();
 			}
+
 			ccEffect.teardown(scheduleContext);
 		};
 	}

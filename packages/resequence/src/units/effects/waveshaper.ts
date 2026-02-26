@@ -18,12 +18,16 @@ export const WaveShaperCurve = {
 	HardClip: buildCurve((x) => Math.max(-0.8, Math.min(0.8, x * 1.5))),
 	Fold: buildCurve((x) => Math.sin((x * Math.PI) / 2)),
 	Saturate: buildCurve((x) => Math.sign(x) * (1 - Math.exp(-Math.abs(x) * 3))),
+	Wavefolder: buildCurve((x) => Math.sin(x * 2 * (Math.PI / 2))),
+	HalfRectify: buildCurve((x) => Math.max(0, x)),
+	FullRectify: buildCurve((x) => Math.abs(x)),
 };
 
 export type Oversample = "none" | "2x" | "4x";
 
 export class WaveShaperEffectUnit extends Unit {
 	readonly id = undefined;
+	protected readonly innerUnits: ReadonlyArray<Unit> = [];
 
 	private readonly curve: Float32Array<ArrayBuffer>;
 	private readonly oversample: Oversample | undefined;

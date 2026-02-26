@@ -48,6 +48,7 @@ export interface Pattern {
 	readonly metadatas: ReadonlyArray<PositionedMetadata>;
 	readonly automations: ReadonlyArray<PositionedAutomation>;
 	readonly sampleKeys: ReadonlySet<string>;
+	readonly moduleUrls: ReadonlySet<string>;
 
 	setup(context: ScheduleContext): void;
 	schedule(offsetBeats: number, context: ScheduleContext): void;
@@ -82,6 +83,24 @@ export abstract class MidiPattern implements Pattern {
 		}
 
 		return keys;
+	}
+
+	get moduleUrls(): ReadonlySet<string> {
+		const urls = new Set<string>();
+
+		if ("child" in this && isPattern((this as { child: unknown }).child)) {
+			for (const url of (this as { child: Pattern }).child.moduleUrls) urls.add(url);
+		} else if ("children" in this && Array.isArray((this as { children: unknown }).children)) {
+			for (const child of (this as { children: ReadonlyArray<unknown> }).children) {
+				if (isPattern(child)) for (const url of child.moduleUrls) urls.add(url);
+			}
+		}
+
+		for (const out of this.outputs) {
+			for (const url of out.collectModuleUrls()) urls.add(url);
+		}
+
+		return urls;
 	}
 
 	setup(context: ScheduleContext): void {

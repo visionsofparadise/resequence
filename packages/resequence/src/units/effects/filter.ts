@@ -6,6 +6,7 @@ export type FilterMode = "lowpass" | "highpass" | "bandpass" | "peaking" | "notc
 
 export class FilterEffectUnit extends Unit {
 	readonly type = "filter" as const;
+	protected readonly innerUnits: ReadonlyArray<Unit> = [];
 
 	private readonly mode: FilterMode;
 	private readonly frequency: number;
@@ -26,8 +27,8 @@ export class FilterEffectUnit extends Unit {
 	protected _setup(context: ScheduleContext): void {
 		const filterNode = context.audioContext.createBiquadFilter();
 		filterNode.type = this.mode;
-		driveParam(filterNode.frequency, this.id, "frequency", this.frequency, context);
-		if (this.resonance !== undefined || this.id) driveParam(filterNode.Q, this.id, "resonance", this.resonance ?? 1, context);
+		driveParam(filterNode.frequency, this.id, "frequency", this.frequency, context, [20, 20000]);
+		if (this.resonance !== undefined || this.id) driveParam(filterNode.Q, this.id, "resonance", this.resonance ?? 1, context, [0, 30]);
 		if (this.gain !== undefined) filterNode.gain.value = this.gain;
 
 		this.filterNode = filterNode;

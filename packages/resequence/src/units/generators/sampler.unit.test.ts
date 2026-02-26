@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { ResequenceError } from "../../error";
+import { chain } from "../composite";
+import { filter } from "../effects/filter";
 import { gain } from "../effects/gain";
 import { SamplerUnit, sampler } from "./sampler";
 
@@ -149,12 +151,28 @@ describe("sampler", () => {
 		});
 	});
 
+	describe("voiceTo", () => {
+		it("accepts composite from callback", () => {
+			const node = sampler("./bass.wav", { id: "bass" });
+			const result = node.voiceTo(() => chain(filter({ frequency: 1000 }), gain({ level: -3 })));
+			expect(result).toBe(node);
+		});
+	});
+
+	describe("voiceMod", () => {
+		it("stores voiceMod declaration without affecting targets", () => {
+			const node = sampler("./bass.wav", { id: "bass" });
+			node.voiceMod(["filter.frequency"]);
+			expect(node.targets).toHaveLength(0);
+		});
+	});
+
 	describe(".to()", () => {
-		it("returns the connected downstream node", () => {
+		it("returns void", () => {
 			const node = sampler("./bass.wav", { id: "bass" });
 			const gainNode = gain({ level: -3 });
-			const chained = node.to(gainNode);
-			expect(chained).toBe(gainNode);
+			const result = node.to(gainNode);
+			expect(result).toBeUndefined();
 		});
 
 		it("appends to targets of the source node", () => {

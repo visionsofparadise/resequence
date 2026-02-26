@@ -4,6 +4,7 @@ import { Unit } from "../unit";
 
 export class BitcrushEffectUnit extends Unit {
 	readonly type = "bitcrush" as const;
+	protected readonly innerUnits: ReadonlyArray<Unit> = [];
 
 	public bitcrushNode: AudioWorkletNode | undefined;
 
@@ -14,11 +15,17 @@ export class BitcrushEffectUnit extends Unit {
 		super();
 	}
 
+	collectModuleUrls(): Set<string> {
+		const urls = super.collectModuleUrls();
+		urls.add(new URL("./bitcrush-processor.js", import.meta.url).href);
+		return urls;
+	}
+
 	protected _setup(context: ScheduleContext): void {
 		const bitcrushNode = new AudioWorkletNode(context.audioContext, "bitcrush-processor");
 
 		bitcrushNode.parameters.forEach((param, name) => {
-			if (name === "bits") driveParam(param, this.id, "bits", this.bits, context);
+			if (name === "bits") driveParam(param, this.id, "bits", this.bits, context, [1, 16]);
 		});
 
 		this.bitcrushNode = bitcrushNode;

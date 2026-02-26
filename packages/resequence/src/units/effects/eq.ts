@@ -11,6 +11,8 @@ export interface EqBand {
 }
 
 export class EqEffectUnit extends Unit {
+	protected readonly innerUnits: ReadonlyArray<Unit> = [];
+
 	private readonly bands: ReadonlyArray<EqBand>;
 	public readonly id?: string;
 

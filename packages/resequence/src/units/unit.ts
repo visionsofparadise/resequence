@@ -1,7 +1,14 @@
 import type { ScheduleContext } from "../rendering/schedule-context";
+import { getOrCreateDriver } from "../utils/driver";
+
+export interface ModDeclaration {
+	readonly paths: ReadonlyArray<string>;
+	readonly transform?: (value: number) => number;
+}
 
 export abstract class Unit {
 	abstract readonly id?: string;
+	protected abstract readonly innerUnits: ReadonlyArray<Unit>;
 
 	readonly targets: Array<Unit> = [];
 
@@ -11,20 +18,35 @@ export abstract class Unit {
 	readonly sampleKeys = new Set<string>();
 	protected isSetUp = false;
 
-	to(unit: Unit): Unit {
-		this.targets.push(unit);
+	private readonly modDeclarations: Array<ModDeclaration> = [];
+	private readonly modConnections: Array<{ exit: AudioNode; param: AudioParam }> = [];
 
-		return unit;
+	to(unit: Unit): void {
+		this.targets.push(unit);
+	}
+
+	mod(paths: Array<string>, transform?: (value: number) => number): void {
+		this.modDeclarations.push({ paths, transform });
 	}
 
 	collectSampleKeys(): Set<string> {
 		const keys = new Set(this.sampleKeys);
 
-		for (const target of this.targets) {
-			for (const key of target.collectSampleKeys()) keys.add(key);
+		for (const unit of [...this.targets, ...this.innerUnits]) {
+			for (const key of unit.collectSampleKeys()) keys.add(key);
 		}
 
 		return keys;
+	}
+
+	collectModuleUrls(): Set<string> {
+		const urls = new Set<string>();
+
+		for (const unit of [...this.targets, ...this.innerUnits]) {
+			for (const url of unit.collectModuleUrls()) urls.add(url);
+		}
+
+		return urls;
 	}
 
 	setup(context: ScheduleContext): void {
@@ -36,6 +58,7 @@ export abstract class Unit {
 		for (const target of this.targets) target.setup(context);
 
 		this.link();
+		this.linkMods(context);
 	}
 
 	teardown(context: ScheduleContext): void {
@@ -43,6 +66,7 @@ export abstract class Unit {
 		this.isSetUp = false;
 
 		this.unlink();
+		this.unlinkMods();
 
 		this._teardown(context);
 
@@ -78,5 +102,29 @@ export abstract class Unit {
 				}
 			}
 		}
+	}
+
+	private linkMods(context: ScheduleContext): void {
+		for (const decl of this.modDeclarations) {
+			for (const path of decl.paths) {
+				const driver = getOrCreateDriver(path, 0, context);
+
+				for (const exit of this.exitNodes) {
+					exit.connect(driver.offset);
+					this.modConnections.push({ exit, param: driver.offset });
+				}
+			}
+		}
+	}
+
+	private unlinkMods(): void {
+		for (const { exit, param } of this.modConnections) {
+			try {
+				exit.disconnect(param);
+			} catch {
+				// already disconnected
+			}
+		}
+		this.modConnections.length = 0;
 	}
 }

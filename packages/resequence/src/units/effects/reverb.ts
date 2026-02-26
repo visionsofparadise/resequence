@@ -9,6 +9,8 @@ const COMB_DELAYS = [1116, 1188, 1277, 1356].map((samples) => (samples / 44100) 
 const ALLPASS_DELAYS = [556, 441].map((samples) => (samples / 44100) * 1000);
 
 export class ReverbEffectUnit extends Unit {
+	protected readonly innerUnits: ReadonlyArray<Unit> = [];
+
 	private readonly roomSize: number;
 	private readonly damping: number;
 	public readonly id?: string;
@@ -44,7 +46,9 @@ export class ReverbEffectUnit extends Unit {
 			const feedbackUnit = linearGain({ level: this.roomSize, id: feedbackId });
 
 			inputUnit.to(delayUnit);
-			delayUnit.to(lowPassUnit).to(feedbackUnit).to(delayUnit);
+			delayUnit.to(lowPassUnit);
+			lowPassUnit.to(feedbackUnit);
+			feedbackUnit.to(delayUnit);
 			delayUnit.to(combSumUnit);
 
 			feedbackIds.push(feedbackId);

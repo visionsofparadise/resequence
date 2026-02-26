@@ -13,6 +13,7 @@ export class AudioPattern implements Pattern {
 	readonly metadatas: [] = [];
 	readonly automations: ReadonlyArray<PositionedAutomation> = [];
 	readonly sampleKeys: ReadonlySet<string>;
+	readonly moduleUrls: ReadonlySet<string> = new Set();
 
 	constructor(
 		readonly name: string,

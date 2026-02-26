@@ -1,6 +1,45 @@
 import { describe, expect, it } from "vitest";
+import type { ScheduleContext } from "../../rendering/schedule-context";
 import { GainEffectUnit, gain } from "./gain";
 import { pan } from "./pan";
+
+function createMockContext(): ScheduleContext {
+	const connections: Array<{ from: string; to: string }> = [];
+
+	const createParam = (name: string): AudioParam =>
+		({ value: 0, setValueAtTime: () => undefined, cancelScheduledValues: () => undefined, linearRampToValueAtTime: () => undefined, _name: name }) as unknown as AudioParam;
+
+	const createNode = (name: string): AudioNode & { gain: AudioParam; offset: AudioParam } => ({
+		gain: createParam(`${name}.gain`),
+		offset: createParam(`${name}.offset`),
+		connect: (dest: AudioNode | AudioParam) => {
+			connections.push({ from: name, to: (dest as unknown as { _name?: string })._name ?? "node" });
+			return dest;
+		},
+		disconnect: () => undefined,
+		addEventListener: () => undefined,
+		_name: name,
+	}) as unknown as AudioNode & { gain: AudioParam; offset: AudioParam };
+
+	let nodeCount = 0;
+
+	return {
+		audioContext: {
+			createGain: () => createNode(`gain-${nodeCount++}`),
+			createConstantSource: () => {
+				const node = createNode(`constant-${nodeCount++}`);
+				return { ...node, start: () => undefined, stop: () => undefined };
+			},
+			destination: createNode("destination"),
+		},
+		sampleMap: new Map(),
+		driverMap: new Map(),
+		tempoMap: [],
+		fromBeats: 0,
+		toBeats: Infinity,
+		_connections: connections,
+	} as unknown as ScheduleContext & { _connections: typeof connections };
+}
 
 describe("gain", () => {
 	it("creates a GainEffectUnit instance", () => {
@@ -14,11 +53,11 @@ describe("gain", () => {
 		expect(fx.id).toBe("vol");
 	});
 
-	it("to() returns the downstream node", () => {
+	it("to() returns void", () => {
 		const fx = gain({ level: -3 });
 		const next = gain({ level: -6 });
-		const chained = fx.to(next);
-		expect(chained).toBe(next);
+		const result = fx.to(next);
+		expect(result).toBeUndefined();
 	});
 
 	it("to() appends to outputs of the source node", () => {
@@ -35,5 +74,35 @@ describe("gain", () => {
 		g.to(p);
 		expect(g.targets).toHaveLength(1);
 		expect(g.targets[0]).toBe(p);
+	});
+});
+
+describe("mod", () => {
+	it("does not affect targets", () => {
+		const g = gain({ level: 1 });
+		g.mod(["filter.frequency"]);
+		expect(g.targets).toHaveLength(0);
+	});
+
+	it("connects exit nodes to driver offset on setup", () => {
+		const g = gain({ level: 1, id: "lfo-gain" });
+		const target = gain({ level: 1, id: "target" });
+		g.mod(["target.level"]);
+		g.to(target);
+
+		const ctx = createMockContext();
+		g.setup(ctx);
+
+		expect(ctx.driverMap.has("target.level")).toBe(true);
+	});
+
+	it("creates driver for mod path even if target unit has no id", () => {
+		const g = gain({ level: 1, id: "source" });
+		g.mod(["some.param"]);
+
+		const ctx = createMockContext();
+		g.setup(ctx);
+
+		expect(ctx.driverMap.has("some.param")).toBe(true);
 	});
 });

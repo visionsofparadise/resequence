@@ -14,11 +14,29 @@ export function getOrCreateDriver(path: string, defaultValue: number, context: S
 	return driver;
 }
 
-export function driveParam(param: AudioParam, id: string | undefined, key: string, value: number, context: ScheduleContext): void {
+export function driveParam(param: AudioParam, id: string | undefined, key: string, value: number, context: ScheduleContext, range?: readonly [number, number]): void {
 	if (id) {
-		const driver = getOrCreateDriver(`${id}.${key}`, value, context);
-		param.value = 0;
-		driver.connect(param);
+		const path = `${id}.${key}`;
+
+		if (range) {
+			const [min, max] = range;
+			const normalized = (value - min) / (max - min);
+			const driver = getOrCreateDriver(path, normalized, context);
+
+			const scaleGain = context.audioContext.createGain();
+
+			scaleGain.gain.value = max - min;
+			param.value = min;
+
+			driver.connect(scaleGain);
+			scaleGain.connect(param);
+		} else {
+			const driver = getOrCreateDriver(path, value, context);
+
+			param.value = 0;
+
+			driver.connect(param);
+		}
 	} else {
 		param.value = value;
 	}
@@ -28,9 +46,13 @@ export function proxyDriver(id: string | undefined, key: string, childPath: stri
 	if (!id) return;
 
 	const childDriver = context.driverMap.get(childPath);
+
 	if (!childDriver) return;
 
 	const parentDriver = getOrCreateDriver(`${id}.${key}`, childDriver.offset.value, context);
+
 	childDriver.offset.value = 0;
+
 	parentDriver.connect(childDriver.offset);
 }
+

@@ -6,6 +6,8 @@ export class MixNode extends Unit {
 	readonly id: string | undefined;
 	private dryChain: Unit | undefined;
 
+	protected readonly innerUnits: ReadonlyArray<Unit>;
+
 	constructor(
 		private readonly inner: Unit,
 		private readonly amount: number,
@@ -14,6 +16,7 @@ export class MixNode extends Unit {
 		super();
 
 		this.id = id;
+		this.innerUnits = [inner];
 	}
 
 	protected _setup(context: ScheduleContext): void {

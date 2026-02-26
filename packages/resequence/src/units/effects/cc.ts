@@ -1,7 +1,7 @@
 import type { ScheduleContext } from "../../rendering/schedule-context";
-import { envelope, type EnvelopeUnit } from "../envelope";
 import type { VoiceNote } from "../midi-unit";
 import { MidiUnit } from "../midi-unit";
+import { envelope, type EnvelopeUnit } from "../midi/envelope";
 import type { Unit } from "../unit";
 import { chorus } from "./chorus";
 import { lowpass, type FilterEffectUnit } from "./filter";
@@ -12,6 +12,7 @@ import { reverb } from "./reverb";
 
 export class CCEffectUnit extends MidiUnit {
 	readonly id = undefined;
+	protected readonly innerUnits: ReadonlyArray<Unit> = [];
 
 	public chain: Array<Unit> = [];
 	public envelopeUnit: EnvelopeUnit | undefined;

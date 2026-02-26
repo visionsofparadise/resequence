@@ -22,7 +22,8 @@ export function evaluateSlide(
 ): Pitch {
 	if (slides.length === 0 || beatOffset <= 0) return noteStartPitch;
 
-	const last = slides[slides.length - 1]!;
+	const last = slides[slides.length - 1];
+	if (!last) return noteStartPitch;
 	if (beatOffset >= last.beat) return last.pitch;
 
 	let prevBeat = 0;
@@ -51,7 +52,8 @@ export function evaluateSlideCents(
 ): number {
 	if (slides.length === 0 || beatOffset <= 0) return 0;
 
-	const last = slides[slides.length - 1]!;
+	const last = slides[slides.length - 1];
+	if (!last) return 0;
 	if (beatOffset >= last.beat) {
 		return pitchToCents(noteRootPitch, last.pitch, tuning);
 	}

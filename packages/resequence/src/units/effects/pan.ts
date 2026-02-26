@@ -4,6 +4,7 @@ import { Unit } from "../unit";
 
 export class PanEffectUnit extends Unit {
 	readonly type = "pan" as const;
+	protected readonly innerUnits: ReadonlyArray<Unit> = [];
 
 	public panNode: StereoPannerNode | undefined;
 
@@ -16,7 +17,7 @@ export class PanEffectUnit extends Unit {
 
 	protected _setup(context: ScheduleContext): void {
 		const panNode = context.audioContext.createStereoPanner();
-		driveParam(panNode.pan, this.id, "position", this.position, context);
+		driveParam(panNode.pan, this.id, "position", this.position, context, [-1, 1]);
 
 		this.panNode = panNode;
 		this.entryNodes.push(panNode);

@@ -1,20 +1,14 @@
+import { AutomationScheduler } from "../automation/scheduler";
 import type { Pattern } from "../patterns/pattern";
-import { AutomationScheduler } from "./automation-scheduler";
 import { loadSample } from "./load-sample";
 import type { ScheduleContext } from "./schedule-context";
 import { buildTempoLog } from "./tempo-log";
-import { buildProcessorUrl } from "./utils";
 
 export interface RenderAudioOptions {
 	readonly trackFilter?: ReadonlySet<string>;
 }
 
-export async function renderAudio(
-	pattern: Pattern,
-	audioContext: OfflineAudioContext,
-	fetchBuffer: (path: string) => Promise<ArrayBuffer>,
-	options: RenderAudioOptions = {},
-): Promise<AudioBuffer> {
+export async function renderAudio(pattern: Pattern, audioContext: OfflineAudioContext, fetchBuffer: (path: string) => Promise<ArrayBuffer>, options: RenderAudioOptions = {}): Promise<AudioBuffer> {
 	const tempoMap = buildTempoLog(pattern.metadatas, pattern.automations);
 
 	const sampleMap = new Map<string, AudioBuffer>();
@@ -27,10 +21,9 @@ export async function renderAudio(
 		}
 	}
 
-	await audioContext.audioWorklet.addModule(buildProcessorUrl("../nodes/envelope-processor.js"));
-	await audioContext.audioWorklet.addModule(buildProcessorUrl("../nodes/generators/noise-processor.js"));
-	await audioContext.audioWorklet.addModule(buildProcessorUrl("../nodes/effects/bitcrush-processor.js"));
-	await audioContext.audioWorklet.addModule(buildProcessorUrl("../nodes/effects/downsample-processor.js"));
+	for (const url of pattern.moduleUrls) {
+		await audioContext.audioWorklet.addModule(url);
+	}
 
 	const driverMap = new Map<string, ConstantSourceNode>();
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { resolveLfo } from "../utils/lfo";
-import { gain } from "./effects/gain";
+import { resolveLfo } from "../../utils/lfo";
+import { gain } from "../effects/gain";
 import { EnvelopeUnit, env } from "./envelope";
 
 describe("resolveLfo", () => {
@@ -43,11 +43,11 @@ describe("env", () => {
 		expect(node.targets).toHaveLength(0);
 	});
 
-	it("to() returns the downstream node", () => {
+	it("to() returns void", () => {
 		const node = env({});
 		const gainNode = gain({ level: -3 });
-		const chained = node.to(gainNode);
-		expect(chained).toBe(gainNode);
+		const result = node.to(gainNode);
+		expect(result).toBeUndefined();
 	});
 
 	it("to() appends to node's targets", () => {

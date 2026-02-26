@@ -1,5 +1,6 @@
 import type { Pattern } from "../patterns/pattern";
 
+// FIX: We have tempomap AND tempo log, which one is it?
 export interface TempoPoint {
 	readonly beat: number;
 	readonly bpm: number;

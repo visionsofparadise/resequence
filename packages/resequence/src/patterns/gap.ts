@@ -11,6 +11,7 @@ export class GapPattern implements Pattern {
 	readonly metadatas: ReadonlyArray<PositionedMetadata> = [];
 	readonly automations: ReadonlyArray<PositionedAutomation> = [];
 	readonly sampleKeys: ReadonlySet<string> = new Set();
+	readonly moduleUrls: ReadonlySet<string> = new Set();
 
 	constructor(readonly duration: Duration) {
 		this.durationBeats = resolveDuration(duration);

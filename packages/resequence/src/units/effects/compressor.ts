@@ -4,6 +4,7 @@ import { Unit } from "../unit";
 
 export class CompressorEffectUnit extends Unit {
 	readonly type = "compressor" as const;
+	protected readonly innerUnits: ReadonlyArray<Unit> = [];
 
 	private readonly threshold: number;
 	private readonly knee: number | undefined;
@@ -27,8 +28,8 @@ export class CompressorEffectUnit extends Unit {
 
 	protected _setup(context: ScheduleContext): void {
 		const compressorNode = context.audioContext.createDynamicsCompressor();
-		driveParam(compressorNode.threshold, this.id, "threshold", this.threshold, context);
-		driveParam(compressorNode.ratio, this.id, "ratio", this.ratio, context);
+		driveParam(compressorNode.threshold, this.id, "threshold", this.threshold, context, [-100, 0]);
+		driveParam(compressorNode.ratio, this.id, "ratio", this.ratio, context, [1, 20]);
 
 		if (this.knee !== undefined) compressorNode.knee.value = this.knee;
 		if (this.attack !== undefined) compressorNode.attack.value = this.attack / 1000;

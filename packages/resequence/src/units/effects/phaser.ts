@@ -5,6 +5,8 @@ import { Unit } from "../unit";
 import { allpass, type FilterEffectUnit } from "./filter";
 
 export class PhaserEffectUnit extends Unit {
+	protected readonly innerUnits: ReadonlyArray<Unit> = [];
+
 	private readonly stages: number;
 	private readonly rate: number;
 	private readonly depth: number;

@@ -4,6 +4,7 @@ import type { Duration } from "../../utils/duration";
 import { resolveDuration } from "../../utils/duration";
 import type { VoiceNote, VoiceSlide } from "../midi-unit";
 import { MidiUnit } from "../midi-unit";
+import type { Unit } from "../unit";
 
 interface LastPitch {
 	readonly note: number;
@@ -13,6 +14,7 @@ interface LastPitch {
 
 export class PortamentoUnit extends MidiUnit {
 	readonly id = undefined;
+	protected readonly innerUnits: ReadonlyArray<Unit> = [];
 	private lastPitch: LastPitch | undefined;
 	private readonly timeBeats: number;
 
@@ -56,8 +58,8 @@ export class PortamentoUnit extends MidiUnit {
 		let prevAbsolute = this.lastPitch.note + this.lastPitch.bend / 100;
 
 		if (this.lastPitch.slides && this.lastPitch.slides.length > 0) {
-			const lastSlide = this.lastPitch.slides[this.lastPitch.slides.length - 1]!;
-			prevAbsolute += lastSlide.cents / 100;
+			const lastSlide = this.lastPitch.slides[this.lastPitch.slides.length - 1];
+			if (lastSlide) prevAbsolute += lastSlide.cents / 100;
 		}
 
 		// Current note's absolute pitch

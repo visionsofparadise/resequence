@@ -4,6 +4,7 @@ import { Unit } from "../unit";
 
 export class GainEffectUnit extends Unit {
 	readonly type = "gain" as const;
+	protected readonly innerUnits: ReadonlyArray<Unit> = [];
 
 	public gainNode: GainNode | undefined;
 
@@ -16,7 +17,7 @@ export class GainEffectUnit extends Unit {
 
 	protected _setup(context: ScheduleContext): void {
 		this.gainNode = context.audioContext.createGain();
-		driveParam(this.gainNode.gain, this.id, "level", this.level, context);
+		driveParam(this.gainNode.gain, this.id, "level", this.level, context, [0, 2]);
 
 		this.entryNodes.push(this.gainNode);
 		this.exitNodes.push(this.gainNode);

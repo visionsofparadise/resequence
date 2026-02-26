@@ -3,9 +3,12 @@ import { driveParam } from "../../utils/driver";
 import { scheduleSlideRamps } from "../../utils/schedule-slides";
 import type { WaveShape } from "../lfo";
 import type { VoiceNote } from "../midi-unit";
+import type { Unit } from "../unit";
 import { GeneratorUnit } from "./generator";
 
 export class OscillatorUnit extends GeneratorUnit {
+	protected readonly innerUnits: ReadonlyArray<Unit> = [];
+
 	private readonly oscillatorType: WaveShape;
 	private readonly detune: number;
 	public readonly id?: string;

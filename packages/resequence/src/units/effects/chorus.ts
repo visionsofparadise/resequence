@@ -5,6 +5,8 @@ import { Unit } from "../unit";
 import { delay, type DelayEffectUnit } from "./delay";
 
 export class ChorusEffectUnit extends Unit {
+	protected readonly innerUnits: ReadonlyArray<Unit> = [];
+
 	private readonly delay: number;
 	private readonly rate: number;
 	private readonly depth: number;

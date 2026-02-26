@@ -65,6 +65,7 @@ export class AutomatePattern implements Pattern {
 	readonly metadatas: [] = [];
 	readonly automations: ReadonlyArray<PositionedAutomation>;
 	readonly sampleKeys: ReadonlySet<string> = new Set();
+	readonly moduleUrls: ReadonlySet<string> = new Set();
 	readonly paths: ReadonlyArray<string>;
 	readonly source: ReadonlyArray<AnyResolvedKeyframe> | Lfo;
 
@@ -119,6 +120,7 @@ export class AutomatePattern implements Pattern {
 			if (path === "tempo") continue;
 
 			const constant = context.audioContext.createConstantSource();
+
 			context.driverMap.set(path, constant);
 
 			if (Array.isArray(this.source)) {
@@ -131,7 +133,6 @@ export class AutomatePattern implements Pattern {
 			}
 		}
 	}
-
 
 	schedule(_offsetBeats: number, _context: ScheduleContext): void {
 		// Automation scheduling is handled centrally by AutomationScheduler

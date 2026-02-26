@@ -3,6 +3,7 @@ import { Unit } from "../unit";
 
 export class ConvolutionEffectUnit extends Unit {
 	readonly id = undefined;
+	protected readonly innerUnits: ReadonlyArray<Unit> = [];
 
 	private readonly impulse: string;
 	private readonly normalize: boolean | undefined;
