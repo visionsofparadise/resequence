@@ -74,7 +74,7 @@ describe("validate", () => {
 		});
 
 		it("ignores audio patterns for orphaned notes", () => {
-			const warnings = validate(audio("break", "./break.wav"));
+			const warnings = validate(audio("break", "./break.wav", "4n"));
 			expect(warnings.filter((w) => w.code === "ORPHANED_NOTES")).toHaveLength(0);
 		});
 	});

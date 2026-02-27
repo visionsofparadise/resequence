@@ -1,7 +1,8 @@
 import type { MidiData, MidiEvent } from "midi-file";
 import { writeMidi } from "midi-file";
 import type { MarkerPoint } from "./collect-markers";
-import type { TempoPoint, TimeSignaturePoint } from "./tempo-map";
+import type { TimeSignaturePoint } from "./collect-time-signatures";
+import type { TempoPoint } from "./tempo-map";
 import { PPQ } from "../utils/duration";
 
 export interface MidiPitchBend {

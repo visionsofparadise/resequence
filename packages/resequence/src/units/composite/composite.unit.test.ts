@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { Chain, Composite, Fan, chain, fan } from "./composite";
-import { gain } from "./effects/gain";
-import { filter } from "./effects/filter";
-import { pan } from "./effects/pan";
+import { filter } from "../effects/filter";
+import { gain } from "../effects/gain";
+import { pan } from "../effects/pan";
+import { Chain, chain } from "./chain";
+import { Composite } from "./composite";
+import { Fan, fan } from "./fan";
 
 describe("chain", () => {
 	it("returns a Chain instance", () => {

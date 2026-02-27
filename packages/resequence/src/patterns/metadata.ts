@@ -1,11 +1,12 @@
 import { ResequenceError } from "../error";
 import type { ScheduleContext } from "../rendering/schedule-context";
 import type { ValidateContext } from "../validate";
-import type { Metadata, Pattern, PositionedAutomation, PositionedMetadata, ScoreNote } from "./pattern";
+import type { Metadata, PositionedAutomation, PositionedMetadata, ScoreNote } from "./pattern";
+import { Pattern } from "./pattern";
 
 export type { Metadata, PositionedMetadata };
 
-export class MetadataPattern implements Pattern {
+export class MetadataPattern extends Pattern {
 	readonly type = "metadata" as const;
 	readonly durationBeats: number;
 	readonly notes: ReadonlyArray<ScoreNote>;
@@ -16,6 +17,7 @@ export class MetadataPattern implements Pattern {
 		readonly child: Pattern,
 		readonly meta: Metadata,
 	) {
+		super();
 		if (meta.tempo !== undefined && meta.tempo <= 0) {
 			throw new ResequenceError("INVALID_TEMPO", `tempo(): bpm must be greater than 0, got ${meta.tempo}`);
 		}

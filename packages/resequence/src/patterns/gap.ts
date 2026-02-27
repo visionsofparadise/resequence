@@ -2,9 +2,10 @@ import type { ScheduleContext } from "../rendering/schedule-context";
 import type { Duration } from "../utils/duration";
 import { resolveDuration } from "../utils/duration";
 import type { ValidateContext } from "../validate";
-import type { Pattern, PositionedAutomation, PositionedMetadata, ScoreNote } from "./pattern";
+import type { PositionedAutomation, PositionedMetadata, ScoreNote } from "./pattern";
+import { Pattern } from "./pattern";
 
-export class GapPattern implements Pattern {
+export class GapPattern extends Pattern {
 	readonly type = "gap" as const;
 	readonly durationBeats: number;
 	readonly notes: ReadonlyArray<ScoreNote> = [];
@@ -14,6 +15,7 @@ export class GapPattern implements Pattern {
 	readonly moduleUrls: ReadonlySet<string> = new Set();
 
 	constructor(readonly duration: Duration) {
+		super();
 		this.durationBeats = resolveDuration(duration);
 	}
 

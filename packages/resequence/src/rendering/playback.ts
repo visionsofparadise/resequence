@@ -4,7 +4,7 @@ import type { MarkerPoint } from "./collect-markers";
 import { collectMarkers } from "./collect-markers";
 import { loadSample } from "./load-sample";
 import type { ScheduleContext } from "./schedule-context";
-import { buildTempoLog } from "./tempo-log";
+import { buildTempoMap } from "./tempo-map";
 import { lowerBound } from "../utils/sorted";
 
 export type PlaybackState = "playing" | "paused" | "stopped";
@@ -73,7 +73,7 @@ export class Playback {
 
 	async setup(fetchBuffer: (path: string) => Promise<ArrayBuffer>): Promise<void> {
 		const sampleKeys = this.pattern.sampleKeys;
-		const tempoMap = buildTempoLog(this.pattern.metadatas, this.pattern.automations);
+		const tempoMap = buildTempoMap(this.pattern);
 
 		const sampleMap = new Map<string, AudioBuffer>();
 		for (const key of sampleKeys) {

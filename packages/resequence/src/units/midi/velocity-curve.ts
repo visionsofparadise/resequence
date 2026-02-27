@@ -23,17 +23,16 @@ export class VelocityCurveMidiUnit extends MidiUnit {
 		super.schedule(transformed, scheduleContext);
 	}
 
-	// FIX: Can you not leave comments for noops, just return
 	protected _schedule(): void {
-		// no-op — transformation handled in schedule() override
+		return;
 	}
 
 	protected _setup(): void {
-		// no audio nodes
+		return;
 	}
 
 	protected _teardown(): void {
-		// no audio nodes
+		return;
 	}
 }
 

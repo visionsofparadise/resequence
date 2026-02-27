@@ -41,22 +41,22 @@ export interface ScoreNote {
 	outputs: Array<string | undefined>;
 }
 
-export interface Pattern {
-	readonly type: string;
-	readonly durationBeats: number;
-	readonly notes: ReadonlyArray<ScoreNote>;
-	readonly metadatas: ReadonlyArray<PositionedMetadata>;
-	readonly automations: ReadonlyArray<PositionedAutomation>;
-	readonly sampleKeys: ReadonlySet<string>;
-	readonly moduleUrls: ReadonlySet<string>;
+export abstract class Pattern {
+	abstract readonly type: string;
+	abstract readonly durationBeats: number;
+	abstract readonly notes: ReadonlyArray<ScoreNote>;
+	abstract readonly metadatas: ReadonlyArray<PositionedMetadata>;
+	abstract readonly automations: ReadonlyArray<PositionedAutomation>;
+	abstract readonly sampleKeys: ReadonlySet<string>;
+	abstract readonly moduleUrls: ReadonlySet<string>;
 
-	setup(context: ScheduleContext): void;
-	schedule(offsetBeats: number, context: ScheduleContext): void;
-	teardown(context: ScheduleContext): void;
-	validate(context: ValidateContext): void;
+	abstract setup(context: ScheduleContext): void;
+	abstract schedule(offsetBeats: number, context: ScheduleContext): void;
+	abstract teardown(context: ScheduleContext): void;
+	abstract validate(context: ValidateContext): void;
 }
 
-export abstract class MidiPattern implements Pattern {
+export abstract class MidiPattern extends Pattern {
 	abstract readonly type: string;
 	abstract readonly durationBeats: number;
 	readonly notes: ReadonlyArray<ScoreNote> = [];
@@ -123,5 +123,5 @@ export abstract class MidiPattern implements Pattern {
 }
 
 function isPattern(value: unknown): value is Pattern {
-	return typeof value === "object" && value !== null && "type" in value && "durationBeats" in value;
+	return value instanceof Pattern;
 }

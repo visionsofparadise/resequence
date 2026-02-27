@@ -2,7 +2,7 @@ import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { parseArgs } from "node:util";
-import type { Pattern } from "./patterns/pattern";
+import { Pattern } from "./patterns/pattern";
 import { collectMarkers } from "./rendering/collect-markers";
 import { collectRouting } from "./rendering/collect-routing";
 import { encodeWav } from "./rendering/encode-wav";
@@ -100,20 +100,17 @@ async function runCli(args: CliOptions): Promise<void> {
 	try {
 		const mod = (await import(entrypoint)) as Record<string, unknown>;
 		const pattern = mod.default;
-		// FIX: We may aswell make pattern a class so we can instanceof pattern here and do without the cast
 
-		if (!pattern || typeof pattern !== "object" || !("type" in pattern) || !("durationBeats" in pattern)) {
+		if (!(pattern instanceof Pattern)) {
 			process.stderr.write("Error: default export must be a Pattern\n");
 			process.exit(1);
 		}
 
-		const typedPattern = pattern as Pattern;
+		process.stdout.write(`Pattern: type=${pattern.type}, duration=${pattern.durationBeats} beats\n`);
 
-		process.stdout.write(`Pattern: type=${typedPattern.type}, duration=${typedPattern.durationBeats} beats\n`);
-
-		const tempoMap = buildTempoMap(typedPattern);
-		const markers = collectMarkers(typedPattern);
-		const routing = collectRouting(typedPattern);
+		const tempoMap = buildTempoMap(pattern);
+		const markers = collectMarkers(pattern);
+		const routing = collectRouting(pattern);
 
 		const trackNames = [...routing.keys()];
 		const filteredNames = filterNames(trackNames, args.include, args.exclude);
@@ -121,7 +118,7 @@ async function runCli(args: CliOptions): Promise<void> {
 		process.stdout.write(`Tracks: ${filteredNames.join(", ")}\n`);
 
 		if (!args.audioOnly) {
-			const midiResult = renderMidi(typedPattern, {
+			const midiResult = renderMidi(pattern, {
 				include: args.include ? [...args.include] : undefined,
 				exclude: args.exclude ? [...args.exclude] : undefined,
 				master: args.master,
@@ -148,7 +145,7 @@ async function runCli(args: CliOptions): Promise<void> {
 			const { default: nodeWebAudio } = (await import("node-web-audio-api")) as { default: { OfflineAudioContext: typeof OfflineAudioContext } };
 			const { OfflineAudioContext: NodeOfflineAudioContext } = nodeWebAudio;
 
-			const totalSeconds = beatsToSeconds(typedPattern.durationBeats, tempoMap);
+			const totalSeconds = beatsToSeconds(pattern.durationBeats, tempoMap);
 			const sampleRate = 44100;
 
 			const fetchProjectBuffer = (path: string) =>
@@ -161,7 +158,7 @@ async function runCli(args: CliOptions): Promise<void> {
 			for (const trackName of filteredNames) {
 				const offlineCtx = new NodeOfflineAudioContext(2, Math.ceil(totalSeconds * sampleRate), sampleRate);
 
-				const rendered = await renderAudio(typedPattern, offlineCtx as unknown as OfflineAudioContext, fetchProjectBuffer, {
+				const rendered = await renderAudio(pattern, offlineCtx as unknown as OfflineAudioContext, fetchProjectBuffer, {
 					trackFilter: new Set([trackName]),
 				});
 
@@ -176,7 +173,7 @@ async function runCli(args: CliOptions): Promise<void> {
 			if (args.master) {
 				const offlineCtx = new NodeOfflineAudioContext(2, Math.ceil(totalSeconds * sampleRate), sampleRate);
 
-				const rendered = await renderAudio(typedPattern, offlineCtx as unknown as OfflineAudioContext, fetchProjectBuffer);
+				const rendered = await renderAudio(pattern, offlineCtx as unknown as OfflineAudioContext, fetchProjectBuffer);
 
 				const wav = encodeWav(rendered as unknown as AudioBuffer, markers, tempoMap);
 				const filePath = resolve(outDir, "master.wav");

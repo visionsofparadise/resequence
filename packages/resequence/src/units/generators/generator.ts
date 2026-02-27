@@ -1,5 +1,6 @@
 import type { ScheduleContext } from "../../rendering/schedule-context";
 import { getOrCreateDriver } from "../../utils/driver";
+import { buildCurve } from "../build-curve";
 import { CCEffectUnit } from "../effects/cc";
 import { linearGain, type GainEffectUnit } from "../effects/gain";
 import type { VoiceNote } from "../midi-unit";
@@ -60,13 +61,26 @@ export abstract class GeneratorUnit extends MidiUnit {
 			}
 		}
 
+		const voiceShapers: Array<AudioNode> = [];
+
 		if (this.voiceModDeclarations.length > 0) {
 			for (const decl of this.voiceModDeclarations) {
 				for (const path of decl.paths) {
 					const driver = getOrCreateDriver(path, 0, scheduleContext);
 
-					for (const source of sourceNodes) {
-						source.connect(driver.offset);
+					if (decl.transform) {
+						const shaper = scheduleContext.audioContext.createWaveShaper();
+						shaper.curve = buildCurve(decl.transform);
+						shaper.connect(driver.offset);
+						voiceShapers.push(shaper);
+
+						for (const source of sourceNodes) {
+							source.connect(shaper);
+						}
+					} else {
+						for (const source of sourceNodes) {
+							source.connect(driver.offset);
+						}
 					}
 				}
 			}
@@ -75,6 +89,10 @@ export abstract class GeneratorUnit extends MidiUnit {
 		return (): void => {
 			for (const source of sourceNodes) {
 				source.disconnect();
+			}
+
+			for (const shaper of voiceShapers) {
+				shaper.disconnect();
 			}
 
 			ccEffect.teardown(scheduleContext);

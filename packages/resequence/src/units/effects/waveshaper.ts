@@ -1,17 +1,6 @@
 import type { ScheduleContext } from "../../rendering/schedule-context";
+import { buildCurve } from "../build-curve";
 import { Unit } from "../unit";
-
-function buildCurve(transform: (x: number) => number): Float32Array<ArrayBuffer> {
-	const samples = 256;
-	const curve = new Float32Array(samples);
-
-	for (let index = 0; index < samples; index++) {
-		const x = (index * 2) / (samples - 1) - 1;
-		curve[index] = transform(x);
-	}
-
-	return curve;
-}
 
 export const WaveShaperCurve = {
 	SoftClip: buildCurve((x) => x / (1 + Math.abs(x))),

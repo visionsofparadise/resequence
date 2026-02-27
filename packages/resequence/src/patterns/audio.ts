@@ -4,9 +4,10 @@ import { beatsToSeconds } from "../rendering/tempo-map";
 import type { Duration } from "../utils/duration";
 import { resolveDuration } from "../utils/duration";
 import type { ValidateContext } from "../validate";
-import type { Pattern, PositionedAutomation, ScoreNote } from "./pattern";
+import type { PositionedAutomation, ScoreNote } from "./pattern";
+import { Pattern } from "./pattern";
 
-export class AudioPattern implements Pattern {
+export class AudioPattern extends Pattern {
 	readonly type = "audio" as const;
 	readonly durationBeats: number;
 	readonly notes: ReadonlyArray<ScoreNote> = [];
@@ -14,22 +15,26 @@ export class AudioPattern implements Pattern {
 	readonly automations: ReadonlyArray<PositionedAutomation> = [];
 	readonly sampleKeys: ReadonlySet<string>;
 	readonly moduleUrls: ReadonlySet<string> = new Set();
+	readonly sampleKey: string;
 
 	constructor(
 		readonly name: string,
-		readonly path: string, // FIX: We should support regions here too
-		readonly duration: Duration | undefined,
+		readonly path: string,
+		readonly duration: Duration,
 		readonly transposeSemitones: number,
 		readonly reversed: boolean,
+		readonly region?: string,
 		readonly loopStartMs?: number,
 		readonly loopEndMs?: number,
 	) {
+		super();
 		if (!path) {
 			throw new ResequenceError("EMPTY_AUDIO_PATH", "audio(): path must not be empty");
 		}
 
-		this.durationBeats = duration !== undefined ? resolveDuration(duration) : 0; // FIX duration 0 is a problem
-		this.sampleKeys = new Set([this.path]);
+		this.durationBeats = resolveDuration(duration);
+		this.sampleKey = region && !path.includes("#") ? `${path}#${region}` : path;
+		this.sampleKeys = new Set([this.sampleKey]);
 	}
 
 	validate(_context: ValidateContext): void {
@@ -49,7 +54,7 @@ export class AudioPattern implements Pattern {
 		if (context.trackFilter && !context.trackFilter.has(this.name)) return;
 		if (offsetBeats + this.durationBeats <= context.fromBeats || offsetBeats >= context.toBeats) return;
 
-		const buffer = context.sampleMap.get(this.path);
+		const buffer = context.sampleMap.get(this.sampleKey);
 		if (!buffer) return;
 
 		const offsetSeconds = beatsToSeconds(offsetBeats, context.tempoMap);
@@ -72,7 +77,7 @@ export class AudioPattern implements Pattern {
 		}
 
 		const destination = context.audioContext.destination;
-		const durationSeconds = this.durationBeats > 0 ? beatsToSeconds(this.durationBeats, context.tempoMap) : buffer.duration;
+		const durationSeconds = beatsToSeconds(this.durationBeats, context.tempoMap);
 
 		source.connect(destination);
 		source.start(offsetSeconds);
@@ -95,6 +100,6 @@ function copyReversed(buffer: AudioBuffer, audioCtx: BaseAudioContext): AudioBuf
 	return reversed;
 }
 
-export function audio(name: string, path: string, duration?: Duration, options?: { loopStartMs?: number; loopEndMs?: number }): AudioPattern {
-	return new AudioPattern(name, path, duration, 0, false, options?.loopStartMs, options?.loopEndMs);
+export function audio(name: string, path: string, duration: Duration, options?: { region?: string; loopStartMs?: number; loopEndMs?: number }): AudioPattern {
+	return new AudioPattern(name, path, duration, 0, false, options?.region, options?.loopStartMs, options?.loopEndMs);
 }

@@ -6,7 +6,8 @@ import { resolveDuration } from "../utils/duration";
 import type { Lfo } from "../utils/lfo";
 import { scheduleLfo } from "../utils/lfo";
 import type { ValidateContext } from "../validate";
-import type { Pattern, PositionedAutomation, ScoreNote } from "./pattern";
+import type { PositionedAutomation, ScoreNote } from "./pattern";
+import { Pattern } from "./pattern";
 
 export type KeyframeCurve = "linear" | "exponential" | "step";
 
@@ -58,7 +59,7 @@ function resolveKeyframe(keyframe: AnyKeyframe): AnyResolvedKeyframe {
 	};
 }
 
-export class AutomatePattern implements Pattern {
+export class AutomatePattern extends Pattern {
 	readonly type = "automate" as const;
 	readonly durationBeats: number;
 	readonly notes: ReadonlyArray<ScoreNote> = [];
@@ -74,6 +75,7 @@ export class AutomatePattern implements Pattern {
 		paths: string | ReadonlyArray<string>,
 		source: ReadonlyArray<AnyKeyframe> | Lfo,
 	) {
+		super();
 		this.paths = typeof paths === "string" ? [paths] : paths;
 
 		if (Array.isArray(source)) {

@@ -59,7 +59,7 @@ describe('integration', () => {
   })
 
   it('creates named audio patterns', () => {
-    const breakLoop = audio('break', './samples/break-140bpm.wav')
+    const breakLoop = audio('break', './samples/break-140bpm.wav', '1n')
     expect(breakLoop).toBeInstanceOf(AudioPattern)
     expect(breakLoop.name).toBe('break')
   })
@@ -118,7 +118,7 @@ describe('integration', () => {
     const snarePattern = sequence(gap('4n'), note('D1', '4n'), gap('4n'), note('D1', '4n'))
     const bassRiff = sequence(note('C2', '8n'), gap('8n'), note('C2', '16n'), gap('16n'), note('C2', '8n'))
 
-    const breakLoop = audio('break', './samples/break-140bpm.wav')
+    const breakLoop = audio('break', './samples/break-140bpm.wav', '1n')
     const filterSweep = automate('filter-sweep', 'bass.hp.frequency', [
       { time: 0, value: 80 },
       { time: 4, value: 2000, curve: 'linear' },

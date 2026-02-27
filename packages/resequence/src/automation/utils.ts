@@ -31,7 +31,8 @@ export function evaluateAt(keyframes: ReadonlyArray<AbsoluteKeyframe>, beat: num
 
 			if (curve === "linear") return prevValue + (kf.value - prevValue) * fraction;
 
-			return prevValue * Math.pow(Math.max(kf.value / prevValue, 1e-6), fraction);
+			const safePrev = Math.max(prevValue, 1e-6);
+			return safePrev * Math.pow(Math.max(kf.value / safePrev, 1e-6), fraction);
 		}
 
 		prevValue = kf.value;

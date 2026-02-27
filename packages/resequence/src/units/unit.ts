@@ -1,5 +1,6 @@
 import type { ScheduleContext } from "../rendering/schedule-context";
 import { getOrCreateDriver } from "../utils/driver";
+import { buildCurve } from "./build-curve";
 
 export interface ModDeclaration {
 	readonly paths: ReadonlyArray<string>;
@@ -19,7 +20,7 @@ export abstract class Unit {
 	protected isSetUp = false;
 
 	private readonly modDeclarations: Array<ModDeclaration> = [];
-	private readonly modConnections: Array<{ exit: AudioNode; param: AudioParam }> = [];
+	private readonly modConnections: Array<{ exit: AudioNode; shaper?: AudioNode; param: AudioParam }> = [];
 
 	to(unit: Unit): void {
 		this.targets.push(unit);
@@ -109,18 +110,34 @@ export abstract class Unit {
 			for (const path of decl.paths) {
 				const driver = getOrCreateDriver(path, 0, context);
 
-				for (const exit of this.exitNodes) {
-					exit.connect(driver.offset);
-					this.modConnections.push({ exit, param: driver.offset });
+				if (decl.transform) {
+					const shaper = context.audioContext.createWaveShaper();
+					shaper.curve = buildCurve(decl.transform);
+					shaper.connect(driver.offset);
+
+					for (const exit of this.exitNodes) {
+						exit.connect(shaper);
+						this.modConnections.push({ exit, shaper, param: driver.offset });
+					}
+				} else {
+					for (const exit of this.exitNodes) {
+						exit.connect(driver.offset);
+						this.modConnections.push({ exit, param: driver.offset });
+					}
 				}
 			}
 		}
 	}
 
 	private unlinkMods(): void {
-		for (const { exit, param } of this.modConnections) {
+		for (const { exit, shaper, param } of this.modConnections) {
 			try {
-				exit.disconnect(param);
+				if (shaper) {
+					exit.disconnect(shaper);
+					shaper.disconnect(param);
+				} else {
+					exit.disconnect(param);
+				}
 			} catch {
 				// already disconnected
 			}

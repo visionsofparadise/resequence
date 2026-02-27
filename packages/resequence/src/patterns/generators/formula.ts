@@ -6,15 +6,15 @@ import type { ValidateContext } from "../../validate";
 import type { ScoreNote } from "../pattern";
 import { MidiPattern } from "../pattern";
 
-export type FormulaCallback = (accumulator: Array<ScoreNote>, index: number, total: number) => Array<ScoreNote>;
+export type GenerativeCallback = (accumulator: Array<ScoreNote>, index: number, total: number) => Array<ScoreNote>;
 
-export class FormulaPattern extends MidiPattern {
-	readonly type = "formula" as const;
+export class GenerativePattern extends MidiPattern {
+	readonly type = "generative" as const;
 	readonly durationBeats: number;
 	readonly notes: ReadonlyArray<ScoreNote>;
 
 	constructor(
-		readonly callback: FormulaCallback,
+		readonly callback: GenerativeCallback,
 		readonly count: number,
 		readonly stepDuration: number,
 	) {
@@ -40,6 +40,6 @@ export class FormulaPattern extends MidiPattern {
 	}
 }
 
-export function formula(callback: FormulaCallback, count: number, stepDuration: Duration | number): FormulaPattern {
-	return new FormulaPattern(callback, count, resolveDuration(stepDuration));
+export function generative(callback: GenerativeCallback, count: number, stepDuration: Duration | number): GenerativePattern {
+	return new GenerativePattern(callback, count, resolveDuration(stepDuration));
 }

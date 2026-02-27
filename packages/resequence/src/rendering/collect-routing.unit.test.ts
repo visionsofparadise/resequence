@@ -60,7 +60,7 @@ describe("collectRouting", () => {
 	});
 
 	it("returns empty map when no samples", () => {
-		const pattern = metadata(audio("break", "./break.wav"), { tempo: 120 });
+		const pattern = metadata(audio("break", "./break.wav", "4n"), { tempo: 120 });
 		const routing = collectRouting(pattern);
 
 		expect(routing.has("break")).toBe(true);

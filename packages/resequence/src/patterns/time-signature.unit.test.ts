@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ResequenceError } from "../error";
-import { buildTimeSignatureMap } from "../rendering/tempo-map";
+import { collectTimeSignatures } from "../rendering/collect-time-signatures";
 import { MetadataPattern, timeSignature } from "./metadata";
 import { note } from "./note";
 import { sequence } from "./sequence";
@@ -30,19 +30,19 @@ describe("timeSignature alias", () => {
 	});
 });
 
-describe("buildTimeSignatureMap", () => {
+describe("collectTimeSignatures", () => {
 	it("returns empty array when no timeSignature wrappers present", () => {
-		expect(buildTimeSignatureMap(note("C4", "4n"))).toEqual([]);
+		expect(collectTimeSignatures(note("C4", "4n").metadatas)).toEqual([]);
 	});
 
 	it("captures single timeSignature at root", () => {
-		const result = buildTimeSignatureMap(timeSignature(note("C4", "4n"), [3, 4]));
+		const result = collectTimeSignatures(timeSignature(note("C4", "4n"), [3, 4]).metadatas);
 		expect(result).toEqual([{ beat: 0, timeSignature: [3, 4] }]);
 	});
 
 	it("captures nested timeSignature inside sequence at correct beat offset", () => {
 		const pattern = sequence(note("C4", "4n"), timeSignature(note("E4", "4n"), [5, 8]));
-		const result = buildTimeSignatureMap(pattern);
+		const result = collectTimeSignatures(pattern.metadatas);
 		expect(result).toEqual([{ beat: 1, timeSignature: [5, 8] }]);
 	});
 
@@ -52,7 +52,7 @@ describe("buildTimeSignatureMap", () => {
 			timeSignature(note("E4", "4n"), [5, 8]),
 			timeSignature(note("G4", "4n"), [4, 4]),
 		);
-		const result = buildTimeSignatureMap(pattern);
+		const result = collectTimeSignatures(pattern.metadatas);
 		expect(result).toEqual([
 			{ beat: 0, timeSignature: [3, 4] },
 			{ beat: 1, timeSignature: [5, 8] },
@@ -62,13 +62,13 @@ describe("buildTimeSignatureMap", () => {
 
 	it("captures timeSignature inside layer at same offset", () => {
 		const pattern = layer(note("C4", "4n"), timeSignature(note("E4", "4n"), [6, 8]));
-		const result = buildTimeSignatureMap(pattern);
+		const result = collectTimeSignatures(pattern.metadatas);
 		expect(result).toEqual([{ beat: 0, timeSignature: [6, 8] }]);
 	});
 
 	it("captures timeSignature inside repeat at each iteration offset", () => {
 		const pattern = repeat(timeSignature(note("C4", "4n"), [3, 4]), 3);
-		const result = buildTimeSignatureMap(pattern);
+		const result = collectTimeSignatures(pattern.metadatas);
 		expect(result).toEqual([
 			{ beat: 0, timeSignature: [3, 4] },
 			{ beat: 1, timeSignature: [3, 4] },

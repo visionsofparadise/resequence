@@ -2,14 +2,14 @@ import { AutomationScheduler } from "../automation/scheduler";
 import type { Pattern } from "../patterns/pattern";
 import { loadSample } from "./load-sample";
 import type { ScheduleContext } from "./schedule-context";
-import { buildTempoLog } from "./tempo-log";
+import { buildTempoMap } from "./tempo-map";
 
 export interface RenderAudioOptions {
 	readonly trackFilter?: ReadonlySet<string>;
 }
 
 export async function renderAudio(pattern: Pattern, audioContext: OfflineAudioContext, fetchBuffer: (path: string) => Promise<ArrayBuffer>, options: RenderAudioOptions = {}): Promise<AudioBuffer> {
-	const tempoMap = buildTempoLog(pattern.metadatas, pattern.automations);
+	const tempoMap = buildTempoMap(pattern);
 
 	const sampleMap = new Map<string, AudioBuffer>();
 	for (const key of pattern.sampleKeys) {

@@ -1,6 +1,6 @@
-import type { Pattern } from "../patterns/pattern";
+import type { AnyResolvedKeyframe, ResolvedKeyframe } from "../patterns/automate";
+import type { Pattern, PositionedAutomation, PositionedMetadata } from "../patterns/pattern";
 
-// FIX: We have tempomap AND tempo log, which one is it?
 export interface TempoPoint {
 	readonly beat: number;
 	readonly bpm: number;
@@ -8,11 +8,41 @@ export interface TempoPoint {
 
 export type TempoMap = ReadonlyArray<TempoPoint>;
 
-export function buildTempoMap(pattern: Pattern, offsetBeats = 0): TempoMap {
-	return pattern.metadatas
-		.filter((positioned): positioned is typeof positioned & { meta: { tempo: number } } => positioned.meta.tempo !== undefined)
-		.map((positioned) => ({ beat: positioned.beat + offsetBeats, bpm: positioned.meta.tempo }))
-		.sort((left, right) => left.beat - right.beat);
+const TEMPO_PATH = "tempo";
+const SAMPLE_RESOLUTION = 0.1;
+
+export function buildTempoMap(pattern: Pattern): TempoMap {
+	return buildTempoMapFromSources(pattern.metadatas, pattern.automations);
+}
+
+export function buildTempoMapFromSources(
+	metadatas: ReadonlyArray<PositionedMetadata>,
+	automations: ReadonlyArray<PositionedAutomation>,
+): TempoMap {
+	const entries: Array<{ beat: number; bpm: number }> = [];
+
+	for (const { beat, meta } of metadatas) {
+		if (meta.tempo !== undefined) {
+			entries.push({ beat, bpm: meta.tempo });
+		}
+	}
+
+	for (const { beat: offset, automation } of automations) {
+		if (!automation.paths.includes(TEMPO_PATH)) continue;
+
+		const keyframes = automation.envelope;
+		if (keyframes.length === 0) continue;
+
+		const duration = automation.durationBeats;
+		let sampleBeat = 0;
+
+		while (sampleBeat <= duration) {
+			entries.push({ beat: offset + sampleBeat, bpm: evaluateTempoAt(keyframes, sampleBeat) });
+			sampleBeat = Math.round((sampleBeat + SAMPLE_RESOLUTION) * 100) / 100;
+		}
+	}
+
+	return entries.sort((left, right) => left.beat - right.beat);
 }
 
 export function beatsToSeconds(beats: number, tempoMap: TempoMap): number {
@@ -36,14 +66,34 @@ export function beatsToSeconds(beats: number, tempoMap: TempoMap): number {
 	return seconds;
 }
 
-export interface TimeSignaturePoint {
-	readonly beat: number;
-	readonly timeSignature: readonly [number, number];
-}
+function evaluateTempoAt(keyframes: ReadonlyArray<AnyResolvedKeyframe>, beatPosition: number): number {
+	let prevValue = 120;
+	let prevTime = 0;
+	let prevCurve: ResolvedKeyframe["curve"];
+	let nextPoint: ResolvedKeyframe | undefined;
 
-export function buildTimeSignatureMap(pattern: Pattern, offsetBeats = 0): ReadonlyArray<TimeSignaturePoint> {
-	return pattern.metadatas
-		.filter((positioned): positioned is typeof positioned & { meta: { timeSignature: readonly [number, number] } } => positioned.meta.timeSignature !== undefined)
-		.map((positioned) => ({ beat: positioned.beat + offsetBeats, timeSignature: positioned.meta.timeSignature }))
-		.sort((left, right) => left.beat - right.beat);
+	for (const kf of keyframes) {
+		if (kf.kind !== "point") continue;
+
+		if (kf.timeBeats > beatPosition) {
+			nextPoint = kf;
+			break;
+		}
+
+		prevValue = kf.value;
+		prevTime = kf.timeBeats;
+		prevCurve = kf.curve;
+	}
+
+	if (nextPoint === undefined || prevCurve === undefined || prevCurve === "step") {
+		return prevValue;
+	}
+
+	const fraction = (beatPosition - prevTime) / (nextPoint.timeBeats - prevTime);
+
+	if (prevCurve === "linear") {
+		return prevValue + (nextPoint.value - prevValue) * fraction;
+	}
+
+	return prevValue * Math.pow(Math.max(nextPoint.value / prevValue, 1e-6), fraction);
 }

@@ -5,14 +5,14 @@ import { audio, AudioPattern } from "./audio";
 describe("AudioPattern", () => {
 	describe("validation", () => {
 		it("rejects empty path", () => {
-			expect(() => audio("break", "")).toThrow(ResequenceError);
-			expect(() => audio("break", "")).toThrow("path must not be empty");
+			expect(() => audio("break", "", "4n")).toThrow(ResequenceError);
+			expect(() => audio("break", "", "4n")).toThrow("path must not be empty");
 		});
 	});
 
 	describe("creation", () => {
 		it("creates with name and path", () => {
-			const pattern = audio("break", "./break.wav");
+			const pattern = audio("break", "./break.wav", "4n");
 			expect(pattern.type).toBe("audio");
 			expect(pattern.name).toBe("break");
 			expect(pattern.path).toBe("./break.wav");
@@ -20,8 +20,8 @@ describe("AudioPattern", () => {
 			expect(pattern.reversed).toBe(false);
 		});
 
-		it("has 0 duration when no explicit duration", () => {
-			expect(audio("break", "./break.wav").durationBeats).toBe(0);
+		it("has 0 duration when numeric 0", () => {
+			expect(audio("break", "./break.wav", 0).durationBeats).toBe(0);
 		});
 
 		it("resolves explicit duration", () => {
@@ -37,7 +37,7 @@ describe("AudioPattern", () => {
 		});
 
 		it("has no loop points by default", () => {
-			const pattern = audio("pad", "./pad.wav");
+			const pattern = audio("pad", "./pad.wav", "4n");
 			expect(pattern.loopStartMs).toBeUndefined();
 			expect(pattern.loopEndMs).toBeUndefined();
 		});
@@ -45,13 +45,13 @@ describe("AudioPattern", () => {
 
 	describe("notes", () => {
 		it("returns empty", () => {
-			expect(audio("kick", "./kick.wav").notes).toEqual([]);
+			expect(audio("kick", "./kick.wav", "4n").notes).toEqual([]);
 		});
 	});
 
 	describe("instanceof", () => {
 		it("is an AudioPattern", () => {
-			expect(audio("break", "./break.wav")).toBeInstanceOf(AudioPattern);
+			expect(audio("break", "./break.wav", "4n")).toBeInstanceOf(AudioPattern);
 		});
 	});
 });

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ResequenceError } from "../../error";
-import { chain } from "../composite";
+import { chain } from "../composite/chain";
 import { filter } from "../effects/filter";
 import { gain } from "../effects/gain";
 import { SamplerUnit, sampler } from "./sampler";

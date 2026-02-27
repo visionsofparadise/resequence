@@ -5,7 +5,8 @@ import { evaluateSlideCents } from "../utils/slide";
 import { collectMarkers } from "./collect-markers";
 import type { MidiNote, MidiPitchBend } from "./encode-midi";
 import { encodeMidi } from "./encode-midi";
-import { buildTempoMap, buildTimeSignatureMap } from "./tempo-map";
+import { collectTimeSignatures } from "./collect-time-signatures";
+import { buildTempoMap } from "./tempo-map";
 
 export interface MidiRenderOptions {
 	readonly include?: ReadonlyArray<string>;
@@ -20,7 +21,7 @@ export interface MidiRenderResult {
 
 export function renderMidi(pattern: Pattern, options?: MidiRenderOptions): MidiRenderResult {
 	const tempoChanges = buildTempoMap(pattern);
-	const timeSignatureChanges = buildTimeSignatureMap(pattern);
+	const timeSignatureChanges = collectTimeSignatures(pattern.metadatas);
 	const markers = collectMarkers(pattern);
 	const grouped = groupByTrack(pattern);
 
