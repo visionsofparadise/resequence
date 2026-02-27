@@ -15,6 +15,7 @@ export interface SlideInput {
 	readonly curve?: number;
 }
 
+// FIX: Patterns should use Pitch and beats only
 export class NotePattern extends MidiPattern {
 	readonly type = "note" as const;
 	readonly durationBeats: number;
@@ -68,7 +69,6 @@ export class NotePattern extends MidiPattern {
 		}
 	}
 
-
 	schedule(offsetBeats: number, context: ScheduleContext): void {
 		if (!isInScope(offsetBeats, this.durationBeats, context)) return;
 
@@ -76,6 +76,10 @@ export class NotePattern extends MidiPattern {
 	}
 }
 
-export function note(pitch: string | number | Pitch, duration: Duration, options?: { velocity?: number; lyric?: string; cc?: Partial<Record<number, number>>; slides?: ReadonlyArray<SlideInput> }): NotePattern {
+export function note(
+	pitch: string | number | Pitch,
+	duration: Duration,
+	options?: { velocity?: number; lyric?: string; cc?: Partial<Record<number, number>>; slides?: ReadonlyArray<SlideInput> },
+): NotePattern {
 	return new NotePattern(pitch, duration, options?.velocity ?? 100, options?.lyric, options?.cc, options?.slides);
 }

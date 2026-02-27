@@ -1,7 +1,7 @@
 import { parseMidi } from "midi-file";
 import { describe, expect, it } from "vitest";
 import { layer } from "../patterns/layer";
-import { tempo } from "../patterns/metadata";
+import { tempo } from "../patterns/tempo";
 import { level } from "../patterns/modifiers/level";
 import { transpose } from "../patterns/modifiers/transpose";
 import { note } from "../patterns/note";

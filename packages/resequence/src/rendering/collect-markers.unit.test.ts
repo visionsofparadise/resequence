@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { marker, tempo } from "../patterns/metadata";
+import { marker } from "../patterns/metadata";
+import { tempo } from "../patterns/tempo";
 import { note } from "../patterns/note";
 import { sequence } from "../patterns/sequence";
 import { layer } from "../patterns/layer";

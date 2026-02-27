@@ -138,6 +138,15 @@ describe("AutomatePattern", () => {
 		it("accepts 3-segment paths", () => {
 			expect(() => automate("ok", "bass.hp.frequency", [{ time: 0, value: 0 }])).not.toThrow();
 		});
+
+		it("rejects tempo path", () => {
+			expect(() => automate("tempo", ["tempo"], [{ time: 0, value: 120 }])).toThrow(ResequenceError);
+			expect(() => automate("tempo", ["tempo"], [{ time: 0, value: 120 }])).toThrow("Use tempo() with keyframes instead");
+		});
+
+		it("rejects tempo among other paths", () => {
+			expect(() => automate("mixed", ["bass.hp.frequency", "tempo"], [{ time: 0, value: 0 }])).toThrow(ResequenceError);
+		});
 	});
 
 	describe("composition", () => {
@@ -221,10 +230,390 @@ describe("AutomatePattern", () => {
 	});
 
 	describe("schedule", () => {
-		it("is a no-op", () => {
-			const context = mockContext();
-			const auto = automate("sweep", "bass.hp.frequency", [{ time: 0, value: 80 }]);
-			expect(() => auto.schedule(0, context)).not.toThrow();
+		it("sets initial value at window start", () => {
+			const driverMap = new Map<string, ConstantSourceNode>();
+			const context = { ...mockContext(driverMap), fromBeats: 0, toBeats: 4, tempoMap: [{ beat: 0, bpm: 120 }] };
+			const auto = automate("sweep", "bass.hp.frequency", [
+				{ time: 0, value: 0.5 },
+				{ time: 4, value: 1.0 },
+			]);
+			auto.setup(context);
+			auto.schedule(0, context);
+			const driver = driverMap.get("bass.hp.frequency");
+			expect(driver?.offset.setValueAtTime).toHaveBeenCalled();
+		});
+
+		it("schedules keyframes within window", () => {
+			const driverMap = new Map<string, ConstantSourceNode>();
+			const context = { ...mockContext(driverMap), fromBeats: 0, toBeats: 8, tempoMap: [{ beat: 0, bpm: 120 }] };
+			const auto = automate("sweep", "bass.hp.frequency", [
+				{ time: 0, value: 0.5 },
+				{ time: 2, value: 0.8, curve: "linear" as const },
+				{ time: 4, value: 1.0 },
+			]);
+			auto.setup(context);
+			auto.schedule(0, context);
+			const driver = driverMap.get("bass.hp.frequency");
+			expect(driver?.offset.setValueAtTime).toHaveBeenCalled();
+			expect(driver?.offset.linearRampToValueAtTime).toHaveBeenCalled();
+		});
+
+		it("skips scheduling outside window", () => {
+			const driverMap = new Map<string, ConstantSourceNode>();
+			const context = { ...mockContext(driverMap), fromBeats: 10, toBeats: 20, tempoMap: [{ beat: 0, bpm: 120 }] };
+			const auto = automate("sweep", "bass.hp.frequency", [
+				{ time: 0, value: 0.5 },
+				{ time: 4, value: 1.0 },
+			]);
+			auto.setup(context);
+			auto.schedule(0, context);
+			const driver = driverMap.get("bass.hp.frequency");
+			expect(driver?.offset.setValueAtTime).not.toHaveBeenCalled();
+		});
+
+		it("does not set driver offset directly for LFO source", () => {
+			const driverMap = new Map<string, ConstantSourceNode>();
+			const context = { ...mockContext(driverMap), fromBeats: 0, toBeats: 8, tempoMap: [{ beat: 0, bpm: 120 }] };
+			const lfo = resolveLfo({ shape: "sine", frequency: 2, value: 500 });
+			const auto = automate("filter-lfo", "bass.hp.frequency", lfo);
+			auto.setup(context);
+			auto.schedule(0, context);
+			const driver = driverMap.get("bass.hp.frequency");
+			expect(driver?.offset.setValueAtTime).not.toHaveBeenCalled();
+		});
+	});
+
+	describe("LFO scheduling", () => {
+		it("creates oscillator and gain node per path", () => {
+			const driverMap = new Map<string, ConstantSourceNode>();
+			const context = { ...mockContext(driverMap), fromBeats: 0, toBeats: 8, tempoMap: [{ beat: 0, bpm: 120 }] };
+			const lfo = resolveLfo({ shape: "sine", frequency: 2, value: 500 });
+			const auto = automate("filter-lfo", "bass.hp.frequency", lfo);
+			auto.setup(context);
+			auto.schedule(0, context);
+			expect(context.audioContext.createOscillator).toHaveBeenCalledOnce();
+			expect(context.audioContext.createGain).toHaveBeenCalledOnce();
+		});
+
+		it("sets oscillator frequency to LFO frequency", () => {
+			const driverMap = new Map<string, ConstantSourceNode>();
+			const oscFreqParam = mockAudioParam();
+			const createOscillator = vi.fn(() => ({
+				type: "sine",
+				frequency: oscFreqParam,
+				connect: vi.fn(),
+				start: vi.fn(),
+				stop: vi.fn(),
+			}));
+			const context = {
+				...mockContext(driverMap),
+				audioContext: { ...mockContext(driverMap).audioContext, createOscillator } as unknown as BaseAudioContext,
+				fromBeats: 0,
+				toBeats: 8,
+				tempoMap: [{ beat: 0, bpm: 120 }],
+			};
+			const lfo = resolveLfo({ shape: "sine", frequency: 4, value: 500 });
+			const auto = automate("filter-lfo", "bass.hp.frequency", lfo);
+			auto.setup(context);
+			auto.schedule(0, context);
+			expect(oscFreqParam.value).toBe(4);
+		});
+
+		it("sets oscillator shape to LFO shape", () => {
+			const driverMap = new Map<string, ConstantSourceNode>();
+			const oscMock = {
+				type: "sine" as string,
+				frequency: mockAudioParam(),
+				connect: vi.fn(),
+				start: vi.fn(),
+				stop: vi.fn(),
+			};
+			const createOscillator = vi.fn(() => oscMock);
+			const context = {
+				...mockContext(driverMap),
+				audioContext: { ...mockContext(driverMap).audioContext, createOscillator } as unknown as BaseAudioContext,
+				fromBeats: 0,
+				toBeats: 8,
+				tempoMap: [{ beat: 0, bpm: 120 }],
+			};
+			const lfo = resolveLfo({ shape: "square", frequency: 2, value: 500 });
+			const auto = automate("filter-lfo", "bass.hp.frequency", lfo);
+			auto.setup(context);
+			auto.schedule(0, context);
+			expect(oscMock.type).toBe("square");
+		});
+
+		it("supports all waveform types", () => {
+			for (const shape of ["sine", "square", "sawtooth", "triangle"] as const) {
+				const driverMap = new Map<string, ConstantSourceNode>();
+				const oscMock = {
+					type: "sine" as string,
+					frequency: mockAudioParam(),
+					connect: vi.fn(),
+					start: vi.fn(),
+					stop: vi.fn(),
+				};
+				const createOscillator = vi.fn(() => oscMock);
+				const context = {
+					...mockContext(driverMap),
+					audioContext: { ...mockContext(driverMap).audioContext, createOscillator } as unknown as BaseAudioContext,
+					fromBeats: 0,
+					toBeats: 8,
+					tempoMap: [{ beat: 0, bpm: 120 }],
+				};
+				const lfo = resolveLfo({ shape, frequency: 2, value: 500 });
+				const auto = automate(`lfo-${shape}`, "bass.hp.frequency", lfo);
+				auto.setup(context);
+				auto.schedule(0, context);
+				expect(oscMock.type).toBe(shape);
+			}
+		});
+
+		it("connects oscillator through depth gain to driver", () => {
+			const driverMap = new Map<string, ConstantSourceNode>();
+			const oscConnect = vi.fn();
+			const gainConnect = vi.fn();
+			const oscMock = {
+				type: "sine",
+				frequency: mockAudioParam(),
+				connect: oscConnect,
+				start: vi.fn(),
+				stop: vi.fn(),
+			};
+			const gainMock = { gain: mockAudioParam(), connect: gainConnect };
+			const context = {
+				...mockContext(driverMap),
+				audioContext: {
+					...mockContext(driverMap).audioContext,
+					createOscillator: vi.fn(() => oscMock),
+					createGain: vi.fn(() => gainMock),
+				} as unknown as BaseAudioContext,
+				fromBeats: 0,
+				toBeats: 8,
+				tempoMap: [{ beat: 0, bpm: 120 }],
+			};
+			const lfo = resolveLfo({ shape: "sine", frequency: 2, value: 500 });
+			const auto = automate("filter-lfo", "bass.hp.frequency", lfo);
+			auto.setup(context);
+			auto.schedule(0, context);
+			expect(oscConnect).toHaveBeenCalledWith(gainMock);
+			const driver = driverMap.get("bass.hp.frequency");
+			expect(gainConnect).toHaveBeenCalledWith(driver?.offset);
+		});
+
+		it("sets depth gain to LFO value when no attack", () => {
+			const driverMap = new Map<string, ConstantSourceNode>();
+			const gainParam = mockAudioParam();
+			const context = {
+				...mockContext(driverMap),
+				audioContext: {
+					...mockContext(driverMap).audioContext,
+					createOscillator: vi.fn(() => ({
+						type: "sine",
+						frequency: mockAudioParam(),
+						connect: vi.fn(),
+						start: vi.fn(),
+						stop: vi.fn(),
+					})),
+					createGain: vi.fn(() => ({ gain: gainParam, connect: vi.fn() })),
+				} as unknown as BaseAudioContext,
+				fromBeats: 0,
+				toBeats: 8,
+				tempoMap: [{ beat: 0, bpm: 120 }],
+			};
+			const lfo = resolveLfo({ shape: "sine", frequency: 2, value: 500 });
+			const auto = automate("filter-lfo", "bass.hp.frequency", lfo);
+			auto.setup(context);
+			auto.schedule(0, context);
+			expect(gainParam.value).toBe(500);
+		});
+
+		it("ramps depth gain when attack is set", () => {
+			const driverMap = new Map<string, ConstantSourceNode>();
+			const gainParam = mockAudioParam();
+			const context = {
+				...mockContext(driverMap),
+				audioContext: {
+					...mockContext(driverMap).audioContext,
+					createOscillator: vi.fn(() => ({
+						type: "sine",
+						frequency: mockAudioParam(),
+						connect: vi.fn(),
+						start: vi.fn(),
+						stop: vi.fn(),
+					})),
+					createGain: vi.fn(() => ({ gain: gainParam, connect: vi.fn() })),
+				} as unknown as BaseAudioContext,
+				fromBeats: 0,
+				toBeats: 8,
+				tempoMap: [{ beat: 0, bpm: 120 }],
+			};
+			const lfo = resolveLfo({ shape: "sine", frequency: 2, value: 500, attack: 0.5 });
+			const auto = automate("filter-lfo", "bass.hp.frequency", lfo);
+			auto.setup(context);
+			auto.schedule(0, context);
+			expect(gainParam.setValueAtTime).toHaveBeenCalledWith(0, 0);
+			expect(gainParam.linearRampToValueAtTime).toHaveBeenCalledWith(500, 0.5);
+		});
+
+		it("starts and stops oscillator within window", () => {
+			const driverMap = new Map<string, ConstantSourceNode>();
+			const oscStart = vi.fn();
+			const oscStop = vi.fn();
+			const context = {
+				...mockContext(driverMap),
+				audioContext: {
+					...mockContext(driverMap).audioContext,
+					createOscillator: vi.fn(() => ({
+						type: "sine",
+						frequency: mockAudioParam(),
+						connect: vi.fn(),
+						start: oscStart,
+						stop: oscStop,
+					})),
+					createGain: vi.fn(() => ({ gain: mockAudioParam(), connect: vi.fn() })),
+				} as unknown as BaseAudioContext,
+				fromBeats: 0,
+				toBeats: 8,
+				tempoMap: [{ beat: 0, bpm: 120 }],
+			};
+			const lfo = resolveLfo({ shape: "sine", frequency: 2, value: 500 });
+			const auto = automate("filter-lfo", "bass.hp.frequency", lfo);
+			auto.setup(context);
+			auto.schedule(0, context);
+			expect(oscStart).toHaveBeenCalledOnce();
+			expect(oscStop).toHaveBeenCalledOnce();
+		});
+
+		it("skips scheduling when offset is past window end", () => {
+			const driverMap = new Map<string, ConstantSourceNode>();
+			const context = { ...mockContext(driverMap), fromBeats: 0, toBeats: 4, tempoMap: [{ beat: 0, bpm: 120 }] };
+			const lfo = resolveLfo({ shape: "sine", frequency: 2, value: 500 });
+			const auto = automate("filter-lfo", "bass.hp.frequency", lfo);
+			auto.setup(context);
+			auto.schedule(10, context);
+			expect(context.audioContext.createOscillator).not.toHaveBeenCalled();
+		});
+
+		it("skips scheduling when window ends before delay completes", () => {
+			const driverMap = new Map<string, ConstantSourceNode>();
+			const context = { ...mockContext(driverMap), fromBeats: 0, toBeats: 4, tempoMap: [{ beat: 0, bpm: 120 }] };
+			const lfo = resolveLfo({ shape: "sine", frequency: 2, value: 500, delay: 10 });
+			const auto = automate("filter-lfo", "bass.hp.frequency", lfo);
+			auto.setup(context);
+			auto.schedule(0, context);
+			expect(context.audioContext.createOscillator).not.toHaveBeenCalled();
+		});
+
+		it("creates oscillator per path for multi-path LFO", () => {
+			const driverMap = new Map<string, ConstantSourceNode>();
+			const createOscillator = vi.fn(() => ({
+				type: "sine",
+				frequency: mockAudioParam(),
+				connect: vi.fn(),
+				start: vi.fn(),
+				stop: vi.fn(),
+			}));
+			const context = {
+				...mockContext(driverMap),
+				audioContext: {
+					...mockContext(driverMap).audioContext,
+					createOscillator,
+					createGain: vi.fn(() => ({ gain: mockAudioParam(), connect: vi.fn() })),
+				} as unknown as BaseAudioContext,
+				fromBeats: 0,
+				toBeats: 8,
+				tempoMap: [{ beat: 0, bpm: 120 }],
+			};
+			const lfo = resolveLfo({ shape: "sine", frequency: 2, value: 500 });
+			const auto = automate("filter-lfo", ["bass.hp.frequency", "pad.hp.frequency"], lfo);
+			auto.setup(context);
+			auto.schedule(0, context);
+			expect(createOscillator).toHaveBeenCalledTimes(2);
+		});
+
+		it("computes beat-rate frequency from tempo", () => {
+			const driverMap = new Map<string, ConstantSourceNode>();
+			const oscFreqParam = mockAudioParam();
+			const createOscillator = vi.fn(() => ({
+				type: "sine",
+				frequency: oscFreqParam,
+				connect: vi.fn(),
+				start: vi.fn(),
+				stop: vi.fn(),
+			}));
+			const context = {
+				...mockContext(driverMap),
+				audioContext: {
+					...mockContext(driverMap).audioContext,
+					createOscillator,
+					createGain: vi.fn(() => ({ gain: mockAudioParam(), connect: vi.fn() })),
+				} as unknown as BaseAudioContext,
+				fromBeats: 0,
+				toBeats: 8,
+				tempoMap: [{ beat: 0, bpm: 120 }],
+			};
+			const lfo = resolveLfo({ shape: "sine", frequency: "4n", value: 500 });
+			const auto = automate("filter-lfo", "bass.hp.frequency", lfo);
+			auto.setup(context);
+			auto.schedule(0, context);
+			expect(oscFreqParam.value).toBe(2);
+		});
+
+		it("schedules frequency updates at tempo changes for beat-rate LFO", () => {
+			const driverMap = new Map<string, ConstantSourceNode>();
+			const oscFreqParam = mockAudioParam();
+			const createOscillator = vi.fn(() => ({
+				type: "sine",
+				frequency: oscFreqParam,
+				connect: vi.fn(),
+				start: vi.fn(),
+				stop: vi.fn(),
+			}));
+			const context = {
+				...mockContext(driverMap),
+				audioContext: {
+					...mockContext(driverMap).audioContext,
+					createOscillator,
+					createGain: vi.fn(() => ({ gain: mockAudioParam(), connect: vi.fn() })),
+				} as unknown as BaseAudioContext,
+				fromBeats: 0,
+				toBeats: 16,
+				tempoMap: [{ beat: 0, bpm: 120 }, { beat: 8, bpm: 60 }],
+			};
+			const lfo = resolveLfo({ shape: "sine", frequency: "4n", value: 500 });
+			const auto = automate("filter-lfo", "bass.hp.frequency", lfo);
+			auto.setup(context);
+			auto.schedule(0, context);
+			expect(oscFreqParam.setValueAtTime).toHaveBeenCalledWith(1, expect.any(Number));
+		});
+
+		it("does not schedule frequency updates for Hz-based LFO", () => {
+			const driverMap = new Map<string, ConstantSourceNode>();
+			const oscFreqParam = mockAudioParam();
+			const createOscillator = vi.fn(() => ({
+				type: "sine",
+				frequency: oscFreqParam,
+				connect: vi.fn(),
+				start: vi.fn(),
+				stop: vi.fn(),
+			}));
+			const context = {
+				...mockContext(driverMap),
+				audioContext: {
+					...mockContext(driverMap).audioContext,
+					createOscillator,
+					createGain: vi.fn(() => ({ gain: mockAudioParam(), connect: vi.fn() })),
+				} as unknown as BaseAudioContext,
+				fromBeats: 0,
+				toBeats: 16,
+				tempoMap: [{ beat: 0, bpm: 120 }, { beat: 8, bpm: 60 }],
+			};
+			const lfo = resolveLfo({ shape: "sine", frequency: 4, value: 500 });
+			const auto = automate("filter-lfo", "bass.hp.frequency", lfo);
+			auto.setup(context);
+			auto.schedule(0, context);
+			expect(oscFreqParam.setValueAtTime).not.toHaveBeenCalled();
 		});
 	});
 

@@ -1,4 +1,3 @@
-import { AutomationScheduler } from "../automation/scheduler";
 import type { Pattern } from "../patterns/pattern";
 import { loadSample } from "./load-sample";
 import type { ScheduleContext } from "./schedule-context";
@@ -38,17 +37,11 @@ export async function renderAudio(pattern: Pattern, audioContext: OfflineAudioCo
 	};
 
 	pattern.setup(context);
-
-	const automationScheduler = new AutomationScheduler();
-	automationScheduler.setup(pattern.automations);
-	automationScheduler.scheduleWindow(0, pattern.durationBeats, context);
-
 	pattern.schedule(0, context);
 
 	const buffer = await audioContext.startRendering();
 
 	pattern.teardown(context);
-	automationScheduler.reset();
 
 	return buffer;
 }

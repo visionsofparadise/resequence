@@ -3,7 +3,7 @@ import { note } from "../patterns/note";
 import { sequence } from "../patterns/sequence";
 import { layer } from "../patterns/layer";
 import { repeat } from "../patterns/repeat";
-import { tempo } from "../patterns/metadata";
+import { tempo } from "../patterns/tempo";
 import { beatsToSeconds, buildTempoMap } from "./tempo-map";
 
 describe("buildTempoMap", () => {
@@ -61,6 +61,115 @@ describe("buildTempoMap", () => {
 		const result = buildTempoMap(pattern);
 		expect(result[0]).toEqual({ beat: 0, bpm: 120 });
 		expect(result[1]).toEqual({ beat: 1, bpm: 100 });
+	});
+
+	describe("keyframes", () => {
+		it("collects step keyframes at absolute positions", () => {
+			const pattern = tempo(note("C4", 4), 120, {
+				keyframes: [{ beat: 2, bpm: 140 }],
+			});
+			const result = buildTempoMap(pattern);
+			expect(result).toEqual([
+				{ beat: 0, bpm: 120 },
+				{ beat: 2, bpm: 140 },
+			]);
+		});
+
+		it("beat-0 keyframe overrides initial bpm", () => {
+			const pattern = tempo(note("C4", 4), 120, {
+				keyframes: [{ beat: 0, bpm: 100 }],
+			});
+			const result = buildTempoMap(pattern);
+			expect(result).toEqual([{ beat: 0, bpm: 100 }]);
+		});
+
+		it("samples linear ramp keyframes", () => {
+			const pattern = tempo(note("C4", 4), 120, {
+				keyframes: [{ beat: 1, bpm: 140, curve: "linear" }],
+			});
+			const result = buildTempoMap(pattern);
+			expect(result.length).toBeGreaterThan(2);
+			expect(result[0]).toEqual({ beat: 0, bpm: 120 });
+			const last = result[result.length - 1];
+			expect(last?.beat).toBeCloseTo(1);
+			expect(last?.bpm).toBeCloseTo(140);
+		});
+
+		it("samples exponential ramp keyframes", () => {
+			const pattern = tempo(note("C4", 4), 120, {
+				keyframes: [{ beat: 1, bpm: 240, curve: "exponential" }],
+			});
+			const result = buildTempoMap(pattern);
+			expect(result.length).toBeGreaterThan(2);
+			const mid = result[Math.floor(result.length / 2)];
+			expect(mid?.bpm).toBeGreaterThan(120);
+			expect(mid?.bpm).toBeLessThan(240);
+		});
+
+		it("offsets keyframe beats in sequence", () => {
+			const pattern = sequence(
+				note("C4", 4),
+				tempo(note("E4", 4), 120, {
+					keyframes: [{ beat: 2, bpm: 140 }],
+				}),
+			);
+			const result = buildTempoMap(pattern);
+			expect(result).toEqual([
+				{ beat: 4, bpm: 120 },
+				{ beat: 6, bpm: 140 },
+			]);
+		});
+	});
+
+	describe("override resolution", () => {
+		it("outermost tempo wins by default", () => {
+			const pattern = tempo(tempo(note("C4", 4), 140), 120);
+			const result = buildTempoMap(pattern);
+			expect(result).toEqual([{ beat: 0, bpm: 120 }]);
+		});
+
+		it("override beats outer tempo", () => {
+			const pattern = tempo(
+				tempo(note("C4", 4), 140, { override: true }),
+				120,
+			);
+			const result = buildTempoMap(pattern);
+			expect(result).toContainEqual({ beat: 0, bpm: 140 });
+		});
+
+		it("nested overrides — innermost wins", () => {
+			const pattern = tempo(
+				tempo(
+					tempo(note("C4", 4), 160, { override: true }),
+					140, { override: true },
+				),
+				120,
+			);
+			const result = buildTempoMap(pattern);
+			expect(result).toContainEqual({ beat: 0, bpm: 160 });
+		});
+
+		it("inner non-override tempo is ignored under outer tempo", () => {
+			const pattern = tempo(
+				sequence(note("C4", 4), tempo(note("E4", 4), 140)),
+				120,
+			);
+			const result = buildTempoMap(pattern);
+			expect(result).toEqual([{ beat: 0, bpm: 120 }]);
+		});
+
+		it("inner override takes effect under outer tempo", () => {
+			const pattern = tempo(
+				sequence(
+					note("C4", 4),
+					tempo(note("E4", 4), 140, { override: true }),
+				),
+				120,
+			);
+			const result = buildTempoMap(pattern);
+			expect(result).toContainEqual({ beat: 0, bpm: 120 });
+			expect(result).toContainEqual({ beat: 4, bpm: 140 });
+		});
 	});
 });
 

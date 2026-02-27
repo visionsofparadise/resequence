@@ -4,8 +4,6 @@ import type { ValidateContext } from "../validate";
 import type { Metadata, PositionedAutomation, PositionedMetadata, ScoreNote } from "./pattern";
 import { Pattern } from "./pattern";
 
-export type { Metadata, PositionedMetadata };
-
 export class MetadataPattern extends Pattern {
 	readonly type = "metadata" as const;
 	readonly durationBeats: number;
@@ -18,10 +16,6 @@ export class MetadataPattern extends Pattern {
 		readonly meta: Metadata,
 	) {
 		super();
-		if (meta.tempo !== undefined && meta.tempo <= 0) {
-			throw new ResequenceError("INVALID_TEMPO", `tempo(): bpm must be greater than 0, got ${meta.tempo}`);
-		}
-
 		if (meta.timeSignature !== undefined && (meta.timeSignature[0] < 1 || meta.timeSignature[1] < 1)) {
 			throw new ResequenceError("INVALID_TIME_SIGNATURE", `timeSignature(): values must be >= 1, got [${meta.timeSignature[0]}, ${meta.timeSignature[1]}]`);
 		}
@@ -48,7 +42,6 @@ export class MetadataPattern extends Pattern {
 		this.child.setup(this.meta.tuning ? { ...context, tuning: this.meta.tuning } : context);
 	}
 
-
 	schedule(offsetBeats: number, context: ScheduleContext): void {
 		this.child.schedule(offsetBeats, this.meta.tuning ? { ...context, tuning: this.meta.tuning } : context);
 	}
@@ -62,7 +55,6 @@ export function metadata(pattern: Pattern, meta: Metadata): MetadataPattern {
 	return new MetadataPattern(pattern, meta);
 }
 
-export const tempo = (pattern: Pattern, bpm: number): MetadataPattern => metadata(pattern, { tempo: bpm });
 export const tuning = (pattern: Pattern, config: NonNullable<Metadata["tuning"]>): MetadataPattern => metadata(pattern, { tuning: config });
 export const timeSignature = (pattern: Pattern, sig: readonly [number, number]): MetadataPattern => metadata(pattern, { timeSignature: sig });
 export const marker = (pattern: Pattern, name: string): MetadataPattern => metadata(pattern, { marker: name });

@@ -1,10 +1,14 @@
+import type { AbsoluteKeyframe } from "../automation/utils";
+import { evaluateAt, firstPointAt, schedulePointKeyframe } from "../automation/utils";
 import { ResequenceError } from "../error";
 import type { ScheduleContext } from "../rendering/schedule-context";
+import { isInScope } from "../rendering/schedule-notes";
+import { beatsToSeconds } from "../rendering/tempo-map";
+import type { TempoMap } from "../rendering/tempo-map";
 
 import type { Duration } from "../utils/duration";
 import { resolveDuration } from "../utils/duration";
 import type { Lfo } from "../utils/lfo";
-import { scheduleLfo } from "../utils/lfo";
 import type { ValidateContext } from "../validate";
 import type { PositionedAutomation, ScoreNote } from "./pattern";
 import { Pattern } from "./pattern";
@@ -95,7 +99,9 @@ export class AutomatePattern extends Pattern {
 		}
 
 		for (const path of this.paths) {
-			if (path === "tempo") continue;
+			if (path === "tempo") {
+				throw new ResequenceError("INVALID_AUTOMATION_PATH", `automate() cannot target "tempo". Use tempo() with keyframes instead.`);
+			}
 
 			const segments = path.split(".");
 
@@ -119,25 +125,119 @@ export class AutomatePattern extends Pattern {
 
 	setup(context: ScheduleContext): void {
 		for (const path of this.paths) {
-			if (path === "tempo") continue;
-
 			const constant = context.audioContext.createConstantSource();
-
 			context.driverMap.set(path, constant);
+			constant.offset.value = 0;
+			constant.start(0);
+		}
+	}
 
-			if (Array.isArray(this.source)) {
-				constant.start(0);
-			} else {
-				const lfo = this.source as Lfo;
-				constant.offset.value = 0;
-				scheduleLfo(lfo, constant.offset, context.audioContext, 0, Infinity, 1, context.tempoMap);
-				constant.start(0);
+	schedule(offsetBeats: number, context: ScheduleContext): void {
+		if (!Array.isArray(this.source)) {
+			this.scheduleLfo(offsetBeats, context);
+			return;
+		}
+
+		if (!isInScope(offsetBeats, this.durationBeats, context)) return;
+
+		const envelope = this.source as ReadonlyArray<AnyResolvedKeyframe>;
+		if (envelope.length === 0) return;
+
+		const absoluteKeyframes: Array<AbsoluteKeyframe> = envelope.map((kf) => {
+			if (kf.kind === "curve") {
+				return { kind: "curve" as const, beat: offsetBeats + kf.timeBeats, durationBeats: kf.durationBeats, values: kf.values };
+			}
+			return { kind: "point" as const, beat: offsetBeats + kf.timeBeats, value: kf.value, curve: kf.curve };
+		});
+
+		const clipEndBeat = offsetBeats + this.durationBeats;
+		const evalBeat = Math.max(context.fromBeats, offsetBeats);
+		const initialValue = evaluateAt(absoluteKeyframes, evalBeat);
+		const evalSeconds = beatsToSeconds(evalBeat, context.tempoMap);
+
+		for (const path of this.paths) {
+			const driver = context.driverMap.get(path);
+			if (!driver) continue;
+
+			driver.offset.setValueAtTime(initialValue, evalSeconds);
+
+			for (const kf of absoluteKeyframes) {
+				if (kf.beat < context.fromBeats || kf.beat >= context.toBeats) continue;
+
+				const timeSeconds = beatsToSeconds(kf.beat, context.tempoMap);
+
+				if (kf.kind === "curve") {
+					const endSeconds = beatsToSeconds(kf.beat + kf.durationBeats, context.tempoMap);
+					driver.offset.setValueCurveAtTime(kf.values, timeSeconds, endSeconds - timeSeconds);
+				} else {
+					schedulePointKeyframe(driver.offset, kf, timeSeconds);
+				}
+			}
+
+			if (clipEndBeat > context.toBeats) {
+				const nextKf = firstPointAt(absoluteKeyframes, context.toBeats);
+				if (nextKf) {
+					const curve = nextKf.curve ?? "step";
+					if (curve !== "step") {
+						const value = evaluateAt(absoluteKeyframes, context.toBeats);
+						const toSeconds = beatsToSeconds(context.toBeats, context.tempoMap);
+						if (curve === "linear") {
+							driver.offset.linearRampToValueAtTime(value, toSeconds);
+						} else {
+							driver.offset.exponentialRampToValueAtTime(Math.max(value, 1e-6), toSeconds);
+						}
+					}
+				}
 			}
 		}
 	}
 
-	schedule(_offsetBeats: number, _context: ScheduleContext): void {
-		// Automation scheduling is handled centrally by AutomationScheduler
+	private scheduleLfo(offsetBeats: number, context: ScheduleContext): void {
+		const lfo = this.source as Lfo;
+
+		if (offsetBeats >= context.toBeats) return;
+
+		const lfoStartSeconds = beatsToSeconds(offsetBeats, context.tempoMap);
+		const effectiveStartSeconds = lfoStartSeconds + lfo.delay;
+		const windowStartSeconds = beatsToSeconds(context.fromBeats, context.tempoMap);
+		const windowEndSeconds = beatsToSeconds(context.toBeats, context.tempoMap);
+
+		if (windowEndSeconds <= effectiveStartSeconds) return;
+
+		const freqHz = lfoFrequencyHz(lfo, offsetBeats, context.tempoMap);
+		if (freqHz <= 0) return;
+
+		const elapsedSeconds = Math.max(0, windowStartSeconds - effectiveStartSeconds);
+		const phase = (2 * Math.PI * freqHz * elapsedSeconds) % (2 * Math.PI);
+		const phaseSeconds = (phase / (2 * Math.PI)) / freqHz;
+
+		const oscStartSeconds = Math.max(effectiveStartSeconds, windowStartSeconds - phaseSeconds);
+
+		for (const path of this.paths) {
+			const driver = context.driverMap.get(path);
+			if (!driver) continue;
+
+			const osc = context.audioContext.createOscillator();
+			osc.type = lfo.shape;
+			osc.frequency.value = freqHz;
+
+			scheduleLfoFrequencyUpdates(lfo, osc.frequency, offsetBeats, context);
+
+			const depthGain = context.audioContext.createGain();
+			const fullDepth = lfo.value;
+
+			if (lfo.attack > 0 && windowStartSeconds < effectiveStartSeconds + lfo.attack) {
+				depthGain.gain.setValueAtTime(0, effectiveStartSeconds);
+				depthGain.gain.linearRampToValueAtTime(fullDepth, effectiveStartSeconds + lfo.attack);
+			} else {
+				depthGain.gain.value = fullDepth;
+			}
+
+			osc.connect(depthGain);
+			depthGain.connect(driver.offset);
+			osc.start(oscStartSeconds);
+			osc.stop(windowEndSeconds);
+		}
 	}
 
 	teardown(context: ScheduleContext): void {
@@ -161,4 +261,42 @@ export class AutomatePattern extends Pattern {
 
 export function automate(name: string, paths: string | ReadonlyArray<string>, source: ReadonlyArray<AnyKeyframe> | Lfo): AutomatePattern {
 	return new AutomatePattern(name, paths, source);
+}
+
+function lfoFrequencyHz(lfo: Lfo, offsetBeats: number, tempoMap: TempoMap): number {
+	if (lfo.frequency !== undefined) return lfo.frequency;
+	if (lfo.speedBeats === undefined) return 0;
+
+	const bpm = bpmAtBeat(offsetBeats, tempoMap);
+	return (1 / lfo.speedBeats) * (bpm / 60);
+}
+
+function bpmAtBeat(beat: number, tempoMap: TempoMap): number {
+	let bpm = 120;
+	for (const point of tempoMap) {
+		if (point.beat > beat) break;
+		bpm = point.bpm;
+	}
+	return bpm;
+}
+
+function scheduleLfoFrequencyUpdates(lfo: Lfo, freqParam: AudioParam, offsetBeats: number, context: ScheduleContext): void {
+	if (lfo.frequency !== undefined || lfo.speedBeats === undefined) return;
+
+	let prevBpm = bpmAtBeat(offsetBeats, context.tempoMap);
+
+	for (const point of context.tempoMap) {
+		if (point.beat <= context.fromBeats) {
+			prevBpm = point.bpm;
+			continue;
+		}
+		if (point.beat >= context.toBeats) break;
+
+		if (point.bpm !== prevBpm) {
+			const hz = (1 / lfo.speedBeats) * (point.bpm / 60);
+			const timeSeconds = beatsToSeconds(point.beat, context.tempoMap);
+			freqParam.setValueAtTime(hz, timeSeconds);
+			prevBpm = point.bpm;
+		}
+	}
 }

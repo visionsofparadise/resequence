@@ -64,7 +64,7 @@ describe("validate", () => {
 
 	describe("traversal", () => {
 		it("traverses through metadata", () => {
-			const warnings = validate(metadata(note("C4", "4n"), { tempo: 120 }));
+			const warnings = validate(metadata(note("C4", "4n"), { name: "test" }));
 			expect(warnings).toContainEqual(expect.objectContaining({ code: "ORPHANED_NOTES" }));
 		});
 

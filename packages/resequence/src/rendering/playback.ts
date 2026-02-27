@@ -1,4 +1,4 @@
-import { AutomationScheduler } from "../automation/scheduler";
+import { seekAutomation } from "../automation/seek";
 import type { Pattern, ScoreNote } from "../patterns/pattern";
 import type { MarkerPoint } from "./collect-markers";
 import { collectMarkers } from "./collect-markers";
@@ -28,7 +28,6 @@ export class Playback {
 	private readonly pattern: Pattern;
 	private readonly audioContext: AudioContext;
 	private readonly options: PlaybackOptions;
-	private readonly automationScheduler = new AutomationScheduler();
 	private readonly listeners: { [K in keyof PlaybackEventMap]: Array<PlaybackEventMap[K]> } = {
 		note: [],
 		marker: [],
@@ -102,7 +101,6 @@ export class Playback {
 		};
 
 		this.pattern.setup(baseContext);
-		this.automationScheduler.setup(this.pattern.automations);
 		this.markers = collectMarkers(this.pattern);
 		this.context = baseContext;
 	}
@@ -145,6 +143,7 @@ export class Playback {
 		this.scheduledToBeats = beat;
 		this.startedAtSeconds = this.audioContext.currentTime;
 		this.markerCursor = lowerBound(this.markers, beat, (marker) => marker.beat);
+		seekAutomation(this.pattern.automations, beat, this.context);
 	}
 
 	stop(): void {
@@ -156,7 +155,6 @@ export class Playback {
 
 		if (this.context) {
 			this.pattern.teardown(this.context);
-			this.automationScheduler.reset();
 			this.context = undefined;
 		}
 
@@ -197,7 +195,6 @@ export class Playback {
 		const toBeats = Math.min(lookaheadBeat, this.pattern.durationBeats);
 
 		const context = { ...this.context, fromBeats, toBeats };
-		this.automationScheduler.scheduleWindow(fromBeats, toBeats, context);
 		this.pattern.schedule(0, context);
 
 		this.emitNoteEvents(context);

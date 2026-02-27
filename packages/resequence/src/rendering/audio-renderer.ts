@@ -1,4 +1,4 @@
-import { AutomationScheduler } from "../automation/scheduler";
+import { seekAutomation } from "../automation/seek";
 import type { Pattern } from "../patterns/pattern";
 import { loadSample } from "./load-sample";
 import type { ScheduleContext } from "./schedule-context";
@@ -13,7 +13,6 @@ export class AudioRenderer {
 	private readonly audioContext: BaseAudioContext;
 	private readonly pattern: Pattern;
 	private readonly options: AudioRendererOptions;
-	private readonly automationScheduler = new AutomationScheduler();
 
 	constructor(pattern: Pattern, audioContext: BaseAudioContext, options: AudioRendererOptions = {}) {
 		this.pattern = pattern;
@@ -55,7 +54,6 @@ export class AudioRenderer {
 		};
 
 		this.pattern.setup(baseContext);
-		this.automationScheduler.setup(this.pattern.automations);
 		this.context = baseContext;
 	}
 
@@ -63,7 +61,7 @@ export class AudioRenderer {
 		if (!this.context) throw new Error("AudioRenderer: setup() must be called before schedule()");
 
 		const context = { ...this.context, fromBeats, toBeats };
-		this.automationScheduler.scheduleWindow(fromBeats, toBeats, context);
+		seekAutomation(this.pattern.automations, fromBeats, context);
 		this.pattern.schedule(0, context);
 	}
 
@@ -71,7 +69,6 @@ export class AudioRenderer {
 		if (!this.context) throw new Error("AudioRenderer: setup() must be called before render()");
 
 		const context = { ...this.context, fromBeats, toBeats };
-		this.automationScheduler.scheduleWindow(fromBeats, toBeats, context);
 		this.pattern.schedule(0, context);
 	}
 
@@ -79,7 +76,6 @@ export class AudioRenderer {
 		if (!this.context) return;
 
 		this.pattern.teardown(this.context);
-		this.automationScheduler.reset();
 		this.context = undefined;
 	}
 }

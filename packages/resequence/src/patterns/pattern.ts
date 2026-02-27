@@ -4,12 +4,17 @@ import type { Pitch, TuningConfig } from "../utils/pitch";
 import type { ValidateContext } from "../validate";
 import type { AutomatePattern } from "./automate";
 
+export interface TempoKeyframe {
+	readonly beat: number;
+	readonly bpm: number;
+	readonly curve?: "step" | "linear" | "exponential";
+}
+
 export interface Metadata {
 	readonly name?: string;
 	readonly description?: string;
 	readonly marker?: string;
 	readonly region?: string;
-	readonly tempo?: number;
 	readonly timeSignature?: readonly [number, number];
 	readonly tuning?: TuningConfig;
 }

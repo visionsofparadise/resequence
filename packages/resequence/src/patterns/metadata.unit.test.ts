@@ -38,13 +38,11 @@ describe("MetadataPattern", () => {
 			const m = metadata(note("C4", "4n"), {
 				name: "Song",
 				description: "desc",
-				tempo: 120,
 				timeSignature: [4, 4] as const,
 				tuning: config,
 				marker: "intro",
 				region: "verse",
 			});
-			expect(m.meta.tempo).toBe(120);
 			expect(m.meta.timeSignature).toEqual([4, 4]);
 			expect(m.meta.tuning).toEqual(config);
 			expect(m.meta.marker).toBe("intro");
@@ -90,14 +88,14 @@ describe("MetadataPattern", () => {
 
 	describe("metadatas aggregation", () => {
 		it("includes own metadata at beat 0", () => {
-			const m = metadata(note("C4", "4n"), { tempo: 120 });
-			expect(m.metadatas).toEqual([{ beat: 0, meta: { tempo: 120 } }]);
+			const m = metadata(note("C4", "4n"), { name: "test" });
+			expect(m.metadatas).toEqual([{ beat: 0, meta: { name: "test" } }]);
 		});
 
 		it("accumulates child metadatas through sequence", () => {
-			const m = metadata(sequence(metadata(note("C4", "4n"), { marker: "intro" }), metadata(note("E4", "4n"), { marker: "verse" })), { tempo: 120 });
+			const m = metadata(sequence(metadata(note("C4", "4n"), { marker: "intro" }), metadata(note("E4", "4n"), { marker: "verse" })), { name: "song" });
 			expect(m.metadatas).toEqual([
-				{ beat: 0, meta: { tempo: 120 } },
+				{ beat: 0, meta: { name: "song" } },
 				{ beat: 0, meta: { marker: "intro" } },
 				{ beat: 1, meta: { marker: "verse" } },
 			]);
