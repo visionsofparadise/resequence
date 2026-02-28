@@ -64,6 +64,7 @@ export type { TempoKeyframe, TempoOptions } from "./patterns/tempo";
 export { encodeMidi } from "./rendering/encode-midi";
 export type { MidiNote, MidiPitchBend } from "./rendering/encode-midi";
 export { encodeWav } from "./rendering/encode-wav";
+export type { WavBitDepth } from "./rendering/encode-wav";
 export { extractMetadata } from "./rendering/extract-metadata";
 export type { ExtractedMetadata } from "./rendering/extract-metadata";
 export { loadSample } from "./rendering/load-sample";
