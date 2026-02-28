@@ -1,12 +1,10 @@
 import type { ScheduleContext } from "../../rendering/schedule-context";
-import { Unit } from "../unit";
+import { Unit, type SetupResult } from "../unit";
 import { gain } from "./gain";
 
 export class MixNode extends Unit {
 	readonly id: string | undefined;
 	private dryChain: Unit | undefined;
-
-	protected readonly innerUnits: ReadonlyArray<Unit>;
 
 	constructor(
 		private readonly inner: Unit,
@@ -16,28 +14,23 @@ export class MixNode extends Unit {
 		super();
 
 		this.id = id;
-		this.innerUnits = [inner];
 	}
 
-	protected _setup(context: ScheduleContext): void {
+	protected _setup(_context: ScheduleContext): SetupResult {
 		const wetGainUnit = gain({
 			level: linearToDb(this.amount),
 			id: this.id ? `${this.id}.wet` : undefined,
 		});
 
 		this.inner.to(wetGainUnit);
-		for (const target of this.targets) wetGainUnit.to(target);
-		this.inner.setup(context);
 
-		this.dryChain = gain({
+		const dryChain = gain({
 			level: linearToDb(1 - this.amount),
 			id: this.id ? `${this.id}.dry` : undefined,
 		});
+		this.dryChain = dryChain;
 
-		for (const target of this.targets) this.dryChain.to(target);
-		this.dryChain.setup(context);
-
-		this.entryNodes.push(...this.inner.entryNodes, ...this.dryChain.entryNodes);
+		return { entries: [this.inner, dryChain], exits: [wetGainUnit, dryChain] };
 	}
 
 	protected _teardown(context: ScheduleContext): void {

@@ -1,13 +1,13 @@
 import { seekAutomation } from "../automation/seek";
 import type { ScoreNote } from "../patterns/note";
 import type { Pattern } from "../patterns/pattern";
+import { lowerBound } from "../utils/sorted";
 import type { MarkerPoint } from "./collect-markers";
 import { collectMarkers } from "./collect-markers";
 import { loadSample } from "./load-sample";
-import { scheduleNotes } from "./schedule-notes";
 import type { ScheduleContext } from "./schedule-context";
+import { scheduleNotes } from "./schedule-notes";
 import { buildTempoMap } from "./tempo-map";
-import { lowerBound } from "../utils/sorted";
 
 export type PlaybackState = "playing" | "paused" | "stopped";
 
@@ -60,6 +60,7 @@ export class Playback {
 		if (this._state !== "playing" || !this.context) return this.startedAtBeats;
 
 		const elapsedSeconds = this.audioContext.currentTime - this.startedAtSeconds;
+
 		return secondsToBeats(this.startedAtBeats, elapsedSeconds, this.context.tempoMap);
 	}
 
@@ -70,28 +71,15 @@ export class Playback {
 	off<K extends keyof PlaybackEventMap>(event: K, callback: PlaybackEventMap[K]): void {
 		const list = this.listeners[event];
 		const index = list.indexOf(callback);
+
 		if (index !== -1) list.splice(index, 1);
 	}
 
 	async setup(fetchBuffer: (path: string) => Promise<ArrayBuffer>): Promise<void> {
-		const sampleKeys = this.pattern.sampleKeys;
-		const tempoMap = buildTempoMap(this.pattern);
-
-		const sampleMap = new Map<string, AudioBuffer>();
-		for (const key of sampleKeys) {
-			try {
-				const audioBuffer = await loadSample(key, this.audioContext, fetchBuffer);
-				sampleMap.set(key, audioBuffer);
-			} catch {
-				// sample not loadable — skip
-			}
-		}
-
-		for (const url of this.pattern.moduleUrls) {
-			await this.audioContext.audioWorklet.addModule(url);
-		}
-
 		const driverMap = new Map<string, ConstantSourceNode>();
+		const loadedModules = new Set<string>();
+		const sampleMap = new Map<string, AudioBuffer>();
+		const tempoMap = buildTempoMap(this.pattern);
 
 		const baseContext: ScheduleContext = {
 			audioContext: this.audioContext,
@@ -104,11 +92,31 @@ export class Playback {
 			outputs: [],
 			dispatch: (note, offsetBeats, outputs, scheduleContext) => {
 				scheduleNotes([note], offsetBeats, outputs, scheduleContext);
+
 				this.pendingNoteEvents.push({ note, beat: offsetBeats + note.startBeat });
+			},
+			getSample: async (path: string) => {
+				const cached = sampleMap.get(path);
+
+				if (cached) return cached;
+
+				const buffer = await loadSample(path, this.audioContext, fetchBuffer);
+
+				sampleMap.set(path, buffer);
+
+				return buffer;
+			},
+			loadModule: async (url: string) => {
+				if (loadedModules.has(url)) return;
+
+				await this.audioContext.audioWorklet.addModule(url);
+
+				loadedModules.add(url);
 			},
 		};
 
-		this.pattern.setup(baseContext);
+		await this.pattern.setup(baseContext);
+
 		this.markers = collectMarkers(this.pattern);
 		this.context = baseContext;
 	}

@@ -1,5 +1,5 @@
 import type { ScheduleContext } from "../../rendering/schedule-context";
-import { Unit } from "../unit";
+import { Unit, type SetupResult } from "../unit";
 import { filter, type FilterEffectUnit, type FilterMode } from "./filter";
 
 export interface EqBand {
@@ -11,8 +11,6 @@ export interface EqBand {
 }
 
 export class EqEffectUnit extends Unit {
-	protected readonly innerUnits: ReadonlyArray<Unit> = [];
-
 	private readonly bands: ReadonlyArray<EqBand>;
 	public readonly id?: string;
 
@@ -24,7 +22,7 @@ export class EqEffectUnit extends Unit {
 		this.id = id;
 	}
 
-	protected _setup(context: ScheduleContext): void {
+	protected _setup(_context: ScheduleContext): SetupResult {
 		const filters: Array<FilterEffectUnit> = [];
 
 		for (const band of this.bands) {
@@ -40,13 +38,11 @@ export class EqEffectUnit extends Unit {
 		const firstFilter = filters[0];
 		const lastFilter = filters[filters.length - 1];
 
-		if (!firstFilter || !lastFilter) return;
-
-		for (const target of this.targets) lastFilter.to(target);
-		firstFilter.setup(context);
-		this.entryNodes.push(...firstFilter.entryNodes);
+		if (!firstFilter || !lastFilter) return {};
 
 		this.filterChain = filters;
+
+		return { entries: [firstFilter], exits: [lastFilter] };
 	}
 
 	protected _teardown(context: ScheduleContext): void {

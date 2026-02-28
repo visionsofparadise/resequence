@@ -1,5 +1,6 @@
 import type { ScheduleContext } from "../../rendering/schedule-context";
 import { driveParam } from "../../utils/driver";
+import type { SetupResult } from "../unit";
 import { Unit } from "../unit";
 
 export interface SpatialOptions {
@@ -15,7 +16,6 @@ export interface SpatialOptions {
 
 export class SpatialEffectUnit extends Unit {
 	readonly type = "spatial" as const;
-	protected readonly innerUnits: ReadonlyArray<Unit> = [];
 
 	private readonly x: number;
 	private readonly y: number;
@@ -40,7 +40,7 @@ export class SpatialEffectUnit extends Unit {
 		this.id = id;
 	}
 
-	protected _setup(context: ScheduleContext): void {
+	protected _setup(context: ScheduleContext): SetupResult {
 		const pannerNode = context.audioContext.createPanner();
 
 		if (this.distanceModel) pannerNode.distanceModel = this.distanceModel;
@@ -48,13 +48,12 @@ export class SpatialEffectUnit extends Unit {
 		if (this.maxDistance !== undefined) pannerNode.maxDistance = this.maxDistance;
 		if (this.rolloffFactor !== undefined) pannerNode.rolloffFactor = this.rolloffFactor;
 
-		driveParam(pannerNode.positionX, this.id, "x", this.x, context, [-100, 100]);
-		driveParam(pannerNode.positionY, this.id, "y", this.y, context, [-100, 100]);
-		driveParam(pannerNode.positionZ, this.id, "z", this.z, context, [-100, 100]);
+		driveParam(pannerNode.positionX, this.id ? `${this.id}.x` : undefined, this.x, [-100, 100], context);
+		driveParam(pannerNode.positionY, this.id ? `${this.id}.y` : undefined, this.y, [-100, 100], context);
+		driveParam(pannerNode.positionZ, this.id ? `${this.id}.z` : undefined, this.z, [-100, 100], context);
 
 		this.pannerNode = pannerNode;
-		this.entryNodes.push(pannerNode);
-		this.exitNodes.push(pannerNode);
+		return { entries: [pannerNode], exits: [pannerNode] };
 	}
 
 	protected _teardown(_context: ScheduleContext): void {

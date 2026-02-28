@@ -76,13 +76,15 @@ export class AutomatePattern extends Pattern {
 		return [];
 	}
 
-	setup(context: ScheduleContext): void {
+	async setup(context: ScheduleContext): Promise<void> {
 		for (const path of this.paths) {
 			const constant = context.audioContext.createConstantSource();
 			context.driverMap.set(path, constant);
 			constant.offset.value = 0;
 			constant.start(0);
 		}
+
+		await super.setup(context);
 	}
 
 	schedule(offsetBeats: number, context: ScheduleContext): void {
@@ -212,12 +214,7 @@ export class AutomatePattern extends Pattern {
 	}
 
 	clone(overrides: Partial<PatternNode>): AutomatePattern {
-		return new AutomatePattern(
-			this.name,
-			this.paths,
-			this.source,
-			this.overrideNode(overrides),
-		);
+		return new AutomatePattern(this.name, this.paths, this.source, this.overrideNode(overrides));
 	}
 
 	validate(context: ValidateContext): void {

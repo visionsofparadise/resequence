@@ -1,6 +1,6 @@
 import type { ScheduleContext } from "../../rendering/schedule-context";
 import { proxyDriver } from "../../utils/driver";
-import { Unit } from "../unit";
+import { Unit, type SetupResult } from "../unit";
 import { delay, type DelayEffectUnit } from "./delay";
 import { allpass, lowpass, type FilterEffectUnit } from "./filter";
 import { linearGain, type GainEffectUnit } from "./gain";
@@ -9,8 +9,6 @@ const COMB_DELAYS = [1116, 1188, 1277, 1356].map((samples) => (samples / 44100) 
 const ALLPASS_DELAYS = [556, 441].map((samples) => (samples / 44100) * 1000);
 
 export class ReverbEffectUnit extends Unit {
-	protected readonly innerUnits: ReadonlyArray<Unit> = [];
-
 	private readonly roomSize: number;
 	private readonly damping: number;
 	public readonly id?: string;
@@ -29,7 +27,7 @@ export class ReverbEffectUnit extends Unit {
 		this.id = id;
 	}
 
-	protected _setup(context: ScheduleContext): void {
+	protected async _setup(context: ScheduleContext): Promise<SetupResult> {
 		const inputUnit = linearGain({ level: 1 });
 		const combSumUnit = linearGain({ level: 0.25 });
 		const lowPassCutoff = lerp(10000, 500, this.damping);
@@ -76,12 +74,9 @@ export class ReverbEffectUnit extends Unit {
 
 		if (firstAllpass && lastAllpass) {
 			combSumUnit.to(firstAllpass);
-			for (const target of this.targets) lastAllpass.to(target);
-		} else {
-			for (const target of this.targets) combSumUnit.to(target);
 		}
 
-		inputUnit.setup(context);
+		await inputUnit.setup(context);
 
 		for (let index = 0; index < feedbackIds.length; index++) {
 			proxyDriver(this.id, "roomSize", `${feedbackIds[index]}.level`, context);
@@ -91,7 +86,8 @@ export class ReverbEffectUnit extends Unit {
 		this.inputUnit = inputUnit;
 		this.combSumUnit = combSumUnit;
 		this.allpassFilters = allpassFilters;
-		this.entryNodes.push(...inputUnit.entryNodes);
+
+		return { entries: [inputUnit], exits: [lastAllpass ?? combSumUnit] };
 	}
 
 	protected _teardown(context: ScheduleContext): void {

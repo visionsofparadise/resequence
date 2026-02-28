@@ -1,8 +1,8 @@
 import { seekAutomation } from "../automation/seek";
 import type { Pattern } from "../patterns/pattern";
 import { loadSample } from "./load-sample";
-import { scheduleNotes } from "./schedule-notes";
 import type { ScheduleContext } from "./schedule-context";
+import { scheduleNotes } from "./schedule-notes";
 import { buildTempoMap } from "./tempo-map";
 
 interface AudioRendererOptions {
@@ -22,27 +22,10 @@ export class AudioRenderer {
 	}
 
 	async setup(fetchBuffer: (path: string) => Promise<ArrayBuffer>): Promise<void> {
-		const sampleKeys = this.pattern.sampleKeys;
-		const tempoMap = buildTempoMap(this.pattern);
-
-		const sampleMap = new Map<string, AudioBuffer>();
-
-		for (const key of sampleKeys) {
-			try {
-				const audioBuffer = await loadSample(key, this.audioContext, fetchBuffer);
-
-				sampleMap.set(key, audioBuffer);
-			} catch {
-				// sample not loadable — skip
-			}
-		}
-
-		await this.audioContext.audioWorklet.addModule(buildProcessorUrl("../nodes/envelope-processor.js"));
-		await this.audioContext.audioWorklet.addModule(buildProcessorUrl("../nodes/generators/noise-processor.js"));
-		await this.audioContext.audioWorklet.addModule(buildProcessorUrl("../nodes/effects/bitcrush-processor.js"));
-		await this.audioContext.audioWorklet.addModule(buildProcessorUrl("../nodes/effects/downsample-processor.js"));
-
 		const driverMap = new Map<string, ConstantSourceNode>();
+		const loadedModules = new Set<string>();
+		const sampleMap = new Map<string, AudioBuffer>();
+		const tempoMap = buildTempoMap(this.pattern);
 
 		const baseContext: ScheduleContext = {
 			audioContext: this.audioContext,
@@ -56,9 +39,27 @@ export class AudioRenderer {
 			dispatch: (note, offsetBeats, outputs, scheduleContext) => {
 				scheduleNotes([note], offsetBeats, outputs, scheduleContext);
 			},
+			getSample: async (path: string) => {
+				const cached = sampleMap.get(path);
+
+				if (cached) return cached;
+
+				const buffer = await loadSample(path, this.audioContext, fetchBuffer);
+
+				sampleMap.set(path, buffer);
+
+				return buffer;
+			},
+			loadModule: async (url: string) => {
+				if (loadedModules.has(url)) return;
+
+				await this.audioContext.audioWorklet.addModule(url);
+
+				loadedModules.add(url);
+			},
 		};
 
-		this.pattern.setup(baseContext);
+		await this.pattern.setup(baseContext);
 		this.context = baseContext;
 	}
 
@@ -83,8 +84,4 @@ export class AudioRenderer {
 		this.pattern.teardown(this.context);
 		this.context = undefined;
 	}
-}
-
-function buildProcessorUrl(relativePath: string): string {
-	return new URL(relativePath, import.meta.url).href;
 }

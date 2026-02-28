@@ -9,11 +9,4 @@ describe("ringmod", () => {
 		expect(fx).toBeInstanceOf(RingModEffectUnit);
 		expect(fx.type).toBe("ringmod");
 	});
-
-	it("collects sample keys from carrier", () => {
-		const carrier = gain({ level: 1 });
-		const fx = ringmod(carrier);
-		const keys = fx.collectSampleKeys();
-		expect(keys).toBeInstanceOf(Set);
-	});
 });

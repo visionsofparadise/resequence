@@ -1,10 +1,10 @@
 import type { ScheduleContext } from "../../rendering/schedule-context";
 import { driveParam } from "../../utils/driver";
+import type { SetupResult } from "../unit";
 import { Unit } from "../unit";
 
 export class GainEffectUnit extends Unit {
 	readonly type = "gain" as const;
-	protected readonly innerUnits: ReadonlyArray<Unit> = [];
 
 	public gainNode: GainNode | undefined;
 
@@ -15,12 +15,12 @@ export class GainEffectUnit extends Unit {
 		super();
 	}
 
-	protected _setup(context: ScheduleContext): void {
+	protected _setup(context: ScheduleContext): SetupResult {
 		this.gainNode = context.audioContext.createGain();
-		driveParam(this.gainNode.gain, this.id, "level", this.level, context, [0, 2]);
 
-		this.entryNodes.push(this.gainNode);
-		this.exitNodes.push(this.gainNode);
+		driveParam(this.gainNode.gain, this.id ? `${this.id}.level` : undefined, this.level, [0, 2], context);
+
+		return { entries: [this.gainNode], exits: [this.gainNode] };
 	}
 
 	protected _teardown(_context: ScheduleContext): void {

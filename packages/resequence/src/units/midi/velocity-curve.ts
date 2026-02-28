@@ -1,12 +1,9 @@
 import type { ScheduleContext } from "../../rendering/schedule-context";
 import type { VoiceNote } from "../midi-unit";
 import { MidiUnit } from "../midi-unit";
-import type { Unit } from "../unit";
 
 export class VelocityCurveMidiUnit extends MidiUnit {
 	readonly type = "velocity-curve-midi" as const;
-	readonly id = undefined;
-	protected readonly innerUnits: ReadonlyArray<Unit> = [];
 
 	public readonly curve: (velocity: number) => number;
 
@@ -21,18 +18,6 @@ export class VelocityCurveMidiUnit extends MidiUnit {
 		const transformed: VoiceNote = { ...voiceNote, velocity: newVelocity };
 
 		super.schedule(transformed, scheduleContext);
-	}
-
-	protected _schedule(): void {
-		return;
-	}
-
-	protected _setup(): void {
-		return;
-	}
-
-	protected _teardown(): void {
-		return;
 	}
 }
 

@@ -4,7 +4,7 @@ import type { Duration } from "../../utils/duration";
 import { resolveDuration } from "../../utils/duration";
 import type { VoiceNote, VoiceSlide } from "../midi-unit";
 import { MidiUnit } from "../midi-unit";
-import type { Unit } from "../unit";
+import type { SetupResult } from "../unit";
 
 interface LastPitch {
 	readonly note: number;
@@ -13,8 +13,6 @@ interface LastPitch {
 }
 
 export class PortamentoUnit extends MidiUnit {
-	readonly id = undefined;
-	protected readonly innerUnits: ReadonlyArray<Unit> = [];
 	private lastPitch: LastPitch | undefined;
 	private readonly timeBeats: number;
 
@@ -25,8 +23,6 @@ export class PortamentoUnit extends MidiUnit {
 
 	schedule(voiceNote: VoiceNote, scheduleContext: ScheduleContext): void {
 		const modified = this.applyPortamento(voiceNote, scheduleContext);
-
-		this._schedule(modified, scheduleContext);
 
 		for (const target of this.targets) {
 			if (target instanceof MidiUnit) target.schedule(modified, scheduleContext);
@@ -39,16 +35,9 @@ export class PortamentoUnit extends MidiUnit {
 		};
 	}
 
-	protected _setup(_context: ScheduleContext): void {
+	protected _setup(_context: ScheduleContext): SetupResult {
 		this.lastPitch = undefined;
-	}
-
-	protected _teardown(_context: ScheduleContext): void {
-		// No audio resources
-	}
-
-	protected _schedule(_voiceNote: VoiceNote, _scheduleContext: ScheduleContext): void {
-		// No-op — portamento is a pure MIDI transformer
+		return {};
 	}
 
 	private applyPortamento(voiceNote: VoiceNote, scheduleContext: ScheduleContext): VoiceNote {

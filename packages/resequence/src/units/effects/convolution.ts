@@ -1,10 +1,8 @@
 import type { ScheduleContext } from "../../rendering/schedule-context";
+import type { SetupResult } from "../unit";
 import { Unit } from "../unit";
 
 export class ConvolutionEffectUnit extends Unit {
-	readonly id = undefined;
-	protected readonly innerUnits: ReadonlyArray<Unit> = [];
-
 	private readonly impulse: string;
 	private readonly normalize: boolean | undefined;
 	convolverNode: ConvolverNode | undefined;
@@ -14,20 +12,21 @@ export class ConvolutionEffectUnit extends Unit {
 
 		this.impulse = impulse;
 		this.normalize = normalize;
-		this.sampleKeys.add(impulse);
 	}
 
-	protected _setup(context: ScheduleContext): void {
+	protected async _setup(context: ScheduleContext): Promise<SetupResult> {
 		const convolverNode = context.audioContext.createConvolver();
 
 		if (this.normalize !== undefined) convolverNode.normalize = this.normalize;
 
-		const impulseBuffer = context.sampleMap.get(this.impulse);
-		if (impulseBuffer) convolverNode.buffer = impulseBuffer;
+		try {
+			convolverNode.buffer = await context.getSample(this.impulse);
+		} catch {
+			// impulse not loadable — skip
+		}
 
 		this.convolverNode = convolverNode;
-		this.entryNodes.push(convolverNode);
-		this.exitNodes.push(convolverNode);
+		return { entries: [convolverNode], exits: [convolverNode] };
 	}
 
 	protected _teardown(_context: ScheduleContext): void {

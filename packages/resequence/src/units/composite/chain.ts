@@ -1,12 +1,11 @@
 import type { ScheduleContext } from "../../rendering/schedule-context";
-import type { Unit } from "../unit";
+import type { SetupResult, Unit } from "../unit";
 import { Composite, flattenUnits } from "./composite";
 
 export class Chain extends Composite {
 	readonly head: Unit;
 	readonly tail: Unit;
 	readonly units: ReadonlyArray<Unit>;
-	protected readonly innerUnits: ReadonlyArray<Unit>;
 
 	constructor(...inputUnits: Array<Unit>) {
 		super();
@@ -27,17 +26,14 @@ export class Chain extends Composite {
 
 		this.head = first;
 		this.tail = last;
-		this.innerUnits = [this.head];
 	}
 
 	to(unit: Unit): void {
 		this.tail.to(unit);
 	}
 
-	protected _setup(context: ScheduleContext): void {
-		this.head.setup(context);
-		this.entryNodes.push(...this.head.entryNodes);
-		this.exitNodes.push(...this.tail.exitNodes);
+	protected _setup(_context: ScheduleContext): SetupResult {
+		return { entries: [this.head], exits: [this.tail] };
 	}
 
 	protected _teardown(context: ScheduleContext): void {

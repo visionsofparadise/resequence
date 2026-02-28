@@ -1,10 +1,10 @@
 import type { ScheduleContext } from "../../rendering/schedule-context";
 import { driveParam } from "../../utils/driver";
+import type { SetupResult } from "../unit";
 import { Unit } from "../unit";
 
 export class DownsampleEffectUnit extends Unit {
 	readonly type = "downsample" as const;
-	protected readonly innerUnits: ReadonlyArray<Unit> = [];
 
 	public downsampleNode: AudioWorkletNode | undefined;
 
@@ -15,22 +15,17 @@ export class DownsampleEffectUnit extends Unit {
 		super();
 	}
 
-	collectModuleUrls(): Set<string> {
-		const urls = super.collectModuleUrls();
-		urls.add(new URL("./downsample-processor.js", import.meta.url).href);
-		return urls;
-	}
+	protected async _setup(context: ScheduleContext): Promise<SetupResult> {
+		await context.loadModule(new URL("./downsample-processor.js", import.meta.url).href);
 
-	protected _setup(context: ScheduleContext): void {
 		const downsampleNode = new AudioWorkletNode(context.audioContext, "downsample-processor");
 
 		downsampleNode.parameters.forEach((param, name) => {
-			if (name === "targetRate") driveParam(param, this.id, "rate", this.rate, context, [100, 44100]);
+			if (name === "targetRate") driveParam(param, this.id ? `${this.id}.rate` : undefined, this.rate, [100, 44100], context);
 		});
 
 		this.downsampleNode = downsampleNode;
-		this.entryNodes.push(downsampleNode);
-		this.exitNodes.push(downsampleNode);
+		return { entries: [downsampleNode], exits: [downsampleNode] };
 	}
 
 	protected _teardown(_context: ScheduleContext): void {

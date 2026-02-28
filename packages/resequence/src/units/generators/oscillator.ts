@@ -1,14 +1,11 @@
 import type { ScheduleContext } from "../../rendering/schedule-context";
-import { driveParam } from "../../utils/driver";
+import { driveParam, undriveParam } from "../../utils/driver";
 import { scheduleSlideRamps } from "../../utils/schedule-slides";
 import type { WaveShape } from "../lfo";
 import type { VoiceNote } from "../midi-unit";
-import type { Unit } from "../unit";
 import { GeneratorUnit } from "./generator";
 
 export class OscillatorUnit extends GeneratorUnit {
-	protected readonly innerUnits: ReadonlyArray<Unit> = [];
-
 	private readonly oscillatorType: WaveShape;
 	private readonly detune: number;
 	public readonly id?: string;
@@ -25,8 +22,8 @@ export class OscillatorUnit extends GeneratorUnit {
 		oscillator.type = this.oscillatorType;
 
 		const frequency = noteToFrequency(voiceNote.note, voiceNote.bend);
-		driveParam(oscillator.frequency, this.id, "frequency", frequency, scheduleContext);
-		driveParam(oscillator.detune, this.id, "detune", this.detune, scheduleContext);
+		driveParam(oscillator.frequency, this.id ? `${this.id}.frequency` : undefined, frequency, [20, 20000], scheduleContext);
+		driveParam(oscillator.detune, this.id ? `${this.id}.detune` : undefined, this.detune, [-1200, 1200], scheduleContext);
 
 		if (voiceNote.slides && voiceNote.slides.length > 0) {
 			scheduleSlideRamps(
@@ -45,8 +42,8 @@ export class OscillatorUnit extends GeneratorUnit {
 
 		oscillator.addEventListener("ended", () => {
 			if (this.id) {
-				scheduleContext.driverMap.get(`${this.id}.frequency`)?.disconnect(oscillator.frequency);
-				scheduleContext.driverMap.get(`${this.id}.detune`)?.disconnect(oscillator.detune);
+				undriveParam(`${this.id}.frequency`, oscillator.frequency, scheduleContext);
+				undriveParam(`${this.id}.detune`, oscillator.detune, scheduleContext);
 			}
 			cleanup();
 		});

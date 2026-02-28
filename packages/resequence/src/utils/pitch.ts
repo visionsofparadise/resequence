@@ -7,6 +7,7 @@ export interface Pitch {
 	readonly octaveRatio: number;
 }
 
+// FIX: We've spread tuning stuff randomly over three files
 export interface TuningConfig {
 	readonly classes: ReadonlyArray<string>;
 	readonly octaveRatio?: number;
@@ -38,6 +39,7 @@ export function addSteps(pitch: Pitch, steps: number): Pitch {
 	return { ...pitch, class: newClass, octave: pitch.octave + octaveShift };
 }
 
+// FIX: We need to phase out this utility, it's allowing sites to use the deprecated way of defining pitch through string or number. We should only be using Pitch objects. Use N.C4 instead
 export function resolvePitch(input: string | number | Pitch): Pitch {
 	if (typeof input === "object") return input;
 

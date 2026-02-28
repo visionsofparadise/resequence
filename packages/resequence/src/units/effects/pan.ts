@@ -1,10 +1,10 @@
 import type { ScheduleContext } from "../../rendering/schedule-context";
 import { driveParam } from "../../utils/driver";
+import type { SetupResult } from "../unit";
 import { Unit } from "../unit";
 
 export class PanEffectUnit extends Unit {
 	readonly type = "pan" as const;
-	protected readonly innerUnits: ReadonlyArray<Unit> = [];
 
 	public panNode: StereoPannerNode | undefined;
 
@@ -15,13 +15,12 @@ export class PanEffectUnit extends Unit {
 		super();
 	}
 
-	protected _setup(context: ScheduleContext): void {
+	protected _setup(context: ScheduleContext): SetupResult {
 		const panNode = context.audioContext.createStereoPanner();
-		driveParam(panNode.pan, this.id, "position", this.position, context, [-1, 1]);
+		driveParam(panNode.pan, this.id ? `${this.id}.position` : undefined, this.position, [-1, 1], context);
 
 		this.panNode = panNode;
-		this.entryNodes.push(panNode);
-		this.exitNodes.push(panNode);
+		return { entries: [panNode], exits: [panNode] };
 	}
 
 	protected _teardown(_context: ScheduleContext): void {

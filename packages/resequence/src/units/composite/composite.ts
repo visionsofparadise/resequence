@@ -5,7 +5,6 @@ export function flattenUnits(units: ReadonlyArray<Unit>): ReadonlyArray<Unit> {
 }
 
 export abstract class Composite extends Unit {
-	readonly id = undefined;
 	abstract readonly head: Unit;
 	abstract readonly units: ReadonlyArray<Unit>;
 }

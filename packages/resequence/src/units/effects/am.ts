@@ -1,25 +1,25 @@
 import type { ScheduleContext } from "../../rendering/schedule-context";
-import { Unit } from "../unit";
+import { Unit, type SetupResult } from "../unit";
 
 export class AmEffectUnit extends Unit {
 	readonly type = "am" as const;
 	readonly id = undefined;
 
 	public readonly carrier: Unit;
-	protected readonly innerUnits: ReadonlyArray<Unit>;
+
+	private dcOffsetNode: ConstantSourceNode | undefined;
 
 	constructor(carrier: Unit) {
 		super();
 
 		this.carrier = carrier;
-		this.innerUnits = [carrier];
 	}
 
-	protected _setup(context: ScheduleContext): void {
+	protected async _setup(context: ScheduleContext): Promise<SetupResult> {
 		const modulatorGain = context.audioContext.createGain();
 		modulatorGain.gain.value = 0;
 
-		this.carrier.setup(context);
+		await this.carrier.setup(context);
 
 		const carrierScale = context.audioContext.createGain();
 		carrierScale.gain.value = 0.5;
@@ -35,11 +35,15 @@ export class AmEffectUnit extends Unit {
 		carrierScale.connect(modulatorGain.gain);
 		dcOffset.connect(modulatorGain.gain);
 
-		this.entryNodes.push(modulatorGain);
-		this.exitNodes.push(modulatorGain);
+		this.dcOffsetNode = dcOffset;
+
+		return { entries: [modulatorGain], exits: [modulatorGain] };
 	}
 
 	protected _teardown(context: ScheduleContext): void {
+		this.dcOffsetNode?.stop();
+		this.dcOffsetNode?.disconnect();
+		this.dcOffsetNode = undefined;
 		this.carrier.teardown(context);
 	}
 }

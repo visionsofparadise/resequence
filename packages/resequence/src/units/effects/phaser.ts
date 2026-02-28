@@ -1,12 +1,10 @@
 import type { ScheduleContext } from "../../rendering/schedule-context";
 import { proxyDriver } from "../../utils/driver";
 import { lfo, type LfoUnit } from "../lfo";
-import { Unit } from "../unit";
+import { Unit, type SetupResult } from "../unit";
 import { allpass, type FilterEffectUnit } from "./filter";
 
 export class PhaserEffectUnit extends Unit {
-	protected readonly innerUnits: ReadonlyArray<Unit> = [];
-
 	private readonly stages: number;
 	private readonly rate: number;
 	private readonly depth: number;
@@ -23,7 +21,7 @@ export class PhaserEffectUnit extends Unit {
 		this.id = id;
 	}
 
-	protected _setup(context: ScheduleContext): void {
+	protected async _setup(context: ScheduleContext): Promise<SetupResult> {
 		const stageFilters: Array<FilterEffectUnit> = [];
 		const stageIds: Array<string> = [];
 
@@ -43,18 +41,15 @@ export class PhaserEffectUnit extends Unit {
 		const firstStage = stageFilters[0];
 		const lastStage = stageFilters[stageFilters.length - 1];
 
-		if (!firstStage || !lastStage) return;
+		if (!firstStage || !lastStage) return {};
 
-		for (const target of this.targets) lastStage.to(target);
-		firstStage.setup(context);
-
-		this.entryNodes.push(...firstStage.entryNodes);
+		await firstStage.setup(context);
 
 		const lfoPath = crypto.randomUUID();
 		const lfoId = crypto.randomUUID();
 
 		const lfoUnit = lfo({ path: lfoPath, shape: "sine", rate: this.rate, depth: this.depth, id: lfoId });
-		lfoUnit.setup(context);
+		await lfoUnit.setup(context);
 
 		const lfoDriver = context.driverMap.get(lfoPath);
 		if (lfoDriver) {
@@ -69,6 +64,8 @@ export class PhaserEffectUnit extends Unit {
 
 		this.stageChain = stageFilters;
 		this.lfoUnit = lfoUnit;
+
+		return { entries: [firstStage], exits: [lastStage] };
 	}
 
 	protected _teardown(context: ScheduleContext): void {

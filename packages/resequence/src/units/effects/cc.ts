@@ -2,7 +2,7 @@ import type { ScheduleContext } from "../../rendering/schedule-context";
 import type { VoiceNote } from "../midi-unit";
 import { MidiUnit } from "../midi-unit";
 import { envelope, type EnvelopeUnit } from "../midi/envelope";
-import type { Unit } from "../unit";
+import type { SetupResult, Unit } from "../unit";
 import { chorus } from "./chorus";
 import { lowpass, type FilterEffectUnit } from "./filter";
 import { gain, linearGain, type GainEffectUnit } from "./gain";
@@ -11,9 +11,6 @@ import { pan, type PanEffectUnit } from "./pan";
 import { reverb } from "./reverb";
 
 export class CCEffectUnit extends MidiUnit {
-	readonly id = undefined;
-	protected readonly innerUnits: ReadonlyArray<Unit> = [];
-
 	public chain: Array<Unit> = [];
 	public envelopeUnit: EnvelopeUnit | undefined;
 	public filterUnit: FilterEffectUnit | undefined;
@@ -26,7 +23,7 @@ export class CCEffectUnit extends MidiUnit {
 		super();
 	}
 
-	protected _setup(context: ScheduleContext): void {
+	protected _setup(_context: ScheduleContext): SetupResult {
 		const units: Array<Unit> = [];
 
 		const { attack, release, sustain } = this.voiceNote;
@@ -103,18 +100,19 @@ export class CCEffectUnit extends MidiUnit {
 		const firstUnit = units[0];
 		const lastUnit = units[units.length - 1];
 
+		this.chain = units;
+
 		if (firstUnit && lastUnit) {
-			for (const target of this.targets) lastUnit.to(target);
-			firstUnit.setup(context);
-			this.entryNodes.push(...firstUnit.entryNodes);
+			return { entries: [firstUnit], exits: [lastUnit] };
 		}
 
-		this.chain = units;
+		return {};
 	}
 
 	protected _teardown(context: ScheduleContext): void {
 		this.chain[0]?.teardown(context);
 		this.chain = [];
+
 		this.envelopeUnit = undefined;
 		this.filterUnit = undefined;
 		this.volumeUnit = undefined;

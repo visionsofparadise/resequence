@@ -29,10 +29,10 @@ export class MetadataPattern extends Pattern {
 		return new MetadataPattern(this.meta, this.overrideNode(overrides));
 	}
 
-	setup(context: ScheduleContext): void {
+	async setup(context: ScheduleContext): Promise<void> {
 		const childContext = this.meta.tuning ? { ...context, tuning: this.meta.tuning } : context;
 
-		for (const { pattern } of this.children) pattern.setup(childContext);
+		for (const { pattern } of this.children) await pattern.setup(childContext);
 	}
 
 	schedule(offsetBeats: number, context: ScheduleContext): void {

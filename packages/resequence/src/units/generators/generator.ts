@@ -1,11 +1,9 @@
 import type { ScheduleContext } from "../../rendering/schedule-context";
-import { getOrCreateDriver } from "../../utils/driver";
-import { buildCurve } from "../utils/build-curve";
 import { CCEffectUnit } from "../effects/cc";
 import { linearGain, type GainEffectUnit } from "../effects/gain";
 import type { VoiceNote } from "../midi-unit";
 import { MidiUnit } from "../midi-unit";
-import type { ModDeclaration, Unit } from "../unit";
+import type { ModDeclaration, SetupResult, Unit } from "../unit";
 
 export abstract class GeneratorUnit extends MidiUnit {
 	public mergeUnit: GainEffectUnit | undefined;
@@ -22,14 +20,14 @@ export abstract class GeneratorUnit extends MidiUnit {
 		this.voiceModDeclarations.push({ paths, transform });
 	}
 
-	protected _setup(context: ScheduleContext): void {
+	protected async _setup(context: ScheduleContext): Promise<SetupResult> {
 		const mergeUnit = linearGain({ level: 1 });
 
-		for (const target of this.targets) mergeUnit.to(target);
-		mergeUnit.setup(context);
+		await mergeUnit.setup(context);
 
-		this.entryNodes.push(...mergeUnit.entryNodes);
 		this.mergeUnit = mergeUnit;
+
+		return { entries: [], exits: [mergeUnit] };
 	}
 
 	protected _teardown(context: ScheduleContext): void {
@@ -37,65 +35,42 @@ export abstract class GeneratorUnit extends MidiUnit {
 		this.mergeUnit = undefined;
 	}
 
-	protected scheduleVoice(sourceNodes: Array<AudioNode>, voiceNote: VoiceNote, scheduleContext: ScheduleContext): () => void {
+	protected scheduleVoice(exits: Array<AudioNode>, voiceNote: VoiceNote, context: ScheduleContext): () => void {
 		if (!this.mergeUnit) return () => {};
 
 		const ccEffect = new CCEffectUnit(voiceNote);
+		let modTarget: Unit = ccEffect;
 
 		if (this.voiceToCallbacks.length > 0) {
 			for (const callback of this.voiceToCallbacks) {
 				const voiceUnit = callback(voiceNote);
 				ccEffect.to(voiceUnit);
 				voiceUnit.to(this.mergeUnit);
+				modTarget = voiceUnit;
 			}
 		} else {
 			ccEffect.to(this.mergeUnit);
 		}
 
-		ccEffect.setup(scheduleContext);
-		ccEffect.schedule(voiceNote, scheduleContext);
-
-		for (const source of sourceNodes) {
-			for (const entry of ccEffect.entryNodes) {
-				source.connect(entry);
-			}
+		for (const decl of this.voiceModDeclarations) {
+			modTarget.mod(decl.paths, decl.transform);
 		}
 
-		const voiceShapers: Array<AudioNode> = [];
+		// Setup is synchronous when all CC chain units have sync _setup (common case)
+		void ccEffect.setup(context);
+		ccEffect.schedule(voiceNote, context);
 
-		if (this.voiceModDeclarations.length > 0) {
-			for (const decl of this.voiceModDeclarations) {
-				for (const path of decl.paths) {
-					const driver = getOrCreateDriver(path, 0, scheduleContext);
-
-					if (decl.transform) {
-						const shaper = scheduleContext.audioContext.createWaveShaper();
-						shaper.curve = buildCurve(decl.transform);
-						shaper.connect(driver.offset);
-						voiceShapers.push(shaper);
-
-						for (const source of sourceNodes) {
-							source.connect(shaper);
-						}
-					} else {
-						for (const source of sourceNodes) {
-							source.connect(driver.offset);
-						}
-					}
-				}
+		for (const exit of exits) {
+			for (const entry of ccEffect.entryNodes) {
+				exit.connect(entry);
 			}
 		}
 
 		return (): void => {
-			for (const source of sourceNodes) {
-				source.disconnect();
+			for (const exit of exits) {
+				exit.disconnect();
 			}
-
-			for (const shaper of voiceShapers) {
-				shaper.disconnect();
-			}
-
-			ccEffect.teardown(scheduleContext);
+			ccEffect.teardown(context);
 		};
 	}
 }

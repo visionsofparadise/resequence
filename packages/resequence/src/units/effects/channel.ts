@@ -1,5 +1,8 @@
 import type { ScheduleContext } from "../../rendering/schedule-context";
-import { Unit } from "../unit";
+import { Unit, type SetupResult } from "../unit";
+import { channelMerger } from "./channel-merger";
+import { channelSplitter } from "./channel-splitter";
+import { linearGain } from "./gain";
 
 export class ChannelEffectUnit extends Unit {
 	readonly type = "channel" as const;
@@ -7,39 +10,34 @@ export class ChannelEffectUnit extends Unit {
 
 	public readonly channelIndex: number;
 	public readonly inner: Unit;
-	protected readonly innerUnits: ReadonlyArray<Unit>;
 
 	constructor(channelIndex: number, inner: Unit) {
 		super();
 		this.channelIndex = channelIndex;
 		this.inner = inner;
-		this.innerUnits = [inner];
 	}
 
-	protected _setup(context: ScheduleContext): void {
-		const splitterNode = context.audioContext.createChannelSplitter(2);
-		const mergerNode = context.audioContext.createChannelMerger(2);
+	protected async _setup(context: ScheduleContext): Promise<SetupResult> {
+		const split = channelSplitter(2);
+		const merge = channelMerger(2);
 
-		this.inner.setup(context);
+		const targetCh = this.channelIndex;
+		const otherCh = targetCh === 0 ? 1 : 0;
 
-		const otherChannel = this.channelIndex === 0 ? 1 : 0;
-		const innerEntry = this.inner.entryNodes[0];
-		if (innerEntry) {
-			splitterNode.connect(innerEntry, this.channelIndex);
-		}
+		const splitTarget = split.channels[targetCh];
+		const splitOther = split.channels[otherCh];
+		const mergeTarget = merge.channels[targetCh];
+		const mergeOther = merge.channels[otherCh];
+		if (!splitTarget || !splitOther || !mergeTarget || !mergeOther) return {};
 
-		for (const exit of this.inner.exitNodes) {
-			exit.connect(mergerNode, 0, this.channelIndex);
-		}
+		splitTarget.to(this.inner);
+		this.inner.to(mergeTarget);
+		splitOther.to(mergeOther);
 
-		splitterNode.connect(mergerNode, otherChannel, otherChannel);
+		await split.setup(context);
+		await merge.setup(context);
 
-		this.entryNodes.push(splitterNode);
-		this.exitNodes.push(mergerNode);
-	}
-
-	protected _teardown(context: ScheduleContext): void {
-		this.inner.teardown(context);
+		return { entries: [split], exits: [merge] };
 	}
 }
 
@@ -56,42 +54,33 @@ export class MidEffectUnit extends Unit {
 	readonly id = undefined;
 
 	public readonly inner: Unit;
-	protected readonly innerUnits: ReadonlyArray<Unit>;
 
 	constructor(inner: Unit) {
 		super();
 		this.inner = inner;
-		this.innerUnits = [inner];
 	}
 
-	protected _setup(context: ScheduleContext): void {
-		const splitterNode = context.audioContext.createChannelSplitter(2);
-		const mergerNode = context.audioContext.createChannelMerger(2);
+	protected async _setup(context: ScheduleContext): Promise<SetupResult> {
+		const split = channelSplitter(2);
+		const merge = channelMerger(2);
+		const sum = linearGain({ level: 0.5 });
 
-		const sumGain = context.audioContext.createGain();
-		sumGain.gain.value = 0.5;
+		const splitL = split.channels[0];
+		const splitR = split.channels[1];
+		const mergeL = merge.channels[0];
+		const mergeR = merge.channels[1];
+		if (!splitL || !splitR || !mergeL || !mergeR) return {};
 
-		splitterNode.connect(sumGain, 0);
-		splitterNode.connect(sumGain, 1);
+		splitL.to(sum);
+		splitR.to(sum);
+		sum.to(this.inner);
+		this.inner.to(mergeL);
+		this.inner.to(mergeR);
 
-		this.inner.setup(context);
+		await split.setup(context);
+		await merge.setup(context);
 
-		const innerEntry = this.inner.entryNodes[0];
-		if (innerEntry) {
-			sumGain.connect(innerEntry);
-		}
-
-		for (const exit of this.inner.exitNodes) {
-			exit.connect(mergerNode, 0, 0);
-			exit.connect(mergerNode, 0, 1);
-		}
-
-		this.entryNodes.push(splitterNode);
-		this.exitNodes.push(mergerNode);
-	}
-
-	protected _teardown(context: ScheduleContext): void {
-		this.inner.teardown(context);
+		return { entries: [split], exits: [merge] };
 	}
 }
 
@@ -104,50 +93,37 @@ export class SideEffectUnit extends Unit {
 	readonly id = undefined;
 
 	public readonly inner: Unit;
-	protected readonly innerUnits: ReadonlyArray<Unit>;
 
 	constructor(inner: Unit) {
 		super();
 		this.inner = inner;
-		this.innerUnits = [inner];
 	}
 
-	protected _setup(context: ScheduleContext): void {
-		const splitterNode = context.audioContext.createChannelSplitter(2);
-		const mergerNode = context.audioContext.createChannelMerger(2);
+	protected async _setup(context: ScheduleContext): Promise<SetupResult> {
+		const split = channelSplitter(2);
+		const merge = channelMerger(2);
+		const diff = linearGain({ level: 0.5 });
+		const invert = linearGain({ level: -1 });
+		const reinvert = linearGain({ level: -1 });
 
-		const diffGain = context.audioContext.createGain();
-		diffGain.gain.value = 0.5;
+		const splitL = split.channels[0];
+		const splitR = split.channels[1];
+		const mergeL = merge.channels[0];
+		const mergeR = merge.channels[1];
+		if (!splitL || !splitR || !mergeL || !mergeR) return {};
 
-		const invertGain = context.audioContext.createGain();
-		invertGain.gain.value = -1;
+		splitL.to(diff);
+		splitR.to(invert);
+		invert.to(diff);
+		diff.to(this.inner);
+		this.inner.to(mergeL);
+		this.inner.to(reinvert);
+		reinvert.to(mergeR);
 
-		splitterNode.connect(diffGain, 0);
-		splitterNode.connect(invertGain, 1);
-		invertGain.connect(diffGain);
+		await split.setup(context);
+		await merge.setup(context);
 
-		this.inner.setup(context);
-
-		const innerEntry = this.inner.entryNodes[0];
-		if (innerEntry) {
-			diffGain.connect(innerEntry);
-		}
-
-		for (const exit of this.inner.exitNodes) {
-			exit.connect(mergerNode, 0, 0);
-
-			const reinvert = context.audioContext.createGain();
-			reinvert.gain.value = -1;
-			exit.connect(reinvert);
-			reinvert.connect(mergerNode, 0, 1);
-		}
-
-		this.entryNodes.push(splitterNode);
-		this.exitNodes.push(mergerNode);
-	}
-
-	protected _teardown(context: ScheduleContext): void {
-		this.inner.teardown(context);
+		return { entries: [split], exits: [merge] };
 	}
 }
 

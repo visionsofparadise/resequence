@@ -42,28 +42,10 @@ export abstract class Pattern implements PatternNode {
 		};
 	}
 
-	get sampleKeys(): ReadonlySet<string> {
-		const keys = new Set<string>();
+	async setup(context: ScheduleContext): Promise<void> {
+		if (this.children.length === 0) return;
 
-		for (const { pattern } of this.children) {
-			for (const key of pattern.sampleKeys) keys.add(key);
-		}
-
-		return keys;
-	}
-
-	get moduleUrls(): ReadonlySet<string> {
-		const urls = new Set<string>();
-
-		for (const { pattern } of this.children) {
-			for (const url of pattern.moduleUrls) urls.add(url);
-		}
-
-		return urls;
-	}
-
-	setup(context: ScheduleContext): void {
-		for (const { pattern } of this.children) pattern.setup(context);
+		await Promise.allSettled(this.children.map(({ pattern }) => pattern.setup(context)));
 	}
 
 	schedule(offsetBeats: number, context: ScheduleContext): void {
@@ -90,43 +72,15 @@ export abstract class Pattern implements PatternNode {
 export abstract class MidiPattern extends Pattern {
 	readonly outputs: Array<MidiUnit> = [];
 
-	get sampleKeys(): ReadonlySet<string> {
-		const keys = new Set<string>();
-
-		for (const { pattern } of this.children) {
-			for (const key of pattern.sampleKeys) keys.add(key);
-		}
-
-		for (const out of this.outputs) {
-			for (const key of out.sampleKeys) keys.add(key);
-		}
-
-		return keys;
-	}
-
-	get moduleUrls(): ReadonlySet<string> {
-		const urls = new Set<string>();
-
-		for (const { pattern } of this.children) {
-			for (const url of pattern.moduleUrls) urls.add(url);
-		}
-
-		for (const output of this.outputs) {
-			for (const url of output.collectModuleUrls()) urls.add(url);
-		}
-
-		return urls;
-	}
-
 	route(node: MidiUnit): this {
 		this.outputs.push(node);
 
 		return this;
 	}
 
-	setup(context: ScheduleContext): void {
-		for (const output of this.outputs) output.setup(context);
-		for (const { pattern } of this.children) pattern.setup(context);
+	async setup(context: ScheduleContext): Promise<void> {
+		await Promise.allSettled(this.outputs.map(async (output) => output.setup(context)));
+		await Promise.allSettled(this.children.map(({ pattern }) => pattern.setup(context)));
 	}
 
 	schedule(offsetBeats: number, context: ScheduleContext): void {
@@ -148,3 +102,4 @@ export abstract class MidiPattern extends Pattern {
 		for (const { pattern } of this.children) pattern.teardown(context);
 	}
 }
+

@@ -1,13 +1,12 @@
 import type { ScheduleContext } from "../../rendering/schedule-context";
 import { linearGain } from "../effects/gain";
-import type { Unit } from "../unit";
+import type { SetupResult, Unit } from "../unit";
 import { Composite, flattenUnits } from "./composite";
 
 export class Fan extends Composite {
 	readonly head: Unit;
 	readonly tails: ReadonlyArray<Unit>;
 	readonly units: ReadonlyArray<Unit>;
-	protected readonly innerUnits: ReadonlyArray<Unit>;
 
 	constructor(branches: ReadonlyArray<Unit>) {
 		super();
@@ -20,7 +19,6 @@ export class Fan extends Composite {
 
 		this.tails = [...branches];
 		this.units = [this.head, ...flattenUnits(branches)];
-		this.innerUnits = [this.head];
 	}
 
 	to(unit: Unit): void {
@@ -29,13 +27,8 @@ export class Fan extends Composite {
 		}
 	}
 
-	protected _setup(context: ScheduleContext): void {
-		this.head.setup(context);
-		this.entryNodes.push(...this.head.entryNodes);
-
-		for (const tail of this.tails) {
-			this.exitNodes.push(...tail.exitNodes);
-		}
+	protected _setup(_context: ScheduleContext): SetupResult {
+		return { entries: [this.head], exits: [...this.tails] };
 	}
 
 	protected _teardown(context: ScheduleContext): void {

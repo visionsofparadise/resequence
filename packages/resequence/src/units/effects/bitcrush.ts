@@ -1,10 +1,10 @@
 import type { ScheduleContext } from "../../rendering/schedule-context";
 import { driveParam } from "../../utils/driver";
+import type { SetupResult } from "../unit";
 import { Unit } from "../unit";
 
 export class BitcrushEffectUnit extends Unit {
 	readonly type = "bitcrush" as const;
-	protected readonly innerUnits: ReadonlyArray<Unit> = [];
 
 	public bitcrushNode: AudioWorkletNode | undefined;
 
@@ -15,22 +15,17 @@ export class BitcrushEffectUnit extends Unit {
 		super();
 	}
 
-	collectModuleUrls(): Set<string> {
-		const urls = super.collectModuleUrls();
-		urls.add(new URL("./bitcrush-processor.js", import.meta.url).href);
-		return urls;
-	}
+	protected async _setup(context: ScheduleContext): Promise<SetupResult> {
+		await context.loadModule(new URL("./bitcrush-processor.js", import.meta.url).href);
 
-	protected _setup(context: ScheduleContext): void {
 		const bitcrushNode = new AudioWorkletNode(context.audioContext, "bitcrush-processor");
 
 		bitcrushNode.parameters.forEach((param, name) => {
-			if (name === "bits") driveParam(param, this.id, "bits", this.bits, context, [1, 16]);
+			if (name === "bits") driveParam(param, this.id ? `${this.id}.bits` : undefined, this.bits, [1, 16], context);
 		});
 
 		this.bitcrushNode = bitcrushNode;
-		this.entryNodes.push(bitcrushNode);
-		this.exitNodes.push(bitcrushNode);
+		return { entries: [bitcrushNode], exits: [bitcrushNode] };
 	}
 
 	protected _teardown(_context: ScheduleContext): void {

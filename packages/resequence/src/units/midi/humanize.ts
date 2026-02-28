@@ -1,7 +1,7 @@
 import type { ScheduleContext } from "../../rendering/schedule-context";
 import type { VoiceNote } from "../midi-unit";
 import { MidiUnit } from "../midi-unit";
-import type { Unit } from "../unit";
+import type { SetupResult } from "../unit";
 
 export interface HumanizeMidiOptions {
 	readonly timing?: number;
@@ -10,8 +10,6 @@ export interface HumanizeMidiOptions {
 
 export class HumanizeMidiUnit extends MidiUnit {
 	readonly type = "humanize-midi" as const;
-	readonly id = undefined;
-	protected readonly innerUnits: ReadonlyArray<Unit> = [];
 
 	public readonly timing: number;
 	public readonly velocity: number;
@@ -44,20 +42,15 @@ export class HumanizeMidiUnit extends MidiUnit {
 		super.schedule(jittered, scheduleContext);
 	}
 
-	protected _schedule(): void {
-		// no-op — transformation handled in schedule() override
-	}
-
-	protected _setup(): void {
+	protected _setup(_context: ScheduleContext): SetupResult {
 		this.seed = 0;
-	}
 
-	protected _teardown(): void {
-		// no audio nodes
+		return {};
 	}
 
 	private nextRandom(): number {
 		this.seed = (this.seed * 1664525 + 1013904223) >>> 0;
+
 		return this.seed / 0x100000000;
 	}
 }

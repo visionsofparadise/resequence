@@ -1,11 +1,9 @@
 import type { ScheduleContext } from "../../rendering/schedule-context";
 import type { VoiceNote } from "../midi-unit";
-import type { Unit } from "../unit";
+import type { SetupResult } from "../unit";
 import { GeneratorUnit } from "./generator";
 
 export class NoiseUnit extends GeneratorUnit {
-	protected readonly innerUnits: ReadonlyArray<Unit> = [];
-
 	public readonly id?: string;
 
 	private readonly color: "white" | "pink" | "brown";
@@ -18,10 +16,9 @@ export class NoiseUnit extends GeneratorUnit {
 		this.id = id;
 	}
 
-	collectModuleUrls(): Set<string> {
-		const urls = super.collectModuleUrls();
-		urls.add(new URL("./noise-processor.js", import.meta.url).href);
-		return urls;
+	protected async _setup(context: ScheduleContext): Promise<SetupResult> {
+		await context.loadModule(new URL("./noise-processor.js", import.meta.url).href);
+		return super._setup(context);
 	}
 
 	protected _schedule(voiceNote: VoiceNote, scheduleContext: ScheduleContext): void {

@@ -1,14 +1,15 @@
 import type { ScoreNote } from "../patterns/note";
 import { note } from "../patterns/note";
-import type { Pitch, TuningConfig } from "./pitch";
-import { resolveDuration } from "./duration";
 import type { Duration } from "./duration";
+import { resolveDuration } from "./duration";
+import type { Pitch, TuningConfig } from "./pitch";
 
 export interface TuningEntry {
 	readonly pitch: Pitch;
 	for(duration: Duration, velocity?: number): ScoreNote;
 }
 
+// FIX: This needs to give a utility with typed class names derived from the TuningConfig
 export function createTuning(config: TuningConfig): Record<string, TuningEntry> {
 	const { classes, octaveRatio = 2, reference } = config;
 	const spo = classes.length;

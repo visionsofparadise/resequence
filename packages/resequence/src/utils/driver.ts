@@ -14,32 +14,26 @@ export function getOrCreateDriver(path: string, defaultValue: number, context: S
 	return driver;
 }
 
-export function driveParam(param: AudioParam, id: string | undefined, key: string, value: number, context: ScheduleContext, range?: readonly [number, number]): void {
-	if (id) {
-		const path = `${id}.${key}`;
+export function driveParam(param: AudioParam, path: string | undefined, value: number, range: readonly [number, number], context: ScheduleContext): void {
+	if (path) {
+		const [min, max] = range;
+		const normalized = (value - min) / (max - min);
+		const driver = getOrCreateDriver(path, normalized, context);
 
-		if (range) {
-			const [min, max] = range;
-			const normalized = (value - min) / (max - min);
-			const driver = getOrCreateDriver(path, normalized, context);
+		const scaleGain = context.audioContext.createGain();
 
-			const scaleGain = context.audioContext.createGain();
+		scaleGain.gain.value = max - min;
+		param.value = min;
 
-			scaleGain.gain.value = max - min;
-			param.value = min;
-
-			driver.connect(scaleGain);
-			scaleGain.connect(param);
-		} else {
-			const driver = getOrCreateDriver(path, value, context);
-
-			param.value = 0;
-
-			driver.connect(param);
-		}
+		driver.connect(scaleGain);
+		scaleGain.connect(param);
 	} else {
 		param.value = value;
 	}
+}
+
+export function undriveParam(path: string, param: AudioParam, context: ScheduleContext): void {
+	context.driverMap.get(path)?.disconnect(param);
 }
 
 export function proxyDriver(id: string | undefined, key: string, childPath: string, context: ScheduleContext): void {

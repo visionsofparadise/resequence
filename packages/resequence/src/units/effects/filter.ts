@@ -1,12 +1,12 @@
 import type { ScheduleContext } from "../../rendering/schedule-context";
 import { driveParam } from "../../utils/driver";
+import type { SetupResult } from "../unit";
 import { Unit } from "../unit";
 
 export type FilterMode = "lowpass" | "highpass" | "bandpass" | "peaking" | "notch" | "lowshelf" | "highshelf" | "allpass";
 
 export class FilterEffectUnit extends Unit {
 	readonly type = "filter" as const;
-	protected readonly innerUnits: ReadonlyArray<Unit> = [];
 
 	private readonly mode: FilterMode;
 	private readonly frequency: number;
@@ -24,16 +24,15 @@ export class FilterEffectUnit extends Unit {
 		this.id = id;
 	}
 
-	protected _setup(context: ScheduleContext): void {
+	protected _setup(context: ScheduleContext): SetupResult {
 		const filterNode = context.audioContext.createBiquadFilter();
 		filterNode.type = this.mode;
-		driveParam(filterNode.frequency, this.id, "frequency", this.frequency, context, [20, 20000]);
-		if (this.resonance !== undefined || this.id) driveParam(filterNode.Q, this.id, "resonance", this.resonance ?? 1, context, [0, 30]);
+		driveParam(filterNode.frequency, this.id ? `${this.id}.frequency` : undefined, this.frequency, [20, 20000], context);
+		if (this.resonance !== undefined || this.id) driveParam(filterNode.Q, this.id ? `${this.id}.resonance` : undefined, this.resonance ?? 1, [0, 30], context);
 		if (this.gain !== undefined) filterNode.gain.value = this.gain;
 
 		this.filterNode = filterNode;
-		this.entryNodes.push(filterNode);
-		this.exitNodes.push(filterNode);
+		return { entries: [filterNode], exits: [filterNode] };
 	}
 
 	protected _teardown(_context: ScheduleContext): void {

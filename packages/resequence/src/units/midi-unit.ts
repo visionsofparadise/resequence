@@ -56,7 +56,9 @@ export abstract class MidiUnit extends Unit {
 		}
 	}
 
-	protected abstract _schedule(voiceNote: VoiceNote, scheduleContext: ScheduleContext): void;
+	protected _schedule(_voiceNote: VoiceNote, _scheduleContext: ScheduleContext): void {
+		return;
+	}
 
 	private applyNoteMods(voiceNote: VoiceNote, context: ScheduleContext): void {
 		for (const decl of this.noteModDeclarations) {

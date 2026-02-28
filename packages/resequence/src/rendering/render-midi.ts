@@ -5,9 +5,9 @@ import { PPQ } from "../utils/duration";
 import { pitchToMidi } from "../utils/pitch";
 import { evaluateSlideCents } from "../utils/slide";
 import { collectMarkers } from "./collect-markers";
+import { collectTimeSignatures } from "./collect-time-signatures";
 import type { MidiNote, MidiPitchBend } from "./encode-midi";
 import { encodeMidi } from "./encode-midi";
-import { collectTimeSignatures } from "./collect-time-signatures";
 import type { ScheduleContext } from "./schedule-context";
 import { buildTempoMap } from "./tempo-map";
 
@@ -72,6 +72,8 @@ function collectMidiNotes(pattern: Pattern, tempoMap: ReadonlyArray<{ beat: numb
 		fromBeats: 0,
 		toBeats: pattern.endBeat - pattern.startBeat,
 		outputs: [],
+		getSample: () => Promise.reject(new Error("No audio context in MIDI render")),
+		loadModule: () => Promise.reject(new Error("No audio context in MIDI render")),
 		dispatch: (note: ScoreNote, offsetBeats: number, outputs: ReadonlyArray<MidiUnit>) => {
 			addNoteToTracks(note, offsetBeats, outputs, grouped);
 		},

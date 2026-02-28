@@ -1,5 +1,8 @@
 import type { ScheduleContext } from "../../rendering/schedule-context";
+import type { SetupResult } from "../unit";
 import { Unit } from "../unit";
+import { linearGain } from "./gain";
+import { linkwitzRiley } from "./linkwitz-riley";
 
 type BandSpec = [number, ...Array<Unit>] | [...Array<Unit>];
 
@@ -29,69 +32,51 @@ function parseBands(options: CrossoverOptions): Array<ParsedBand> {
 	return bands;
 }
 
-function createLinkwitzRiley(context: BaseAudioContext, frequency: number, type: BiquadFilterType): [BiquadFilterNode, BiquadFilterNode] {
-	const first = context.createBiquadFilter();
-	first.type = type;
-	first.frequency.value = frequency;
-	first.Q.value = 0.707;
-
-	const second = context.createBiquadFilter();
-	second.type = type;
-	second.frequency.value = frequency;
-	second.Q.value = 0.707;
-
-	first.connect(second);
-
-	return [first, second];
-}
-
 export class CrossoverEffectUnit extends Unit {
 	readonly type = "crossover" as const;
 	readonly id = undefined;
 
 	public readonly parsedBands: Array<ParsedBand>;
 	public bandUnits: Array<Array<Unit>> = [];
-	protected readonly innerUnits: ReadonlyArray<Unit>;
 
 	constructor(options: CrossoverOptions) {
 		super();
 		this.parsedBands = parseBands(options);
-		this.innerUnits = this.parsedBands.flatMap((band) => [...band.units]);
 	}
 
-	protected _setup(context: ScheduleContext): void {
-		const mergerGain = context.audioContext.createGain();
-		mergerGain.gain.value = 1;
-
-		const inputGain = context.audioContext.createGain();
-		inputGain.gain.value = 1;
+	protected async _setup(context: ScheduleContext): Promise<SetupResult> {
+		const inputUnit = linearGain({ level: 1 });
+		const mergerUnit = linearGain({ level: 1 });
 
 		for (let bandIndex = 0; bandIndex < this.parsedBands.length; bandIndex++) {
 			const band = this.parsedBands[bandIndex];
 			if (!band) continue;
 			const bandNodes: Array<Unit> = [];
 
-			let bandInput: AudioNode = inputGain;
+			let bandHead: Unit = inputUnit;
 
 			if (bandIndex > 0) {
 				const prevBand = this.parsedBands[bandIndex - 1];
 				if (prevBand?.frequency !== undefined) {
-					const [first, second] = createLinkwitzRiley(context.audioContext, prevBand.frequency, "highpass");
-					inputGain.connect(first);
-					bandInput = second;
+					const hp = linkwitzRiley(prevBand.frequency, "highpass");
+					inputUnit.to(hp);
+					bandHead = hp;
+					bandNodes.push(hp);
 				}
 			}
 
 			if (band.frequency !== undefined) {
-				const [first, second] = createLinkwitzRiley(context.audioContext, band.frequency, "lowpass");
-				bandInput.connect(first);
-				bandInput = second;
-			} else if (bandInput === inputGain && bandIndex > 0) {
+				const lp = linkwitzRiley(band.frequency, "lowpass");
+				bandHead.to(lp);
+				bandHead = lp;
+				bandNodes.push(lp);
+			} else if (bandHead === inputUnit && bandIndex > 0) {
 				const prevBand = this.parsedBands[bandIndex - 1];
 				if (prevBand?.frequency !== undefined) {
-					const [first, second] = createLinkwitzRiley(context.audioContext, prevBand.frequency, "highpass");
-					inputGain.connect(first);
-					bandInput = second;
+					const hp = linkwitzRiley(prevBand.frequency, "highpass");
+					inputUnit.to(hp);
+					bandHead = hp;
+					bandNodes.push(hp);
 				}
 			}
 
@@ -106,26 +91,21 @@ export class CrossoverEffectUnit extends Unit {
 				const lastUnit = band.units[band.units.length - 1];
 
 				if (firstUnit && lastUnit) {
-					firstUnit.setup(context);
-					const firstEntry = firstUnit.entryNodes[0];
-					if (firstEntry) {
-						bandInput.connect(firstEntry);
-					}
-					for (const exit of lastUnit.exitNodes) {
-						exit.connect(mergerGain);
-					}
+					bandHead.to(firstUnit);
+					lastUnit.to(mergerUnit);
 				}
 
 				bandNodes.push(...band.units);
 			} else {
-				bandInput.connect(mergerGain);
+				bandHead.to(mergerUnit);
 			}
 
 			this.bandUnits.push(bandNodes);
 		}
 
-		this.entryNodes.push(inputGain);
-		this.exitNodes.push(mergerGain);
+		await inputUnit.setup(context);
+
+		return { entries: [inputUnit], exits: [mergerUnit] };
 	}
 
 	protected _teardown(context: ScheduleContext): void {

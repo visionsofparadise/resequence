@@ -1,5 +1,6 @@
 import type { ScheduleContext } from "../../rendering/schedule-context";
 import { buildCurve } from "../utils/build-curve";
+import type { SetupResult } from "../unit";
 import { Unit } from "../unit";
 
 export const WaveShaperCurve = {
@@ -15,8 +16,6 @@ export const WaveShaperCurve = {
 export type Oversample = "none" | "2x" | "4x";
 
 export class WaveShaperEffectUnit extends Unit {
-	readonly id = undefined;
-	protected readonly innerUnits: ReadonlyArray<Unit> = [];
 
 	private readonly curve: Float32Array<ArrayBuffer>;
 	private readonly oversample: Oversample | undefined;
@@ -28,14 +27,13 @@ export class WaveShaperEffectUnit extends Unit {
 		this.oversample = oversample;
 	}
 
-	protected _setup(context: ScheduleContext): void {
+	protected _setup(context: ScheduleContext): SetupResult {
 		const waveShaperNode = context.audioContext.createWaveShaper();
 		waveShaperNode.curve = this.curve;
 		if (this.oversample !== undefined) waveShaperNode.oversample = this.oversample;
 
 		this.waveShaperNode = waveShaperNode;
-		this.entryNodes.push(waveShaperNode);
-		this.exitNodes.push(waveShaperNode);
+		return { entries: [waveShaperNode], exits: [waveShaperNode] };
 	}
 
 	protected _teardown(_context: ScheduleContext): void {

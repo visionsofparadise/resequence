@@ -7,6 +7,8 @@ import type { PatternNode } from "./pattern";
 import { Pattern } from "./pattern";
 
 export class AudioPattern extends Pattern {
+	private buffer: AudioBuffer | undefined;
+
 	constructor(
 		readonly name: string,
 		readonly path: string,
@@ -23,8 +25,16 @@ export class AudioPattern extends Pattern {
 		super(node);
 	}
 
-	get sampleKeys(): ReadonlySet<string> {
-		return new Set([this.sampleKey]);
+	async setup(context: ScheduleContext): Promise<void> {
+		try {
+			this.buffer = await context.getSample(this.sampleKey);
+		} catch {
+			// sample not loadable — skip
+		}
+	}
+
+	teardown(_context: ScheduleContext): void {
+		this.buffer = undefined;
 	}
 
 	clone(overrides: Partial<PatternNode>): AudioPattern {
@@ -40,7 +50,7 @@ export class AudioPattern extends Pattern {
 		if (context.trackFilter && !context.trackFilter.has(this.name)) return;
 		if (offsetBeats + this.endBeat <= context.fromBeats || offsetBeats + this.startBeat >= context.toBeats) return;
 
-		const buffer = context.sampleMap.get(this.sampleKey);
+		const buffer = this.buffer;
 		if (!buffer) return;
 
 		const offsetSeconds = beatsToSeconds(offsetBeats, context.tempoMap);

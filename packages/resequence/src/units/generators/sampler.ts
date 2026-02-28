@@ -4,7 +4,7 @@ import type { Pitch } from "../../utils/pitch";
 import { pitchToMidi, resolvePitch } from "../../utils/pitch";
 import { scheduleSlideRamps } from "../../utils/schedule-slides";
 import type { VoiceNote } from "../midi-unit";
-import type { Unit } from "../unit";
+import type { SetupResult } from "../unit";
 import { GeneratorUnit } from "./generator";
 
 export interface SamplerZone {
@@ -40,8 +40,6 @@ interface NormalizedZone {
 }
 
 export class SamplerUnit extends GeneratorUnit {
-	protected readonly innerUnits: ReadonlyArray<Unit> = [];
-
 	private readonly config: SamplerConfig;
 
 	constructor(
@@ -50,27 +48,39 @@ export class SamplerUnit extends GeneratorUnit {
 	) {
 		super();
 		this.config = config;
-		this.populateSampleKeys();
 	}
 
-	private populateSampleKeys(): void {
+	protected async _setup(context: ScheduleContext): Promise<SetupResult> {
+		const result = await super._setup(context);
+
+		const paths = this.collectSamplePaths();
+		await Promise.all(paths.map((path) => context.getSample(path).catch(() => {})));
+
+		return result;
+	}
+
+	private collectSamplePaths(): Array<string> {
+		const paths: Array<string> = [];
+
 		if (this.config.kind === "single") {
-			this.sampleKeys.add(this.config.path);
+			paths.push(this.config.path);
 		} else if (this.config.kind === "mapping") {
 			for (const value of Object.values(this.config.mapping)) {
 				if (typeof value === "string") {
-					this.sampleKeys.add(value);
+					paths.push(value);
 				} else {
 					for (const layer of value) {
-						this.sampleKeys.add(layer.sample);
+						paths.push(layer.sample);
 					}
 				}
 			}
 		} else {
 			for (const zone of this.config.zones) {
-				this.sampleKeys.add(zone.sample);
+				paths.push(zone.sample);
 			}
 		}
+
+		return paths;
 	}
 
 	protected _schedule(voiceNote: VoiceNote, scheduleContext: ScheduleContext): void {

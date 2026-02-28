@@ -1,16 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { MidSideEffectUnit, midSide, stereoWidth, width } from "./mid-side";
+import { Fan } from "../composite/fan";
+import { midSide, stereoWidth, width } from "./mid-side";
 
 describe("midSide", () => {
-	it("creates a MidSideEffectUnit instance", () => {
+	it("creates a Fan instance", () => {
 		const fx = midSide(0.5);
-		expect(fx).toBeInstanceOf(MidSideEffectUnit);
-		expect(fx.type).toBe("midSide");
-	});
-
-	it("accepts optional id", () => {
-		const fx = midSide(0.5, { id: "width" });
-		expect(fx.id).toBe("width");
+		expect(fx).toBeInstanceOf(Fan);
 	});
 
 	it("width is an alias for midSide", () => {

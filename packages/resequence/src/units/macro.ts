@@ -1,10 +1,9 @@
 import type { ScheduleContext } from "../rendering/schedule-context";
 import { driveParam } from "../utils/driver";
-import { Unit } from "./unit";
+import { Unit, type SetupResult } from "./unit";
 
 export class MacroUnit extends Unit {
 	readonly type = "macro" as const;
-	protected readonly innerUnits: ReadonlyArray<Unit> = [];
 
 	private readonly value: number;
 	public readonly id: string;
@@ -17,15 +16,16 @@ export class MacroUnit extends Unit {
 		this.id = id;
 	}
 
-	protected _setup(context: ScheduleContext): void {
+	protected _setup(context: ScheduleContext): SetupResult {
 		const constantNode = context.audioContext.createConstantSource();
 
-		driveParam(constantNode.offset, this.id, "value", this.value, context, [0, 1]);
+		driveParam(constantNode.offset, `${this.id}.value`, this.value, [0, 1], context);
 
 		constantNode.start();
 
 		this.constantNode = constantNode;
-		this.exitNodes.push(constantNode);
+
+		return { exits: [constantNode] };
 	}
 
 	protected _teardown(_context: ScheduleContext): void {

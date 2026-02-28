@@ -1,12 +1,10 @@
 import type { ScheduleContext } from "../../rendering/schedule-context";
 import { proxyDriver } from "../../utils/driver";
 import { lfo, type LfoUnit } from "../lfo";
-import { Unit } from "../unit";
+import { Unit, type SetupResult } from "../unit";
 import { delay, type DelayEffectUnit } from "./delay";
 
 export class ChorusEffectUnit extends Unit {
-	protected readonly innerUnits: ReadonlyArray<Unit> = [];
-
 	private readonly delay: number;
 	private readonly rate: number;
 	private readonly depth: number;
@@ -25,16 +23,13 @@ export class ChorusEffectUnit extends Unit {
 		this.id = id;
 	}
 
-	protected _setup(context: ScheduleContext): void {
+	protected async _setup(context: ScheduleContext): Promise<SetupResult> {
 		const delayId = crypto.randomUUID();
 		const lfoId = crypto.randomUUID();
 
 		const delayUnit = delay({ time: this.delay, feedback: this.feedback, id: delayId });
 
-		for (const target of this.targets) delayUnit.targets.push(target);
-		delayUnit.setup(context);
-
-		this.entryNodes.push(...delayUnit.entryNodes);
+		await delayUnit.setup(context);
 
 		const lfoUnit = lfo({
 			path: `${delayId}.time`,
@@ -43,7 +38,7 @@ export class ChorusEffectUnit extends Unit {
 			depth: this.depth,
 			id: lfoId,
 		});
-		lfoUnit.setup(context);
+		await lfoUnit.setup(context);
 
 		proxyDriver(this.id, "time", `${delayId}.time`, context);
 		proxyDriver(this.id, "rate", `${lfoId}.rate`, context);
@@ -51,6 +46,8 @@ export class ChorusEffectUnit extends Unit {
 
 		this.delayUnit = delayUnit;
 		this.lfoUnit = lfoUnit;
+
+		return { entries: [delayUnit], exits: [delayUnit] };
 	}
 
 	protected _teardown(context: ScheduleContext): void {

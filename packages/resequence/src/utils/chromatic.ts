@@ -41,13 +41,13 @@ const CLASS_NAMES_TONAL = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A",
 const FLAT_ALIASES: ReadonlyArray<[string, string, number]> = [
 	["Db", "Cs", 0],
 	["Eb", "Ds", 0],
-	["Fb", "E",  0],
+	["Fb", "E", 0],
 	["Gb", "Fs", 0],
 	["Ab", "Gs", 0],
 	["Bb", "As", 0],
-	["Cb", "B",  -1],  // Cb4 = B3
-	["Bs", "C",   1],  // Bs4 = C5
-	["Es", "F",   0],  // Es4 = F4
+	["Cb", "B", -1], // Cb4 = B3
+	["Bs", "C", 1], // Bs4 = C5
+	["Es", "F", 0], // Es4 = F4
 ];
 
 const nBase = createTuning(CHROMATIC_TUNING);

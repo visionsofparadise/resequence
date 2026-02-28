@@ -7,7 +7,7 @@ export type NoteDispatch = (note: ScoreNote, offsetBeats: number, outputs: Reado
 
 export interface ScheduleContext {
 	readonly audioContext: BaseAudioContext;
-	readonly sampleMap: ReadonlyMap<string, AudioBuffer>;
+	readonly sampleMap: Map<string, AudioBuffer>;
 	readonly driverMap: Map<string, ConstantSourceNode>;
 	readonly tempoMap: TempoMap;
 	readonly fromBeats: number;
@@ -16,4 +16,6 @@ export interface ScheduleContext {
 	readonly trackFilter?: ReadonlySet<string>;
 	readonly outputs: ReadonlyArray<MidiUnit>;
 	readonly dispatch: NoteDispatch;
+	readonly getSample: (path: string) => Promise<AudioBuffer>;
+	readonly loadModule: (url: string) => Promise<void>;
 }

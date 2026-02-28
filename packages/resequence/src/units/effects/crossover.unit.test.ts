@@ -24,11 +24,4 @@ describe("crossover", () => {
 	it("multiband is an alias for crossover", () => {
 		expect(multiband).toBe(crossover);
 	});
-
-	it("collects sample keys from band units", () => {
-		const g = gain({ level: -3 });
-		const fx = crossover({ low: [800, g], high: [] });
-		const keys = fx.collectSampleKeys();
-		expect(keys).toBeInstanceOf(Set);
-	});
 });

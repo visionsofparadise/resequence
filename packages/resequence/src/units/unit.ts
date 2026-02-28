@@ -7,16 +7,19 @@ export interface ModDeclaration {
 	readonly transform?: (value: number) => number;
 }
 
+export interface SetupResult {
+	entries?: Array<AudioNode | Unit>;
+	exits?: Array<AudioNode | Unit>;
+}
+
 export abstract class Unit {
-	abstract readonly id?: string;
-	protected abstract readonly innerUnits: ReadonlyArray<Unit>;
+	readonly id?: string;
 
 	readonly targets: Array<Unit> = [];
 
 	readonly entryNodes: Array<AudioNode> = [];
 	readonly exitNodes: Array<AudioNode> = [];
 
-	readonly sampleKeys = new Set<string>();
 	protected isSetUp = false;
 
 	private readonly modDeclarations: Array<ModDeclaration> = [];
@@ -26,40 +29,57 @@ export abstract class Unit {
 		this.targets.push(unit);
 	}
 
-	mod(paths: Array<string>, transform?: (value: number) => number): void {
+	mod(paths: ReadonlyArray<string>, transform?: (value: number) => number): void {
 		this.modDeclarations.push({ paths, transform });
 	}
 
-	collectSampleKeys(): Set<string> {
-		const keys = new Set(this.sampleKeys);
-
-		for (const unit of [...this.targets, ...this.innerUnits]) {
-			for (const key of unit.collectSampleKeys()) keys.add(key);
-		}
-
-		return keys;
-	}
-
-	collectModuleUrls(): Set<string> {
-		const urls = new Set<string>();
-
-		for (const unit of [...this.targets, ...this.innerUnits]) {
-			for (const url of unit.collectModuleUrls()) urls.add(url);
-		}
-
-		return urls;
-	}
-
-	setup(context: ScheduleContext): void {
+	setup(context: ScheduleContext): void | Promise<void> {
 		if (this.isSetUp) return;
 		this.isSetUp = true;
 
-		this._setup(context);
+		const resultOrPromise = this._setup(context);
 
-		for (const target of this.targets) target.setup(context);
+		if (resultOrPromise instanceof Promise) {
+			return resultOrPromise.then((result) => this._finishSetup(result, context));
+		}
 
-		this.link();
-		this.linkMods(context);
+		return this._finishSetup(resultOrPromise, context);
+	}
+
+	private _finishSetup(result: SetupResult, context: ScheduleContext): void | Promise<void> {
+		const entries = result.entries ?? [];
+		const exits = result.exits ?? [];
+
+		const steps: Array<() => void | Promise<void>> = [];
+
+		for (const entry of entries) {
+			if (entry instanceof Unit) {
+				const unit = entry;
+				steps.push(() => unit.setup(context));
+			}
+		}
+
+		steps.push(() => {
+			for (const entry of entries) {
+				if (entry instanceof Unit) this.entryNodes.push(...entry.entryNodes);
+				else this.entryNodes.push(entry);
+			}
+			for (const exit of exits) {
+				if (exit instanceof Unit) this.exitNodes.push(...exit.exitNodes);
+				else this.exitNodes.push(exit);
+			}
+		});
+
+		for (const target of this.targets) {
+			steps.push(() => target.setup(context));
+		}
+
+		steps.push(() => {
+			this.link();
+			this.linkMods(context);
+		});
+
+		return runSequence(steps);
 	}
 
 	teardown(context: ScheduleContext): void {
@@ -77,9 +97,13 @@ export abstract class Unit {
 		for (const target of this.targets) target.teardown(context);
 	}
 
-	protected abstract _setup(context: ScheduleContext): void;
+	protected _setup(_context: ScheduleContext): SetupResult | Promise<SetupResult> {
+		return {};
+	}
 
-	protected abstract _teardown(context: ScheduleContext): void;
+	protected _teardown(_context: ScheduleContext): void {
+		return;
+	}
 
 	link(): void {
 		for (const exit of this.exitNodes) {
@@ -143,5 +167,19 @@ export abstract class Unit {
 			}
 		}
 		this.modConnections.length = 0;
+	}
+}
+
+function runSequence(steps: Array<() => void | Promise<void>>): void | Promise<void> {
+	for (let index = 0; index < steps.length; index++) {
+		const result = steps[index]?.();
+		if (result instanceof Promise) {
+			let chain = result;
+			for (let next = index + 1; next < steps.length; next++) {
+				const step = steps[next];
+				if (step) chain = chain.then(step);
+			}
+			return chain;
+		}
 	}
 }
