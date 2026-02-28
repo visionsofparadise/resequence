@@ -1,12 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
 import { ResequenceError } from "../error";
 import type { ScheduleContext } from "../rendering/schedule-context";
-import { bars, resolveDuration } from "../utils/duration";
+import { bars } from "../utils/duration";
 import { resolveLfo } from "../utils/lfo";
-import { resolvePitch } from "../utils/pitch";
+import { N } from "../tunings/chromatic";
 import { automate } from "./automate";
 import { layer } from "./layer";
-import { note } from "./note";
 import { sequence } from "./sequence";
 
 function mockAudioParam(): AudioParam {
@@ -99,7 +98,7 @@ describe("AutomatePattern", () => {
 
 	describe("envelope resolution", () => {
 		it("resolves Duration strings to beats", () => {
-			const auto = automate("test", "bass.vol.level", [{ time: "4n", value: 0.5 }]);
+			const auto = automate("test", "bass.vol.level", [{ time: 1, value: 0.5 }]);
 			expect(auto.envelope[0].timeBeats).toBe(1);
 		});
 
@@ -120,8 +119,8 @@ describe("AutomatePattern", () => {
 		it("preserves curve types", () => {
 			const auto = automate("test", "bass.vol.level", [
 				{ time: 0, value: 0, curve: "step" },
-				{ time: "4n", value: 1, curve: "linear" },
-				{ time: "2n", value: 0, curve: "exponential" },
+				{ time: 1, value: 1, curve: "linear" },
+				{ time: 2, value: 0, curve: "exponential" },
 			]);
 			expect(auto.envelope[0].curve).toBe("step");
 			expect(auto.envelope[1].curve).toBe("linear");
@@ -156,9 +155,9 @@ describe("AutomatePattern", () => {
 		it("composes with layer alongside musical content", () => {
 			const auto = automate("sweep", "bass.hp.frequency", [
 				{ time: 0, value: 80 },
-				{ time: "4n", value: 2000 },
+				{ time: 1, value: 2000 },
 			]);
-			const combined = layer(sequence(note(resolvePitch("C4"), resolveDuration("4n"))), auto);
+			const combined = layer(sequence(N.C4(1)), auto);
 			expect(combined.endBeat - combined.startBeat).toBe(1);
 		});
 	});
@@ -533,62 +532,6 @@ describe("AutomatePattern", () => {
 			auto.setup(context);
 			auto.schedule(0, context);
 			expect(createOscillator).toHaveBeenCalledTimes(2);
-		});
-
-		it("computes beat-rate frequency from tempo", () => {
-			const driverMap = new Map<string, ConstantSourceNode>();
-			const oscFreqParam = mockAudioParam();
-			const createOscillator = vi.fn(() => ({
-				type: "sine",
-				frequency: oscFreqParam,
-				connect: vi.fn(),
-				start: vi.fn(),
-				stop: vi.fn(),
-			}));
-			const context = {
-				...mockContext(driverMap),
-				audioContext: {
-					...mockContext(driverMap).audioContext,
-					createOscillator,
-					createGain: vi.fn(() => ({ gain: mockAudioParam(), connect: vi.fn() })),
-				} as unknown as BaseAudioContext,
-				fromBeats: 0,
-				toBeats: 8,
-				tempoMap: [{ beat: 0, bpm: 120 }],
-			};
-			const lfo = resolveLfo({ shape: "sine", frequency: "4n", value: 500 });
-			const auto = automate("filter-lfo", "bass.hp.frequency", lfo);
-			auto.setup(context);
-			auto.schedule(0, context);
-			expect(oscFreqParam.value).toBe(2);
-		});
-
-		it("schedules frequency updates at tempo changes for beat-rate LFO", () => {
-			const driverMap = new Map<string, ConstantSourceNode>();
-			const oscFreqParam = mockAudioParam();
-			const createOscillator = vi.fn(() => ({
-				type: "sine",
-				frequency: oscFreqParam,
-				connect: vi.fn(),
-				start: vi.fn(),
-				stop: vi.fn(),
-			}));
-			const context = {
-				...mockContext(driverMap),
-				audioContext: {
-					...mockContext(driverMap).audioContext,
-					createOscillator,
-					createGain: vi.fn(() => ({ gain: mockAudioParam(), connect: vi.fn() })),
-				} as unknown as BaseAudioContext,
-				fromBeats: 0,
-				toBeats: 16,
-				tempoMap: [{ beat: 0, bpm: 120 }, { beat: 8, bpm: 60 }],
-			};
-			const lfo = resolveLfo({ shape: "sine", frequency: "4n", value: 500 });
-			const auto = automate("filter-lfo", "bass.hp.frequency", lfo);
-			auto.setup(context);
-			auto.schedule(0, context);
-			expect(oscFreqParam.setValueAtTime).toHaveBeenCalledWith(1, expect.any(Number));
 		});
 
 		it("does not schedule frequency updates for Hz-based LFO", () => {

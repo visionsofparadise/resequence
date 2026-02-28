@@ -2,10 +2,7 @@ import type { AbsoluteKeyframe } from "../automation/utils";
 import { evaluateAt, firstPointAt, schedulePointKeyframe } from "../automation/utils";
 import { ResequenceError } from "../error";
 import type { ScheduleContext } from "../rendering/schedule-context";
-import type { TempoMap } from "../rendering/tempo-map";
 import { beatsToSeconds } from "../rendering/tempo-map";
-import type { Duration } from "../utils/duration";
-import { resolveDuration } from "../utils/duration";
 import type { Lfo } from "../utils/lfo";
 import type { ValidateContext } from "../validate";
 import type { PatternNode } from "./pattern";
@@ -14,14 +11,14 @@ import { Pattern } from "./pattern";
 export type KeyframeCurve = "linear" | "exponential" | "step";
 
 export interface Keyframe {
-	readonly time: Duration;
+	readonly time: number;
 	readonly value: number;
 	readonly curve?: KeyframeCurve;
 }
 
 export interface CurveKeyframe {
-	readonly time: Duration;
-	readonly duration: Duration;
+	readonly time: number;
+	readonly duration: number;
 	readonly values: Float32Array;
 }
 
@@ -47,15 +44,15 @@ function resolveKeyframe(keyframe: AnyKeyframe): AnyResolvedKeyframe {
 	if ("values" in keyframe) {
 		return {
 			kind: "curve",
-			timeBeats: resolveDuration(keyframe.time),
-			durationBeats: resolveDuration(keyframe.duration),
+			timeBeats: keyframe.time,
+			durationBeats: keyframe.duration,
 			values: keyframe.values,
 		};
 	}
 
 	return {
 		kind: "point",
-		timeBeats: resolveDuration(keyframe.time),
+		timeBeats: keyframe.time,
 		value: keyframe.value,
 		curve: keyframe.curve,
 	};
@@ -159,7 +156,7 @@ export class AutomatePattern extends Pattern {
 
 		if (windowEndSeconds <= effectiveStartSeconds) return;
 
-		const freqHz = lfoFrequencyHz(lfo, offsetBeats, context.tempoMap);
+		const freqHz = lfoFrequencyHz(lfo);
 		if (freqHz <= 0) return;
 
 		const elapsedSeconds = Math.max(0, windowStartSeconds - effectiveStartSeconds);
@@ -175,8 +172,6 @@ export class AutomatePattern extends Pattern {
 			const osc = context.audioContext.createOscillator();
 			osc.type = lfo.shape;
 			osc.frequency.value = freqHz;
-
-			scheduleLfoFrequencyUpdates(lfo, osc.frequency, offsetBeats, context);
 
 			const depthGain = context.audioContext.createGain();
 			const fullDepth = lfo.value;
@@ -253,40 +248,7 @@ export function automate(name: string, paths: string | ReadonlyArray<string>, so
 	return new AutomatePattern(name, resolvedPaths, source as Lfo, { notes: [], children: [], startBeat: 0, endBeat: 0 });
 }
 
-function lfoFrequencyHz(lfo: Lfo, offsetBeats: number, tempoMap: TempoMap): number {
-	if (lfo.frequency !== undefined) return lfo.frequency;
-	if (lfo.speedBeats === undefined) return 0;
-
-	const bpm = bpmAtBeat(offsetBeats, tempoMap);
-	return (1 / lfo.speedBeats) * (bpm / 60);
+function lfoFrequencyHz(lfo: Lfo): number {
+	return lfo.frequency;
 }
 
-function bpmAtBeat(beat: number, tempoMap: TempoMap): number {
-	let bpm = 120;
-	for (const point of tempoMap) {
-		if (point.beat > beat) break;
-		bpm = point.bpm;
-	}
-	return bpm;
-}
-
-function scheduleLfoFrequencyUpdates(lfo: Lfo, freqParam: AudioParam, offsetBeats: number, context: ScheduleContext): void {
-	if (lfo.frequency !== undefined || lfo.speedBeats === undefined) return;
-
-	let prevBpm = bpmAtBeat(offsetBeats, context.tempoMap);
-
-	for (const point of context.tempoMap) {
-		if (point.beat <= context.fromBeats) {
-			prevBpm = point.bpm;
-			continue;
-		}
-		if (point.beat >= context.toBeats) break;
-
-		if (point.bpm !== prevBpm) {
-			const hz = (1 / lfo.speedBeats) * (point.bpm / 60);
-			const timeSeconds = beatsToSeconds(point.beat, context.tempoMap);
-			freqParam.setValueAtTime(hz, timeSeconds);
-			prevBpm = point.bpm;
-		}
-	}
-}

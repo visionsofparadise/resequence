@@ -1,5 +1,5 @@
 import type { Pitch } from "../../utils/pitch";
-import { addSteps, pitchKey, resolvePitch } from "../../utils/pitch";
+import { addSteps, pitchKey } from "../../utils/pitch";
 import type { PatternNode } from "../pattern";
 import { MidiPattern, type Pattern } from "../pattern";
 import { mapNotes } from "../utils/tree";
@@ -19,9 +19,9 @@ export class FlipPattern extends MidiPattern {
 	}
 }
 
-export function flip(pattern: Pattern, center: string | number | Pitch, range?: [string | number | Pitch, string | number | Pitch]): FlipPattern {
-	const centerPitch = resolvePitch(center);
-	const resolvedRange: [Pitch, Pitch] | undefined = range ? [resolvePitch(range[0]), resolvePitch(range[1])] : undefined;
+export function flip(pattern: Pattern, center: Pitch, range?: [Pitch, Pitch]): FlipPattern {
+	const centerPitch = center;
+	const resolvedRange = range;
 	const centerKey = pitchKey(centerPitch);
 
 	const transformed = mapNotes(pattern, (note) => {
@@ -29,7 +29,7 @@ export function flip(pattern: Pattern, center: string | number | Pitch, range?: 
 		const newKey = centerKey * 2 - pitchKey(note.pitch);
 		const newOctave = Math.floor(newKey / spo);
 		const newClass = ((newKey % spo) + spo) % spo;
-		let pitch: Pitch = { ...note.pitch, class: newClass, octave: newOctave };
+		let pitch: Pitch = { class: newClass, stepsPerOctave: note.pitch.stepsPerOctave, octave: newOctave, octaveRatio: note.pitch.octaveRatio };
 
 		if (resolvedRange) {
 			const rangeMinKey = pitchKey(resolvedRange[0]);

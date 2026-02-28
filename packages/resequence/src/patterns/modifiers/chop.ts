@@ -1,5 +1,3 @@
-import type { Duration } from "../../utils/duration";
-import { resolveDuration } from "../../utils/duration";
 import type { Pitch } from "../../utils/pitch";
 import { evaluateSlide } from "../../utils/slide";
 import type { ScoreNoteSlide } from "../note";
@@ -21,17 +19,15 @@ export class ChopPattern extends MidiPattern {
 	}
 }
 
-export function chop(pattern: Pattern, subdivision: Duration | number): ChopPattern {
-	const resolvedSubdivision = resolveDuration(subdivision);
-
+export function chop(pattern: Pattern, subdivision: number): ChopPattern {
 	const transformed = flatMapNotes(pattern, (note) => {
 		const duration = note.endBeat - note.startBeat;
-		const chopCount = Math.floor(duration / resolvedSubdivision);
+		const chopCount = Math.floor(duration / subdivision);
 		const result = [];
 
 		for (let chopIndex = 0; chopIndex < chopCount; chopIndex++) {
-			const chopStart = chopIndex * resolvedSubdivision;
-			const chopEnd = chopStart + resolvedSubdivision;
+			const chopStart = chopIndex * subdivision;
+			const chopEnd = chopStart + subdivision;
 
 			let pitch: Pitch = note.pitch;
 			let slides: ReadonlyArray<ScoreNoteSlide> | undefined;
@@ -56,5 +52,5 @@ export function chop(pattern: Pattern, subdivision: Duration | number): ChopPatt
 		return result;
 	});
 
-	return new ChopPattern(pattern, resolvedSubdivision, transformed);
+	return new ChopPattern(pattern, subdivision, transformed);
 }

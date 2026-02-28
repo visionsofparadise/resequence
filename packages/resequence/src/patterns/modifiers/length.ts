@@ -1,5 +1,3 @@
-import type { Duration } from "../../utils/duration";
-import { resolveDuration } from "../../utils/duration";
 import type { PatternNode } from "../pattern";
 import { MidiPattern, type Pattern } from "../pattern";
 import { mapNotes } from "../utils/tree";
@@ -18,17 +16,15 @@ export class LengthPattern extends MidiPattern {
 	}
 }
 
-export function length(pattern: Pattern, duration: Duration | number): LengthPattern {
-	const noteDuration = resolveDuration(duration);
-
+export function length(pattern: Pattern, duration: number): LengthPattern {
 	const transformed = mapNotes(pattern, (note) => {
-		const truncatedSlides = note.slides?.filter((sl) => sl.beat <= noteDuration);
+		const truncatedSlides = note.slides?.filter((sl) => sl.beat <= duration);
 		return {
 			...note,
-			endBeat: note.startBeat + noteDuration,
+			endBeat: note.startBeat + duration,
 			slides: truncatedSlides && truncatedSlides.length > 0 ? truncatedSlides : undefined,
 		};
 	});
 
-	return new LengthPattern(pattern, noteDuration, transformed);
+	return new LengthPattern(pattern, duration, transformed);
 }

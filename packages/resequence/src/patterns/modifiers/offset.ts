@@ -1,5 +1,3 @@
-import type { Duration } from "../../utils/duration";
-import { resolveDuration } from "../../utils/duration";
 import type { PatternNode } from "../pattern";
 import { MidiPattern, type Pattern } from "../pattern";
 import { mapNotes } from "../utils/tree";
@@ -18,14 +16,12 @@ export class OffsetPattern extends MidiPattern {
 	}
 }
 
-export function offset(pattern: Pattern, amount: Duration | number): OffsetPattern {
-	const resolvedAmount = resolveDuration(amount);
-
+export function offset(pattern: Pattern, amount: number): OffsetPattern {
 	const transformed = mapNotes(pattern, (note) => ({
 		...note,
-		startBeat: note.startBeat + resolvedAmount,
-		endBeat: note.endBeat + resolvedAmount,
+		startBeat: note.startBeat + amount,
+		endBeat: note.endBeat + amount,
 	}));
 
-	return new OffsetPattern(pattern, resolvedAmount, transformed);
+	return new OffsetPattern(pattern, amount, transformed);
 }

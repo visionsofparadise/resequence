@@ -1,5 +1,3 @@
-import type { Duration } from "../../utils/duration";
-import { resolveDuration } from "../../utils/duration";
 import type { PatternNode } from "../pattern";
 import { MidiPattern, type Pattern } from "../pattern";
 import { flatMapNotes } from "../utils/tree";
@@ -20,9 +18,7 @@ export class EchoPattern extends MidiPattern {
 	}
 }
 
-export function echo(pattern: Pattern, interval: Duration | number, repeats: number, decay: number): EchoPattern {
-	const resolvedInterval = resolveDuration(interval);
-
+export function echo(pattern: Pattern, interval: number, repeats: number, decay: number): EchoPattern {
 	const transformed = flatMapNotes(pattern, (note) => {
 		const result = [note];
 
@@ -30,8 +26,8 @@ export function echo(pattern: Pattern, interval: Duration | number, repeats: num
 			const echoVelocity = Math.round(note.velocity * decay ** echoIndex);
 			result.push({
 				...note,
-				startBeat: note.startBeat + echoIndex * resolvedInterval,
-				endBeat: note.endBeat + echoIndex * resolvedInterval,
+				startBeat: note.startBeat + echoIndex * interval,
+				endBeat: note.endBeat + echoIndex * interval,
 				velocity: Math.max(1, echoVelocity),
 			});
 		}
@@ -39,5 +35,5 @@ export function echo(pattern: Pattern, interval: Duration | number, repeats: num
 		return result;
 	});
 
-	return new EchoPattern(pattern, resolvedInterval, repeats, decay, transformed);
+	return new EchoPattern(pattern, interval, repeats, decay, transformed);
 }

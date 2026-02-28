@@ -1,5 +1,5 @@
-import type { Duration } from "../../utils/duration";
-import { resolveDuration } from "../../utils/duration";
+;
+;
 import { pitchKey } from "../../utils/pitch";
 import type { ScoreNote } from "../note";
 import type { PatternNode } from "../pattern";
@@ -20,8 +20,8 @@ export class HealPattern extends MidiPattern {
 	}
 }
 
-export function heal(pattern: Pattern, threshold?: Duration | number): HealPattern {
-	const resolvedThreshold = threshold !== undefined ? resolveDuration(threshold) : 0;
+export function heal(pattern: Pattern, threshold?: number): HealPattern {
+	const resolvedThreshold = threshold ?? 0;
 	const allNotes = collectNotes(pattern);
 	const sorted = allNotes.slice().sort((noteA, noteB) => noteA.startBeat - noteB.startBeat || pitchKey(noteA.pitch) - pitchKey(noteB.pitch));
 

@@ -1,7 +1,6 @@
-import type { Duration } from "../../utils/duration";
-import { resolveDuration } from "../../utils/duration";
+;
+;
 import type { Pitch } from "../../utils/pitch";
-import { resolvePitch } from "../../utils/pitch";
 import type { PatternNode, RelativeNote } from "../pattern";
 import { MidiPattern } from "../pattern";
 
@@ -32,9 +31,9 @@ export class DistributePattern extends MidiPattern {
 	}
 }
 
-export function distribute(hits: number, steps: number, pitch: string | number | Pitch, stepDuration: Duration | number, rotate = 0): DistributePattern {
-	const resolvedPitch = resolvePitch(pitch);
-	const resolvedDuration = resolveDuration(stepDuration);
+export function distribute(hits: number, steps: number, pitch: Pitch, stepDuration: number, rotate = 0): DistributePattern {
+	const resolvedPitch = pitch;
+	const resolvedDuration = stepDuration;
 	const durationBeats = steps * resolvedDuration;
 	const pattern = euclidean(hits, steps, rotate);
 	const notes: Array<RelativeNote> = [];

@@ -1,22 +1,21 @@
 import { describe, expect, it } from "vitest";
-import { resolvePitch } from "../../utils/pitch";
+import { N } from "../../tunings/chromatic";
 import { gap } from "../gap";
 import { layer } from "../layer";
-import { note } from "../note";
 import { sequence } from "../sequence";
 import { collectNotes } from "../utils/tree";
 import { SlidePattern, slide } from "./slide";
 
-const C4 = resolvePitch("C4");
-const E4 = resolvePitch("E4");
-const G4 = resolvePitch("G4");
+const C4 = N.C4;
+const E4 = N.E4;
+const G4 = N.G4;
 
 describe("SlidePattern", () => {
 	describe("notes", () => {
 		it("adds slide keyframes when notes overlap", () => {
 			// A: C4 at beat 0, dur 1.5 — B: E4 at beat 1.0, dur 1.0
 			// Overlap: beat 1.0 to 1.5
-			const pat = slide(layer(sequence(note(resolvePitch("C4"), 1.5)), sequence(gap(1), note(resolvePitch("E4"), 1))));
+			const pat = slide(layer(sequence(N.C4(1.5)), sequence(gap(1), N.E4(1))));
 
 			const noteA = collectNotes(pat).find((sn) => sn.startBeat === 0 && sn.pitch.class === C4.class);
 			expect(noteA).toBeDefined();
@@ -30,7 +29,7 @@ describe("SlidePattern", () => {
 
 		it("does not add slides for adjacent notes (no overlap)", () => {
 			// A: C4 dur 1.0, B: E4 dur 1.0 — adjacent, not overlapping
-			const pat = slide(sequence(note(resolvePitch("C4"), 1), note(resolvePitch("E4"), 1)));
+			const pat = slide(sequence(N.C4(1), N.E4(1)));
 
 			for (const sn of collectNotes(pat)) {
 				expect(sn.slides).toBeUndefined();
@@ -40,7 +39,7 @@ describe("SlidePattern", () => {
 		it("handles chained slides across three overlapping notes", () => {
 			// A: C4 at 0, dur 1.5 — B: E4 at 1.0, dur 1.5 — C: G4 at 2.0, dur 1.0
 			const pat = slide(
-				layer(sequence(note(resolvePitch("C4"), 1.5)), sequence(gap(1), note(resolvePitch("E4"), 1.5)), sequence(gap(2), note(resolvePitch("G4"), 1))),
+				layer(sequence(N.C4(1.5)), sequence(gap(1), N.E4(1.5)), sequence(gap(2), N.G4(1))),
 			);
 
 			// A should slide to B
@@ -59,9 +58,9 @@ describe("SlidePattern", () => {
 			// C: E4 at 1, dur 1, D: A4 at 1, dur 1
 			// C4 is closer to E4 (4 steps) than A4 (9 steps)
 			// G4 is closer to A4 (2 steps) than E4 (3 steps)
-			const A4 = resolvePitch("A4");
+			const A4 = N.A4;
 			const pat = slide(
-				layer(sequence(note(resolvePitch("C4"), 2)), sequence(note(resolvePitch("G4"), 2)), sequence(gap(1), note(resolvePitch("E4"), 1)), sequence(gap(1), note(resolvePitch("A4"), 1))),
+				layer(sequence(N.C4(2)), sequence(N.G4(2)), sequence(gap(1), N.E4(1)), sequence(gap(1), N.A4(1))),
 			);
 
 			const noteC4 = collectNotes(pat).find((sn) => sn.startBeat === 0 && sn.pitch.class === C4.class);
@@ -76,8 +75,8 @@ describe("SlidePattern", () => {
 		it("merges with existing user-defined slides", () => {
 			const pat = slide(
 				layer(
-					sequence(note(resolvePitch("C4"), 2, { slides: [{ pitch: resolvePitch("D4"), beat: 0.5 }] })),
-					sequence(gap(1), note(resolvePitch("G4"), 1)),
+					sequence(N.C4(2, { slides: [{ pitch: N.D4, beat: 0.5 }] })),
+					sequence(gap(1), N.G4(1)),
 				),
 			);
 
@@ -89,7 +88,7 @@ describe("SlidePattern", () => {
 		});
 
 		it("returns notes unchanged for single note", () => {
-			const pat = slide(sequence(note(resolvePitch("C4"), 1)));
+			const pat = slide(sequence(N.C4(1)));
 			expect(collectNotes(pat)).toHaveLength(1);
 			expect(collectNotes(pat)[0]!.slides).toBeUndefined();
 		});
@@ -97,14 +96,14 @@ describe("SlidePattern", () => {
 
 	describe("durationBeats", () => {
 		it("preserves child duration", () => {
-			const child = sequence(note(resolvePitch("C4"), 1), note(resolvePitch("E4"), 1));
+			const child = sequence(N.C4(1), N.E4(1));
 			expect(slide(child).endBeat - slide(child).startBeat).toBe(2);
 		});
 	});
 
 	describe("instanceof", () => {
 		it("is a SlidePattern", () => {
-			expect(slide(sequence(note(resolvePitch("C4"), 1)))).toBeInstanceOf(SlidePattern);
+			expect(slide(sequence(N.C4(1)))).toBeInstanceOf(SlidePattern);
 		});
 	});
 });

@@ -1,7 +1,4 @@
-import { N } from "../../utils/chromatic";
-import type { Duration } from "../../utils/duration";
-import { resolveDuration } from "../../utils/duration";
-import { note } from "../note";
+import { N } from "../../tunings/chromatic";
 import type { PatternNode } from "../pattern";
 import { MidiPattern, type Pattern } from "../pattern";
 import { sequence } from "../sequence";
@@ -22,8 +19,8 @@ export class QuantizePattern extends MidiPattern {
 	}
 }
 
-export function quantize(pattern: Pattern, subdivision: Duration | number, grooveMap?: Pattern): QuantizePattern {
-	const grid = resolveDuration(subdivision);
+export function quantize(pattern: Pattern, subdivision: number, grooveMap?: Pattern): QuantizePattern {
+	const grid = subdivision;
 
 	let transformed: Pattern;
 
@@ -52,10 +49,9 @@ export function quantize(pattern: Pattern, subdivision: Duration | number, groov
 }
 
 function buildSwingMap(amount: number): Pattern {
-	// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-	return sequence(note(N.C4!.pitch, amount), note(N.C4!.pitch, 1 - amount));
+	return sequence(N.C4(amount), N.C4(1 - amount));
 }
 
 export function shuffle(pattern: Pattern, amount: number): QuantizePattern {
-	return quantize(pattern, "4n", buildSwingMap(amount));
+	return quantize(pattern, 1, buildSwingMap(amount));
 }

@@ -1,13 +1,13 @@
 import type { AnyKeyframe, CurveKeyframe, Keyframe } from "../patterns/automate";
 import type { Pattern } from "../patterns/pattern";
 import { collectNotes } from "../patterns/utils/tree";
-import type { Duration } from "../utils/duration";
-import { resolveDuration } from "../utils/duration";
+;
+;
 
 export interface TriggerOptions {
 	readonly peak: number;
-	readonly attack: Duration;
-	readonly release: Duration;
+	readonly attack: number;
+	readonly release: number;
 	readonly tension?: number;
 }
 
@@ -20,8 +20,8 @@ export function trigger(pattern: Pattern, options: TriggerOptions): Array<AnyKey
 	if (allNotes.length === 0) return [];
 
 	const sorted = allNotes.sort((left, right) => left.startBeat - right.startBeat);
-	const attackBeats = resolveDuration(options.attack);
-	const releaseBeats = resolveDuration(options.release);
+	const attackBeats = options.attack;
+	const releaseBeats = options.release;
 	const tension = options.tension ?? 1;
 	const keyframes: Array<AnyKeyframe> = [];
 
@@ -35,8 +35,8 @@ export function trigger(pattern: Pattern, options: TriggerOptions): Array<AnyKey
 		const nextBeat = next ? next.startBeat : Infinity;
 		const releaseEnd = tick + attackBeats + releaseBeats;
 
-		const baseline: Keyframe = { time: tick as Duration, value: 0, curve: "step" };
-		const peak: Keyframe = { time: (tick + attackBeats) as Duration, value: options.peak, curve: "linear" };
+		const baseline: Keyframe = { time: tick, value: 0, curve: "step" };
+		const peak: Keyframe = { time: (tick + attackBeats), value: options.peak, curve: "linear" };
 		keyframes.push(baseline, peak);
 
 		const curve = buildReleaseCurve(tick + attackBeats, releaseBeats, options.peak, tension, Math.min(releaseEnd, nextBeat));
@@ -57,8 +57,8 @@ function buildReleaseCurve(startBeat: number, releaseBeats: number, peak: number
 	});
 
 	return {
-		time: startBeat as Duration,
-		duration: effectiveDuration as Duration,
+		time: startBeat,
+		duration: effectiveDuration,
 		values,
 	};
 }

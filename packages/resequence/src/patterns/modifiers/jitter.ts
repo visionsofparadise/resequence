@@ -1,5 +1,3 @@
-import type { Duration } from "../../utils/duration";
-import { resolveDuration } from "../../utils/duration";
 import type { PatternNode } from "../pattern";
 import { MidiPattern, type Pattern } from "../pattern";
 import { mapNotes } from "../utils/tree";
@@ -30,12 +28,11 @@ export class JitterPattern extends MidiPattern {
 	}
 }
 
-export function jitter(pattern: Pattern, amount: Duration | number, seed?: number): JitterPattern {
-	const resolvedAmount = resolveDuration(amount);
+export function jitter(pattern: Pattern, amount: number, seed?: number): JitterPattern {
 	const rng = seed !== undefined ? mulberry32(seed) : Math.random.bind(Math);
 
 	const transformed = mapNotes(pattern, (note) => {
-		const shift = Math.round((rng() * 2 - 1) * resolvedAmount);
+		const shift = Math.round((rng() * 2 - 1) * amount);
 		return {
 			...note,
 			startBeat: note.startBeat + shift,
@@ -43,5 +40,5 @@ export function jitter(pattern: Pattern, amount: Duration | number, seed?: numbe
 		};
 	});
 
-	return new JitterPattern(pattern, resolvedAmount, seed, transformed);
+	return new JitterPattern(pattern, amount, seed, transformed);
 }

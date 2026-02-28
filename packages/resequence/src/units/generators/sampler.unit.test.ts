@@ -1,3 +1,4 @@
+import { N } from "../../tunings/chromatic";
 import { describe, expect, it } from "vitest";
 import { ResequenceError } from "../../error";
 import { chain } from "../composite/chain";
@@ -11,11 +12,6 @@ describe("sampler", () => {
 			expect(() => sampler([])).toThrow(ResequenceError);
 			expect(() => sampler([])).toThrow("zones array must not be empty");
 		});
-
-		it("rejects empty mapping", () => {
-			expect(() => sampler({})).toThrow(ResequenceError);
-			expect(() => sampler({})).toThrow("mapping must not be empty");
-		});
 	});
 
 	describe("single sample", () => {
@@ -26,30 +22,12 @@ describe("sampler", () => {
 		});
 
 		it("accepts root for pitch shifting", () => {
-			const node = sampler("./bass-C2.wav", { root: "C2", id: "bass" });
+			const node = sampler("./bass-C2.wav", { root: N.C2, id: "bass" });
 			expect(node).toBeInstanceOf(SamplerUnit);
 		});
 
 		it("accepts loop points", () => {
-			const node = sampler("./pad.wav", { root: "C3", loopStartMs: 500, loopEndMs: 1200, id: "pad" });
-			expect(node).toBeInstanceOf(SamplerUnit);
-		});
-	});
-
-	describe("mapping", () => {
-		it("creates SamplerUnit from note mapping", () => {
-			const node = sampler({ C1: "./kick.wav", D1: "./snare.wav" }, { id: "drums" });
-			expect(node).toBeInstanceOf(SamplerUnit);
-			expect(node.id).toBe("drums");
-		});
-
-		it("supports velocity layers in mapping", () => {
-			const node = sampler({
-				C1: [
-					{ sample: "./kick-soft.wav", velocity: 0 },
-					{ sample: "./kick-hard.wav", velocity: 64 },
-				],
-			});
+			const node = sampler("./pad.wav", { root: N.C3, loopStartMs: 500, loopEndMs: 1200, id: "pad" });
 			expect(node).toBeInstanceOf(SamplerUnit);
 		});
 	});
@@ -57,8 +35,8 @@ describe("sampler", () => {
 	describe("zones", () => {
 		it("creates SamplerUnit from zones array", () => {
 			const node = sampler([
-				{ sample: "./piano-C3.wav", root: "C3" },
-				{ sample: "./piano-C4.wav", root: "C4" },
+				{ sample: "./piano-C3.wav", root: N.C3 },
+				{ sample: "./piano-C4.wav", root: N.C4 },
 			], { id: "piano" });
 			expect(node).toBeInstanceOf(SamplerUnit);
 		});
@@ -75,7 +53,7 @@ describe("sampler", () => {
 	describe("region normalization", () => {
 		it("normalizes zone region to composite key when sample has no #", () => {
 			const node = sampler([
-				{ sample: "./piano-all.wav", region: "C4-soft", root: "C4" },
+				{ sample: "./piano-all.wav", region: "C4-soft", root: N.C4 },
 			]);
 			const config = (node as unknown as { config: { zones: Array<{ sample: string }> } }).config;
 			expect(config.zones[0]?.sample).toBe("./piano-all.wav#C4-soft");
@@ -83,14 +61,14 @@ describe("sampler", () => {
 
 		it("does not duplicate # when sample already contains it", () => {
 			const node = sampler([
-				{ sample: "./piano-all.wav#C4-soft", region: "C4-soft", root: "C4" },
+				{ sample: "./piano-all.wav#C4-soft", region: "C4-soft", root: N.C4 },
 			]);
 			const config = (node as unknown as { config: { zones: Array<{ sample: string }> } }).config;
 			expect(config.zones[0]?.sample).toBe("./piano-all.wav#C4-soft");
 		});
 
 		it("preserves sample as-is when no region property", () => {
-			const node = sampler([{ sample: "./piano-C4.wav", root: "C4" }]);
+			const node = sampler([{ sample: "./piano-C4.wav", root: N.C4 }]);
 			const config = (node as unknown as { config: { zones: Array<{ sample: string }> } }).config;
 			expect(config.zones[0]?.sample).toBe("./piano-C4.wav");
 		});
@@ -99,10 +77,10 @@ describe("sampler", () => {
 	describe("zone resolution: pitch + velocity", () => {
 		it("selects by pitch then velocity simultaneously", () => {
 			const node = sampler([
-				{ sample: "./piano-C4-soft.wav", root: "C4", velocity: 0 },
-				{ sample: "./piano-C4-hard.wav", root: "C4", velocity: 64 },
-				{ sample: "./piano-C5-soft.wav", root: "C5", velocity: 0 },
-				{ sample: "./piano-C5-hard.wav", root: "C5", velocity: 64 },
+				{ sample: "./piano-C4-soft.wav", root: N.C4, velocity: 0 },
+				{ sample: "./piano-C4-hard.wav", root: N.C4, velocity: 64 },
+				{ sample: "./piano-C5-soft.wav", root: N.C5, velocity: 0 },
+				{ sample: "./piano-C5-hard.wav", root: N.C5, velocity: 64 },
 			]);
 
 			const c4Soft = { id: "c4-soft" } as unknown as AudioBuffer;

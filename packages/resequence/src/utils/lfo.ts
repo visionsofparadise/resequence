@@ -1,38 +1,28 @@
-import { beatsToSeconds } from "../rendering/tempo-map";
-import type { TempoMap } from "../rendering/tempo-map";
-import type { Duration } from "./duration";
-import { resolveDuration } from "./duration";
-
 export type LfoShape = "sine" | "sawtooth" | "triangle" | "square";
 
 export interface Lfo {
 	readonly shape: LfoShape;
 	readonly value: number;
-	readonly frequency?: number;
-	readonly speedBeats?: number;
+	readonly frequency: number;
 	readonly delay: number;
 	readonly attack: number;
 }
 
-export function resolveLfo(lfo: { shape: LfoShape; value: number; frequency: number | Duration; delay?: number; attack?: number }): Lfo {
-	const frequency = typeof lfo.frequency === "number" ? lfo.frequency : undefined;
-	const speedBeats = typeof lfo.frequency !== "number" ? resolveDuration(lfo.frequency) : undefined;
-
+export function resolveLfo(lfo: { shape: LfoShape; value: number; frequency: number; delay?: number; attack?: number }): Lfo {
 	return {
 		shape: lfo.shape,
 		value: lfo.value,
-		frequency,
-		speedBeats,
+		frequency: lfo.frequency,
 		delay: lfo.delay ?? 0,
 		attack: lfo.attack ?? 0,
 	};
 }
 
-export function scheduleLfo(lfo: Lfo, target: AudioParam, audioContext: BaseAudioContext, startTime: number, stopTime: number, depthScale: number, tempoMap: TempoMap): void {
+export function scheduleLfo(lfo: Lfo, target: AudioParam, audioContext: BaseAudioContext, startTime: number, stopTime: number, depthScale: number): void {
 	const osc = audioContext.createOscillator();
 
 	osc.type = lfo.shape;
-	osc.frequency.value = lfo.frequency ?? (lfo.speedBeats !== undefined ? 1 / beatsToSeconds(lfo.speedBeats, tempoMap) : 0);
+	osc.frequency.value = lfo.frequency;
 
 	const depthGain = audioContext.createGain();
 	const fullDepth = lfo.value * depthScale;

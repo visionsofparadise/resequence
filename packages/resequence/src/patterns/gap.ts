@@ -1,11 +1,9 @@
-import type { Duration } from "../utils/duration";
-import { resolveDuration } from "../utils/duration";
 import type { PatternNode } from "./pattern";
 import { Pattern } from "./pattern";
 
 export class GapPattern extends Pattern {
 	constructor(
-		readonly duration: Duration,
+		readonly duration: number,
 		node: PatternNode,
 	) {
 		super(node);
@@ -16,7 +14,6 @@ export class GapPattern extends Pattern {
 	}
 }
 
-export function gap(duration: Duration): GapPattern {
-	const durationBeats = resolveDuration(duration);
-	return new GapPattern(duration, { notes: [], children: [], startBeat: 0, endBeat: durationBeats });
+export function gap(duration: number): GapPattern {
+	return new GapPattern(duration, { notes: [], children: [], startBeat: 0, endBeat: duration });
 }

@@ -1,5 +1,5 @@
-import type { Duration } from "../../utils/duration";
-import { resolveDuration } from "../../utils/duration";
+;
+;
 import type { PatternNode, RelativeNote } from "../pattern";
 import { MidiPattern, type Pattern } from "../pattern";
 import { collectNotes } from "../utils/tree";
@@ -11,8 +11,8 @@ export interface SpliceOptions {
 }
 
 export interface InsertOptions {
-	readonly at: Duration | number;
-	readonly remove?: Duration | number;
+	readonly at: number;
+	readonly remove?: number;
 	readonly insert?: Pattern;
 }
 
@@ -86,8 +86,8 @@ export function splice(pattern: Pattern, options: SpliceOptions): SplicePattern 
 
 export function insert(pattern: Pattern, options: InsertOptions): InsertPattern {
 	const allNotes = collectNotes(pattern);
-	const atTick = resolveDuration(options.at);
-	const removeDuration = options.remove !== undefined ? resolveDuration(options.remove) : 0;
+	const atTick = options.at;
+	const removeDuration = options.remove ?? 0;
 	const removeEndTick = atTick + removeDuration;
 	const insertNotes = options.insert ? collectNotes(options.insert) : [];
 	const insertDuration = options.insert ? (options.insert.endBeat - options.insert.startBeat) : 0;

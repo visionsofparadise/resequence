@@ -5,14 +5,14 @@ import { audio, AudioPattern } from "./audio";
 describe("AudioPattern", () => {
 	describe("validation", () => {
 		it("rejects empty path", () => {
-			expect(() => audio("break", "", "4n")).toThrow(ResequenceError);
-			expect(() => audio("break", "", "4n")).toThrow("path must not be empty");
+			expect(() => audio("break", "", 1)).toThrow(ResequenceError);
+			expect(() => audio("break", "", 1)).toThrow("path must not be empty");
 		});
 	});
 
 	describe("creation", () => {
 		it("creates with name and path", () => {
-			const pattern = audio("break", "./break.wav", "4n");
+			const pattern = audio("break", "./break.wav", 1);
 			expect(pattern).toBeInstanceOf(AudioPattern);
 			expect(pattern.name).toBe("break");
 			expect(pattern.path).toBe("./break.wav");
@@ -26,20 +26,20 @@ describe("AudioPattern", () => {
 		});
 
 		it("resolves explicit duration", () => {
-			const pattern = audio("break", "./break.wav", "4n");
+			const pattern = audio("break", "./break.wav", 1);
 			expect(pattern.endBeat - pattern.startBeat).toBe(1);
 		});
 	});
 
 	describe("loop points", () => {
 		it("stores loop points from factory", () => {
-			const pattern = audio("pad", "./pad.wav", "1n", { loopStartMs: 500, loopEndMs: 2000 });
+			const pattern = audio("pad", "./pad.wav", 4, { loopStartMs: 500, loopEndMs: 2000 });
 			expect(pattern.loopStartMs).toBe(500);
 			expect(pattern.loopEndMs).toBe(2000);
 		});
 
 		it("has no loop points by default", () => {
-			const pattern = audio("pad", "./pad.wav", "4n");
+			const pattern = audio("pad", "./pad.wav", 1);
 			expect(pattern.loopStartMs).toBeUndefined();
 			expect(pattern.loopEndMs).toBeUndefined();
 		});
@@ -47,13 +47,13 @@ describe("AudioPattern", () => {
 
 	describe("notes", () => {
 		it("returns empty", () => {
-			expect(audio("kick", "./kick.wav", "4n").notes).toEqual([]);
+			expect(audio("kick", "./kick.wav", 1).notes).toEqual([]);
 		});
 	});
 
 	describe("instanceof", () => {
 		it("is an AudioPattern", () => {
-			expect(audio("break", "./break.wav", "4n")).toBeInstanceOf(AudioPattern);
+			expect(audio("break", "./break.wav", 1)).toBeInstanceOf(AudioPattern);
 		});
 	});
 });

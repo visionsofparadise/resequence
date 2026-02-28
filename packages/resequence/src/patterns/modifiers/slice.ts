@@ -1,5 +1,3 @@
-import type { Duration } from "../../utils/duration";
-import { resolveDuration } from "../../utils/duration";
 import type { PatternNode, RelativeNote } from "../pattern";
 import { MidiPattern, type Pattern } from "../pattern";
 import { collectNotes, flatMapNotes } from "../utils/tree";
@@ -60,10 +58,7 @@ export class TrimPattern extends MidiPattern {
 	}
 }
 
-export function trim(pattern: Pattern, from: Duration | number, to: Duration | number): TrimPattern {
-	const fromBeats = resolveDuration(from);
-	const toBeats = resolveDuration(to);
-
+export function trim(pattern: Pattern, fromBeats: number, toBeats: number): TrimPattern {
 	const transformed = flatMapNotes(pattern, (note, absoluteOffset) => {
 		const noteStart = absoluteOffset + note.startBeat;
 		const noteEnd = absoluteOffset + note.endBeat;

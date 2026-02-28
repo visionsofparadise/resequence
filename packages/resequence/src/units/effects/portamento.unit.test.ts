@@ -41,17 +41,17 @@ function makeVoiceNote(note: number, startMs: number, stopMs: number, slides?: R
 
 describe("PortamentoUnit", () => {
 	it("creates a PortamentoUnit instance", () => {
-		const unit = portamento({ time: "8n" });
+		const unit = portamento({ timeBeats: 0.5 });
 		expect(unit).toBeInstanceOf(PortamentoUnit);
 	});
 
 	it("porta alias creates same unit", () => {
-		const unit = porta({ time: "4n" });
+		const unit = porta({ timeBeats: 1 });
 		expect(unit).toBeInstanceOf(PortamentoUnit);
 	});
 
 	it("first note has no slides", () => {
-		const unit = portamento({ time: "8n" });
+		const unit = portamento({ timeBeats: 0.5 });
 		const capture = new CaptureMidiUnit();
 		unit.to(capture);
 
@@ -66,7 +66,7 @@ describe("PortamentoUnit", () => {
 	});
 
 	it("second note gets portamento slides from previous pitch", () => {
-		const unit = portamento({ time: "8n" });
+		const unit = portamento({ timeBeats: 0.5 });
 		const capture = new CaptureMidiUnit();
 		unit.to(capture);
 
@@ -90,8 +90,8 @@ describe("PortamentoUnit", () => {
 	});
 
 	it("portamento time is clamped to note duration", () => {
-		// portamento time = 4n = 1 beat = 500ms at 120bpm
-		const unit = portamento({ time: "4n" });
+		// portamento time = 1 beat = 500ms at 120bpm
+		const unit = portamento({ timeBeats: 1 });
 		const capture = new CaptureMidiUnit();
 		unit.to(capture);
 
@@ -110,7 +110,7 @@ describe("PortamentoUnit", () => {
 	});
 
 	it("same pitch consecutive notes get no slides", () => {
-		const unit = portamento({ time: "8n" });
+		const unit = portamento({ timeBeats: 0.5 });
 		const capture = new CaptureMidiUnit();
 		unit.to(capture);
 
@@ -124,7 +124,7 @@ describe("PortamentoUnit", () => {
 	});
 
 	it("previous note with slides: portamento starts from slide endpoint", () => {
-		const unit = portamento({ time: "8n" });
+		const unit = portamento({ timeBeats: 0.5 });
 		const capture = new CaptureMidiUnit();
 		unit.to(capture);
 
@@ -148,7 +148,7 @@ describe("PortamentoUnit", () => {
 	});
 
 	it("state resets on setup", () => {
-		const unit = portamento({ time: "8n" });
+		const unit = portamento({ timeBeats: 0.5 });
 		const capture = new CaptureMidiUnit();
 		unit.to(capture);
 

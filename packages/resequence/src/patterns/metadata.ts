@@ -1,13 +1,13 @@
 import { ResequenceError } from "../error";
 import type { ScheduleContext } from "../rendering/schedule-context";
-import type { TuningConfig } from "../utils/pitch";
+import type { ResolvedTuning } from "../utils/tuning";
 import type { PatternNode } from "./pattern";
 import { Pattern } from "./pattern";
 
 export interface Metadata {
 	readonly name?: string;
 	readonly description?: string;
-	readonly tuning?: TuningConfig;
+	readonly tuning?: ResolvedTuning;
 	readonly timeSignature?: readonly [number, number];
 	readonly marker?: string;
 	readonly region?: string;

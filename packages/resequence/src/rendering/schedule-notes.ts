@@ -1,9 +1,10 @@
 import type { ScoreNote } from "../patterns/note";
 import type { MidiUnit, VoiceNote, VoiceSlide } from "../units/midi-unit";
 import { CC } from "../utils/cc";
-import { CHROMATIC_TUNING } from "../utils/chromatic";
+import { CHROMATIC_TUNING } from "../tunings/chromatic";
 import type { Pitch } from "../utils/pitch";
 import { pitchToCents } from "../utils/pitch";
+import type { ResolvedTuning } from "../utils/tuning";
 import type { ScheduleContext } from "./schedule-context";
 import { beatsToSeconds } from "./tempo-map";
 
@@ -77,22 +78,17 @@ function buildVoiceNote(scoreNote: ScoreNote, absoluteBeat: number, scheduleCont
 }
 
 function pitchToFrequency(pitch: Pitch, scheduleContext: ScheduleContext): number {
-	const tuning = scheduleContext.tuning ?? CHROMATIC_TUNING;
-	const octaveRatio = tuning.octaveRatio ?? 2;
+	const tuning: ResolvedTuning = scheduleContext.tuning ?? CHROMATIC_TUNING;
 
-	if (tuning.frequencies) {
-		const className = tuning.classes[pitch.class];
-		const baseHz = className !== undefined ? tuning.frequencies[className] : undefined;
+	const className = tuning.classes[pitch.class];
+	const baseHz = className !== undefined ? tuning.frequencies[className] : undefined;
 
-		if (baseHz !== undefined) {
-			return baseHz * Math.pow(octaveRatio, pitch.octave - tuning.reference.octave);
-		}
+	if (baseHz !== undefined) {
+		return baseHz * Math.pow(tuning.octaveRatio, pitch.octave - tuning.referenceOctave);
 	}
 
-	const refClassIndex = tuning.classes.indexOf(tuning.reference.class);
-	const stepsFromReference = pitch.class - refClassIndex + (pitch.octave - tuning.reference.octave) * pitch.stepsPerOctave;
-
-	return tuning.reference.hz * Math.pow(octaveRatio, stepsFromReference / pitch.stepsPerOctave);
+	// Fallback for pitches not in the tuning's class list — use equal-tempered math
+	return 440 * Math.pow(2, (pitch.class / pitch.stepsPerOctave + pitch.octave - 4) - 9 / 12);
 }
 
 function frequencyToNoteAndBend(frequency: number): { note: number; bend: number } {

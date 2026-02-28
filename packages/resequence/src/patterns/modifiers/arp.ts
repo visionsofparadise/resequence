@@ -1,6 +1,7 @@
+import { I } from "../../tunings/index-tuning";
 import type { Pitch } from "../../utils/pitch";
-import { pitchKey, resolvePitch } from "../../utils/pitch";
-import { note, type ScoreNote } from "../note";
+import { pitchKey } from "../../utils/pitch";
+import type { ScoreNote } from "../note";
 import type { PatternNode } from "../pattern";
 import { MidiPattern, type Pattern } from "../pattern";
 import { sequence } from "../sequence";
@@ -160,45 +161,36 @@ export function arp(pattern: Pattern, mappingPattern: Pattern): ArpPattern {
 
 export function arpUp(voices: number, rate: number): Pattern {
 	const steps: Array<ScoreNote> = [];
-
 	for (let voiceIndex = 0; voiceIndex < voices; voiceIndex++) {
-		steps.push(note(resolvePitch(voiceIndex), rate));
+		steps.push(I(voiceIndex)(rate));
 	}
-
 	return sequence(...steps);
 }
 
 export function arpDown(voices: number, rate: number): Pattern {
 	const steps: Array<ScoreNote> = [];
-
 	for (let voiceIndex = voices - 1; voiceIndex >= 0; voiceIndex--) {
-		steps.push(note(resolvePitch(voiceIndex), rate));
+		steps.push(I(voiceIndex)(rate));
 	}
-
 	return sequence(...steps);
 }
 
 export function arpUpDown(voices: number, rate: number): Pattern {
 	const steps: Array<ScoreNote> = [];
-
 	for (let voiceIndex = 0; voiceIndex < voices; voiceIndex++) {
-		steps.push(note(resolvePitch(voiceIndex), rate));
+		steps.push(I(voiceIndex)(rate));
 	}
-
 	for (let voiceIndex = voices - 2; voiceIndex >= 1; voiceIndex--) {
-		steps.push(note(resolvePitch(voiceIndex), rate));
+		steps.push(I(voiceIndex)(rate));
 	}
-
 	return sequence(...steps);
 }
 
 export function arpRandom(voices: number, rate: number, seed?: number): Pattern {
 	const rng = seed !== undefined ? mulberry32(seed) : Math.random.bind(Math);
 	const steps: Array<ScoreNote> = [];
-
 	for (let stepIndex = 0; stepIndex < voices; stepIndex++) {
-		steps.push(note(resolvePitch(Math.floor(rng() * voices)), rate));
+		steps.push(I(Math.floor(rng() * voices))(rate));
 	}
-
 	return sequence(...steps);
 }

@@ -23,6 +23,7 @@ export interface MidiRenderResult {
 }
 
 export function renderMidi(pattern: Pattern, options?: MidiRenderOptions): MidiRenderResult {
+	// FIX: All of these could be gathered in a single walk
 	const tempoChanges = buildTempoMap(pattern);
 	const timeSignatureChanges = collectTimeSignatures(pattern);
 	const markers = collectMarkers(pattern);

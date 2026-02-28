@@ -3,8 +3,8 @@ import { gap } from "./gap";
 
 describe("GapPattern", () => {
 	describe("durationBeats", () => {
-		it("resolves string duration to ticks", () => {
-			const g = gap("8n");
+		it("resolves fractional beat duration", () => {
+			const g = gap(0.5);
 			expect(g.endBeat - g.startBeat).toBe(0.5);
 		});
 
@@ -16,7 +16,7 @@ describe("GapPattern", () => {
 
 	describe("notes", () => {
 		it("returns empty", () => {
-			expect(gap("4n").notes).toEqual([]);
+			expect(gap(1).notes).toEqual([]);
 		});
 	});
 });

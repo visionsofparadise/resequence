@@ -1,35 +1,33 @@
 import { describe, expect, it } from "vitest";
-import { note } from "../patterns/note";
 import { sequence } from "../patterns/sequence";
 import { layer } from "../patterns/layer";
 import { repeat } from "../patterns/modifiers/repeat";
 import { tempo } from "../patterns/tempo";
-import { resolveDuration } from "../utils/duration";
-import { resolvePitch } from "../utils/pitch";
+import { N } from "../tunings/chromatic";
 import { beatsToSeconds, buildTempoMap } from "./tempo-map";
 
 describe("buildTempoMap", () => {
 	it("returns empty array for flat pattern with no tempo wrappers", () => {
-		const result = buildTempoMap(sequence(note(resolvePitch("C4"), resolveDuration("4n"))));
+		const result = buildTempoMap(sequence(N.C4(1)));
 		expect(result).toEqual([]);
 	});
 
 	it("captures single tempo wrapper at root", () => {
-		const result = buildTempoMap(tempo(sequence(note(resolvePitch("C4"), resolveDuration("4n"))), 140));
+		const result = buildTempoMap(tempo(sequence(N.C4(1)), 140));
 		expect(result).toEqual([{ beat: 0, bpm: 140 }]);
 	});
 
 	it("captures nested tempo inside sequence at correct beat offset", () => {
-		const pattern = sequence(note(resolvePitch("C4"), resolveDuration("4n")), tempo(sequence(note(resolvePitch("E4"), resolveDuration("4n"))), 100));
+		const pattern = sequence(N.C4(1), tempo(sequence(N.E4(1)), 100));
 		const result = buildTempoMap(pattern);
 		expect(result).toEqual([{ beat: 1, bpm: 100 }]);
 	});
 
 	it("captures multiple tempo wrappers in sequence", () => {
 		const pattern = sequence(
-			tempo(sequence(note(resolvePitch("C4"), resolveDuration("4n"))), 120),
-			tempo(sequence(note(resolvePitch("E4"), resolveDuration("4n"))), 100),
-			tempo(sequence(note(resolvePitch("G4"), resolveDuration("4n"))), 80),
+			tempo(sequence(N.C4(1)), 120),
+			tempo(sequence(N.E4(1)), 100),
+			tempo(sequence(N.G4(1)), 80),
 		);
 		const result = buildTempoMap(pattern);
 		expect(result).toEqual([
@@ -40,13 +38,13 @@ describe("buildTempoMap", () => {
 	});
 
 	it("captures tempo inside layer at same offset", () => {
-		const pattern = layer(sequence(note(resolvePitch("C4"), resolveDuration("4n"))), tempo(sequence(note(resolvePitch("E4"), resolveDuration("4n"))), 90));
+		const pattern = layer(sequence(N.C4(1)), tempo(sequence(N.E4(1)), 90));
 		const result = buildTempoMap(pattern);
 		expect(result).toEqual([{ beat: 0, bpm: 90 }]);
 	});
 
 	it("captures tempo wrapping a repeat", () => {
-		const pattern = tempo(repeat(sequence(note(resolvePitch("C4"), resolveDuration("4n"))), 3), 110);
+		const pattern = tempo(repeat(sequence(N.C4(1)), 3), 110);
 		const result = buildTempoMap(pattern);
 		expect(result).toEqual([
 			{ beat: 0, bpm: 110 },
@@ -55,8 +53,8 @@ describe("buildTempoMap", () => {
 
 	it("returns sorted result", () => {
 		const pattern = layer(
-			tempo(sequence(note(resolvePitch("C4"), resolveDuration("4n")), note(resolvePitch("E4"), resolveDuration("4n"))), 120),
-			sequence(note(resolvePitch("C4"), resolveDuration("4n")), tempo(sequence(note(resolvePitch("G4"), resolveDuration("4n"))), 100)),
+			tempo(sequence(N.C4(1), N.E4(1)), 120),
+			sequence(N.C4(1), tempo(sequence(N.G4(1)), 100)),
 		);
 		const result = buildTempoMap(pattern);
 		expect(result[0]).toEqual({ beat: 0, bpm: 120 });
@@ -65,7 +63,7 @@ describe("buildTempoMap", () => {
 
 	describe("keyframes", () => {
 		it("collects step keyframes at absolute positions", () => {
-			const pattern = tempo(sequence(note(resolvePitch("C4"), 4)), 120, {
+			const pattern = tempo(sequence(N.C4(4)), 120, {
 				keyframes: [{ beat: 2, bpm: 140 }],
 			});
 			const result = buildTempoMap(pattern);
@@ -76,7 +74,7 @@ describe("buildTempoMap", () => {
 		});
 
 		it("beat-0 keyframe overrides initial bpm", () => {
-			const pattern = tempo(sequence(note(resolvePitch("C4"), 4)), 120, {
+			const pattern = tempo(sequence(N.C4(4)), 120, {
 				keyframes: [{ beat: 0, bpm: 100 }],
 			});
 			const result = buildTempoMap(pattern);
@@ -84,7 +82,7 @@ describe("buildTempoMap", () => {
 		});
 
 		it("samples linear ramp keyframes", () => {
-			const pattern = tempo(sequence(note(resolvePitch("C4"), 4)), 120, {
+			const pattern = tempo(sequence(N.C4(4)), 120, {
 				keyframes: [{ beat: 1, bpm: 140, curve: "linear" }],
 			});
 			const result = buildTempoMap(pattern);
@@ -96,7 +94,7 @@ describe("buildTempoMap", () => {
 		});
 
 		it("samples exponential ramp keyframes", () => {
-			const pattern = tempo(sequence(note(resolvePitch("C4"), 4)), 120, {
+			const pattern = tempo(sequence(N.C4(4)), 120, {
 				keyframes: [{ beat: 1, bpm: 240, curve: "exponential" }],
 			});
 			const result = buildTempoMap(pattern);
@@ -108,8 +106,8 @@ describe("buildTempoMap", () => {
 
 		it("offsets keyframe beats in sequence", () => {
 			const pattern = sequence(
-				note(resolvePitch("C4"), 4),
-				tempo(sequence(note(resolvePitch("E4"), 4)), 120, {
+				N.C4(4),
+				tempo(sequence(N.E4(4)), 120, {
 					keyframes: [{ beat: 2, bpm: 140 }],
 				}),
 			);
@@ -123,14 +121,14 @@ describe("buildTempoMap", () => {
 
 	describe("override resolution", () => {
 		it("outermost tempo wins by default", () => {
-			const pattern = tempo(tempo(sequence(note(resolvePitch("C4"), 4)), 140), 120);
+			const pattern = tempo(tempo(sequence(N.C4(4)), 140), 120);
 			const result = buildTempoMap(pattern);
 			expect(result).toEqual([{ beat: 0, bpm: 120 }]);
 		});
 
 		it("override beats outer tempo", () => {
 			const pattern = tempo(
-				tempo(sequence(note(resolvePitch("C4"), 4)), 140, { override: true }),
+				tempo(sequence(N.C4(4)), 140, { override: true }),
 				120,
 			);
 			const result = buildTempoMap(pattern);
@@ -140,7 +138,7 @@ describe("buildTempoMap", () => {
 		it("nested overrides - innermost wins", () => {
 			const pattern = tempo(
 				tempo(
-					tempo(sequence(note(resolvePitch("C4"), 4)), 160, { override: true }),
+					tempo(sequence(N.C4(4)), 160, { override: true }),
 					140, { override: true },
 				),
 				120,
@@ -151,7 +149,7 @@ describe("buildTempoMap", () => {
 
 		it("inner non-override tempo is ignored under outer tempo", () => {
 			const pattern = tempo(
-				sequence(note(resolvePitch("C4"), 4), tempo(sequence(note(resolvePitch("E4"), 4)), 140)),
+				sequence(N.C4(4), tempo(sequence(N.E4(4)), 140)),
 				120,
 			);
 			const result = buildTempoMap(pattern);
@@ -161,8 +159,8 @@ describe("buildTempoMap", () => {
 		it("inner override takes effect under outer tempo", () => {
 			const pattern = tempo(
 				sequence(
-					note(resolvePitch("C4"), 4),
-					tempo(sequence(note(resolvePitch("E4"), 4)), 140, { override: true }),
+					N.C4(4),
+					tempo(sequence(N.E4(4)), 140, { override: true }),
 				),
 				120,
 			);

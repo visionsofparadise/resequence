@@ -1,34 +1,32 @@
 import { describe, expect, it } from "vitest";
 import { marker } from "../patterns/metadata";
 import { tempo } from "../patterns/tempo";
-import { note } from "../patterns/note";
 import { sequence } from "../patterns/sequence";
 import { layer } from "../patterns/layer";
-import { resolveDuration } from "../utils/duration";
-import { resolvePitch } from "../utils/pitch";
+import { N } from "../tunings/chromatic";
 import { collectMarkers } from "./collect-markers";
 
 describe("collectMarkers", () => {
 	it("returns empty array when no markers present", () => {
-		expect(collectMarkers(sequence(note(resolvePitch("C4"), resolveDuration("4n"))))).toEqual([]);
+		expect(collectMarkers(sequence(N.C4(1)))).toEqual([]);
 	});
 
 	it("captures single marker at root", () => {
-		const result = collectMarkers(marker(sequence(note(resolvePitch("C4"), resolveDuration("4n"))), "intro"));
+		const result = collectMarkers(marker(sequence(N.C4(1)), "intro"));
 		expect(result).toEqual([{ beat: 0, name: "intro" }]);
 	});
 
 	it("captures marker inside sequence at correct tick offset", () => {
-		const pattern = sequence(note(resolvePitch("C4"), resolveDuration("4n")), marker(sequence(note(resolvePitch("E4"), resolveDuration("4n"))), "verse"));
+		const pattern = sequence(N.C4(1), marker(sequence(N.E4(1)), "verse"));
 		const result = collectMarkers(pattern);
 		expect(result).toEqual([{ beat: 1, name: "verse" }]);
 	});
 
 	it("captures multiple markers in sequence", () => {
 		const pattern = sequence(
-			marker(sequence(note(resolvePitch("C4"), resolveDuration("4n"))), "intro"),
-			marker(sequence(note(resolvePitch("E4"), resolveDuration("4n"))), "verse"),
-			marker(sequence(note(resolvePitch("G4"), resolveDuration("4n"))), "chorus"),
+			marker(sequence(N.C4(1)), "intro"),
+			marker(sequence(N.E4(1)), "verse"),
+			marker(sequence(N.G4(1)), "chorus"),
 		);
 		const result = collectMarkers(pattern);
 		expect(result).toEqual([
@@ -39,21 +37,21 @@ describe("collectMarkers", () => {
 	});
 
 	it("captures marker inside layer at same offset", () => {
-		const pattern = layer(sequence(note(resolvePitch("C4"), resolveDuration("4n"))), marker(sequence(note(resolvePitch("E4"), resolveDuration("4n"))), "drop"));
+		const pattern = layer(sequence(N.C4(1)), marker(sequence(N.E4(1)), "drop"));
 		const result = collectMarkers(pattern);
 		expect(result).toEqual([{ beat: 0, name: "drop" }]);
 	});
 
 	it("traverses through tempo wrapper", () => {
-		const pattern = tempo(marker(sequence(note(resolvePitch("C4"), resolveDuration("4n"))), "start"), 140);
+		const pattern = tempo(marker(sequence(N.C4(1)), "start"), 140);
 		const result = collectMarkers(pattern);
 		expect(result).toEqual([{ beat: 0, name: "start" }]);
 	});
 
 	it("returns markers sorted by tick", () => {
 		const pattern = layer(
-			sequence(note(resolvePitch("C4"), resolveDuration("4n")), marker(sequence(note(resolvePitch("E4"), resolveDuration("4n"))), "b")),
-			marker(sequence(note(resolvePitch("C4"), resolveDuration("4n"))), "a"),
+			sequence(N.C4(1), marker(sequence(N.E4(1)), "b")),
+			marker(sequence(N.C4(1)), "a"),
 		);
 		const result = collectMarkers(pattern);
 		expect(result[0]).toEqual({ beat: 0, name: "a" });

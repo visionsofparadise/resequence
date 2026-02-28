@@ -8,7 +8,7 @@ import { collectRouting } from "./rendering/collect-routing";
 import { encodeWav } from "./rendering/encode-wav";
 import { renderAudio } from "./rendering/render-audio";
 import { renderMidi } from "./rendering/render-midi";
-import { buildTempoMap, beatsToSeconds } from "./rendering/tempo-map";
+import { beatsToSeconds, buildTempoMap } from "./rendering/tempo-map";
 
 interface CliOptions {
 	readonly entrypoint: string;
@@ -158,6 +158,7 @@ async function runCli(args: CliOptions): Promise<void> {
 			for (const trackName of filteredNames) {
 				const offlineCtx = new NodeOfflineAudioContext(2, Math.ceil(totalSeconds * sampleRate), sampleRate);
 
+				// FIX: We do things like gather markers here, we should just be getting that from the return of this instead of having to get it ourselves
 				const rendered = await renderAudio(pattern, offlineCtx as unknown as OfflineAudioContext, fetchProjectBuffer, {
 					trackFilter: new Set([trackName]),
 				});

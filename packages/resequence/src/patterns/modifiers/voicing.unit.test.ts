@@ -1,15 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { resolveDuration } from "../../utils/duration";
-import { pitchToMidi, resolvePitch } from "../../utils/pitch";
+import { N } from "../../tunings/chromatic";
+import { pitchToMidi } from "../../utils/pitch";
 import { layer } from "../layer";
-import { note } from "../note";
 import { sequence } from "../sequence";
 import { collectNotes } from "../utils/tree";
 import { VoicingPattern, voicing } from "./voicing";
 
 // C4=60, E4=64, G4=67, B4=71
 function cmaj7(): ReturnType<typeof layer> {
-	return layer(sequence(note(resolvePitch("C4"), resolveDuration("1n"))), sequence(note(resolvePitch("E4"), resolveDuration("1n"))), sequence(note(resolvePitch("G4"), resolveDuration("1n"))), sequence(note(resolvePitch("B4"), resolveDuration("1n"))));
+	return layer(sequence(N.C4(4)), sequence(N.E4(4)), sequence(N.G4(4)), sequence(N.B4(4)));
 }
 
 describe("VoicingPattern", () => {

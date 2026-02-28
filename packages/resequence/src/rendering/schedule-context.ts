@@ -1,18 +1,18 @@
-import type { MidiUnit } from "../units/midi-unit";
 import type { ScoreNote } from "../patterns/note";
-import type { TuningConfig } from "../utils/pitch";
+import type { MidiUnit } from "../units/midi-unit";
+import type { ResolvedTuning } from "../utils/tuning";
 import type { TempoMap } from "./tempo-map";
 
 export type NoteDispatch = (note: ScoreNote, offsetBeats: number, outputs: ReadonlyArray<MidiUnit>, context: ScheduleContext) => void;
 
 export interface ScheduleContext {
 	readonly audioContext: BaseAudioContext;
-	readonly sampleMap: Map<string, AudioBuffer>;
+	readonly sampleMap: Map<string, AudioBuffer>; // FIX: We no longer use this, we use getSample
 	readonly driverMap: Map<string, ConstantSourceNode>;
 	readonly tempoMap: TempoMap;
 	readonly fromBeats: number;
 	readonly toBeats: number;
-	readonly tuning?: TuningConfig;
+	readonly tuning?: ResolvedTuning;
 	readonly trackFilter?: ReadonlySet<string>;
 	readonly outputs: ReadonlyArray<MidiUnit>;
 	readonly dispatch: NoteDispatch;

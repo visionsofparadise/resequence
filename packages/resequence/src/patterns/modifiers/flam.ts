@@ -1,5 +1,3 @@
-import type { Duration } from "../../utils/duration";
-import { resolveDuration } from "../../utils/duration";
 import type { PatternNode } from "../pattern";
 import { MidiPattern, type Pattern } from "../pattern";
 import { flatMapNotes } from "../utils/tree";
@@ -19,13 +17,11 @@ export class FlamPattern extends MidiPattern {
 	}
 }
 
-export function flam(pattern: Pattern, flamOffset: Duration | number, graceVelocity = 40): FlamPattern {
-	const resolvedOffset = resolveDuration(flamOffset);
-
+export function flam(pattern: Pattern, flamOffset: number, graceVelocity = 40): FlamPattern {
 	const transformed = flatMapNotes(pattern, (note) => [
 		{
 			...note,
-			startBeat: note.startBeat - resolvedOffset,
+			startBeat: note.startBeat - flamOffset,
 			endBeat: note.startBeat,
 			velocity: graceVelocity,
 			slides: undefined,
@@ -33,5 +29,5 @@ export function flam(pattern: Pattern, flamOffset: Duration | number, graceVeloc
 		note,
 	]);
 
-	return new FlamPattern(pattern, resolvedOffset, graceVelocity, transformed);
+	return new FlamPattern(pattern, flamOffset, graceVelocity, transformed);
 }

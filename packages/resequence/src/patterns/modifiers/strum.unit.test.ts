@@ -1,15 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { resolveDuration } from "../../utils/duration";
-import { pitchKey, pitchToMidi, resolvePitch } from "../../utils/pitch";
+import { N } from "../../tunings/chromatic";
+import { pitchKey, pitchToMidi } from "../../utils/pitch";
 import { layer } from "../layer";
-import { note } from "../note";
 import { sequence } from "../sequence";
 import { collectNotes } from "../utils/tree";
 import { StrumPattern, strum } from "./strum";
 
 // C major chord: C4=60, E4=64, G4=67
 function cMajChord(): ReturnType<typeof layer> {
-	return layer(sequence(note(resolvePitch("C4"), resolveDuration("4n"))), sequence(note(resolvePitch("E4"), resolveDuration("4n"))), sequence(note(resolvePitch("G4"), resolveDuration("4n"))));
+	return layer(sequence(N.C4(1)), sequence(N.E4(1)), sequence(N.G4(1)));
 }
 
 describe("StrumPattern", () => {

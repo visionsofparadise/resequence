@@ -1,5 +1,3 @@
-import type { Duration } from "../../utils/duration";
-import { resolveDuration } from "../../utils/duration";
 import type { PatternNode } from "../pattern";
 import { MidiPattern, type Pattern } from "../pattern";
 import { mapNotes } from "../utils/tree";
@@ -19,8 +17,8 @@ export class AccentPattern extends MidiPattern {
 	}
 }
 
-export function accent(pattern: Pattern, positions: ReadonlyArray<Duration | number>, amount: number): AccentPattern {
-	const resolvedPositions = positions.map(resolveDuration);
+export function accent(pattern: Pattern, positions: ReadonlyArray<number>, amount: number): AccentPattern {
+	const resolvedPositions = positions;
 	const totalDuration = pattern.endBeat - pattern.startBeat;
 	const cycle = resolvedPositions.reduce((sum, pos) => sum + pos, 0);
 

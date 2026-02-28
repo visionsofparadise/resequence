@@ -9,6 +9,7 @@ export interface RenderAudioOptions {
 }
 
 export async function renderAudio(pattern: Pattern, audioContext: OfflineAudioContext, fetchBuffer: (path: string) => Promise<ArrayBuffer>, options: RenderAudioOptions = {}): Promise<AudioBuffer> {
+	// FIX: Tempo map is never used by anything in the setup phase, we could just collect it while doing our setup walk. This would also apply for metadatas, which we need to gather markers in playback renderer
 	const tempoMap = buildTempoMap(pattern);
 	const sampleMap = new Map<string, AudioBuffer>();
 	const loadedModules = new Set<string>();

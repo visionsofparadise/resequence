@@ -1,8 +1,6 @@
 import { ResequenceError } from "../error";
 import type { ScheduleContext } from "../rendering/schedule-context";
 import { beatsToSeconds } from "../rendering/tempo-map";
-import type { Duration } from "../utils/duration";
-import { resolveDuration } from "../utils/duration";
 import type { PatternNode } from "./pattern";
 import { Pattern } from "./pattern";
 
@@ -12,7 +10,7 @@ export class AudioPattern extends Pattern {
 	constructor(
 		readonly name: string,
 		readonly path: string,
-		readonly duration: Duration,
+		readonly duration: number,
 		readonly durationBeats: number,
 		readonly transposeSemitones: number,
 		readonly reversed: boolean,
@@ -96,14 +94,13 @@ function copyReversed(buffer: AudioBuffer, audioCtx: BaseAudioContext): AudioBuf
 	return reversed;
 }
 
-export function audio(name: string, path: string, duration: Duration, options?: { region?: string; loopStartMs?: number; loopEndMs?: number }): AudioPattern {
+export function audio(name: string, path: string, duration: number, options?: { region?: string; loopStartMs?: number; loopEndMs?: number }): AudioPattern {
 	if (!path) {
 		throw new ResequenceError("EMPTY_AUDIO_PATH", "audio(): path must not be empty");
 	}
 
 	const region = options?.region;
 	const sampleKey = region && !path.includes("#") ? `${path}#${region}` : path;
-	const durationBeats = resolveDuration(duration);
 
-	return new AudioPattern(name, path, duration, durationBeats, 0, false, sampleKey, region, options?.loopStartMs, options?.loopEndMs, { notes: [], children: [], startBeat: 0, endBeat: durationBeats });
+	return new AudioPattern(name, path, duration, duration, 0, false, sampleKey, region, options?.loopStartMs, options?.loopEndMs, { notes: [], children: [], startBeat: 0, endBeat: duration });
 }

@@ -1,7 +1,5 @@
 import type { ScheduleContext } from "../../rendering/schedule-context";
 import { beatsToSeconds } from "../../rendering/tempo-map";
-import type { Duration } from "../../utils/duration";
-import { resolveDuration } from "../../utils/duration";
 import type { VoiceNote, VoiceSlide } from "../midi-unit";
 import { MidiUnit } from "../midi-unit";
 import type { SetupResult } from "../unit";
@@ -92,8 +90,8 @@ export class PortamentoUnit extends MidiUnit {
 	}
 }
 
-export function portamento(options: { time: Duration }): PortamentoUnit {
-	return new PortamentoUnit(resolveDuration(options.time));
+export function portamento(options: { timeBeats: number }): PortamentoUnit {
+	return new PortamentoUnit(options.timeBeats);
 }
 
 export const porta = portamento;

@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 import type { ScoreSlide } from "../patterns/pattern";
-import { resolvePitch } from "./pitch";
+import { N } from "../tunings/chromatic";
 import { evaluateSlide, evaluateSlideCents, mergeSlides } from "./slide";
 
-const C4 = resolvePitch("C4");
-const E4 = resolvePitch("E4");
-const G4 = resolvePitch("G4");
-const A4 = resolvePitch("A4");
+const C4 = N.C4;
+const E4 = N.E4;
+const G4 = N.G4;
+const A4 = N.A4;
 
 describe("evaluateSlide", () => {
 	it("returns root pitch when no slides", () => {

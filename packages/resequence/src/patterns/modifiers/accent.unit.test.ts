@@ -1,7 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { resolveDuration } from "../../utils/duration";
-import { resolvePitch } from "../../utils/pitch";
-import { note } from "../note";
+import { N } from "../../tunings/chromatic";
 import { sequence } from "../sequence";
 import { collectNotes } from "../utils/tree";
 import { AccentPattern, accent } from "./accent";
@@ -12,7 +10,7 @@ describe("AccentPattern", () => {
 			// positions=[2] → cycle=2 beats, accentedBeats = {0, 2, ...}
 			// C4@0 accented, E4@1 not accented
 			const pat = accent(
-				sequence(note(resolvePitch("C4"), resolveDuration("4n"), { velocity: 80 }), note(resolvePitch("E4"), resolveDuration("4n"), { velocity: 80 })),
+				sequence(N.C4(1, { velocity: 80 }), N.E4(1, { velocity: 80 })),
 				[2],
 				20,
 			);
@@ -23,12 +21,12 @@ describe("AccentPattern", () => {
 
 		it("clamps velocity to 127", () => {
 			// positions=[1] → cycle=1 beat, accentedBeats = {0, 1, 2, ...}
-			const pat = accent(sequence(note(resolvePitch("C4"), resolveDuration("4n"), { velocity: 120 })), [1], 20);
+			const pat = accent(sequence(N.C4(1, { velocity: 120 })), [1], 20);
 			expect(collectNotes(pat)[0]!.velocity).toBe(127); // min(127, 120+20)
 		});
 
 		it("accents notes using default velocity of 100 when none set", () => {
-			const pat = accent(sequence(note(resolvePitch("C4"), resolveDuration("4n"))), [1], 10);
+			const pat = accent(sequence(N.C4(1)), [1], 10);
 			expect(collectNotes(pat)[0]!.velocity).toBe(110); // (undefined ?? 100) + 10
 		});
 
@@ -37,10 +35,10 @@ describe("AccentPattern", () => {
 			// all four notes at 0, 1, 2, 3 — all accented
 			const pat = accent(
 				sequence(
-					note(resolvePitch("C4"), resolveDuration("4n"), { velocity: 80 }),
-					note(resolvePitch("D4"), resolveDuration("4n"), { velocity: 80 }),
-					note(resolvePitch("E4"), resolveDuration("4n"), { velocity: 80 }),
-					note(resolvePitch("F4"), resolveDuration("4n"), { velocity: 80 }),
+					N.C4(1, { velocity: 80 }),
+					N.D4(1, { velocity: 80 }),
+					N.E4(1, { velocity: 80 }),
+					N.F4(1, { velocity: 80 }),
 				),
 				[1, 1],
 				20,
@@ -53,14 +51,14 @@ describe("AccentPattern", () => {
 
 	describe("durationBeats", () => {
 		it("preserves child duration", () => {
-			const pat = accent(sequence(note(resolvePitch("C4"), resolveDuration("4n"))), [1], 10);
+			const pat = accent(sequence(N.C4(1)), [1], 10);
 			expect(pat.endBeat - pat.startBeat).toBe(1);
 		});
 	});
 
 	describe("instanceof", () => {
 		it("is an AccentPattern", () => {
-			expect(accent(sequence(note(resolvePitch("C4"), resolveDuration("4n"))), [1], 10)).toBeInstanceOf(AccentPattern);
+			expect(accent(sequence(N.C4(1)), [1], 10)).toBeInstanceOf(AccentPattern);
 		});
 	});
 });

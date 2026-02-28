@@ -1,6 +1,7 @@
 import type { ScoreNoteSlide } from "../patterns/note";
-import type { Pitch, TuningConfig } from "./pitch";
+import type { Pitch } from "./pitch";
 import { addSteps, pitchToCents } from "./pitch";
+import type { ResolvedTuning } from "./tuning";
 
 function applyCurve(progress: number, curve: number): number {
 	if (curve === 0) return progress;
@@ -48,7 +49,7 @@ export function evaluateSlideCents(
 	noteRootPitch: Pitch,
 	slides: ReadonlyArray<ScoreNoteSlide>,
 	beatOffset: number,
-	tuning?: TuningConfig,
+	tuning?: ResolvedTuning,
 ): number {
 	if (slides.length === 0 || beatOffset <= 0) return 0;
 

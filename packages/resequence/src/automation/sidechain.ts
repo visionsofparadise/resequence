@@ -1,13 +1,12 @@
 import type { AnyKeyframe } from "../patterns/automate";
 import type { Pattern } from "../patterns/pattern";
-import type { Duration } from "../utils/duration";
 import { invert } from "./invert";
 import { trigger } from "./trigger";
 
 export interface SidechainOptions {
 	readonly depth: number;
-	readonly attack: Duration;
-	readonly release: Duration;
+	readonly attack: number;
+	readonly release: number;
 	readonly tension?: number;
 }
 

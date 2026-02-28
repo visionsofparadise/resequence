@@ -1,7 +1,6 @@
-import type { Duration } from "../../utils/duration";
-import { resolveDuration } from "../../utils/duration";
+;
+;
 import type { Pitch } from "../../utils/pitch";
-import { resolvePitch } from "../../utils/pitch";
 import type { PatternNode, RelativeNote } from "../pattern";
 import { MidiPattern } from "../pattern";
 
@@ -24,9 +23,9 @@ export interface RandomVelocityRange {
 }
 
 export interface RandomOptions {
-	readonly pitches: ReadonlyArray<string | number | Pitch>;
+	readonly pitches: ReadonlyArray<Pitch>;
 	readonly count: number;
-	readonly stepDuration: Duration | number;
+	readonly stepDuration: number;
 	readonly velocity?: RandomVelocityRange;
 	readonly seed?: number;
 }
@@ -45,10 +44,10 @@ export class RandomPattern extends MidiPattern {
 }
 
 export function random(options: RandomOptions): RandomPattern {
-	const stepDurationBeats = resolveDuration(options.stepDuration);
+	const stepDurationBeats = options.stepDuration;
 	const durationBeats = options.count * stepDurationBeats;
 	const rng = options.seed !== undefined ? mulberry32(options.seed) : Math.random.bind(Math);
-	const resolvedPitches = options.pitches.map(resolvePitch);
+	const resolvedPitches = options.pitches;
 	const firstPitch = resolvedPitches[0];
 
 	if (!firstPitch) {

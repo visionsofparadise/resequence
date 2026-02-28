@@ -13,12 +13,6 @@ describe("resolveLfo", () => {
 		expect(lfo.attack).toBe(0);
 	});
 
-	it("resolves Duration speed", () => {
-		const lfo = resolveLfo({ shape: "triangle", value: 12, frequency: "4n" });
-		expect(lfo.frequency).toBeUndefined();
-		expect(lfo.speedBeats).toBe(1);
-	});
-
 	it("applies delay and attack", () => {
 		const lfo = resolveLfo({ shape: "sine", value: 0.5, frequency: 5, delay: 0.2, attack: 0.5 });
 		expect(lfo.delay).toBe(0.2);

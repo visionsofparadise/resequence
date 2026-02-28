@@ -1,8 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { resolveDuration } from "../../utils/duration";
-import { resolvePitch } from "../../utils/pitch";
+import { N } from "../../tunings/chromatic";
 import { gap } from "../gap";
-import { note } from "../note";
 import { sequence } from "../sequence";
 import { collectNotes } from "../utils/tree";
 import { QuantizePattern, quantize, shuffle } from "./quantize";
@@ -11,7 +9,7 @@ describe("QuantizePattern", () => {
 	describe("without groove map", () => {
 		it("snaps notes to nearest subdivision grid", () => {
 			// Notes at 0, 250, 490 with grid 480; first note already on beat 0
-			const pat = quantize(sequence(note(resolvePitch("C4"), 250), note(resolvePitch("E4"), 240), note(resolvePitch("G4"), 240)), 480);
+			const pat = quantize(sequence(N.C4(250), N.E4(240), N.G4(240)), 480);
 			// First note at 0
 			expect(collectNotes(pat)[0]?.startBeat).toBe(0);
 		});
@@ -19,19 +17,19 @@ describe("QuantizePattern", () => {
 		it("snaps halfway point down to lower grid line", () => {
 			// Note at beat 0.5, grid "4n" (1 beat) → exactly halfway; <= grid/2 snaps to 0
 			const pat = quantize(
-				sequence(gap(0.5), note(resolvePitch("C4"), resolveDuration("4n"))),
-				"4n",
+				sequence(gap(0.5), N.C4(1)),
+				1,
 			);
 			expect(collectNotes(pat)[0]?.startBeat).toBe(0);
 		});
 
 		it("accepts Duration string subdivision", () => {
-			const pat = quantize(sequence(note(resolvePitch("C4"), resolveDuration("4n"))), "4n");
+			const pat = quantize(sequence(N.C4(1)), 1);
 			expect(collectNotes(pat)[0]?.startBeat).toBe(0);
 		});
 
 		it("returns instance of QuantizePattern", () => {
-			expect(quantize(sequence(note(resolvePitch("C4"), resolveDuration("4n"))), "4n")).toBeInstanceOf(QuantizePattern);
+			expect(quantize(sequence(N.C4(1)), 1)).toBeInstanceOf(QuantizePattern);
 		});
 	});
 
@@ -41,7 +39,7 @@ describe("QuantizePattern", () => {
 			// Notes originally at [0, 1]
 			// cycle 0: rem 0 → nearest [0, 0.67] = 0 → beat 0
 			// cycle 1: rem 0 → nearest [0, 0.67] = 0 → beat 1
-			const src = sequence(note(resolvePitch("C4"), resolveDuration("4n")), note(resolvePitch("E4"), resolveDuration("4n")));
+			const src = sequence(N.C4(1), N.E4(1));
 			const pat = shuffle(src, 0.67);
 			expect(collectNotes(pat)[0]?.startBeat).toBe(0);
 			expect(collectNotes(pat)[1]?.startBeat).toBe(1);
@@ -51,7 +49,7 @@ describe("QuantizePattern", () => {
 	describe("shuffle", () => {
 		it("produces swung timing on straight 8th notes", () => {
 			// 8th notes at [0, 0.5, 1, 1.5]
-			const eights = sequence(note(resolvePitch("C4"), resolveDuration("8n")), note(resolvePitch("D4"), resolveDuration("8n")), note(resolvePitch("E4"), resolveDuration("8n")), note(resolvePitch("F4"), resolveDuration("8n")));
+			const eights = sequence(N.C4(0.5), N.D4(0.5), N.E4(0.5), N.F4(0.5));
 			const swung = shuffle(eights, 0.67);
 			const notes = collectNotes(swung);
 			// Notes at 0 and 1 stay on beat; 0.5 and 1.5 get swung to ~0.67 and ~1.67
@@ -65,7 +63,7 @@ describe("QuantizePattern", () => {
 
 	describe("durationBeats", () => {
 		it("preserves child duration", () => {
-			expect(quantize(sequence(note(resolvePitch("C4"), resolveDuration("2n"))), "4n").endBeat - quantize(sequence(note(resolvePitch("C4"), resolveDuration("2n"))), "4n").startBeat).toBe(2);
+			expect(quantize(sequence(N.C4(2)), 1).endBeat - quantize(sequence(N.C4(2)), 1).startBeat).toBe(2);
 		});
 	});
 });
