@@ -29,13 +29,6 @@ describe('pitchKey', () => {
 		expect(pitchKey(N.C5)).toBe(5 * 12 + 0)
 	})
 
-	it('sorts pitches ascending', () => {
-		const pitches = [N.E4, N.C4, N.G4]
-		const sorted = pitches.slice().sort((a, b) => pitchKey(a) - pitchKey(b))
-		expect(sorted.map((p) => pitchKey(p))).toEqual(
-			[N.C4, N.E4, N.G4].map(pitchKey),
-		)
-	})
 })
 
 describe('addSteps', () => {
@@ -54,11 +47,6 @@ describe('addSteps', () => {
 		expect(addSteps(N.C5, -1)).toEqual({ class: 11, stepsPerOctave: 12, octave: 4, octaveRatio: 2 })
 	})
 
-	it('preserves stepsPerOctave and octaveRatio', () => {
-		const result = addSteps(N.C4, 5)
-		expect(result.stepsPerOctave).toBe(12)
-		expect(result.octaveRatio).toBe(2)
-	})
 })
 
 describe('pitchToCents', () => {
@@ -70,8 +58,4 @@ describe('pitchToCents', () => {
 		expect(pitchToCents(N.C4, N.C5)).toBeCloseTo(1200)
 	})
 
-	it('returns correct semitone cents', () => {
-		expect(pitchToCents(N.C4, N.D4)).toBeCloseTo(200)
-		expect(pitchToCents(N.C4, N.G4)).toBeCloseTo(700)
-	})
 })

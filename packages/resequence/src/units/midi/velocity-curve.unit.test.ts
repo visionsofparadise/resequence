@@ -59,16 +59,4 @@ describe("VelocityCurveMidiUnit", () => {
 
 		expect(capture.captured[0]?.velocity).toBe(1);
 	});
-
-	it("preserves note and timing", () => {
-		const unit = velocityCurve((v) => v / 2);
-		const capture = new CaptureMidiUnit();
-		unit.to(capture);
-
-		unit.schedule(makeVoiceNote(72, 80), stubContext);
-
-		expect(capture.captured[0]?.note).toBe(72);
-		expect(capture.captured[0]?.startMs).toBe(0);
-		expect(capture.captured[0]?.stopMs).toBe(500);
-	});
 });

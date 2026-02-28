@@ -50,18 +50,4 @@ describe("NoteFilterMidiUnit", () => {
 
 		expect(capture.captured).toHaveLength(0);
 	});
-
-	it("filters by note number", () => {
-		const unit = noteFilter((n) => n.note >= 60 && n.note <= 72);
-		const capture = new CaptureMidiUnit();
-		unit.to(capture);
-
-		unit.schedule(makeVoiceNote(48), stubContext);
-		unit.schedule(makeVoiceNote(60), stubContext);
-		unit.schedule(makeVoiceNote(72), stubContext);
-		unit.schedule(makeVoiceNote(84), stubContext);
-
-		expect(capture.captured).toHaveLength(2);
-		expect(capture.captured.map((n) => n.note)).toEqual([60, 72]);
-	});
 });

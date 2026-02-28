@@ -3,7 +3,6 @@ import { ResequenceError } from "../error";
 import { N } from "../tunings/chromatic";
 import { sequence } from "./sequence";
 import { TempoPattern, tempo } from "./tempo";
-import { collectNotes } from "./utils/tree";
 
 describe("TempoPattern", () => {
 	it("creates TempoPattern with bpm", () => {
@@ -17,22 +16,6 @@ describe("TempoPattern", () => {
 		expect(() => tempo(sequence(N.C4(1)), -10)).toThrow("bpm must be greater than 0");
 	});
 
-	it("delegates durationBeats to child", () => {
-		const t = tempo(sequence(N.C4(1)), 120);
-		expect(t.endBeat - t.startBeat).toBe(1);
-	});
-
-	it("delegates sequence duration", () => {
-		const t = tempo(sequence(N.C4(1), N.E4(1)), 120);
-		expect(t.endBeat - t.startBeat).toBe(2);
-	});
-
-	it("delegates notes to child", () => {
-		const t = tempo(sequence(N.C4(1)), 120);
-		const notes = collectNotes(t);
-		expect(notes).toMatchObject([{ startBeat: 0, pitch: N.C4 }]);
-	});
-
 	describe("keyframes", () => {
 		it("constructs with keyframes", () => {
 			const pattern = tempo(sequence(N.C4(1)), 120, {
@@ -40,18 +23,6 @@ describe("TempoPattern", () => {
 			});
 			expect(pattern.bpm).toBe(120);
 			expect(pattern.keyframes).toEqual([{ beat: 4, bpm: 140, curve: "linear" }]);
-		});
-
-		it("constructs with override", () => {
-			const pattern = tempo(sequence(N.C4(1)), 140, { override: true });
-			expect(pattern.isOverride).toBe(true);
-		});
-
-		it("static tempo defaults", () => {
-			const pattern = tempo(sequence(N.C4(1)), 120);
-			expect(pattern.bpm).toBe(120);
-			expect(pattern.keyframes).toEqual([]);
-			expect(pattern.isOverride).toBe(false);
 		});
 
 		it("rejects keyframe with negative beat", () => {

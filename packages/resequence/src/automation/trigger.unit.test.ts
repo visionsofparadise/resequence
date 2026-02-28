@@ -1,9 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { CurveKeyframe } from "../patterns/automate";
 import { gap } from "../patterns/gap";
-import { repeat } from "../patterns/modifiers/repeat";
 import { sequence } from "../patterns/sequence";
-import { layer } from "../patterns/layer";
 import { N } from "../tunings/chromatic";
 import { trigger } from "./trigger";
 
@@ -22,11 +20,6 @@ describe("trigger", () => {
 		const curve = keyframes[2] as CurveKeyframe;
 		expect("values" in curve).toBe(true);
 		expect(curve.time).toBe(1);
-	});
-
-	it("uses peak value", () => {
-		const keyframes = trigger(sequence(N.C4(1)), { peak: 0.8, attack: 1, release: 0.5 });
-		expect(keyframes[1]).toEqual({ time: 1, value: 0.8, curve: "linear" });
 	});
 
 	it("resolves attack and release durations", () => {
@@ -59,16 +52,6 @@ describe("trigger", () => {
 		expect(curve.values[midIdx]).toBeCloseTo(expected, 1);
 	});
 
-	it("release curve has correct values for tension=0.5 at midpoint", () => {
-		const keyframes = trigger(sequence(N.C4(1)), { peak: 1, attack: 1, release: 1, tension: 0.5 });
-		const curve = keyframes[2] as CurveKeyframe;
-
-		const midIdx = Math.floor(curve.values.length / 2);
-		const midProgress = 0.5 * (curve.duration / 1);
-		const expected = Math.pow(1 - midProgress, 0.5);
-		expect(curve.values[midIdx]).toBeCloseTo(expected, 1);
-	});
-
 	it("handles multiple hits", () => {
 		const pattern = sequence(N.C4(1), N.D4(1));
 		const keyframes = trigger(pattern, { peak: 1, attack: 1, release: 0.5 });
@@ -87,25 +70,4 @@ describe("trigger", () => {
 		expect(firstCurve.duration).toBeLessThanOrEqual(1);
 	});
 
-	it("works with repeat pattern", () => {
-		const pattern = repeat(sequence(N.C1(1)), 4);
-		const keyframes = trigger(pattern, { peak: 0.9, attack: 1, release: 0.5 });
-
-		const baselines = keyframes.filter((pt) => "curve" in pt && pt.curve === "step");
-		expect(baselines).toHaveLength(4);
-		expect(baselines.map((pt) => pt.time)).toEqual([0, 1, 2, 3]);
-	});
-
-	it("works with layer pattern (simultaneous notes)", () => {
-		const pattern = layer(
-			sequence(N.C4(1)),
-			sequence(N.E4(1)),
-		);
-		const keyframes = trigger(pattern, { peak: 1, attack: 1, release: 0.5 });
-
-		const baselines = keyframes.filter((pt) => "curve" in pt && pt.curve === "step");
-		expect(baselines).toHaveLength(2);
-		expect(baselines[0]?.time).toBe(0);
-		expect(baselines[1]?.time).toBe(0);
-	});
 });

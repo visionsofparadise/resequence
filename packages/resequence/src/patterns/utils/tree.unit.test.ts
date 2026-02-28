@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import { N } from "../../tunings/chromatic";
 import { gap } from "../gap";
 import { layer } from "../layer";
-import { metadata } from "../metadata";
 import { repeat } from "../modifiers/repeat";
 import { sequence } from "../sequence";
 import { collectNotes, mapNotes, flatMapNotes, mapGroups } from "./tree";
@@ -36,13 +35,6 @@ describe("collectNotes", () => {
 		expect(notes[1]?.startBeat).toBe(0);
 	});
 
-	it("collects notes from metadata wrapper", () => {
-		const wrapped = metadata(sequence(N.C4(1)), { name: "test" });
-		const notes = collectNotes(wrapped);
-		expect(notes).toHaveLength(1);
-		expect(notes[0]).toMatchObject({ startBeat: 0, pitch: N.C4 });
-	});
-
 	it("collects notes from repeat with correct offsets", () => {
 		const rep = repeat(sequence(N.C4(1)), 3);
 		const notes = collectNotes(rep);
@@ -54,14 +46,15 @@ describe("collectNotes", () => {
 
 	it("collects from nested tree", () => {
 		const tree = sequence(
-			metadata(sequence(N.C4(2)), { name: "first" }),
+			repeat(sequence(N.C4(1)), 2),
 			layer(sequence(N.E4(2)), sequence(N.G4(2))),
 		);
 		const notes = collectNotes(tree);
-		expect(notes).toHaveLength(3);
+		expect(notes).toHaveLength(4);
 		expect(notes[0]?.startBeat).toBe(0);
-		expect(notes[1]?.startBeat).toBe(2);
+		expect(notes[1]?.startBeat).toBe(1);
 		expect(notes[2]?.startBeat).toBe(2);
+		expect(notes[3]?.startBeat).toBe(2);
 	});
 });
 

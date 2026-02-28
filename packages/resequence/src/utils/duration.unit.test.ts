@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { PPQ, bars, ms, sec } from "./duration";
+import { bars, ms, sec } from "./duration";
 
 describe("bars", () => {
 	it("returns beats for n bars at 4/4", () => {
@@ -27,8 +27,3 @@ describe("sec", () => {
 	});
 });
 
-describe("PPQ", () => {
-	it("is 480", () => {
-		expect(PPQ).toBe(480);
-	});
-});

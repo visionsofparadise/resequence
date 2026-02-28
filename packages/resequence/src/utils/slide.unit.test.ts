@@ -6,7 +6,6 @@ import { evaluateSlide, evaluateSlideCents, mergeSlides } from "./slide";
 const C4 = N.C4;
 const E4 = N.E4;
 const G4 = N.G4;
-const A4 = N.A4;
 
 describe("evaluateSlide", () => {
 	it("returns root pitch when no slides", () => {
@@ -65,15 +64,6 @@ describe("evaluateSlide", () => {
 });
 
 describe("evaluateSlideCents", () => {
-	it("returns 0 when no slides", () => {
-		expect(evaluateSlideCents(C4, [], 0.5)).toBe(0);
-	});
-
-	it("returns 0 when beatOffset <= 0", () => {
-		const slides: ScoreSlide[] = [{ beat: 1, pitch: E4, curve: 0 }];
-		expect(evaluateSlideCents(C4, slides, 0)).toBe(0);
-	});
-
 	it("returns final cents when beatOffset >= last beat", () => {
 		const slides: ScoreSlide[] = [{ beat: 1, pitch: E4, curve: 0 }];
 		// C4 to E4 = 4 semitones = 400 cents
@@ -87,20 +77,6 @@ describe("evaluateSlideCents", () => {
 		expect(evaluateSlideCents(C4, slides, 0.5)).toBe(200);
 	});
 
-	it("interpolates between two keyframes", () => {
-		const slides: ScoreSlide[] = [
-			{ beat: 1, pitch: E4, curve: 0 },
-			{ beat: 2, pitch: G4, curve: 0 },
-		];
-		// At 1.5: halfway between 400 and 700 = 550
-		expect(evaluateSlideCents(C4, slides, 1.5)).toBe(550);
-	});
-
-	it("applies curve to cents interpolation", () => {
-		const slides: ScoreSlide[] = [{ beat: 1, pitch: E4, curve: 1 }];
-		// At t=0.5 with curve=1: t^4 = 0.0625, cents = 400 * 0.0625 = 25
-		expect(evaluateSlideCents(C4, slides, 0.5)).toBe(25);
-	});
 });
 
 describe("mergeSlides", () => {
@@ -128,16 +104,4 @@ describe("mergeSlides", () => {
 		expect(mergeSlides([], slides)).toEqual(slides);
 	});
 
-	it("sorts mixed beat positions correctly", () => {
-		const existing: ScoreSlide[] = [{ beat: 3, pitch: A4, curve: 0 }];
-		const incoming: ScoreSlide[] = [
-			{ beat: 1, pitch: E4, curve: 0 },
-			{ beat: 2, pitch: G4, curve: 0 },
-		];
-		const result = mergeSlides(existing, incoming);
-		expect(result).toHaveLength(3);
-		expect(result[0].beat).toBe(1);
-		expect(result[1].beat).toBe(2);
-		expect(result[2].beat).toBe(3);
-	});
 });

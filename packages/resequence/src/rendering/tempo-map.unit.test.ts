@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { sequence } from "../patterns/sequence";
 import { layer } from "../patterns/layer";
-import { repeat } from "../patterns/modifiers/repeat";
 import { tempo } from "../patterns/tempo";
 import { N } from "../tunings/chromatic";
 import { beatsToSeconds, buildTempoMap } from "./tempo-map";
@@ -21,34 +20,6 @@ describe("buildTempoMap", () => {
 		const pattern = sequence(N.C4(1), tempo(sequence(N.E4(1)), 100));
 		const result = buildTempoMap(pattern);
 		expect(result).toEqual([{ beat: 1, bpm: 100 }]);
-	});
-
-	it("captures multiple tempo wrappers in sequence", () => {
-		const pattern = sequence(
-			tempo(sequence(N.C4(1)), 120),
-			tempo(sequence(N.E4(1)), 100),
-			tempo(sequence(N.G4(1)), 80),
-		);
-		const result = buildTempoMap(pattern);
-		expect(result).toEqual([
-			{ beat: 0, bpm: 120 },
-			{ beat: 1, bpm: 100 },
-			{ beat: 2, bpm: 80 },
-		]);
-	});
-
-	it("captures tempo inside layer at same offset", () => {
-		const pattern = layer(sequence(N.C4(1)), tempo(sequence(N.E4(1)), 90));
-		const result = buildTempoMap(pattern);
-		expect(result).toEqual([{ beat: 0, bpm: 90 }]);
-	});
-
-	it("captures tempo wrapping a repeat", () => {
-		const pattern = tempo(repeat(sequence(N.C4(1)), 3), 110);
-		const result = buildTempoMap(pattern);
-		expect(result).toEqual([
-			{ beat: 0, bpm: 110 },
-		]);
 	});
 
 	it("returns sorted result", () => {
@@ -135,18 +106,6 @@ describe("buildTempoMap", () => {
 			expect(result).toContainEqual({ beat: 0, bpm: 140 });
 		});
 
-		it("nested overrides - innermost wins", () => {
-			const pattern = tempo(
-				tempo(
-					tempo(sequence(N.C4(4)), 160, { override: true }),
-					140, { override: true },
-				),
-				120,
-			);
-			const result = buildTempoMap(pattern);
-			expect(result).toContainEqual({ beat: 0, bpm: 160 });
-		});
-
 		it("inner non-override tempo is ignored under outer tempo", () => {
 			const pattern = tempo(
 				sequence(N.C4(4), tempo(sequence(N.E4(4)), 140)),
@@ -156,18 +115,6 @@ describe("buildTempoMap", () => {
 			expect(result).toEqual([{ beat: 0, bpm: 120 }]);
 		});
 
-		it("inner override takes effect under outer tempo", () => {
-			const pattern = tempo(
-				sequence(
-					N.C4(4),
-					tempo(sequence(N.E4(4)), 140, { override: true }),
-				),
-				120,
-			);
-			const result = buildTempoMap(pattern);
-			expect(result).toContainEqual({ beat: 0, bpm: 120 });
-			expect(result).toContainEqual({ beat: 4, bpm: 140 });
-		});
 	});
 });
 

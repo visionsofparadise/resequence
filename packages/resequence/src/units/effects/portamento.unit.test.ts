@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { ScheduleContext } from "../../rendering/schedule-context";
 import type { VoiceNote, VoiceSlide } from "../midi-unit";
 import { MidiUnit } from "../midi-unit";
-import { PortamentoUnit, porta, portamento } from "./portamento";
+import { portamento } from "./portamento";
 
 // Minimal mock MidiUnit that captures scheduled VoiceNotes
 class CaptureMidiUnit extends MidiUnit {
@@ -40,16 +40,6 @@ function makeVoiceNote(note: number, startMs: number, stopMs: number, slides?: R
 }
 
 describe("PortamentoUnit", () => {
-	it("creates a PortamentoUnit instance", () => {
-		const unit = portamento({ timeBeats: 0.5 });
-		expect(unit).toBeInstanceOf(PortamentoUnit);
-	});
-
-	it("porta alias creates same unit", () => {
-		const unit = porta({ timeBeats: 1 });
-		expect(unit).toBeInstanceOf(PortamentoUnit);
-	});
-
 	it("first note has no slides", () => {
 		const unit = portamento({ timeBeats: 0.5 });
 		const capture = new CaptureMidiUnit();

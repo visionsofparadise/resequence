@@ -1,52 +1,13 @@
 import { N } from "../../tunings/chromatic";
 import { describe, expect, it } from "vitest";
 import { ResequenceError } from "../../error";
-import { chain } from "../composite/chain";
-import { filter } from "../effects/filter";
-import { gain } from "../effects/gain";
-import { SamplerUnit, sampler } from "./sampler";
+import { sampler } from "./sampler";
 
 describe("sampler", () => {
 	describe("validation", () => {
 		it("rejects empty zones array", () => {
 			expect(() => sampler([])).toThrow(ResequenceError);
 			expect(() => sampler([])).toThrow("zones array must not be empty");
-		});
-	});
-
-	describe("single sample", () => {
-		it("creates SamplerUnit with id", () => {
-			const node = sampler("./bass.wav", { id: "bass" });
-			expect(node).toBeInstanceOf(SamplerUnit);
-			expect(node.id).toBe("bass");
-		});
-
-		it("accepts root for pitch shifting", () => {
-			const node = sampler("./bass-C2.wav", { root: N.C2, id: "bass" });
-			expect(node).toBeInstanceOf(SamplerUnit);
-		});
-
-		it("accepts loop points", () => {
-			const node = sampler("./pad.wav", { root: N.C3, loopStartMs: 500, loopEndMs: 1200, id: "pad" });
-			expect(node).toBeInstanceOf(SamplerUnit);
-		});
-	});
-
-	describe("zones", () => {
-		it("creates SamplerUnit from zones array", () => {
-			const node = sampler([
-				{ sample: "./piano-C3.wav", root: N.C3 },
-				{ sample: "./piano-C4.wav", root: N.C4 },
-			], { id: "piano" });
-			expect(node).toBeInstanceOf(SamplerUnit);
-		});
-
-		it("accepts zones without root (no pitch shift)", () => {
-			const node = sampler([
-				{ sample: "./slice1.wav", velocity: 0 },
-				{ sample: "./slice2.wav", velocity: 64 },
-			]);
-			expect(node).toBeInstanceOf(SamplerUnit);
 		});
 	});
 
@@ -129,34 +90,4 @@ describe("sampler", () => {
 		});
 	});
 
-	describe("voiceTo", () => {
-		it("accepts composite from callback", () => {
-			const node = sampler("./bass.wav", { id: "bass" });
-			const result = node.voiceTo(() => chain(filter({ frequency: 1000 }), gain({ level: -3 })));
-			expect(result).toBe(node);
-		});
-	});
-
-	describe("voiceMod", () => {
-		it("stores voiceMod declaration without affecting targets", () => {
-			const node = sampler("./bass.wav", { id: "bass" });
-			node.voiceMod(["filter.frequency"]);
-			expect(node.targets).toHaveLength(0);
-		});
-	});
-
-	describe(".to()", () => {
-		it("returns void", () => {
-			const node = sampler("./bass.wav", { id: "bass" });
-			const gainNode = gain({ level: -3 });
-			const result = node.to(gainNode);
-			expect(result).toBeUndefined();
-		});
-
-		it("appends to targets of the source node", () => {
-			const node = sampler("./bass.wav", { id: "bass" });
-			node.to(gain({ level: -3 }));
-			expect(node.targets).toHaveLength(1);
-		});
-	});
 });

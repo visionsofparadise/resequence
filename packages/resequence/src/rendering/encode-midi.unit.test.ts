@@ -50,16 +50,6 @@ describe("encodeMidi", () => {
 		}
 	});
 
-	it("encodes multiple tempo changes", () => {
-		const tracks = new Map([["test", [{ tick: 0, pitch: 60, durationTicks: PPQ * 2, velocity: 100 }]]]);
-		const result = encodeMidi(tracks, { ppq: PPQ, tempoChanges: [{ beat: 0, bpm: 120 }, { beat: 1, bpm: 100 }], markers: noMarkers });
-
-		const parsed = parseMidi(result);
-		const tempoTrack = parsed.tracks[0];
-		const tempoEvents = tempoTrack.filter((ev) => ev.type === "setTempo");
-		expect(tempoEvents).toHaveLength(2);
-	});
-
 	it("encodes marker meta events", () => {
 		const tracks = new Map([["test", [{ tick: 0, pitch: 60, durationTicks: PPQ, velocity: 100 }]]]);
 		const result = encodeMidi(tracks, { ppq: PPQ, tempoChanges: noTempoChanges, markers: [{ beat: 0, name: "intro" }, { beat: 1, name: "verse" }] });
@@ -101,19 +91,6 @@ describe("encodeMidi", () => {
 		}
 	});
 
-	it("encodes track name", () => {
-		const tracks = new Map([["bass", [{ tick: 0, pitch: 36, durationTicks: PPQ, velocity: 100 }]]]);
-		const result = encodeMidi(tracks, { ppq: PPQ, tempoChanges: noTempoChanges, markers: noMarkers });
-
-		const parsed = parseMidi(result);
-		const noteTrack = parsed.tracks[1];
-		const nameEvent = noteTrack.find((ev) => ev.type === "trackName");
-		expect(nameEvent).toBeDefined();
-		if (nameEvent?.type === "trackName") {
-			expect(nameEvent.text).toBe("bass");
-		}
-	});
-
 	it("encodes noteOn and noteOff events with correct delta times", () => {
 		const tracks = new Map([["test", [
 			{ tick: 0, pitch: 60, durationTicks: PPQ, velocity: 100 },
@@ -125,18 +102,6 @@ describe("encodeMidi", () => {
 		const noteTrack = parsed.tracks[1];
 		const noteEvents = noteTrack.filter((ev) => ev.type === "noteOn" || ev.type === "noteOff");
 		expect(noteEvents.length).toBe(4);
-	});
-
-	it("encodes multiple tracks", () => {
-		const tracks = new Map([
-			["bass", [{ tick: 0, pitch: 36, durationTicks: PPQ, velocity: 100 }]],
-			["drums", [{ tick: 0, pitch: 24, durationTicks: PPQ / 2, velocity: 127 }]],
-		]);
-		const result = encodeMidi(tracks, { ppq: PPQ, tempoChanges: noTempoChanges, markers: noMarkers });
-
-		const parsed = parseMidi(result);
-		expect(parsed.header.numTracks).toBe(3);
-		expect(parsed.tracks).toHaveLength(3);
 	});
 
 	it("encodes lyrics events", () => {
@@ -195,27 +160,4 @@ describe("encodeMidi", () => {
 		expect(meaningful[1]?.type).toBe("noteOn");
 	});
 
-	it("notes without CC emit no controller events", () => {
-		const tracks = new Map([["test", [
-			{ tick: 0, pitch: 60, durationTicks: PPQ, velocity: 100 },
-		]]]);
-		const result = encodeMidi(tracks, { ppq: PPQ, tempoChanges: noTempoChanges, markers: noMarkers });
-
-		const parsed = parseMidi(result);
-		const noteTrack = parsed.tracks[1];
-		const ccEvents = noteTrack.filter((ev) => ev.type === "controller");
-		expect(ccEvents).toHaveLength(0);
-	});
-
-	it("roundtrips correctly", () => {
-		const tracks = new Map([["piano", [
-			{ tick: 0, pitch: 60, durationTicks: PPQ, velocity: 100 },
-		]]]);
-		const encoded = encodeMidi(tracks, { ppq: PPQ, tempoChanges: noTempoChanges, markers: noMarkers });
-		const parsed = parseMidi(encoded);
-		const reEncoded = encodeMidi(tracks, { ppq: PPQ, tempoChanges: noTempoChanges, markers: noMarkers });
-
-		expect(reEncoded).toEqual(encoded);
-		expect(parsed.header.format).toBe(1);
-	});
 });

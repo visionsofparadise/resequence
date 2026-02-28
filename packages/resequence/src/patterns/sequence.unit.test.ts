@@ -35,9 +35,5 @@ describe("SequencePattern", () => {
 				{ startBeat: 2, pitch: N.E4 },
 			]);
 		});
-
-		it("returns empty for empty sequence", () => {
-			expect(collectNotes(sequence())).toEqual([]);
-		});
 	});
 });

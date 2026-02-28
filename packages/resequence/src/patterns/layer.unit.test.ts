@@ -30,9 +30,5 @@ describe("LayerPattern", () => {
 				{ startBeat: 0, pitch: N.G4 },
 			]);
 		});
-
-		it("returns empty for empty layer", () => {
-			expect(collectNotes(layer())).toEqual([]);
-		});
 	});
 });

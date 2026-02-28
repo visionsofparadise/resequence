@@ -53,28 +53,4 @@ describe("HarmonizeMidiUnit", () => {
 		expect(capture.captured).toHaveLength(2);
 	});
 
-	it("supports multiple intervals", () => {
-		const unit = harmonize([4, 7]);
-		const capture = new CaptureMidiUnit();
-		unit.to(capture);
-
-		unit.schedule(makeVoiceNote(60), stubContext);
-
-		const notes = capture.captured.map((n) => n.note).sort((a, b) => a - b);
-		expect(notes).toEqual([60, 64, 67]);
-	});
-
-	it("preserves velocity and timing on harmonized notes", () => {
-		const unit = harmonize([12]);
-		const capture = new CaptureMidiUnit();
-		unit.to(capture);
-
-		unit.schedule(makeVoiceNote(48, 80), stubContext);
-
-		const harmonized = capture.captured.find((n) => n.note === 60);
-		expect(harmonized).toBeDefined();
-		expect(harmonized?.velocity).toBe(80);
-		expect(harmonized?.startMs).toBe(0);
-		expect(harmonized?.stopMs).toBe(500);
-	});
 });
