@@ -4,7 +4,9 @@ import type { RegionPoint } from "./pattern-metadata";
 import type { TempoMap } from "./tempo-map";
 import { beatsToSeconds } from "./tempo-map";
 
-export function encodeWav(buffer: AudioBuffer, markers?: ReadonlyArray<MarkerPoint>, tempoMap?: TempoMap, regions?: ReadonlyArray<RegionPoint>): ArrayBuffer {
+export type WavBitDepth = "16" | "24" | "32" | "32f" | "64";
+
+export function encodeWav(buffer: AudioBuffer, markers?: ReadonlyArray<MarkerPoint>, tempoMap?: TempoMap, regions?: ReadonlyArray<RegionPoint>, bitDepth?: WavBitDepth): ArrayBuffer {
 	const channels: Array<Float32Array> = [];
 
 	for (let channel = 0; channel < buffer.numberOfChannels; channel++) {
@@ -12,7 +14,7 @@ export function encodeWav(buffer: AudioBuffer, markers?: ReadonlyArray<MarkerPoi
 	}
 
 	const wav = new WaveFile();
-	wav.fromScratch(buffer.numberOfChannels, buffer.sampleRate, "32f", channels);
+	wav.fromScratch(buffer.numberOfChannels, buffer.sampleRate, bitDepth ?? "24", channels);
 
 	if (markers && markers.length > 0 && tempoMap) {
 		for (const markerPoint of markers) {

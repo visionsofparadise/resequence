@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { parseArgs } from "node:util";
 import { Pattern } from "./patterns/pattern";
+import type { WavBitDepth } from "./rendering/encode-wav";
 import { encodeWav } from "./rendering/encode-wav";
 import { collectMetadata } from "./rendering/pattern-metadata";
 import { renderAudio } from "./rendering/render-audio";
@@ -18,21 +19,25 @@ interface CliOptions {
 	readonly master: boolean;
 	readonly midiOnly: boolean;
 	readonly audioOnly: boolean;
+	readonly sampleRate: number;
+	readonly bitDepth: WavBitDepth;
 }
 
 const HELP = `Usage: resequence [entrypoint] [options]
 
 Arguments:
-  entrypoint          Path to ts/js file (default: ./index.ts)
+  entrypoint              Path to ts/js file (default: ./index.ts)
 
 Options:
-  --out <dir>         Output directory (default: .)
-  --include <names>   Comma-separated track names to include
-  --exclude <names>   Comma-separated track names to exclude
-  --master            Include master MIDI + master WAV
-  --midi-only         Only export MIDI
-  --audio-only        Only export audio
-  --help              Show this help message
+  --out <dir>             Output directory (default: .)
+  --include <names>       Comma-separated track names to include
+  --exclude <names>       Comma-separated track names to exclude
+  --master                Include master MIDI + master WAV
+  --midi-only             Only export MIDI
+  --audio-only            Only export audio
+  --sample-rate <hz>      Audio sample rate (default: 44100)
+  --bit-depth <depth>     WAV bit depth: 16, 24, 32, 32f, 64 (default: 24)
+  --help                  Show this help message
 `;
 
 export function parseCliArgs(argv: ReadonlyArray<string>): CliOptions | "help" {
@@ -45,6 +50,8 @@ export function parseCliArgs(argv: ReadonlyArray<string>): CliOptions | "help" {
 			master: { type: "boolean", default: false },
 			"midi-only": { type: "boolean", default: false },
 			"audio-only": { type: "boolean", default: false },
+			"sample-rate": { type: "string", default: "44100" },
+			"bit-depth": { type: "string", default: "24" },
 			help: { type: "boolean", default: false },
 		},
 		allowPositionals: true,
@@ -61,6 +68,8 @@ export function parseCliArgs(argv: ReadonlyArray<string>): CliOptions | "help" {
 		master: values.master,
 		midiOnly: values["midi-only"],
 		audioOnly: values["audio-only"],
+		sampleRate: Number(values["sample-rate"]),
+		bitDepth: values["bit-depth"] as WavBitDepth,
 	};
 }
 
@@ -145,7 +154,7 @@ async function runCli(args: CliOptions): Promise<void> {
 			const { OfflineAudioContext: NodeOfflineAudioContext } = nodeWebAudio;
 
 			const totalSeconds = beatsToSeconds(pattern.endBeat - pattern.startBeat, metadata.tempoMap);
-			const sampleRate = 44100;
+			const sampleRate = args.sampleRate;
 
 			const fetchProjectBuffer = (path: string) =>
 				readFile(resolve(projectDir, path)).then((data) => {
@@ -162,7 +171,7 @@ async function runCli(args: CliOptions): Promise<void> {
 					metadata,
 				});
 
-				const wav = encodeWav(result.buffer as unknown as AudioBuffer, metadata.markers, metadata.tempoMap, metadata.regions);
+				const wav = encodeWav(result.buffer as unknown as AudioBuffer, metadata.markers, metadata.tempoMap, metadata.regions, args.bitDepth);
 				const filePath = resolve(outDir, `${trackName}.wav`);
 
 				writeFileSync(filePath, Buffer.from(wav));
@@ -175,7 +184,7 @@ async function runCli(args: CliOptions): Promise<void> {
 
 				const result = await renderAudio(pattern, offlineCtx as unknown as OfflineAudioContext, fetchProjectBuffer, { metadata });
 
-				const wav = encodeWav(result.buffer as unknown as AudioBuffer, metadata.markers, metadata.tempoMap, metadata.regions);
+				const wav = encodeWav(result.buffer as unknown as AudioBuffer, metadata.markers, metadata.tempoMap, metadata.regions, args.bitDepth);
 				const filePath = resolve(outDir, "master.wav");
 
 				writeFileSync(filePath, Buffer.from(wav));
