@@ -1,3 +1,4 @@
+import type { Keyframe } from "../automation/keyframe";
 import { ResequenceError } from "../error";
 import type { PatternNode } from "./pattern";
 import { Pattern } from "./pattern";
@@ -5,7 +6,8 @@ import { Pattern } from "./pattern";
 export interface TempoKeyframe {
 	readonly beat: number;
 	readonly bpm: number;
-	readonly curve?: "step" | "linear" | "exponential";
+	readonly curve?: number;
+	readonly step?: true;
 }
 
 export interface TempoOptions {
@@ -16,7 +18,9 @@ export interface TempoOptions {
 export class TempoPattern extends Pattern {
 	constructor(
 		readonly bpm: number,
-		readonly keyframes: ReadonlyArray<TempoKeyframe>,
+		readonly keyframes: ReadonlyArray<Keyframe>,
+		readonly bpmMin: number,
+		readonly bpmMax: number,
 		readonly isOverride: boolean,
 		node: PatternNode,
 	) {
@@ -24,7 +28,7 @@ export class TempoPattern extends Pattern {
 	}
 
 	clone(overrides: Partial<PatternNode>): TempoPattern {
-		return new TempoPattern(this.bpm, this.keyframes, this.isOverride, this.overrideNode(overrides));
+		return new TempoPattern(this.bpm, this.keyframes, this.bpmMin, this.bpmMax, this.isOverride, this.overrideNode(overrides));
 	}
 }
 
@@ -33,9 +37,9 @@ export function tempo(pattern: Pattern, bpm: number, options?: TempoOptions): Te
 		throw new ResequenceError("INVALID_TEMPO", `tempo(): bpm must be greater than 0, got ${bpm}`);
 	}
 
-	const keyframes = options?.keyframes ?? [];
+	const inputKeyframes = options?.keyframes ?? [];
 
-	for (const keyframe of keyframes) {
+	for (const keyframe of inputKeyframes) {
 		if (keyframe.beat < 0) {
 			throw new ResequenceError("INVALID_TEMPO", `tempo(): keyframe beat must be >= 0, got ${keyframe.beat}`);
 		}
@@ -44,5 +48,22 @@ export function tempo(pattern: Pattern, bpm: number, options?: TempoOptions): Te
 		}
 	}
 
-	return new TempoPattern(bpm, keyframes, options?.override ?? false, { notes: [], children: [{ offsetBeats: 0, pattern }], startBeat: pattern.startBeat, endBeat: pattern.endBeat });
+	const allBpms = [bpm, ...inputKeyframes.map((kf) => kf.bpm)];
+	const bpmMin = Math.min(...allBpms);
+	const bpmMax = Math.max(...allBpms);
+	const bpmRange = bpmMax - bpmMin;
+
+	const keyframes: ReadonlyArray<Keyframe> = inputKeyframes.map((kf) => ({
+		beat: kf.beat,
+		value: bpmRange === 0 ? 0.5 : (kf.bpm - bpmMin) / bpmRange,
+		curve: kf.curve,
+		step: kf.step,
+	}));
+
+	return new TempoPattern(bpm, keyframes, bpmMin, bpmMax, options?.override ?? false, {
+		notes: [],
+		children: [{ offsetBeats: 0, pattern }],
+		startBeat: pattern.startBeat,
+		endBeat: pattern.endBeat,
+	});
 }

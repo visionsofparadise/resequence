@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { N } from "../../tunings/chromatic";
+import { normalizePitch } from "../../utils/pitch";
 import { gap } from "../gap";
 import { layer } from "../layer";
 import { sequence } from "../sequence";
@@ -18,8 +19,8 @@ describe("SlidePattern", () => {
 		expect(noteA).toBeDefined();
 		expect(noteA!.slides).toBeDefined();
 		expect(noteA!.slides).toHaveLength(2);
-		expect(noteA!.slides![0]).toEqual({ beat: 1.0, pitch: C4, curve: 0 });
-		expect(noteA!.slides![1]).toEqual({ beat: 1.5, pitch: E4, curve: 0 });
+		expect(noteA!.slides![0]).toEqual({ beat: 1.0, value: normalizePitch(C4) });
+		expect(noteA!.slides![1]).toEqual({ beat: 1.5, value: normalizePitch(E4) });
 	});
 
 	it("does not add slides for adjacent notes (no overlap)", () => {
@@ -38,11 +39,11 @@ describe("SlidePattern", () => {
 
 		const noteC4 = collectNotes(pat).find((sn) => sn.startBeat === 0 && sn.pitch.class === C4.class);
 		expect(noteC4!.slides).toBeDefined();
-		expect(noteC4!.slides![1]).toMatchObject({ pitch: E4 });
+		expect(noteC4!.slides![1]).toMatchObject({ value: normalizePitch(E4) });
 
 		const noteG4 = collectNotes(pat).find((sn) => sn.startBeat === 0 && sn.pitch.class === G4.class);
 		expect(noteG4!.slides).toBeDefined();
-		expect(noteG4!.slides![1]).toMatchObject({ pitch: A4 });
+		expect(noteG4!.slides![1]).toMatchObject({ value: normalizePitch(A4) });
 	});
 
 	it("merges with existing user-defined slides", () => {

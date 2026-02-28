@@ -1,5 +1,5 @@
-import type { AbsoluteKeyframe } from "../automation/utils";
-import { evaluateAt, firstPointAt, schedulePointKeyframe } from "../automation/utils";
+import type { Keyframe } from "../automation/keyframe";
+import { evaluateAt, scheduleKeyframes } from "../automation/keyframe";
 import { ResequenceError } from "../error";
 import type { ScheduleContext } from "../rendering/schedule-context";
 import { beatsToSeconds } from "../rendering/tempo-map";
@@ -8,68 +8,18 @@ import type { ValidateContext } from "../validate";
 import type { PatternNode } from "./pattern";
 import { Pattern } from "./pattern";
 
-export type KeyframeCurve = "linear" | "exponential" | "step";
-
-export interface Keyframe {
-	readonly time: number;
-	readonly value: number;
-	readonly curve?: KeyframeCurve;
-}
-
-export interface CurveKeyframe {
-	readonly time: number;
-	readonly duration: number;
-	readonly values: Float32Array;
-}
-
-export type AnyKeyframe = Keyframe | CurveKeyframe;
-
-export interface ResolvedKeyframe {
-	readonly kind: "point";
-	readonly timeBeats: number;
-	readonly value: number;
-	readonly curve?: KeyframeCurve;
-}
-
-export interface ResolvedCurveKeyframe {
-	readonly kind: "curve";
-	readonly timeBeats: number;
-	readonly durationBeats: number;
-	readonly values: Float32Array;
-}
-
-export type AnyResolvedKeyframe = ResolvedKeyframe | ResolvedCurveKeyframe;
-
-function resolveKeyframe(keyframe: AnyKeyframe): AnyResolvedKeyframe {
-	if ("values" in keyframe) {
-		return {
-			kind: "curve",
-			timeBeats: keyframe.time,
-			durationBeats: keyframe.duration,
-			values: keyframe.values,
-		};
-	}
-
-	return {
-		kind: "point",
-		timeBeats: keyframe.time,
-		value: keyframe.value,
-		curve: keyframe.curve,
-	};
-}
-
 export class AutomatePattern extends Pattern {
 	constructor(
 		readonly name: string,
 		readonly paths: ReadonlyArray<string>,
-		readonly source: ReadonlyArray<AnyResolvedKeyframe> | Lfo,
+		readonly source: ReadonlyArray<Keyframe> | Lfo,
 		node: PatternNode,
 	) {
 		super(node);
 	}
 
-	get envelope(): ReadonlyArray<AnyResolvedKeyframe> {
-		if (Array.isArray(this.source)) return this.source as ReadonlyArray<AnyResolvedKeyframe>;
+	get envelope(): ReadonlyArray<Keyframe> {
+		if (Array.isArray(this.source)) return this.source as ReadonlyArray<Keyframe>;
 		return [];
 	}
 
@@ -92,53 +42,32 @@ export class AutomatePattern extends Pattern {
 
 		if (offsetBeats + this.endBeat <= context.fromBeats || offsetBeats + this.startBeat >= context.toBeats) return;
 
-		const envelope = this.source as ReadonlyArray<AnyResolvedKeyframe>;
+		const envelope = this.source as ReadonlyArray<Keyframe>;
 		if (envelope.length === 0) return;
 
-		const absoluteKeyframes: Array<AbsoluteKeyframe> = envelope.map((kf) => {
-			if (kf.kind === "curve") {
-				return { kind: "curve" as const, beat: offsetBeats + kf.timeBeats, durationBeats: kf.durationBeats, values: kf.values };
-			}
-			return { kind: "point" as const, beat: offsetBeats + kf.timeBeats, value: kf.value, curve: kf.curve };
-		});
+		const absoluteKeyframes: Array<Keyframe> = envelope.map((kf) => ({ ...kf, beat: offsetBeats + kf.beat }));
 
 		const clipEndBeat = offsetBeats + (this.endBeat - this.startBeat);
 		const evalBeat = Math.max(context.fromBeats, offsetBeats);
 		const initialValue = evaluateAt(absoluteKeyframes, evalBeat);
-		const evalSeconds = beatsToSeconds(evalBeat, context.tempoMap);
+		const beatToSec = (beat: number) => beatsToSeconds(beat, context.tempoMap);
 
 		for (const path of this.paths) {
 			const driver = context.driverMap.get(path);
 			if (!driver) continue;
 
-			driver.offset.setValueAtTime(initialValue, evalSeconds);
-
-			for (const kf of absoluteKeyframes) {
-				if (kf.beat < context.fromBeats || kf.beat >= context.toBeats) continue;
-
-				const timeSeconds = beatsToSeconds(kf.beat, context.tempoMap);
-
-				if (kf.kind === "curve") {
-					const endSeconds = beatsToSeconds(kf.beat + kf.durationBeats, context.tempoMap);
-					driver.offset.setValueCurveAtTime(kf.values, timeSeconds, endSeconds - timeSeconds);
-				} else {
-					schedulePointKeyframe(driver.offset, kf, timeSeconds);
-				}
-			}
+			scheduleKeyframes(driver.offset, absoluteKeyframes, beatToSec, {
+				fromBeat: context.fromBeats,
+				toBeat: context.toBeats,
+				initialValue,
+			});
 
 			if (clipEndBeat > context.toBeats) {
-				const nextKf = firstPointAt(absoluteKeyframes, context.toBeats);
-				if (nextKf) {
-					const curve = nextKf.curve ?? "step";
-					if (curve !== "step") {
-						const value = evaluateAt(absoluteKeyframes, context.toBeats);
-						const toSeconds = beatsToSeconds(context.toBeats, context.tempoMap);
-						if (curve === "linear") {
-							driver.offset.linearRampToValueAtTime(value, toSeconds);
-						} else {
-							driver.offset.exponentialRampToValueAtTime(Math.max(value, 1e-6), toSeconds);
-						}
-					}
+				const nextKf = firstAt(absoluteKeyframes, context.toBeats);
+				if (nextKf && !nextKf.step) {
+					const value = evaluateAt(absoluteKeyframes, context.toBeats);
+					const toSeconds = beatToSec(context.toBeats);
+					driver.offset.linearRampToValueAtTime(value, toSeconds);
 				}
 			}
 		}
@@ -217,7 +146,7 @@ export class AutomatePattern extends Pattern {
 	}
 }
 
-export function automate(name: string, paths: string | ReadonlyArray<string>, source: ReadonlyArray<AnyKeyframe> | Lfo): AutomatePattern {
+export function automate(name: string, paths: string | ReadonlyArray<string>, source: ReadonlyArray<Keyframe> | Lfo): AutomatePattern {
 	const resolvedPaths = typeof paths === "string" ? [paths] : [...paths];
 
 	for (const path of resolvedPaths) {
@@ -233,22 +162,27 @@ export function automate(name: string, paths: string | ReadonlyArray<string>, so
 	}
 
 	if (Array.isArray(source)) {
-		const keyframes = source as ReadonlyArray<AnyKeyframe>;
+		const keyframes = source as ReadonlyArray<Keyframe>;
 
 		if (keyframes.length === 0) {
 			throw new ResequenceError("EMPTY_KEYFRAMES", "automate(): keyframes array must not be empty");
 		}
 
-		const resolved = keyframes.map(resolveKeyframe);
-		const endBeat = Math.max(...resolved.map((point) => point.timeBeats));
+		const endBeat = Math.max(...keyframes.map((kf) => kf.beat));
 
-		return new AutomatePattern(name, resolvedPaths, resolved, { notes: [], children: [], startBeat: 0, endBeat });
+		return new AutomatePattern(name, resolvedPaths, keyframes, { notes: [], children: [], startBeat: 0, endBeat });
 	}
 
 	return new AutomatePattern(name, resolvedPaths, source as Lfo, { notes: [], children: [], startBeat: 0, endBeat: 0 });
 }
 
+function firstAt(keyframes: ReadonlyArray<Keyframe>, beat: number): Keyframe | undefined {
+	for (const kf of keyframes) {
+		if (kf.beat >= beat) return kf;
+	}
+	return undefined;
+}
+
 function lfoFrequencyHz(lfo: Lfo): number {
 	return lfo.frequency;
 }
-

@@ -1,6 +1,7 @@
-import { pitchKey } from "../../utils/pitch";
+import type { Keyframe } from "../../automation/keyframe";
+import { normalizePitch, pitchKey } from "../../utils/pitch";
 import { evaluateSlide, mergeSlides } from "../../utils/slide";
-import type { ScoreNote, ScoreNoteSlide } from "../note";
+import type { ScoreNote } from "../note";
 import type { PatternNode } from "../pattern";
 import { MidiPattern, type Pattern } from "../pattern";
 import { toPattern } from "../sequence";
@@ -29,7 +30,7 @@ export function slide(pattern: Pattern | ScoreNote): SlidePattern {
 
 	const sorted = allNotes.slice().sort((noteA, noteB) => noteA.startBeat - noteB.startBeat);
 
-	const slideMap = new Map<string, Array<ScoreNoteSlide>>();
+	const slideMap = new Map<string, Array<Keyframe>>();
 
 	for (const noteA of sorted) {
 		const aEnd = noteA.endBeat;
@@ -56,8 +57,8 @@ export function slide(pattern: Pattern | ScoreNote): SlidePattern {
 			? evaluateSlide(noteA.pitch, noteA.slides, slideStartBeat)
 			: noteA.pitch;
 
-		const holdKeyframe: ScoreNoteSlide = { beat: slideStartBeat, pitch: currentPitchAtSlideStart, curve: 0 };
-		const targetKeyframe: ScoreNoteSlide = { beat: slideEndBeat, pitch: bestMatch.pitch, curve: 0 };
+		const holdKeyframe: Keyframe = { beat: slideStartBeat, value: normalizePitch(currentPitchAtSlideStart) };
+		const targetKeyframe: Keyframe = { beat: slideEndBeat, value: normalizePitch(bestMatch.pitch) };
 
 		const newSlides = [holdKeyframe, targetKeyframe];
 		const key = `${noteA.startBeat}:${noteA.endBeat}:${pitchKey(noteA.pitch)}`;

@@ -1,53 +1,32 @@
-import type { ScoreNoteSlide } from "../patterns/note";
+import type { Keyframe } from "../automation/keyframe";
+import { evaluateAt } from "../automation/keyframe";
 import type { Pitch } from "./pitch";
-import { addSteps, pitchToCents } from "./pitch";
+import { denormalizePitch, normalizePitch, pitchToCents } from "./pitch";
 import type { ResolvedTuning } from "./tuning";
-
-function applyCurve(progress: number, curve: number): number {
-	if (curve === 0) return progress;
-	if (curve > 0) return Math.pow(progress, 1 + curve * 3);
-	return 1 - Math.pow(1 - progress, 1 + Math.abs(curve) * 3);
-}
-
-function lerpPitch(from: Pitch, to: Pitch, progress: number): Pitch {
-	const fromKey = from.octave * from.stepsPerOctave + from.class;
-	const toKey = to.octave * to.stepsPerOctave + to.class;
-	const steps = (toKey - fromKey) * progress;
-	return addSteps(from, Math.round(steps));
-}
 
 export function evaluateSlide(
 	noteStartPitch: Pitch,
-	slides: ReadonlyArray<ScoreNoteSlide>,
+	slides: ReadonlyArray<Keyframe>,
 	beatOffset: number,
 ): Pitch {
 	if (slides.length === 0 || beatOffset <= 0) return noteStartPitch;
 
 	const last = slides[slides.length - 1];
 	if (!last) return noteStartPitch;
-	if (beatOffset >= last.beat) return last.pitch;
 
-	let prevBeat = 0;
-	let prevPitch = noteStartPitch;
-
-	for (const slide of slides) {
-		if (beatOffset <= slide.beat) {
-			const span = slide.beat - prevBeat;
-			if (span === 0) return slide.pitch;
-			const raw = (beatOffset - prevBeat) / span;
-			const curved = applyCurve(raw, slide.curve);
-			return lerpPitch(prevPitch, slide.pitch, curved);
-		}
-		prevBeat = slide.beat;
-		prevPitch = slide.pitch;
+	if (beatOffset >= last.beat) {
+		return denormalizePitch(last.value, noteStartPitch.stepsPerOctave, noteStartPitch.octaveRatio);
 	}
 
-	return last.pitch;
+	const startValue = normalizePitch(noteStartPitch);
+	const allKeyframes: Array<Keyframe> = [{ beat: 0, value: startValue }, ...slides];
+	const value = evaluateAt(allKeyframes, beatOffset);
+	return denormalizePitch(value, noteStartPitch.stepsPerOctave, noteStartPitch.octaveRatio);
 }
 
 export function evaluateSlideCents(
 	noteRootPitch: Pitch,
-	slides: ReadonlyArray<ScoreNoteSlide>,
+	slides: ReadonlyArray<Keyframe>,
 	beatOffset: number,
 	tuning?: ResolvedTuning,
 ): number {
@@ -55,36 +34,24 @@ export function evaluateSlideCents(
 
 	const last = slides[slides.length - 1];
 	if (!last) return 0;
+
 	if (beatOffset >= last.beat) {
-		return pitchToCents(noteRootPitch, last.pitch, tuning);
+		const pitch = denormalizePitch(last.value, noteRootPitch.stepsPerOctave, noteRootPitch.octaveRatio);
+		return pitchToCents(noteRootPitch, pitch, tuning);
 	}
 
-	let prevBeat = 0;
-	let prevCents = 0;
-
-	for (const slide of slides) {
-		const slideCents = pitchToCents(noteRootPitch, slide.pitch, tuning);
-
-		if (beatOffset <= slide.beat) {
-			const span = slide.beat - prevBeat;
-			if (span === 0) return slideCents;
-			const raw = (beatOffset - prevBeat) / span;
-			const curved = applyCurve(raw, slide.curve);
-			return prevCents + (slideCents - prevCents) * curved;
-		}
-
-		prevBeat = slide.beat;
-		prevCents = slideCents;
-	}
-
-	return pitchToCents(noteRootPitch, last.pitch, tuning);
+	const startValue = normalizePitch(noteRootPitch);
+	const allKeyframes: Array<Keyframe> = [{ beat: 0, value: startValue }, ...slides];
+	const value = evaluateAt(allKeyframes, beatOffset);
+	const pitch = denormalizePitch(value, noteRootPitch.stepsPerOctave, noteRootPitch.octaveRatio);
+	return pitchToCents(noteRootPitch, pitch, tuning);
 }
 
 export function mergeSlides(
-	existing: ReadonlyArray<ScoreNoteSlide>,
-	incoming: ReadonlyArray<ScoreNoteSlide>,
-): ReadonlyArray<ScoreNoteSlide> {
-	const beatMap = new Map<number, ScoreNoteSlide>();
+	existing: ReadonlyArray<Keyframe>,
+	incoming: ReadonlyArray<Keyframe>,
+): ReadonlyArray<Keyframe> {
+	const beatMap = new Map<number, Keyframe>();
 
 	for (const slide of existing) {
 		beatMap.set(slide.beat, slide);

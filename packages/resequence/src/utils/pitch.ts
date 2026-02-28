@@ -45,3 +45,16 @@ export function pitchToCents(from: Pitch, to: Pitch, tuning?: ResolvedTuning): n
 
 	return (to.class / to.stepsPerOctave - from.class / from.stepsPerOctave) * 1200 * Math.log2(to.octaveRatio) + (to.octave - from.octave) * 1200;
 }
+
+export const NUM_OCTAVES = 11;
+
+export function normalizePitch(pitch: Pitch): number {
+	return pitchKey(pitch) / (pitch.stepsPerOctave * NUM_OCTAVES);
+}
+
+export function denormalizePitch(value: number, stepsPerOctave: number, octaveRatio: number): Pitch {
+	const totalSteps = Math.round(value * stepsPerOctave * NUM_OCTAVES);
+	const pitchClass = ((totalSteps % stepsPerOctave) + stepsPerOctave) % stepsPerOctave;
+	const octave = Math.floor(totalSteps / stepsPerOctave);
+	return { class: pitchClass, stepsPerOctave, octave, octaveRatio };
+}

@@ -3,7 +3,7 @@ import type { MidiUnit, VoiceNote, VoiceSlide } from "../units/midi-unit";
 import { CC } from "../utils/cc";
 import { CHROMATIC_TUNING } from "../tunings/chromatic";
 import type { Pitch } from "../utils/pitch";
-import { pitchToCents } from "../utils/pitch";
+import { denormalizePitch, pitchToCents } from "../utils/pitch";
 import type { ResolvedTuning } from "../utils/tuning";
 import type { ScheduleContext } from "./schedule-context";
 import { beatsToSeconds } from "./tempo-map";
@@ -48,8 +48,9 @@ function buildVoiceNote(scoreNote: ScoreNote, absoluteBeat: number, scheduleCont
 		slides = scoreNote.slides.map((slide) => {
 			const slideAbsoluteBeat = absoluteBeat + slide.beat;
 			const slideTimeMs = beatsToSeconds(slideAbsoluteBeat, scheduleContext.tempoMap) * 1000;
-			const cents = pitchToCents(scoreNote.pitch, slide.pitch, scheduleContext.tuning);
-			return { timeMs: slideTimeMs - startMs, cents, curve: slide.curve };
+			const slidePitch = denormalizePitch(slide.value, scoreNote.pitch.stepsPerOctave, scoreNote.pitch.octaveRatio);
+			const cents = pitchToCents(scoreNote.pitch, slidePitch, scheduleContext.tuning);
+			return { timeMs: slideTimeMs - startMs, cents, curve: slide.curve ?? 0 };
 		});
 	}
 

@@ -1,5 +1,7 @@
+import type { Keyframe } from "../automation/keyframe";
 import { ResequenceError } from "../error";
 import type { Pitch } from "../utils/pitch";
+import { normalizePitch } from "../utils/pitch";
 
 export interface ScoreNote {
 	readonly pitch: Pitch;
@@ -8,13 +10,14 @@ export interface ScoreNote {
 	readonly velocity: number;
 	readonly lyric?: string;
 	readonly cc?: Partial<Record<number, number>>;
-	readonly slides?: ReadonlyArray<ScoreNoteSlide>;
+	readonly slides?: ReadonlyArray<Keyframe>;
 }
 
 export interface ScoreNoteSlideInput {
 	readonly pitch: Pitch;
 	readonly beat: number;
 	readonly curve?: number;
+	readonly step?: true;
 }
 
 export function note(
@@ -33,13 +36,7 @@ export function note(
 	return { pitch, startBeat: 0, endBeat: durationBeats, velocity, lyric: options?.lyric, cc: options?.cc, slides };
 }
 
-export interface ScoreNoteSlide {
-	readonly pitch: Pitch;
-	readonly beat: number;
-	readonly curve: number;
-}
-
-export function resolveScoreNoteSlides(inputs: ReadonlyArray<ScoreNoteSlideInput>, durationBeats: number): ReadonlyArray<ScoreNoteSlide> {
+export function resolveScoreNoteSlides(inputs: ReadonlyArray<ScoreNoteSlideInput>, durationBeats: number): ReadonlyArray<Keyframe> {
 	const resolved = inputs.map((input) => {
 		const curve = Math.max(-1, Math.min(1, input.curve ?? 0));
 
@@ -50,7 +47,12 @@ export function resolveScoreNoteSlides(inputs: ReadonlyArray<ScoreNoteSlideInput
 			throw new ResequenceError("INVALID_SLIDE", `note(): slide time ${input.beat} exceeds note duration ${durationBeats}`);
 		}
 
-		return { beat: input.beat, pitch: input.pitch, curve };
+		return {
+			beat: input.beat,
+			value: normalizePitch(input.pitch),
+			...(curve !== 0 ? { curve } : {}),
+			...(input.step ? { step: true as const } : {}),
+		};
 	});
 
 	return resolved.sort((s1, s2) => s1.beat - s2.beat);

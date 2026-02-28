@@ -1,6 +1,7 @@
+import type { Keyframe } from "../../automation/keyframe";
 import type { Pitch } from "../../utils/pitch";
 import { evaluateSlide } from "../../utils/slide";
-import type { ScoreNote, ScoreNoteSlide } from "../note";
+import type { ScoreNote } from "../note";
 import type { PatternNode } from "../pattern";
 import { MidiPattern, type Pattern } from "../pattern";
 import { toPattern } from "../sequence";
@@ -32,7 +33,7 @@ export function chop(pattern: Pattern | ScoreNote, subdivision: number): ChopPat
 			const chopEnd = chopStart + subdivision;
 
 			let pitch: Pitch = note.pitch;
-			let slides: ReadonlyArray<ScoreNoteSlide> | undefined;
+			let slides: ReadonlyArray<Keyframe> | undefined;
 
 			if (note.slides && note.slides.length > 0) {
 				pitch = evaluateSlide(note.pitch, note.slides, chopStart);

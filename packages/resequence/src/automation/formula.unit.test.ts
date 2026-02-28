@@ -27,7 +27,7 @@ describe("formula", () => {
 
 	it("spans the full duration in ticks", () => {
 		const keyframes = formula((t) => t, { duration: bars(2), resolution: 4 });
-		expect(keyframes[0]?.time).toBe(0);
-		expect(keyframes[4]?.time).toBe(bars(2));
+		expect(keyframes[0]?.beat).toBe(0);
+		expect(keyframes[4]?.beat).toBe(bars(2));
 	});
 });

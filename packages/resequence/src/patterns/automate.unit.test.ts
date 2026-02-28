@@ -10,6 +10,7 @@ function mockAudioParam(): AudioParam {
 		setValueAtTime: vi.fn(),
 		linearRampToValueAtTime: vi.fn(),
 		exponentialRampToValueAtTime: vi.fn(),
+		setValueCurveAtTime: vi.fn(),
 		value: 0,
 	} as unknown as AudioParam;
 }
@@ -55,8 +56,8 @@ describe("AutomatePattern", () => {
 	describe("creation", () => {
 		it("creates with name and single path", () => {
 			const auto = automate("filter-sweep", "bass.hp.frequency", [
-				{ time: 0, value: 80 },
-				{ time: 4, value: 2000, curve: "linear" },
+				{ beat: 0, value: 0.5 },
+				{ beat: 4, value: 1.0 },
 			]);
 			expect(auto).toBeInstanceOf(auto.constructor);
 			expect(auto.name).toBe("filter-sweep");
@@ -67,9 +68,9 @@ describe("AutomatePattern", () => {
 	describe("durationBeats", () => {
 		it("derives from last envelope point", () => {
 			const auto = automate("sweep", "bass.hp.frequency", [
-				{ time: 0, value: 80 },
-				{ time: 4, value: 2000 },
-				{ time: bars(2), value: 80 },
+				{ beat: 0, value: 0.5 },
+				{ beat: 4, value: 1.0 },
+				{ beat: bars(2), value: 0.5 },
 			]);
 			expect(auto.endBeat - auto.startBeat).toBe(bars(2));
 		});
@@ -82,12 +83,12 @@ describe("AutomatePattern", () => {
 
 	describe("path validation", () => {
 		it("rejects paths with fewer than 2 segments", () => {
-			expect(() => automate("bad", "bass", [{ time: 0, value: 0 }])).toThrow();
+			expect(() => automate("bad", "bass", [{ beat: 0, value: 0 }])).toThrow();
 		});
 
 		it("rejects tempo path", () => {
-			expect(() => automate("tempo", ["tempo"], [{ time: 0, value: 120 }])).toThrow(ResequenceError);
-			expect(() => automate("tempo", ["tempo"], [{ time: 0, value: 120 }])).toThrow("Use tempo() with keyframes instead");
+			expect(() => automate("tempo", ["tempo"], [{ beat: 0, value: 0.5 }])).toThrow(ResequenceError);
+			expect(() => automate("tempo", ["tempo"], [{ beat: 0, value: 0.5 }])).toThrow("Use tempo() with keyframes instead");
 		});
 	});
 
@@ -110,8 +111,8 @@ describe("AutomatePattern", () => {
 			const driverMap = new Map<string, ConstantSourceNode>();
 			const context = { ...mockContext(driverMap), fromBeats: 10, toBeats: 20, tempoMap: [{ beat: 0, bpm: 120 }] };
 			const auto = automate("sweep", "bass.hp.frequency", [
-				{ time: 0, value: 0.5 },
-				{ time: 4, value: 1.0 },
+				{ beat: 0, value: 0.5 },
+				{ beat: 4, value: 1.0 },
 			]);
 			auto.setup(context);
 			auto.schedule(0, context);
@@ -175,7 +176,7 @@ describe("AutomatePattern", () => {
 		it("stops and disconnects ConstantSourceNode", () => {
 			const driverMap = new Map<string, ConstantSourceNode>();
 			const context = mockContext(driverMap);
-			const auto = automate("sweep", "bass.hp.frequency", [{ time: 0, value: 80 }]);
+			const auto = automate("sweep", "bass.hp.frequency", [{ beat: 0, value: 0.5 }]);
 			auto.setup(context);
 			const node = driverMap.get("bass.hp.frequency");
 			auto.teardown(context);

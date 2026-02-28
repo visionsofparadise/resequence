@@ -47,22 +47,21 @@ describe("collectMetadata", () => {
 			]);
 		});
 
-		it("samples linear ramp keyframes", () => {
+		it("collects linear ramp keyframes", () => {
 			const pattern = tempo(sequence(N.C4(4)), 120, {
-				keyframes: [{ beat: 1, bpm: 140, curve: "linear" }],
+				keyframes: [{ beat: 1, bpm: 140 }],
 			});
 			const metadata = collectMetadata(pattern);
 
-			expect(metadata.tempoMap.length).toBeGreaterThan(2);
-			expect(metadata.tempoMap[0]).toEqual({ beat: 0, bpm: 120 });
-			const last = metadata.tempoMap[metadata.tempoMap.length - 1];
-			expect(last?.beat).toBeCloseTo(1);
-			expect(last?.bpm).toBeCloseTo(140);
+			expect(metadata.tempoMap).toEqual([
+				{ beat: 0, bpm: 120 },
+				{ beat: 1, bpm: 140 },
+			]);
 		});
 
-		it("samples exponential ramp keyframes", () => {
+		it("samples curved ramp keyframes", () => {
 			const pattern = tempo(sequence(N.C4(4)), 120, {
-				keyframes: [{ beat: 1, bpm: 240, curve: "exponential" }],
+				keyframes: [{ beat: 1, bpm: 240, curve: 1 }],
 			});
 			const metadata = collectMetadata(pattern);
 

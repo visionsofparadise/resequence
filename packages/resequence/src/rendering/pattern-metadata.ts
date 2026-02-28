@@ -1,8 +1,9 @@
+import type { Keyframe } from "../automation/keyframe";
+import { evaluateAt } from "../automation/keyframe";
 import { AudioPattern } from "../patterns/audio";
 import { MetadataPattern } from "../patterns/metadata";
 import type { Pattern } from "../patterns/pattern";
 import { MidiPattern } from "../patterns/pattern";
-import type { TempoKeyframe } from "../patterns/tempo";
 import { TempoPattern } from "../patterns/tempo";
 import type { TempoMap, TempoPoint } from "./tempo-map";
 
@@ -66,7 +67,7 @@ function walkMetadata(
 		const shouldTakeEffect = !ancestorHasTempo || pattern.isOverride;
 
 		if (shouldTakeEffect) {
-			collectTempoPoints(pattern.bpm, pattern.keyframes, offsetBeats, tempoEntries);
+			collectTempoPoints(pattern.bpm, pattern.keyframes, pattern.bpmMin, pattern.bpmMax, offsetBeats, tempoEntries);
 			tempoForChildren = true;
 		}
 	}
@@ -106,7 +107,18 @@ function walkMetadata(
 	}
 }
 
-function collectTempoPoints(baseBpm: number, keyframes: ReadonlyArray<TempoKeyframe>, offsetBeats: number, entries: Array<TempoPoint>): void {
+function denormalizeBpm(value: number, bpmMin: number, bpmMax: number): number {
+	return bpmMin + value * (bpmMax - bpmMin);
+}
+
+function collectTempoPoints(
+	baseBpm: number,
+	keyframes: ReadonlyArray<Keyframe>,
+	bpmMin: number,
+	bpmMax: number,
+	offsetBeats: number,
+	entries: Array<TempoPoint>,
+): void {
 	if (keyframes.length === 0) {
 		entries.push({ beat: offsetBeats, bpm: baseBpm });
 		return;
@@ -115,15 +127,13 @@ function collectTempoPoints(baseBpm: number, keyframes: ReadonlyArray<TempoKeyfr
 	const sorted = [...keyframes].sort((left, right) => left.beat - right.beat);
 	const first = sorted[0];
 
-	let prevBpm = baseBpm;
-	let prevBeat = 0;
-
 	if (first?.beat === 0) {
-		entries.push({ beat: offsetBeats, bpm: first.bpm });
-		prevBpm = first.bpm;
+		entries.push({ beat: offsetBeats, bpm: denormalizeBpm(first.value, bpmMin, bpmMax) });
 	} else {
 		entries.push({ beat: offsetBeats, bpm: baseBpm });
 	}
+
+	let prevBeat = 0;
 
 	for (const kf of sorted) {
 		if (kf.beat === 0) {
@@ -131,24 +141,20 @@ function collectTempoPoints(baseBpm: number, keyframes: ReadonlyArray<TempoKeyfr
 			continue;
 		}
 
-		if (!kf.curve || kf.curve === "step") {
-			entries.push({ beat: offsetBeats + kf.beat, bpm: kf.bpm });
+		const curve = kf.curve ?? 0;
+
+		if (kf.step || curve === 0) {
+			entries.push({ beat: offsetBeats + kf.beat, bpm: denormalizeBpm(kf.value, bpmMin, bpmMax) });
 		} else {
 			let sampleBeat = prevBeat + SAMPLE_RESOLUTION;
 			while (sampleBeat <= kf.beat) {
-				const fraction = (sampleBeat - prevBeat) / (kf.beat - prevBeat);
-				let bpm: number;
-				if (kf.curve === "linear") {
-					bpm = prevBpm + (kf.bpm - prevBpm) * fraction;
-				} else {
-					bpm = prevBpm * Math.pow(Math.max(kf.bpm / prevBpm, 1e-6), fraction);
-				}
+				const normalizedValue = evaluateAt(sorted, sampleBeat);
+				const bpm = denormalizeBpm(normalizedValue, bpmMin, bpmMax);
 				entries.push({ beat: offsetBeats + Math.round(sampleBeat * 100) / 100, bpm });
 				sampleBeat = Math.round((sampleBeat + SAMPLE_RESOLUTION) * 100) / 100;
 			}
 		}
 
-		prevBpm = kf.bpm;
 		prevBeat = kf.beat;
 	}
 }

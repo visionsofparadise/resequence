@@ -1,4 +1,4 @@
-import { addSteps, pitchKey } from "../../utils/pitch";
+import { NUM_OCTAVES, pitchKey } from "../../utils/pitch";
 import type { Pitch } from "../../utils/pitch";
 import type { ScoreNote } from "../note";
 import type { PatternNode } from "../pattern";
@@ -58,7 +58,7 @@ export function sort(pattern: Pattern | ScoreNote, key: SortKey = "asc"): SortPa
 			return {
 				...note,
 				pitch: newPitch,
-				slides: note.slides?.map((sl) => ({ ...sl, pitch: addSteps(sl.pitch, shift) })),
+				slides: note.slides?.map((sl) => ({ ...sl, value: sl.value + shift / (note.pitch.stepsPerOctave * NUM_OCTAVES) })),
 			};
 		}
 

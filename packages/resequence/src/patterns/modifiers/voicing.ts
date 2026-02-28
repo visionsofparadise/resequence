@@ -1,4 +1,4 @@
-import { addSteps, pitchKey } from "../../utils/pitch";
+import { addSteps, NUM_OCTAVES, pitchKey } from "../../utils/pitch";
 import type { Pitch } from "../../utils/pitch";
 import type { ScoreNote } from "../note";
 import type { PatternNode } from "../pattern";
@@ -111,7 +111,7 @@ export function voicing(pattern: Pattern | ScoreNote, style: VoicingStyle): Voic
 			return {
 				...note,
 				pitch: newPitch,
-				slides: note.slides?.map((sl) => ({ ...sl, pitch: addSteps(sl.pitch, shift) })),
+				slides: note.slides?.map((sl) => ({ ...sl, value: sl.value + shift / (note.pitch.stepsPerOctave * NUM_OCTAVES) })),
 			};
 		}
 

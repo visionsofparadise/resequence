@@ -1,3 +1,4 @@
+import { applyCurve } from "../automation/keyframe";
 import type { VoiceSlide } from "../units/midi-unit";
 
 export function scheduleSlideRamps(
@@ -9,7 +10,6 @@ export function scheduleSlideRamps(
 ): void {
 	if (slides.length === 0) return;
 
-	// Hold at base value until first keyframe
 	param.setValueAtTime(baseValue, noteStartSec);
 
 	let prevTimeSec = noteStartSec;
@@ -24,7 +24,6 @@ export function scheduleSlideRamps(
 		} else if (slide.curve === 0) {
 			param.linearRampToValueAtTime(targetValue, targetTimeSec);
 		} else {
-			// For non-linear curves, sample at ~5ms intervals
 			const segmentDuration = targetTimeSec - prevTimeSec;
 			const sampleCount = Math.max(2, Math.ceil(segmentDuration / 0.005));
 			const values = new Float32Array(sampleCount);
@@ -41,10 +40,4 @@ export function scheduleSlideRamps(
 		prevTimeSec = targetTimeSec;
 		prevValue = targetValue;
 	}
-}
-
-function applyCurve(progress: number, curve: number): number {
-	if (curve === 0) return progress;
-	if (curve > 0) return Math.pow(progress, 1 + curve * 3);
-	return 1 - Math.pow(1 - progress, 1 + Math.abs(curve) * 3);
 }

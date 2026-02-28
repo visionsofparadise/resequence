@@ -1,4 +1,4 @@
-import { addSteps } from "../../utils/pitch";
+import { addSteps, NUM_OCTAVES } from "../../utils/pitch";
 import type { ScoreNote } from "../note";
 import type { PatternNode } from "../pattern";
 import { MidiPattern, type Pattern } from "../pattern";
@@ -24,7 +24,7 @@ export function transpose(pattern: Pattern | ScoreNote, interval: number): Trans
 	const transformed = mapNotes(resolved, (note) => ({
 		...note,
 		pitch: addSteps(note.pitch, interval),
-		slides: note.slides?.map((sl) => ({ ...sl, pitch: addSteps(sl.pitch, interval) })),
+		slides: note.slides?.map((sl) => ({ ...sl, value: sl.value + interval / (note.pitch.stepsPerOctave * NUM_OCTAVES) })),
 	}));
 
 	return new TransposePattern(pattern, interval, transformed);

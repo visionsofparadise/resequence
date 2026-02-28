@@ -1,16 +1,15 @@
+import type { Keyframe } from "../automation/keyframe";
+import { evaluateAt } from "../automation/keyframe";
 import { AutomatePattern } from "../patterns/automate";
-import type { AnyResolvedKeyframe } from "../patterns/automate";
 import type { Pattern } from "../patterns/pattern";
 import type { ScheduleContext } from "../rendering/schedule-context";
 import { beatsToSeconds } from "../rendering/tempo-map";
 import { lastBefore } from "../utils/sorted";
-import type { AbsoluteKeyframe } from "./utils";
-import { evaluateAt } from "./utils";
 
 interface AutomationClip {
 	readonly endBeat: number;
 	readonly paths: ReadonlyArray<string>;
-	readonly keyframes: ReadonlyArray<AbsoluteKeyframe>;
+	readonly keyframes: ReadonlyArray<Keyframe>;
 	readonly finalValue: number;
 }
 
@@ -53,16 +52,10 @@ export function seekAutomation(pattern: Pattern, seekBeat: number, context: Sche
 
 function collectAutomationClips(pattern: Pattern, offsetBeats: number, clips: Array<AutomationClip>): void {
 	if (pattern instanceof AutomatePattern && Array.isArray(pattern.source)) {
-		const envelope = pattern.source as ReadonlyArray<AnyResolvedKeyframe>;
+		const envelope = pattern.source as ReadonlyArray<Keyframe>;
 		const durationBeats = pattern.endBeat - pattern.startBeat;
 
-		const keyframes: Array<AbsoluteKeyframe> = envelope.map((kf) => {
-			if (kf.kind === "curve") {
-				return { kind: "curve" as const, beat: offsetBeats + kf.timeBeats, durationBeats: kf.durationBeats, values: kf.values };
-			}
-
-			return { kind: "point" as const, beat: offsetBeats + kf.timeBeats, value: kf.value, curve: kf.curve };
-		});
+		const keyframes: Array<Keyframe> = envelope.map((kf) => ({ ...kf, beat: offsetBeats + kf.beat }));
 
 		clips.push({
 			endBeat: offsetBeats + durationBeats,
