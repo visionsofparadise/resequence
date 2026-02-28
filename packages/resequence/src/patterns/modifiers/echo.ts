@@ -1,64 +1,43 @@
-import type { ScheduleContext } from "../../rendering/schedule-context";
-import { isInScope, scheduleNotes } from "../../rendering/schedule-notes";
 import type { Duration } from "../../utils/duration";
 import { resolveDuration } from "../../utils/duration";
-import type { ValidateContext } from "../../validate";
-import type { Pattern, PositionedAutomation, PositionedMetadata, ScoreNote } from "../pattern";
-import { MidiPattern } from "../pattern";
+import type { PatternNode } from "../pattern";
+import { MidiPattern, type Pattern } from "../pattern";
+import { flatMapNotes } from "../utils/tree";
 
 export class EchoPattern extends MidiPattern {
-	readonly type = "echo" as const;
-	readonly durationBeats: number;
-	readonly notes: ReadonlyArray<ScoreNote>;
-	readonly metadatas: ReadonlyArray<PositionedMetadata>;
-	readonly automations: ReadonlyArray<PositionedAutomation>;
-
 	constructor(
-		readonly child: Pattern,
+		readonly source: Pattern,
 		readonly interval: number,
 		readonly repeats: number,
 		readonly decay: number,
+		node: PatternNode,
 	) {
-		super();
-
-		this.durationBeats = child.durationBeats;
-
-		const result: Array<ScoreNote> = [];
-
-		for (const positionedNote of child.notes) {
-			result.push(positionedNote);
-
-			for (let echoIndex = 1; echoIndex <= repeats; echoIndex++) {
-				const echoVelocity = Math.round((positionedNote.velocity ?? 100) * decay ** echoIndex);
-
-				result.push({
-					...positionedNote,
-					beat: positionedNote.beat + echoIndex * interval,
-					velocity: Math.max(1, echoVelocity),
-				});
-			}
-		}
-
-		this.notes = result;
-		this.metadatas = child.metadatas;
-		this.automations = child.automations;
+		super(node);
 	}
 
-	validate(context: ValidateContext): void {
-		const childContext = this.outputs.length > 0 ? { ...context, insideRoute: true } : context;
-
-		this.child.validate(childContext);
-	}
-
-
-	schedule(offsetBeats: number, context: ScheduleContext): void {
-		if (!isInScope(offsetBeats, this.durationBeats, context)) return;
-
-		scheduleNotes(this.notes, offsetBeats, this.outputs, context);
-		this.child.schedule(offsetBeats, context);
+	clone(overrides: Partial<PatternNode>): EchoPattern {
+		return new EchoPattern(this.source, this.interval, this.repeats, this.decay, this.overrideNode(overrides));
 	}
 }
 
 export function echo(pattern: Pattern, interval: Duration | number, repeats: number, decay: number): EchoPattern {
-	return new EchoPattern(pattern, resolveDuration(interval), repeats, decay);
+	const resolvedInterval = resolveDuration(interval);
+
+	const transformed = flatMapNotes(pattern, (note) => {
+		const result = [note];
+
+		for (let echoIndex = 1; echoIndex <= repeats; echoIndex++) {
+			const echoVelocity = Math.round(note.velocity * decay ** echoIndex);
+			result.push({
+				...note,
+				startBeat: note.startBeat + echoIndex * resolvedInterval,
+				endBeat: note.endBeat + echoIndex * resolvedInterval,
+				velocity: Math.max(1, echoVelocity),
+			});
+		}
+
+		return result;
+	});
+
+	return new EchoPattern(pattern, resolvedInterval, repeats, decay, transformed);
 }

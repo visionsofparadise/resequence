@@ -1,126 +1,122 @@
 import { describe, expect, it } from "vitest";
+import { resolveDuration } from "../../utils/duration";
+import { resolvePitch } from "../../utils/pitch";
 import { gap } from "../gap";
 import { layer } from "../layer";
 import { metadata } from "../metadata";
 import { note } from "../note";
-import { repeat } from "../repeat";
+import { repeat } from "../modifiers/repeat";
 import { sequence } from "../sequence";
-import { childrenOf, flatMapTree } from "./tree";
+import { collectNotes, mapNotes, flatMapNotes, mapGroups } from "./tree";
 
-describe("childrenOf", () => {
-	it("returns empty for leaf pattern", () => {
-		expect(childrenOf(note("C4", 1), 0)).toEqual([]);
+describe("collectNotes", () => {
+	it("returns empty for gap", () => {
+		expect(collectNotes(gap(2))).toEqual([]);
 	});
 
-	it("returns single child for metadata wrapper", () => {
-		const child = note("C4", 1);
-		const wrapped = metadata(child, { name: "test" });
-		const children = childrenOf(wrapped, 4);
-		expect(children).toHaveLength(1);
-		expect(children[0].pattern).toBe(child);
-		expect(children[0].offsetBeats).toBe(4);
+	it("collects notes from sequence with correct offsets", () => {
+		const seq = sequence(
+			note(resolvePitch("C4"), resolveDuration("4n")),
+			note(resolvePitch("D4"), resolveDuration("4n")),
+			note(resolvePitch("E4"), resolveDuration("4n")),
+		);
+		const notes = collectNotes(seq);
+		expect(notes).toHaveLength(3);
+		expect(notes[0]).toMatchObject({ startBeat: 0, pitch: resolvePitch("C4") });
+		expect(notes[1]).toMatchObject({ startBeat: 1, pitch: resolvePitch("D4") });
+		expect(notes[2]).toMatchObject({ startBeat: 2, pitch: resolvePitch("E4") });
 	});
 
-	it("returns sequence children with accumulated offsets", () => {
-		const first = gap(2);
-		const second = gap(3);
-		const third = gap(1);
-		const seq = sequence(first, second, third);
-		const children = childrenOf(seq, 10);
-		expect(children).toHaveLength(3);
-		expect(children[0].offsetBeats).toBe(10);
-		expect(children[1].offsetBeats).toBe(12);
-		expect(children[2].offsetBeats).toBe(15);
+	it("collects notes from layer at same offset", () => {
+		const lay = layer(
+			sequence(note(resolvePitch("C4"), 4)),
+			sequence(note(resolvePitch("E4"), 4)),
+		);
+		const notes = collectNotes(lay);
+		expect(notes).toHaveLength(2);
+		expect(notes[0]?.startBeat).toBe(0);
+		expect(notes[1]?.startBeat).toBe(0);
 	});
 
-	it("returns layer children with same offset", () => {
-		const first = note("C4", 4);
-		const second = note("E4", 4);
-		const lay = layer(first, second);
-		const children = childrenOf(lay, 8);
-		expect(children).toHaveLength(2);
-		expect(children[0].offsetBeats).toBe(8);
-		expect(children[1].offsetBeats).toBe(8);
+	it("collects notes from metadata wrapper", () => {
+		const wrapped = metadata(sequence(note(resolvePitch("C4"), 1)), { name: "test" });
+		const notes = collectNotes(wrapped);
+		expect(notes).toHaveLength(1);
+		expect(notes[0]).toMatchObject({ startBeat: 0, pitch: resolvePitch("C4") });
 	});
 
-	it("returns repeat children with multiplied offsets", () => {
-		const child = gap(4);
-		const rep = repeat(child, 3);
-		const children = childrenOf(rep, 0);
-		expect(children).toHaveLength(3);
-		expect(children[0].offsetBeats).toBe(0);
-		expect(children[1].offsetBeats).toBe(4);
-		expect(children[2].offsetBeats).toBe(8);
-	});
-});
-
-describe("flatMapTree", () => {
-	it("visits leaf node", () => {
-		const leaf = note("C4", 1);
-		const result = flatMapTree(leaf, (pattern, offset) => [{ type: pattern.type, offset }]);
-		expect(result).toEqual([{ type: "note", offset: 0 }]);
-	});
-
-	it("visits metadata wrapper and child", () => {
-		const wrapped = metadata(note("C4", 1), { name: "test" });
-		const types = flatMapTree(wrapped, (pattern) => [pattern.type]);
-		expect(types).toEqual(["metadata", "note"]);
-	});
-
-	it("visits sequence children with correct offsets", () => {
-		const seq = sequence(gap(2), gap(3), gap(1));
-		const result = flatMapTree(seq, (pattern, offset) => {
-			if (pattern.type === "gap") return [offset];
-			return [];
-		});
-		expect(result).toEqual([0, 2, 5]);
-	});
-
-	it("visits layer children with same offset", () => {
-		const lay = layer(note("C4", 4), note("E4", 4));
-		const result = flatMapTree(lay, (pattern, offset) => {
-			if (pattern.type === "note") return [offset];
-			return [];
-		});
-		expect(result).toEqual([0, 0]);
-	});
-
-	it("visits repeat children with correct offsets", () => {
-		const rep = repeat(gap(4), 3);
-		const result = flatMapTree(rep, (pattern, offset) => {
-			if (pattern.type === "gap") return [offset];
-			return [];
-		});
-		expect(result).toEqual([0, 4, 8]);
+	it("collects notes from repeat with correct offsets", () => {
+		const rep = repeat(sequence(note(resolvePitch("C4"), 1)), 3);
+		const notes = collectNotes(rep);
+		expect(notes).toHaveLength(3);
+		expect(notes[0]?.startBeat).toBe(0);
+		expect(notes[1]?.startBeat).toBe(1);
+		expect(notes[2]?.startBeat).toBe(2);
 	});
 
 	it("collects from nested tree", () => {
-		const tree = sequence(metadata(note("C4", 2), { name: "first" }), layer(note("E4", 2), note("G4", 2)));
-		const result = flatMapTree(tree, (pattern, offset) => {
-			if (pattern.type === "note") return [offset];
-			return [];
+		const tree = sequence(
+			metadata(sequence(note(resolvePitch("C4"), 2)), { name: "first" }),
+			layer(sequence(note(resolvePitch("E4"), 2)), sequence(note(resolvePitch("G4"), 2))),
+		);
+		const notes = collectNotes(tree);
+		expect(notes).toHaveLength(3);
+		expect(notes[0]?.startBeat).toBe(0);
+		expect(notes[1]?.startBeat).toBe(2);
+		expect(notes[2]?.startBeat).toBe(2);
+	});
+});
+
+describe("mapNotes", () => {
+	it("transforms notes in place", () => {
+		const seq = sequence(note(resolvePitch("C4"), 1), note(resolvePitch("D4"), 1));
+		const mapped = mapNotes(seq, (n) => ({ ...n, velocity: 50 }));
+		const notes = collectNotes(mapped);
+		expect(notes[0]?.velocity).toBe(50);
+		expect(notes[1]?.velocity).toBe(50);
+	});
+
+	it("preserves structure when no changes", () => {
+		const seq = sequence(note(resolvePitch("C4"), 1));
+		const mapped = mapNotes(seq, (n) => n);
+		expect(mapped).toBe(seq);
+	});
+
+	it("provides absolute offset to callback", () => {
+		const seq = sequence(note(resolvePitch("C4"), 2), note(resolvePitch("D4"), 2));
+		const offsets: number[] = [];
+		mapNotes(seq, (n, offset) => {
+			offsets.push(offset);
+			return n;
 		});
-		expect(result).toEqual([0, 2, 2]);
+		expect(offsets).toEqual([0, 2]);
+	});
+});
+
+describe("flatMapNotes", () => {
+	it("can duplicate notes", () => {
+		const seq = sequence(note(resolvePitch("C4"), 1));
+		const mapped = flatMapNotes(seq, (n) => [n, { ...n, velocity: 50 }]);
+		const notes = collectNotes(mapped);
+		expect(notes).toHaveLength(2);
 	});
 
-	it("handles repeat inside sequence", () => {
-		const tree = sequence(gap(4), repeat(gap(2), 3));
-		const result = flatMapTree(tree, (pattern, offset) => {
-			if (pattern.type === "gap" && pattern.durationBeats === 2) return [offset];
-			return [];
+	it("can filter out notes", () => {
+		const seq = sequence(note(resolvePitch("C4"), 1), note(resolvePitch("D4"), 1));
+		const mapped = flatMapNotes(seq, (n) => (n.pitch.class === resolvePitch("C4").class ? [n] : []));
+		const notes = collectNotes(mapped);
+		expect(notes).toHaveLength(1);
+	});
+});
+
+describe("mapGroups", () => {
+	it("receives all notes at a tree node", () => {
+		const seq = sequence(note(resolvePitch("C4"), 1), note(resolvePitch("D4"), 1));
+		const groupSizes: number[] = [];
+		mapGroups(seq, (notes, _offset) => {
+			groupSizes.push(notes.length);
+			return notes;
 		});
-		expect(result).toEqual([4, 6, 8]);
-	});
-
-	it("returns empty for visitor that produces nothing", () => {
-		const tree = sequence(note("C4", 1), note("D4", 1));
-		const result = flatMapTree(tree, () => []);
-		expect(result).toEqual([]);
-	});
-
-	it("collects multiple results per node", () => {
-		const leaf = note("C4", 4);
-		const result = flatMapTree(leaf, (pattern) => [pattern.type, pattern.type]);
-		expect(result).toEqual(["note", "note"]);
+		expect(groupSizes).toContain(2);
 	});
 });

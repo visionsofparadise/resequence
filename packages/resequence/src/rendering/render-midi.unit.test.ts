@@ -5,10 +5,12 @@ import { tempo } from "../patterns/tempo";
 import { level } from "../patterns/modifiers/level";
 import { transpose } from "../patterns/modifiers/transpose";
 import { note } from "../patterns/note";
-import { repeat } from "../patterns/repeat";
+import { repeat } from "../patterns/modifiers/repeat";
 import { sequence } from "../patterns/sequence";
 import { sampler } from "../units/generators/sampler";
 import { CC } from "../utils/cc";
+import { resolveDuration } from "../utils/duration";
+import { resolvePitch } from "../utils/pitch";
 import { renderMidi } from "./render-midi";
 
 describe("renderMidi", () => {
@@ -16,7 +18,10 @@ describe("renderMidi", () => {
 	const drums = sampler({ C1: "./kick.wav", D1: "./snare.wav" }, { id: "drums" });
 
 	it("renders per-track MIDI files", () => {
-		const pattern = tempo(layer(note("C2", "4n").route(bass), note("C1", "4n").route(drums)), 120);
+		const pattern = tempo(layer(
+			sequence(note(resolvePitch("C2"), resolveDuration("4n"))).route(bass),
+			sequence(note(resolvePitch("C1"), resolveDuration("4n"))).route(drums),
+		), 120);
 
 		const result = renderMidi(pattern);
 		expect(result.tracks.size).toBe(2);
@@ -25,7 +30,7 @@ describe("renderMidi", () => {
 	});
 
 	it("each per-track file is valid MIDI", () => {
-		const pattern = note("C2", "4n").route(bass);
+		const pattern = sequence(note(resolvePitch("C2"), resolveDuration("4n"))).route(bass);
 		const result = renderMidi(pattern);
 
 		const bassTrack = result.tracks.get("bass");
@@ -37,7 +42,10 @@ describe("renderMidi", () => {
 	});
 
 	it("renders master when requested", () => {
-		const pattern = layer(note("C2", "4n").route(bass), note("C1", "4n").route(drums));
+		const pattern = layer(
+			sequence(note(resolvePitch("C2"), resolveDuration("4n"))).route(bass),
+			sequence(note(resolvePitch("C1"), resolveDuration("4n"))).route(drums),
+		);
 
 		const result = renderMidi(pattern, { master: true });
 		expect(result.master).toBeDefined();
@@ -47,13 +55,16 @@ describe("renderMidi", () => {
 	});
 
 	it("does not render master by default", () => {
-		const pattern = note("C2", "4n").route(bass);
+		const pattern = sequence(note(resolvePitch("C2"), resolveDuration("4n"))).route(bass);
 		const result = renderMidi(pattern);
 		expect(result.master).toBeUndefined();
 	});
 
 	it("filters with include", () => {
-		const pattern = layer(note("C2", "4n").route(bass), note("C1", "4n").route(drums));
+		const pattern = layer(
+			sequence(note(resolvePitch("C2"), resolveDuration("4n"))).route(bass),
+			sequence(note(resolvePitch("C1"), resolveDuration("4n"))).route(drums),
+		);
 
 		const result = renderMidi(pattern, { include: ["bass"] });
 		expect(result.tracks.size).toBe(1);
@@ -62,7 +73,10 @@ describe("renderMidi", () => {
 	});
 
 	it("filters with exclude", () => {
-		const pattern = layer(note("C2", "4n").route(bass), note("C1", "4n").route(drums));
+		const pattern = layer(
+			sequence(note(resolvePitch("C2"), resolveDuration("4n"))).route(bass),
+			sequence(note(resolvePitch("C1"), resolveDuration("4n"))).route(drums),
+		);
 
 		const result = renderMidi(pattern, { exclude: ["drums"] });
 		expect(result.tracks.size).toBe(1);
@@ -70,13 +84,13 @@ describe("renderMidi", () => {
 	});
 
 	it("handles pattern with no routed notes", () => {
-		const pattern = note("C4", "4n");
+		const pattern = sequence(note(resolvePitch("C4"), resolveDuration("4n")));
 		const result = renderMidi(pattern);
 		expect(result.tracks.size).toBe(0);
 	});
 
 	it("preserves tempo from tempo wrapper", () => {
-		const pattern = tempo(note("C2", "4n").route(bass), 140);
+		const pattern = tempo(sequence(note(resolvePitch("C2"), resolveDuration("4n"))).route(bass), 140);
 		const result = renderMidi(pattern);
 
 		const parsed = parseMidi(result.tracks.get("bass")!);
@@ -88,7 +102,7 @@ describe("renderMidi", () => {
 	});
 
 	it("includes CC controller events from note cc option", () => {
-		const pattern = note("C4", "4n", { cc: { [CC.VOLUME]: 64 } }).route(bass);
+		const pattern = sequence(note(resolvePitch("C4"), resolveDuration("4n"), { cc: { [CC.VOLUME]: 64 } })).route(bass);
 		const result = renderMidi(pattern);
 
 		const encoded = result.tracks.get("bass");
@@ -106,7 +120,7 @@ describe("renderMidi", () => {
 	});
 
 	it("exports MIDI from modifier patterns", () => {
-		const pattern = transpose(note("C4", "4n"), 7).route(bass);
+		const pattern = transpose(sequence(note(resolvePitch("C4"), resolveDuration("4n"))), 7).route(bass);
 		const result = renderMidi(pattern);
 
 		const encoded = result.tracks.get("bass");
@@ -122,7 +136,7 @@ describe("renderMidi", () => {
 	});
 
 	it("includes CC from level modifier in MIDI output", () => {
-		const pattern = level(note("C4", "4n"), { cc: { [CC.CUTOFF]: 80 } }).route(bass);
+		const pattern = level(sequence(note(resolvePitch("C4"), resolveDuration("4n"))), { cc: { [CC.CUTOFF]: 80 } }).route(bass);
 		const result = renderMidi(pattern);
 
 		const encoded = result.tracks.get("bass");
@@ -142,8 +156,13 @@ describe("renderMidi", () => {
 	});
 
 	it("handles complex pattern tree", () => {
-		const bassLine = sequence(note("C2", "8n"), note("E2", "8n"), note("G2", "8n"), note("C3", "8n"));
-		const kickPattern = repeat(note("C1", "4n"), 4);
+		const bassLine = sequence(
+			note(resolvePitch("C2"), resolveDuration("8n")),
+			note(resolvePitch("E2"), resolveDuration("8n")),
+			note(resolvePitch("G2"), resolveDuration("8n")),
+			note(resolvePitch("C3"), resolveDuration("8n")),
+		);
+		const kickPattern = repeat(sequence(note(resolvePitch("C1"), resolveDuration("4n"))), 4);
 
 		const pattern = tempo(layer(bassLine.route(bass), kickPattern.route(drums)), 126);
 
@@ -164,7 +183,7 @@ describe("renderMidi", () => {
 
 	it("appears in multiple tracks when routed to multiple outputs", () => {
 		const bass2 = sampler("./bass2.wav", { root: "C2", id: "bass2" });
-		const pattern = note("C2", "4n").route(bass).route(bass2);
+		const pattern = sequence(note(resolvePitch("C2"), resolveDuration("4n"))).route(bass).route(bass2);
 		const result = renderMidi(pattern);
 		expect(result.tracks.has("bass")).toBe(true);
 		expect(result.tracks.has("bass2")).toBe(true);

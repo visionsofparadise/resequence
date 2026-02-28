@@ -1,4 +1,4 @@
-import type { ScoreSlide } from "../patterns/pattern";
+import type { ScoreNoteSlide } from "../patterns/note";
 import type { Pitch, TuningConfig } from "./pitch";
 import { addSteps, pitchToCents } from "./pitch";
 
@@ -17,7 +17,7 @@ function lerpPitch(from: Pitch, to: Pitch, progress: number): Pitch {
 
 export function evaluateSlide(
 	noteStartPitch: Pitch,
-	slides: ReadonlyArray<ScoreSlide>,
+	slides: ReadonlyArray<ScoreNoteSlide>,
 	beatOffset: number,
 ): Pitch {
 	if (slides.length === 0 || beatOffset <= 0) return noteStartPitch;
@@ -46,7 +46,7 @@ export function evaluateSlide(
 
 export function evaluateSlideCents(
 	noteRootPitch: Pitch,
-	slides: ReadonlyArray<ScoreSlide>,
+	slides: ReadonlyArray<ScoreNoteSlide>,
 	beatOffset: number,
 	tuning?: TuningConfig,
 ): number {
@@ -80,10 +80,10 @@ export function evaluateSlideCents(
 }
 
 export function mergeSlides(
-	existing: ReadonlyArray<ScoreSlide>,
-	incoming: ReadonlyArray<ScoreSlide>,
-): ReadonlyArray<ScoreSlide> {
-	const beatMap = new Map<number, ScoreSlide>();
+	existing: ReadonlyArray<ScoreNoteSlide>,
+	incoming: ReadonlyArray<ScoreNoteSlide>,
+): ReadonlyArray<ScoreNoteSlide> {
+	const beatMap = new Map<number, ScoreNoteSlide>();
 
 	for (const slide of existing) {
 		beatMap.set(slide.beat, slide);

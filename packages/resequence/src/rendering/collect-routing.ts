@@ -9,9 +9,7 @@ export interface RoutingEntry {
 
 export function collectRouting(pattern: Pattern): Map<string, RoutingEntry> {
 	const routing = new Map<string, RoutingEntry>();
-
 	walk(pattern, routing);
-
 	return routing;
 }
 
@@ -20,25 +18,9 @@ function walk(pattern: Pattern, routing: Map<string, RoutingEntry>): void {
 		if (!routing.has(pattern.name)) {
 			routing.set(pattern.name, { type: "audio", name: pattern.name, path: pattern.path });
 		}
-
-		return;
 	}
 
-	if ("child" in pattern && isPattern((pattern as { child: unknown }).child)) {
-		walk((pattern as { child: Pattern }).child, routing);
+	for (const { pattern: child } of pattern.children) {
+		walk(child, routing);
 	}
-
-	if ("node" in pattern && isPattern((pattern as { node: unknown }).node)) {
-		walk((pattern as { node: Pattern }).node, routing);
-	}
-
-	if ("children" in pattern && Array.isArray((pattern as { children: unknown }).children)) {
-		for (const child of (pattern as { children: ReadonlyArray<Pattern> }).children) {
-			if (isPattern(child)) walk(child, routing);
-		}
-	}
-}
-
-function isPattern(value: unknown): value is Pattern {
-	return typeof value === "object" && value !== null && "type" in value && "durationBeats" in value;
 }

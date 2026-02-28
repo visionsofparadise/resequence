@@ -1,56 +1,31 @@
-import type { ScheduleContext } from "../../rendering/schedule-context";
-import { isInScope, scheduleNotes } from "../../rendering/schedule-notes";
 import { addSteps } from "../../utils/pitch";
-import type { ValidateContext } from "../../validate";
-import type { Pattern, PositionedAutomation, PositionedMetadata, ScoreNote } from "../pattern";
-import { MidiPattern } from "../pattern";
+import type { PatternNode } from "../pattern";
+import { MidiPattern, type Pattern } from "../pattern";
+import { flatMapNotes } from "../utils/tree";
 
 export class HarmonizePattern extends MidiPattern {
-	readonly type = "harmonize" as const;
-	readonly durationBeats: number;
-	readonly notes: ReadonlyArray<ScoreNote>;
-	readonly metadatas: ReadonlyArray<PositionedMetadata>;
-	readonly automations: ReadonlyArray<PositionedAutomation>;
-
 	constructor(
-		readonly child: Pattern,
+		readonly source: Pattern,
 		readonly interval: number,
+		node: PatternNode,
 	) {
-		super();
-
-		this.durationBeats = child.durationBeats;
-
-		const result: Array<ScoreNote> = [];
-
-		for (const positionedNote of child.notes) {
-			result.push(positionedNote);
-			result.push({
-				...positionedNote,
-				pitch: addSteps(positionedNote.pitch, interval),
-				slides: positionedNote.slides?.map((sl) => ({ ...sl, pitch: addSteps(sl.pitch, interval) })),
-			});
-		}
-
-		this.notes = result;
-		this.metadatas = child.metadatas;
-		this.automations = child.automations;
+		super(node);
 	}
 
-	validate(context: ValidateContext): void {
-		const childContext = this.outputs.length > 0 ? { ...context, insideRoute: true } : context;
-
-		this.child.validate(childContext);
-	}
-
-
-	schedule(offsetBeats: number, context: ScheduleContext): void {
-		if (!isInScope(offsetBeats, this.durationBeats, context)) return;
-
-		scheduleNotes(this.notes, offsetBeats, this.outputs, context);
-		this.child.schedule(offsetBeats, context);
+	clone(overrides: Partial<PatternNode>): HarmonizePattern {
+		return new HarmonizePattern(this.source, this.interval, this.overrideNode(overrides));
 	}
 }
 
 export function harmonize(pattern: Pattern, interval: number): HarmonizePattern {
-	return new HarmonizePattern(pattern, interval);
+	const transformed = flatMapNotes(pattern, (note) => [
+		note,
+		{
+			...note,
+			pitch: addSteps(note.pitch, interval),
+			slides: note.slides?.map((sl) => ({ ...sl, pitch: addSteps(sl.pitch, interval) })),
+		},
+	]);
+
+	return new HarmonizePattern(pattern, interval, transformed);
 }

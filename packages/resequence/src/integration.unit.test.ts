@@ -2,15 +2,16 @@ import { describe, expect, it } from 'vitest'
 import {
   note, gap, sequence, layer, repeat,
   sampler, SamplerUnit,
-  gain, pan, highpass, compressor,
+  gain, highpass, compressor,
   env, EnvelopeUnit,
   audio, metadata, automate,
-  bars,
+  bars, resolveDuration,
   N, Chromatic,
   trigger, sidechain, formula, invert, resolveLfo,
-  pitchToMidi,
+  pitchToMidi, resolvePitch,
   MetadataPattern, AutomatePattern, AudioPattern,
 } from './index'
+import { collectNotes } from './patterns/utils/tree'
 
 describe('integration', () => {
   const bass = sampler('./samples/bass-C2.wav', { root: 'C2', id: 'bass' })
@@ -41,21 +42,21 @@ describe('integration', () => {
   })
 
   it('routes pattern to instrument with .route()', () => {
-    const kickPattern = repeat(note('C1', '4n'), 4)
+    const kickPattern = repeat(sequence(note(resolvePitch('C1'), resolveDuration('4n'))), 4)
     const kickPart = kickPattern.route(drums)
-    expect(kickPart.durationBeats).toBe(4)
+    expect(kickPart.endBeat - kickPart.startBeat).toBe(4)
   })
 
   it('composes full arrangement', () => {
-    const kickPattern = repeat(note('C1', '4n'), 4)
-    const snarePattern = sequence(gap('4n'), note('D1', '4n'), gap('4n'), note('D1', '4n'))
-    const bassRiff = sequence(note('C2', '8n'), gap('8n'), note('C2', '16n'), gap('16n'), note('C2', '8n'))
+    const kickPattern = repeat(sequence(note(resolvePitch('C1'), resolveDuration('4n'))), 4)
+    const snarePattern = sequence(gap('4n'), note(resolvePitch('D1'), resolveDuration('4n')), gap('4n'), note(resolvePitch('D1'), resolveDuration('4n')))
+    const bassRiff = sequence(note(resolvePitch('C2'), resolveDuration('8n')), gap('8n'), note(resolvePitch('C2'), resolveDuration('16n')), gap('16n'), note(resolvePitch('C2'), resolveDuration('8n')))
 
     const groove = layer(kickPattern.route(drums), snarePattern.route(drums), bassRiff.route(bass))
     const verse = repeat(groove, 4)
 
-    expect(groove.durationBeats).toBe(4)
-    expect(verse.durationBeats).toBe(16)
+    expect(groove.endBeat - groove.startBeat).toBe(4)
+    expect(verse.endBeat - verse.startBeat).toBe(16)
   })
 
   it('creates named audio patterns', () => {
@@ -71,7 +72,7 @@ describe('integration', () => {
       { time: bars(2), value: 80, curve: 'exponential' },
     ])
     expect(filterSweep).toBeInstanceOf(AutomatePattern)
-    expect(filterSweep.durationBeats).toBe(bars(2))
+    expect(filterSweep.endBeat - filterSweep.startBeat).toBe(bars(2))
   })
 
   it('accepts 2-segment automation paths', () => {
@@ -91,7 +92,7 @@ describe('integration', () => {
   })
 
   it('wraps with metadata', () => {
-    const kickPart = repeat(note('C1', '4n'), 4).route(drums)
+    const kickPart = repeat(sequence(note(resolvePitch('C1'), resolveDuration('4n'))), 4).route(drums)
     const filterSweep = automate('filter-sweep', 'bass.hp.frequency', [
       { time: 0, value: 80 },
       { time: bars(2), value: 2000 },
@@ -104,19 +105,20 @@ describe('integration', () => {
   it('uses chord with routing', () => {
     const chordProg = sequence(Chromatic.chord(N['C4']!.pitch, 'm', '2n'), Chromatic.chord(N['Ab3']!.pitch, '', '2n'))
     const padPart = chordProg.route(pad)
-    expect(padPart.durationBeats).toBe(4)
+    expect(padPart.endBeat - padPart.startBeat).toBe(4)
   })
 
   it('notes aggregates all pitches unconditionally', () => {
-    const kick = repeat(note('C1', '4n'), 4).route(drums)
-    expect(kick.notes).toHaveLength(4)
-    expect(kick.notes.every((n) => pitchToMidi(n.pitch).note === 24)).toBe(true)
+    const kick = repeat(sequence(note(resolvePitch('C1'), resolveDuration('4n'))), 4).route(drums)
+    const notes = collectNotes(kick)
+    expect(notes).toHaveLength(4)
+    expect(notes.every((n) => pitchToMidi(n.pitch).note === 24)).toBe(true)
   })
 
   it('full composition matches API shape', () => {
-    const kickPattern = repeat(note('C1', '4n'), 4)
-    const snarePattern = sequence(gap('4n'), note('D1', '4n'), gap('4n'), note('D1', '4n'))
-    const bassRiff = sequence(note('C2', '8n'), gap('8n'), note('C2', '16n'), gap('16n'), note('C2', '8n'))
+    const kickPattern = repeat(sequence(note(resolvePitch('C1'), resolveDuration('4n'))), 4)
+    const snarePattern = sequence(gap('4n'), note(resolvePitch('D1'), resolveDuration('4n')), gap('4n'), note(resolvePitch('D1'), resolveDuration('4n')))
+    const bassRiff = sequence(note(resolvePitch('C2'), resolveDuration('8n')), gap('8n'), note(resolvePitch('C2'), resolveDuration('16n')), gap('16n'), note(resolvePitch('C2'), resolveDuration('8n')))
 
     const breakLoop = audio('break', './samples/break-140bpm.wav', '1n')
     const filterSweep = automate('filter-sweep', 'bass.hp.frequency', [
@@ -132,23 +134,23 @@ describe('integration', () => {
 
     expect(composition).toBeInstanceOf(MetadataPattern)
     expect(composition.meta.name).toBe('Song')
-    expect(composition.durationBeats).toBe(32)
+    expect(composition.endBeat - composition.startBeat).toBe(32)
   })
 
   it('creates sidechain automation from kick pattern', () => {
-    const kickPattern = repeat(note('C1', '4n'), 4)
+    const kickPattern = repeat(sequence(note(resolvePitch('C1'), resolveDuration('4n'))), 4)
     const duck = sidechain(kickPattern, { depth: 0.8, attack: 1, release: '8n' })
 
     expect(duck.length).toBeGreaterThan(0)
     const firstDuck = duck[0]!
     expect('value' in firstDuck && firstDuck.value).toBe(1)
 
-    const bassRiff = sequence(note('C2', '8n'), gap('8n'), note('C2', '8n'), gap('8n'))
+    const bassRiff = sequence(note(resolvePitch('C2'), resolveDuration('8n')), gap('8n'), note(resolvePitch('C2'), resolveDuration('8n')), gap('8n'))
     const bassPart = bassRiff.route(bass)
     const duckAutomation = automate('sidechain-duck', 'bass.vol.level', duck)
 
     const groove = layer(bassPart, duckAutomation)
-    expect(groove.durationBeats).toBeGreaterThan(0)
+    expect(groove.endBeat - groove.startBeat).toBeGreaterThan(0)
   })
 
   it('creates LFO automation on filter', () => {
@@ -160,7 +162,7 @@ describe('integration', () => {
     const lfoAutomation = automate('filter-lfo', 'pad.hp.frequency', filterLfo)
     const padChords = repeat(Chromatic.chord(N['C4']!.pitch, 'm', '1n'), 4).route(pad)
     const section = layer(padChords, lfoAutomation)
-    expect(section.durationBeats).toBe(bars(4))
+    expect(section.endBeat - section.startBeat).toBe(bars(4))
   })
 
   it('creates formula automation', () => {
@@ -172,11 +174,11 @@ describe('integration', () => {
 
     const fadeAutomation = automate('fade-in', 'bass.vol.level', fadeIn)
     expect(fadeAutomation).toBeInstanceOf(AutomatePattern)
-    expect(fadeAutomation.durationBeats).toBe(bars(2))
+    expect(fadeAutomation.endBeat - fadeAutomation.startBeat).toBe(bars(2))
   })
 
   it('composes invert with sidechain', () => {
-    const kickPattern = repeat(note('C1', '4n'), 4)
+    const kickPattern = repeat(sequence(note(resolvePitch('C1'), resolveDuration('4n'))), 4)
     const duck = sidechain(kickPattern, { depth: 0.8, attack: 1, release: '8n' })
     const inverted = invert(duck)
 
@@ -195,7 +197,7 @@ describe('integration', () => {
   })
 
   it('trigger creates pattern-driven envelope', () => {
-    const kickPattern = repeat(note('C1', '4n'), 4)
+    const kickPattern = repeat(sequence(note(resolvePitch('C1'), resolveDuration('4n'))), 4)
     const envelope = trigger(kickPattern, { peak: 0.9, attack: 1, release: '8n' })
 
     expect(envelope.length).toBeGreaterThan(0)

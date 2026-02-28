@@ -1,5 +1,6 @@
 import { AudioPattern } from "../patterns/audio";
 import type { Pattern } from "../patterns/pattern";
+import { MidiPattern } from "../patterns/pattern";
 import type { SamplerMapping, SamplerVelocityLayer } from "../units/generators/sampler";
 import { SamplerUnit } from "../units/generators/sampler";
 
@@ -11,24 +12,20 @@ export function collectSampleKeys(pattern: Pattern): ReadonlySet<string> {
 
 function walkPattern(pattern: Pattern, keys: Set<string>): void {
 	if (pattern instanceof AudioPattern) {
-		keys.add(pattern.path);
+		keys.add(pattern.sampleKey);
 	}
 
-	collectNodeKeys(pattern, keys);
+	if (pattern instanceof MidiPattern) {
+		collectNodeKeys(pattern, keys);
+	}
 
-	if ("child" in pattern && isPattern((pattern as { child: unknown }).child)) {
-		walkPattern((pattern as { child: Pattern }).child, keys);
-	} else if ("children" in pattern && Array.isArray((pattern as { children: unknown }).children)) {
-		for (const child of (pattern as { children: ReadonlyArray<Pattern> }).children) {
-			if (isPattern(child)) walkPattern(child, keys);
-		}
+	for (const { pattern: child } of pattern.children) {
+		walkPattern(child, keys);
 	}
 }
 
-function collectNodeKeys(pattern: Pattern, keys: Set<string>): void {
-	if (!("outputs" in pattern) || !Array.isArray((pattern as { outputs: unknown }).outputs)) return;
-
-	for (const node of (pattern as { outputs: ReadonlyArray<unknown> }).outputs) {
+function collectNodeKeys(pattern: MidiPattern, keys: Set<string>): void {
+	for (const node of pattern.outputs) {
 		walkNode(node, keys);
 	}
 }
@@ -69,8 +66,4 @@ function walkNode(node: unknown, keys: Set<string>): void {
 	for (const target of node.targets) {
 		walkNode(target, keys);
 	}
-}
-
-function isPattern(value: unknown): value is Pattern {
-	return typeof value === "object" && value !== null && "type" in value && "durationBeats" in value;
 }

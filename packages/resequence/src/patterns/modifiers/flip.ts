@@ -1,68 +1,50 @@
-import type { ScheduleContext } from "../../rendering/schedule-context";
-import { isInScope, scheduleNotes } from "../../rendering/schedule-notes";
 import type { Pitch } from "../../utils/pitch";
 import { addSteps, pitchKey, resolvePitch } from "../../utils/pitch";
-import type { ValidateContext } from "../../validate";
-import type { Pattern, PositionedAutomation, PositionedMetadata, ScoreNote } from "../pattern";
-import { MidiPattern } from "../pattern";
+import type { PatternNode } from "../pattern";
+import { MidiPattern, type Pattern } from "../pattern";
+import { mapNotes } from "../utils/tree";
 
 export class FlipPattern extends MidiPattern {
-	readonly type = "flip" as const;
-	readonly durationBeats: number;
-	readonly notes: ReadonlyArray<ScoreNote>;
-	readonly metadatas: ReadonlyArray<PositionedMetadata>;
-	readonly automations: ReadonlyArray<PositionedAutomation>;
-
 	constructor(
-		readonly child: Pattern,
+		readonly source: Pattern,
 		readonly center: Pitch,
-		readonly range?: [Pitch, Pitch],
+		readonly range: [Pitch, Pitch] | undefined,
+		node: PatternNode,
 	) {
-		super();
-
-		this.durationBeats = child.durationBeats;
-		const centerKey = pitchKey(center);
-
-		this.notes = child.notes.map((positionedNote) => {
-			const spo = positionedNote.pitch.stepsPerOctave;
-			const newKey = centerKey * 2 - pitchKey(positionedNote.pitch);
-			const newOctave = Math.floor(newKey / spo);
-			const newClass = ((newKey % spo) + spo) % spo;
-			let pitch: Pitch = { ...positionedNote.pitch, class: newClass, octave: newOctave };
-
-			if (range) {
-				const rangeMinKey = pitchKey(range[0]);
-				const rangeMaxKey = pitchKey(range[1]);
-				while (pitchKey(pitch) < rangeMinKey) pitch = addSteps(pitch, spo);
-				while (pitchKey(pitch) > rangeMaxKey) pitch = addSteps(pitch, -spo);
-			}
-
-			const shift = pitchKey(pitch) - pitchKey(positionedNote.pitch);
-			return {
-				...positionedNote,
-				pitch,
-				slides: positionedNote.slides?.map((sl) => ({ ...sl, pitch: addSteps(sl.pitch, shift) })),
-			};
-		});
-		this.metadatas = child.metadatas;
-		this.automations = child.automations;
+		super(node);
 	}
 
-	validate(context: ValidateContext): void {
-		const childContext = this.outputs.length > 0 ? { ...context, insideRoute: true } : context;
-		this.child.validate(childContext);
-	}
-
-
-	schedule(offsetBeats: number, context: ScheduleContext): void {
-		if (!isInScope(offsetBeats, this.durationBeats, context)) return;
-		scheduleNotes(this.notes, offsetBeats, this.outputs, context);
-		this.child.schedule(offsetBeats, context);
+	clone(overrides: Partial<PatternNode>): FlipPattern {
+		return new FlipPattern(this.source, this.center, this.range, this.overrideNode(overrides));
 	}
 }
 
 export function flip(pattern: Pattern, center: string | number | Pitch, range?: [string | number | Pitch, string | number | Pitch]): FlipPattern {
 	const centerPitch = resolvePitch(center);
 	const resolvedRange: [Pitch, Pitch] | undefined = range ? [resolvePitch(range[0]), resolvePitch(range[1])] : undefined;
-	return new FlipPattern(pattern, centerPitch, resolvedRange);
+	const centerKey = pitchKey(centerPitch);
+
+	const transformed = mapNotes(pattern, (note) => {
+		const spo = note.pitch.stepsPerOctave;
+		const newKey = centerKey * 2 - pitchKey(note.pitch);
+		const newOctave = Math.floor(newKey / spo);
+		const newClass = ((newKey % spo) + spo) % spo;
+		let pitch: Pitch = { ...note.pitch, class: newClass, octave: newOctave };
+
+		if (resolvedRange) {
+			const rangeMinKey = pitchKey(resolvedRange[0]);
+			const rangeMaxKey = pitchKey(resolvedRange[1]);
+			while (pitchKey(pitch) < rangeMinKey) pitch = addSteps(pitch, spo);
+			while (pitchKey(pitch) > rangeMaxKey) pitch = addSteps(pitch, -spo);
+		}
+
+		const shift = pitchKey(pitch) - pitchKey(note.pitch);
+		return {
+			...note,
+			pitch,
+			slides: note.slides?.map((sl) => ({ ...sl, pitch: addSteps(sl.pitch, shift) })),
+		};
+	});
+
+	return new FlipPattern(pattern, centerPitch, resolvedRange, transformed);
 }

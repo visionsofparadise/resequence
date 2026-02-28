@@ -1,40 +1,45 @@
 import { describe, expect, it } from "vitest";
+import { resolveDuration } from "../utils/duration";
 import { resolvePitch } from "../utils/pitch";
 import { gap } from "./gap";
 import { note } from "./note";
 import { sequence } from "./sequence";
+import { collectNotes } from "./utils/tree";
 
 describe("SequencePattern", () => {
 	describe("durationBeats", () => {
 		it("sums child durations", () => {
-			expect(sequence(note("C4", "4n"), note("E4", "8n")).durationBeats).toBe(1.5);
+			const pat = sequence(note(resolvePitch("C4"), resolveDuration("4n")), note(resolvePitch("E4"), resolveDuration("8n")));
+			expect(pat.endBeat - pat.startBeat).toBe(1.5);
 		});
 
 		it("returns 0 for empty sequence", () => {
-			expect(sequence().durationBeats).toBe(0);
+			expect(sequence().endBeat - sequence().startBeat).toBe(0);
 		});
 	});
 
 	describe("notes", () => {
 		it("accumulates offsets", () => {
-			const pat = sequence(note("C4", "4n"), note("D4", "4n"), note("E4", "4n"));
-			expect(pat.notes).toMatchObject([
-				{ beat: 0, pitch: resolvePitch("C4") },
-				{ beat: 1, pitch: resolvePitch("D4") },
-				{ beat: 2, pitch: resolvePitch("E4") },
+			const pat = sequence(note(resolvePitch("C4"), resolveDuration("4n")), note(resolvePitch("D4"), resolveDuration("4n")), note(resolvePitch("E4"), resolveDuration("4n")));
+			const notes = collectNotes(pat);
+			expect(notes).toMatchObject([
+				{ startBeat: 0, pitch: resolvePitch("C4") },
+				{ startBeat: 1, pitch: resolvePitch("D4") },
+				{ startBeat: 2, pitch: resolvePitch("E4") },
 			]);
 		});
 
 		it("skips gaps", () => {
-			const pat = sequence(note("C4", "4n"), gap("4n"), note("E4", "4n"));
-			expect(pat.notes).toMatchObject([
-				{ beat: 0, pitch: resolvePitch("C4") },
-				{ beat: 2, pitch: resolvePitch("E4") },
+			const pat = sequence(note(resolvePitch("C4"), resolveDuration("4n")), gap("4n"), note(resolvePitch("E4"), resolveDuration("4n")));
+			const notes = collectNotes(pat);
+			expect(notes).toMatchObject([
+				{ startBeat: 0, pitch: resolvePitch("C4") },
+				{ startBeat: 2, pitch: resolvePitch("E4") },
 			]);
 		});
 
 		it("returns empty for empty sequence", () => {
-			expect(sequence().notes).toEqual([]);
+			expect(collectNotes(sequence())).toEqual([]);
 		});
 	});
 });

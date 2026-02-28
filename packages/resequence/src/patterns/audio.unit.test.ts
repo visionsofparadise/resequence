@@ -13,7 +13,7 @@ describe("AudioPattern", () => {
 	describe("creation", () => {
 		it("creates with name and path", () => {
 			const pattern = audio("break", "./break.wav", "4n");
-			expect(pattern.type).toBe("audio");
+			expect(pattern).toBeInstanceOf(AudioPattern);
 			expect(pattern.name).toBe("break");
 			expect(pattern.path).toBe("./break.wav");
 			expect(pattern.transposeSemitones).toBe(0);
@@ -21,11 +21,13 @@ describe("AudioPattern", () => {
 		});
 
 		it("has 0 duration when numeric 0", () => {
-			expect(audio("break", "./break.wav", 0).durationBeats).toBe(0);
+			const pattern = audio("break", "./break.wav", 0);
+			expect(pattern.endBeat - pattern.startBeat).toBe(0);
 		});
 
 		it("resolves explicit duration", () => {
-			expect(audio("break", "./break.wav", "4n").durationBeats).toBe(1);
+			const pattern = audio("break", "./break.wav", "4n");
+			expect(pattern.endBeat - pattern.startBeat).toBe(1);
 		});
 	});
 

@@ -1,37 +1,39 @@
 import { describe, expect, it } from "vitest";
+import { resolveDuration } from "../../utils/duration";
 import { resolvePitch } from "../../utils/pitch";
 import { note } from "../note";
 import { sequence } from "../sequence";
+import { collectNotes } from "../utils/tree";
 import { LengthPattern, length } from "./length";
 
 describe("LengthPattern", () => {
 	describe("notes", () => {
 		it("sets all note durations to the given value", () => {
-			const pat = length(sequence(note("C4", "4n"), note("E4", "4n")), 120);
-			expect(pat.notes[0]).toMatchObject({ beat: 0, durationBeats: 120 });
-			expect(pat.notes[1]).toMatchObject({ beat: 1, durationBeats: 120 });
+			const pat = length(sequence(note(resolvePitch("C4"), resolveDuration("4n")), note(resolvePitch("E4"), resolveDuration("4n"))), 120);
+			expect(collectNotes(pat)[0]).toMatchObject({ startBeat: 0, endBeat: 120 });
+			expect(collectNotes(pat)[1]).toMatchObject({ startBeat: 1, endBeat: 121 });
 		});
 
 		it("preserves pitch", () => {
-			const pat = length(note("G4", "4n"), 100);
-			expect(pat.notes[0]!.pitch).toEqual(resolvePitch("G4"));
+			const pat = length(sequence(note(resolvePitch("G4"), resolveDuration("4n"))), 100);
+			expect(collectNotes(pat)[0]!.pitch).toEqual(resolvePitch("G4"));
 		});
 
 		it("accepts musical notation for duration", () => {
-			const pat = length(note("C4", "4n"), "16n");
-			expect(pat.notes[0]).toMatchObject({ durationBeats: 0.25 });
+			const pat = length(sequence(note(resolvePitch("C4"), resolveDuration("4n"))), "16n");
+			expect(collectNotes(pat)[0]).toMatchObject({ endBeat: 0.25 });
 		});
 	});
 
 	describe("durationBeats", () => {
-		it("preserves child duration", () => {
-			expect(length(note("C4", "4n"), 100).durationBeats).toBe(1);
+		it("adjusts duration to match new note length", () => {
+			expect(length(sequence(note(resolvePitch("C4"), resolveDuration("4n"))), resolveDuration("4n")).endBeat - length(sequence(note(resolvePitch("C4"), resolveDuration("4n"))), resolveDuration("4n")).startBeat).toBe(1);
 		});
 	});
 
 	describe("instanceof", () => {
 		it("is a LengthPattern", () => {
-			expect(length(note("C4", "4n"), 100)).toBeInstanceOf(LengthPattern);
+			expect(length(sequence(note(resolvePitch("C4"), resolveDuration("4n"))), 100)).toBeInstanceOf(LengthPattern);
 		});
 	});
 });

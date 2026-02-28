@@ -4,11 +4,13 @@ import { gap } from "./gap";
 describe("GapPattern", () => {
 	describe("durationBeats", () => {
 		it("resolves string duration to ticks", () => {
-			expect(gap("8n").durationBeats).toBe(0.5);
+			const g = gap("8n");
+			expect(g.endBeat - g.startBeat).toBe(0.5);
 		});
 
 		it("resolves numeric duration as-is", () => {
-			expect(gap(120).durationBeats).toBe(120);
+			const g = gap(120);
+			expect(g.endBeat - g.startBeat).toBe(120);
 		});
 	});
 

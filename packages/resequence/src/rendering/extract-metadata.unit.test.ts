@@ -4,10 +4,12 @@ import { metadata } from "../patterns/metadata";
 import { note } from "../patterns/note";
 import { sequence } from "../patterns/sequence";
 import { layer } from "../patterns/layer";
+import { resolveDuration } from "../utils/duration";
+import { resolvePitch } from "../utils/pitch";
 
 describe("extractMetadata", () => {
 	it("returns empty object when no metadata present", () => {
-		const pattern = note("C4", "4n");
+		const pattern = sequence(note(resolvePitch("C4"), resolveDuration("4n")));
 		const result = extractMetadata(pattern);
 
 		expect(result.name).toBeUndefined();
@@ -15,7 +17,7 @@ describe("extractMetadata", () => {
 	});
 
 	it("extracts name and description from metadata wrapper", () => {
-		const pattern = metadata(note("C4", "4n"), { name: "My Track", description: "A test" });
+		const pattern = metadata(sequence(note(resolvePitch("C4"), resolveDuration("4n"))), { name: "My Track", description: "A test" });
 		const result = extractMetadata(pattern);
 
 		expect(result.name).toBe("My Track");
@@ -23,7 +25,7 @@ describe("extractMetadata", () => {
 	});
 
 	it("applies defaults for missing metadata fields", () => {
-		const pattern = metadata(note("C4", "4n"), { name: "Only Name" });
+		const pattern = metadata(sequence(note(resolvePitch("C4"), resolveDuration("4n"))), { name: "Only Name" });
 		const result = extractMetadata(pattern);
 
 		expect(result.name).toBe("Only Name");
@@ -31,7 +33,7 @@ describe("extractMetadata", () => {
 	});
 
 	it("uses outermost metadata when nested", () => {
-		const inner = metadata(note("C4", "4n"), { name: "inner" });
+		const inner = metadata(sequence(note(resolvePitch("C4"), resolveDuration("4n"))), { name: "inner" });
 		const outer = metadata(inner, { name: "outer" });
 		const result = extractMetadata(outer);
 
@@ -39,14 +41,14 @@ describe("extractMetadata", () => {
 	});
 
 	it("finds metadata inside sequence", () => {
-		const pattern = sequence(note("C4", "4n"), metadata(note("D4", "4n"), { name: "seq-meta" }));
+		const pattern = sequence(note(resolvePitch("C4"), resolveDuration("4n")), metadata(sequence(note(resolvePitch("D4"), resolveDuration("4n"))), { name: "seq-meta" }));
 		const result = extractMetadata(pattern);
 
 		expect(result.name).toBe("seq-meta");
 	});
 
 	it("finds metadata inside layer", () => {
-		const pattern = layer(note("C4", "4n"), metadata(note("D4", "4n"), { name: "layer-meta" }));
+		const pattern = layer(sequence(note(resolvePitch("C4"), resolveDuration("4n"))), metadata(sequence(note(resolvePitch("D4"), resolveDuration("4n"))), { name: "layer-meta" }));
 		const result = extractMetadata(pattern);
 
 		expect(result.name).toBe("layer-meta");

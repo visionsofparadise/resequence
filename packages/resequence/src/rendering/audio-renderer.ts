@@ -1,6 +1,7 @@
 import { seekAutomation } from "../automation/seek";
 import type { Pattern } from "../patterns/pattern";
 import { loadSample } from "./load-sample";
+import { scheduleNotes } from "./schedule-notes";
 import type { ScheduleContext } from "./schedule-context";
 import { buildTempoMap } from "./tempo-map";
 
@@ -51,6 +52,10 @@ export class AudioRenderer {
 			fromBeats: 0,
 			toBeats: Infinity,
 			trackFilter: this.options.trackFilter,
+			outputs: [],
+			dispatch: (note, offsetBeats, outputs, scheduleContext) => {
+				scheduleNotes([note], offsetBeats, outputs, scheduleContext);
+			},
 		};
 
 		this.pattern.setup(baseContext);
@@ -61,7 +66,7 @@ export class AudioRenderer {
 		if (!this.context) throw new Error("AudioRenderer: setup() must be called before schedule()");
 
 		const context = { ...this.context, fromBeats, toBeats };
-		seekAutomation(this.pattern.automations, fromBeats, context);
+		seekAutomation(this.pattern, fromBeats, context);
 		this.pattern.schedule(0, context);
 	}
 

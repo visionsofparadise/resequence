@@ -3,56 +3,42 @@ import type { ScheduleContext } from "../rendering/schedule-context";
 import { beatsToSeconds } from "../rendering/tempo-map";
 import type { Duration } from "../utils/duration";
 import { resolveDuration } from "../utils/duration";
-import type { ValidateContext } from "../validate";
-import type { PositionedAutomation, ScoreNote } from "./pattern";
+import type { PatternNode } from "./pattern";
 import { Pattern } from "./pattern";
 
 export class AudioPattern extends Pattern {
-	readonly type = "audio" as const;
-	readonly durationBeats: number;
-	readonly notes: ReadonlyArray<ScoreNote> = [];
-	readonly metadatas: [] = [];
-	readonly automations: ReadonlyArray<PositionedAutomation> = [];
-	readonly sampleKeys: ReadonlySet<string>;
-	readonly moduleUrls: ReadonlySet<string> = new Set();
-	readonly sampleKey: string;
-
 	constructor(
 		readonly name: string,
 		readonly path: string,
 		readonly duration: Duration,
+		readonly durationBeats: number,
 		readonly transposeSemitones: number,
 		readonly reversed: boolean,
-		readonly region?: string,
-		readonly loopStartMs?: number,
-		readonly loopEndMs?: number,
+		readonly sampleKey: string,
+		readonly region: string | undefined,
+		readonly loopStartMs: number | undefined,
+		readonly loopEndMs: number | undefined,
+		node: PatternNode,
 	) {
-		super();
-		if (!path) {
-			throw new ResequenceError("EMPTY_AUDIO_PATH", "audio(): path must not be empty");
-		}
-
-		this.durationBeats = resolveDuration(duration);
-		this.sampleKey = region && !path.includes("#") ? `${path}#${region}` : path;
-		this.sampleKeys = new Set([this.sampleKey]);
+		super(node);
 	}
 
-	validate(_context: ValidateContext): void {
-		return;
+	get sampleKeys(): ReadonlySet<string> {
+		return new Set([this.sampleKey]);
 	}
 
-	setup(_context: ScheduleContext): void {
-		return;
-	}
-
-
-	teardown(_context: ScheduleContext): void {
-		return;
+	clone(overrides: Partial<PatternNode>): AudioPattern {
+		return new AudioPattern(
+			this.name, this.path, this.duration, this.durationBeats,
+			this.transposeSemitones, this.reversed, this.sampleKey,
+			this.region, this.loopStartMs, this.loopEndMs,
+			this.overrideNode(overrides),
+		);
 	}
 
 	schedule(offsetBeats: number, context: ScheduleContext): void {
 		if (context.trackFilter && !context.trackFilter.has(this.name)) return;
-		if (offsetBeats + this.durationBeats <= context.fromBeats || offsetBeats >= context.toBeats) return;
+		if (offsetBeats + this.endBeat <= context.fromBeats || offsetBeats + this.startBeat >= context.toBeats) return;
 
 		const buffer = context.sampleMap.get(this.sampleKey);
 		if (!buffer) return;
@@ -101,5 +87,13 @@ function copyReversed(buffer: AudioBuffer, audioCtx: BaseAudioContext): AudioBuf
 }
 
 export function audio(name: string, path: string, duration: Duration, options?: { region?: string; loopStartMs?: number; loopEndMs?: number }): AudioPattern {
-	return new AudioPattern(name, path, duration, 0, false, options?.region, options?.loopStartMs, options?.loopEndMs);
+	if (!path) {
+		throw new ResequenceError("EMPTY_AUDIO_PATH", "audio(): path must not be empty");
+	}
+
+	const region = options?.region;
+	const sampleKey = region && !path.includes("#") ? `${path}#${region}` : path;
+	const durationBeats = resolveDuration(duration);
+
+	return new AudioPattern(name, path, duration, durationBeats, 0, false, sampleKey, region, options?.loopStartMs, options?.loopEndMs, { notes: [], children: [], startBeat: 0, endBeat: durationBeats });
 }

@@ -2,10 +2,11 @@ import { describe, expect, it } from "vitest";
 import type { CurveKeyframe } from "../patterns/automate";
 import { gap } from "../patterns/gap";
 import { note } from "../patterns/note";
-import { repeat } from "../patterns/repeat";
+import { repeat } from "../patterns/modifiers/repeat";
 import { sequence } from "../patterns/sequence";
 import { layer } from "../patterns/layer";
 import { resolveDuration } from "../utils/duration";
+import { resolvePitch } from "../utils/pitch";
 import { trigger } from "./trigger";
 
 describe("trigger", () => {
@@ -14,7 +15,7 @@ describe("trigger", () => {
 	});
 
 	it("produces step, peak, and release curve for a single hit", () => {
-		const keyframes = trigger(note("C4", "4n"), { peak: 1, attack: 1, release: "8n" });
+		const keyframes = trigger(sequence(note(resolvePitch("C4"), resolveDuration("4n"))), { peak: 1, attack: 1, release: "8n" });
 
 		expect(keyframes[0]).toEqual({ time: 0, value: 0, curve: "step" });
 		expect(keyframes[1]).toEqual({ time: 1, value: 1, curve: "linear" });
@@ -26,12 +27,12 @@ describe("trigger", () => {
 	});
 
 	it("uses peak value", () => {
-		const keyframes = trigger(note("C4", "4n"), { peak: 0.8, attack: 1, release: "8n" });
+		const keyframes = trigger(sequence(note(resolvePitch("C4"), resolveDuration("4n"))), { peak: 0.8, attack: 1, release: "8n" });
 		expect(keyframes[1]).toEqual({ time: 1, value: 0.8, curve: "linear" });
 	});
 
 	it("resolves attack and release durations", () => {
-		const keyframes = trigger(note("C4", "4n"), { peak: 1, attack: "16n", release: "4n" });
+		const keyframes = trigger(sequence(note(resolvePitch("C4"), resolveDuration("4n"))), { peak: 1, attack: "16n", release: "4n" });
 
 		expect(keyframes[0]).toEqual({ time: 0, value: 0, curve: "step" });
 		expect(keyframes[1]).toEqual({ time: 0.25, value: 1, curve: "linear" });
@@ -42,7 +43,7 @@ describe("trigger", () => {
 	});
 
 	it("release curve starts at peak and ends near zero", () => {
-		const keyframes = trigger(note("C4", "4n"), { peak: 1, attack: 1, release: "8n" });
+		const keyframes = trigger(sequence(note(resolvePitch("C4"), resolveDuration("4n"))), { peak: 1, attack: 1, release: "8n" });
 		const curve = keyframes[2] as CurveKeyframe;
 
 		expect(curve.values[0]).toBeCloseTo(1, 4);
@@ -51,7 +52,7 @@ describe("trigger", () => {
 	});
 
 	it("release curve has correct values for tension=2 at midpoint", () => {
-		const keyframes = trigger(note("C4", "4n"), { peak: 1, attack: 1, release: 1, tension: 2 });
+		const keyframes = trigger(sequence(note(resolvePitch("C4"), resolveDuration("4n"))), { peak: 1, attack: 1, release: 1, tension: 2 });
 		const curve = keyframes[2] as CurveKeyframe;
 
 		const midIdx = Math.floor(curve.values.length / 2);
@@ -61,7 +62,7 @@ describe("trigger", () => {
 	});
 
 	it("release curve has correct values for tension=0.5 at midpoint", () => {
-		const keyframes = trigger(note("C4", "4n"), { peak: 1, attack: 1, release: 1, tension: 0.5 });
+		const keyframes = trigger(sequence(note(resolvePitch("C4"), resolveDuration("4n"))), { peak: 1, attack: 1, release: 1, tension: 0.5 });
 		const curve = keyframes[2] as CurveKeyframe;
 
 		const midIdx = Math.floor(curve.values.length / 2);
@@ -71,7 +72,7 @@ describe("trigger", () => {
 	});
 
 	it("handles multiple hits", () => {
-		const pattern = sequence(note("C4", "4n"), note("D4", "4n"));
+		const pattern = sequence(note(resolvePitch("C4"), resolveDuration("4n")), note(resolvePitch("D4"), resolveDuration("4n")));
 		const keyframes = trigger(pattern, { peak: 1, attack: 1, release: "8n" });
 
 		const baselines = keyframes.filter((pt) => "curve" in pt && pt.curve === "step");
@@ -81,7 +82,7 @@ describe("trigger", () => {
 	});
 
 	it("truncates release curve when next hit arrives", () => {
-		const pattern = sequence(note("C4", "8n"), note("D4", "8n"));
+		const pattern = sequence(note(resolvePitch("C4"), resolveDuration("8n")), note(resolvePitch("D4"), resolveDuration("8n")));
 		const keyframes = trigger(pattern, { peak: 1, attack: 0.1, release: "4n" });
 
 		const firstCurve = keyframes[2] as CurveKeyframe;
@@ -89,7 +90,7 @@ describe("trigger", () => {
 	});
 
 	it("works with repeat pattern", () => {
-		const pattern = repeat(note("C1", "4n"), 4);
+		const pattern = repeat(sequence(note(resolvePitch("C1"), resolveDuration("4n"))), 4);
 		const keyframes = trigger(pattern, { peak: 0.9, attack: 1, release: "8n" });
 
 		const baselines = keyframes.filter((pt) => "curve" in pt && pt.curve === "step");
@@ -98,7 +99,10 @@ describe("trigger", () => {
 	});
 
 	it("works with layer pattern (simultaneous notes)", () => {
-		const pattern = layer(note("C4", "4n"), note("E4", "4n"));
+		const pattern = layer(
+			sequence(note(resolvePitch("C4"), resolveDuration("4n"))),
+			sequence(note(resolvePitch("E4"), resolveDuration("4n"))),
+		);
 		const keyframes = trigger(pattern, { peak: 1, attack: 1, release: "8n" });
 
 		const baselines = keyframes.filter((pt) => "curve" in pt && pt.curve === "step");

@@ -1,60 +1,53 @@
-import type { ScheduleContext } from "../../rendering/schedule-context";
-import { isInScope, scheduleNotes } from "../../rendering/schedule-notes";
-import type { ValidateContext } from "../../validate";
-import type { Pattern, PositionedAutomation, PositionedMetadata, ScoreNote } from "../pattern";
-import { MidiPattern } from "../pattern";
+import type { PatternNode } from "../pattern";
+import { MidiPattern, type Pattern } from "../pattern";
+import { collectNotes, mapNotes } from "../utils/tree";
 
 export class LegatoPattern extends MidiPattern {
-	readonly type = "legato" as const;
-	readonly durationBeats: number;
-	readonly notes: ReadonlyArray<ScoreNote>;
-	readonly metadatas: ReadonlyArray<PositionedMetadata>;
-	readonly automations: ReadonlyArray<PositionedAutomation>;
-
 	constructor(
-		readonly child: Pattern,
-		readonly extendLast = true,
+		readonly source: Pattern,
+		readonly extendLast: boolean,
+		node: PatternNode,
 	) {
-		super();
-
-		this.durationBeats = child.durationBeats;
-
-		const sorted = child.notes.slice().sort((noteA, noteB) => noteA.beat - noteB.beat);
-		const result: Array<ScoreNote> = [];
-
-		for (let noteIndex = 0; noteIndex < sorted.length; noteIndex++) {
-			const positionedNote = sorted[noteIndex];
-			if (positionedNote === undefined) continue;
-			const nextNote = sorted[noteIndex + 1];
-
-			if (nextNote) {
-				result.push({ ...positionedNote, durationBeats: nextNote.beat - positionedNote.beat });
-			} else if (extendLast) {
-				result.push({ ...positionedNote, durationBeats: child.durationBeats - positionedNote.beat });
-			} else {
-				result.push(positionedNote);
-			}
-		}
-
-		this.notes = result;
-		this.metadatas = child.metadatas;
-		this.automations = child.automations;
+		super(node);
 	}
 
-	validate(context: ValidateContext): void {
-		const childContext = this.outputs.length > 0 ? { ...context, insideRoute: true } : context;
-		this.child.validate(childContext);
-	}
-
-
-	schedule(offsetBeats: number, context: ScheduleContext): void {
-		if (!isInScope(offsetBeats, this.durationBeats, context)) return;
-
-		scheduleNotes(this.notes, offsetBeats, this.outputs, context);
-		this.child.schedule(offsetBeats, context);
+	clone(overrides: Partial<PatternNode>): LegatoPattern {
+		return new LegatoPattern(this.source, this.extendLast, this.overrideNode(overrides));
 	}
 }
 
-export function legato(pattern: Pattern, extendLast?: boolean): LegatoPattern {
-	return new LegatoPattern(pattern, extendLast ?? true);
+export function legato(pattern: Pattern, extendLast = true): LegatoPattern {
+	const allNotes = collectNotes(pattern);
+	const sorted = allNotes.slice().sort((noteA, noteB) => noteA.startBeat - noteB.startBeat);
+	const totalDuration = pattern.endBeat - pattern.startBeat;
+
+	const endBeatMap = new Map<string, number>();
+
+	for (let noteIndex = 0; noteIndex < sorted.length; noteIndex++) {
+		const scoreNote = sorted[noteIndex];
+		if (!scoreNote) continue;
+		const nextNote = sorted[noteIndex + 1];
+		const key = `${scoreNote.startBeat}:${scoreNote.endBeat}:${scoreNote.velocity}`;
+
+		if (nextNote) {
+			endBeatMap.set(key, nextNote.startBeat);
+		} else if (extendLast) {
+			endBeatMap.set(key, totalDuration);
+		}
+	}
+
+	const transformed = mapNotes(pattern, (note, absoluteOffset) => {
+		const absStart = absoluteOffset + note.startBeat;
+		const absEnd = absoluteOffset + note.endBeat;
+		const key = `${absStart}:${absEnd}:${note.velocity}`;
+		const newAbsEnd = endBeatMap.get(key);
+
+		if (newAbsEnd !== undefined) {
+			return { ...note, endBeat: newAbsEnd - absoluteOffset };
+		}
+
+		return note;
+	});
+
+	return new LegatoPattern(pattern, extendLast, transformed);
 }

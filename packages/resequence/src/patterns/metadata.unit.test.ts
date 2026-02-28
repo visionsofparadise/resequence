@@ -1,30 +1,33 @@
 import { describe, expect, it } from "vitest";
+import { collectMarkers } from "../rendering/collect-markers";
 import { sampler } from "../units/generators/sampler";
+import { resolveDuration } from "../utils/duration";
 import { resolvePitch } from "../utils/pitch";
 import { gap } from "./gap";
 import { layer } from "./layer";
 import { metadata } from "./metadata";
 import { note } from "./note";
-import { repeat } from "./repeat";
+import { repeat } from "./modifiers/repeat";
 import { sequence } from "./sequence";
+import { collectNotes } from "./utils/tree";
 
 describe("MetadataPattern", () => {
 	describe("creation", () => {
 		it("wraps pattern with name and description", () => {
-			const m = metadata(note("C4", "4n"), { name: "My Song", description: "A test song" });
-			expect(m.type).toBe("metadata");
+			const m = metadata(sequence(note(resolvePitch("C4"), resolveDuration("4n"))), { name: "My Song", description: "A test song" });
+			expect(m).toBeInstanceOf(m.constructor);
 			expect(m.meta.name).toBe("My Song");
 			expect(m.meta.description).toBe("A test song");
 		});
 
 		it("supports partial metadata", () => {
-			const m = metadata(note("C4", "4n"), { name: "Test" });
+			const m = metadata(sequence(note(resolvePitch("C4"), resolveDuration("4n"))), { name: "Test" });
 			expect(m.meta.name).toBe("Test");
 			expect(m.meta.description).toBeUndefined();
 		});
 
 		it("supports empty config", () => {
-			const m = metadata(note("C4", "4n"), {});
+			const m = metadata(sequence(note(resolvePitch("C4"), resolveDuration("4n"))), {});
 			expect(m.meta.name).toBeUndefined();
 			expect(m.meta.description).toBeUndefined();
 		});
@@ -35,7 +38,7 @@ describe("MetadataPattern", () => {
 				octaveRatio: 2 as const,
 				reference: { class: "C", octave: 4, hz: 264 },
 			};
-			const m = metadata(note("C4", "4n"), {
+			const m = metadata(sequence(note(resolvePitch("C4"), resolveDuration("4n"))), {
 				name: "Song",
 				description: "desc",
 				timeSignature: [4, 4] as const,
@@ -52,58 +55,63 @@ describe("MetadataPattern", () => {
 
 	describe("durationBeats", () => {
 		it("delegates to child", () => {
-			const m = metadata(note("C4", "4n"), {});
-			expect(m.durationBeats).toBe(1);
+			const m = metadata(sequence(note(resolvePitch("C4"), resolveDuration("4n"))), {});
+			expect(m.endBeat - m.startBeat).toBe(1);
 		});
 
 		it("delegates sequence duration", () => {
-			const m = metadata(sequence(note("C4", "4n"), note("E4", "4n")), {});
-			expect(m.durationBeats).toBe(2);
+			const m = metadata(sequence(note(resolvePitch("C4"), resolveDuration("4n")), note(resolvePitch("E4"), resolveDuration("4n"))), {});
+			expect(m.endBeat - m.startBeat).toBe(2);
 		});
 	});
 
 	describe("notes", () => {
 		it("delegates to child", () => {
-			const pat = metadata(note("C4", "4n"), {});
-			expect(pat.notes).toMatchObject([{ beat: 0, pitch: resolvePitch("C4") }]);
+			const pat = metadata(sequence(note(resolvePitch("C4"), resolveDuration("4n"))), {});
+			const notes = collectNotes(pat);
+			expect(notes).toMatchObject([{ startBeat: 0, pitch: resolvePitch("C4") }]);
 		});
 
 		it("handles nested structures", () => {
-			const inst = sampler("drums", "./kick.wav", { root: "C1" });
-			const kick = repeat(note("C1", "4n"), 4).route(inst);
-			const snare = sequence(gap("4n"), note("D1", "4n"), gap("4n"), note("D1", "4n"));
+			const inst = sampler("./kick.wav", { root: "C1", id: "drums" });
+			const kick = repeat(sequence(note(resolvePitch("C1"), resolveDuration("4n"))), 4).route(inst);
+			const snare = sequence(gap("4n"), note(resolvePitch("D1"), resolveDuration("4n")), gap("4n"), note(resolvePitch("D1"), resolveDuration("4n")));
 			const groove = layer(kick, snare);
 			const song = metadata(groove, { name: "Groove" });
 
-			expect(song.notes).toMatchObject([
-				{ beat: 0, pitch: resolvePitch("C1") },
-				{ beat: 1, pitch: resolvePitch("C1") },
-				{ beat: 2, pitch: resolvePitch("C1") },
-				{ beat: 3, pitch: resolvePitch("C1") },
-				{ beat: 1, pitch: resolvePitch("D1") },
-				{ beat: 3, pitch: resolvePitch("D1") },
+			const notes = collectNotes(song);
+			expect(notes).toMatchObject([
+				{ startBeat: 0, pitch: resolvePitch("C1") },
+				{ startBeat: 1, pitch: resolvePitch("C1") },
+				{ startBeat: 2, pitch: resolvePitch("C1") },
+				{ startBeat: 3, pitch: resolvePitch("C1") },
+				{ startBeat: 1, pitch: resolvePitch("D1") },
+				{ startBeat: 3, pitch: resolvePitch("D1") },
 			]);
 		});
 	});
 
-	describe("metadatas aggregation", () => {
-		it("includes own metadata at beat 0", () => {
-			const m = metadata(note("C4", "4n"), { name: "test" });
-			expect(m.metadatas).toEqual([{ beat: 0, meta: { name: "test" } }]);
+	describe("markers aggregation", () => {
+		it("includes own marker at beat 0", () => {
+			const m = metadata(sequence(note(resolvePitch("C4"), resolveDuration("4n"))), { marker: "test" });
+			expect(collectMarkers(m)).toEqual([{ beat: 0, name: "test" }]);
 		});
 
-		it("accumulates child metadatas through sequence", () => {
-			const m = metadata(sequence(metadata(note("C4", "4n"), { marker: "intro" }), metadata(note("E4", "4n"), { marker: "verse" })), { name: "song" });
-			expect(m.metadatas).toEqual([
-				{ beat: 0, meta: { name: "song" } },
-				{ beat: 0, meta: { marker: "intro" } },
-				{ beat: 1, meta: { marker: "verse" } },
+		it("accumulates child markers through sequence", () => {
+			const m = metadata(sequence(
+				metadata(sequence(note(resolvePitch("C4"), resolveDuration("4n"))), { marker: "intro" }),
+				metadata(sequence(note(resolvePitch("E4"), resolveDuration("4n"))), { marker: "verse" }),
+			), { name: "song" });
+			const markers = collectMarkers(m);
+			expect(markers).toEqual([
+				{ beat: 0, name: "intro" },
+				{ beat: 1, name: "verse" },
 			]);
 		});
 
-		it("leaf patterns return empty metadatas", () => {
-			expect(note("C4", "4n").metadatas).toEqual([]);
-			expect(gap("4n").metadatas).toEqual([]);
+		it("leaf patterns return empty markers", () => {
+			expect(collectMarkers(sequence(note(resolvePitch("C4"), resolveDuration("4n"))))).toEqual([]);
+			expect(collectMarkers(gap("4n"))).toEqual([]);
 		});
 	});
 });

@@ -1,3 +1,4 @@
+import { MetadataPattern } from "../patterns/metadata";
 import type { Pattern } from "../patterns/pattern";
 
 export interface MarkerPoint {
@@ -6,8 +7,17 @@ export interface MarkerPoint {
 }
 
 export function collectMarkers(pattern: Pattern, offsetBeats = 0): ReadonlyArray<MarkerPoint> {
-	return pattern.metadatas
-		.filter((positioned): positioned is typeof positioned & { meta: { marker: string } } => positioned.meta.marker !== undefined)
-		.map((positioned) => ({ beat: positioned.beat + offsetBeats, name: positioned.meta.marker }))
-		.sort((left, right) => left.beat - right.beat);
+	const markers: Array<MarkerPoint> = [];
+	walkForMarkers(pattern, offsetBeats, markers);
+	return markers.sort((left, right) => left.beat - right.beat);
+}
+
+function walkForMarkers(pattern: Pattern, offsetBeats: number, markers: Array<MarkerPoint>): void {
+	if (pattern instanceof MetadataPattern && pattern.meta.marker !== undefined) {
+		markers.push({ beat: offsetBeats, name: pattern.meta.marker });
+	}
+
+	for (const { offsetBeats: childOffset, pattern: child } of pattern.children) {
+		walkForMarkers(child, offsetBeats + childOffset, markers);
+	}
 }

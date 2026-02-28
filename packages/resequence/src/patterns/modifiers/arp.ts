@@ -1,154 +1,203 @@
-import type { ScheduleContext } from "../../rendering/schedule-context";
-import { isInScope, scheduleNotes } from "../../rendering/schedule-notes";
-import type { Duration } from "../../utils/duration";
 import type { Pitch } from "../../utils/pitch";
-import { pitchKey } from "../../utils/pitch";
-import type { ValidateContext } from "../../validate";
-import { note } from "../note";
-import type { Pattern, PositionedAutomation, PositionedMetadata, ScoreNote } from "../pattern";
-import { MidiPattern } from "../pattern";
+import { pitchKey, resolvePitch } from "../../utils/pitch";
+import { note, type ScoreNote } from "../note";
+import type { PatternNode } from "../pattern";
+import { MidiPattern, type Pattern } from "../pattern";
 import { sequence } from "../sequence";
+import { collectNotes, flatMapNotes } from "../utils/tree";
 
 function mulberry32(seed: number): () => number {
 	let state = seed;
+
 	return function (): number {
 		state += 0x6d2b79f5;
 		let value = state;
 		value = Math.imul(value ^ (value >>> 15), value | 1);
 		value ^= value + Math.imul(value ^ (value >>> 7), value | 61);
+
 		return ((value ^ (value >>> 14)) >>> 0) / 4294967296;
 	};
 }
 
+interface ArpStep {
+	readonly absoluteBeat: number;
+	readonly pitch: Pitch;
+	readonly velocity: number;
+	readonly duration: number;
+}
+
 export class ArpPattern extends MidiPattern {
-	readonly type = "arp" as const;
-	readonly durationBeats: number;
-	readonly notes: ReadonlyArray<ScoreNote>;
-	readonly metadatas: ReadonlyArray<PositionedMetadata>;
-	readonly automations: ReadonlyArray<PositionedAutomation>;
-
 	constructor(
-		readonly child: Pattern,
-		readonly mappingPattern: Pattern,
+		readonly source: Pattern,
+		readonly mapping: Pattern,
+		node: PatternNode,
 	) {
-		super();
+		super(node);
+	}
 
-		this.durationBeats = child.durationBeats;
-		this.metadatas = child.metadatas;
-		this.automations = child.automations;
+	clone(overrides: Partial<PatternNode>): ArpPattern {
+		return new ArpPattern(this.source, this.mapping, this.overrideNode(overrides));
+	}
+}
 
-		const total = child.durationBeats;
-		const mappingDuration = mappingPattern.durationBeats;
+export function arp(pattern: Pattern, mappingPattern: Pattern): ArpPattern {
+	const sourceNotes = collectNotes(pattern);
+	const mappingNotes = collectNotes(mappingPattern).sort((noteA, noteB) => noteA.startBeat - noteB.startBeat);
 
-		const seen = new Set<number>();
-		const pitchPool: Array<Pitch> = [];
-		for (const positionedNote of child.notes) {
-			const key = pitchKey(positionedNote.pitch);
-			if (!seen.has(key)) { seen.add(key); pitchPool.push(positionedNote.pitch); }
-		}
-		pitchPool.sort((pitchA, pitchB) => pitchKey(pitchA) - pitchKey(pitchB));
+	const mappingDuration = mappingPattern.endBeat - mappingPattern.startBeat;
 
-		if (pitchPool.length === 0 || mappingDuration === 0) {
-			this.notes = [];
-			return;
-		}
+	if (sourceNotes.length === 0 || mappingNotes.length === 0 || mappingDuration === 0) {
+		return new ArpPattern(pattern, mappingPattern, { notes: [], children: [{ offsetBeats: 0, pattern }], startBeat: pattern.startBeat, endBeat: pattern.endBeat });
+	}
 
-		const mappingNotes = mappingPattern.notes.slice().sort((noteA, noteB) => noteA.beat - noteB.beat);
+	const mappingPitchKeys = [...new Set(mappingNotes.map((mappingNote) => pitchKey(mappingNote.pitch)))].sort((keyA, keyB) => keyA - keyB);
+	const mappingPitchRank = new Map(mappingPitchKeys.map((key, index) => [key, index]));
 
-		if (mappingNotes.length === 0) {
-			this.notes = [];
-			return;
-		}
+	const events: Array<{ beat: number; delta: number }> = [];
 
-		const firstMappingNote = mappingNotes[0];
-		const firstPitch = pitchPool[0];
+	for (const source of sourceNotes) {
+		events.push({ beat: source.startBeat, delta: 1 });
+		events.push({ beat: source.endBeat, delta: -1 });
+	}
 
-		if (firstMappingNote === undefined || firstPitch === undefined) {
-			this.notes = [];
-			return;
-		}
+	events.sort((eventA, eventB) => eventA.beat - eventB.beat || eventB.delta - eventA.delta);
 
-		const result: Array<ScoreNote> = [];
+	const segments: Array<{ start: number; end: number }> = [];
+	let activeCount = 0;
+	let segmentStart = 0;
+
+	for (const event of events) {
+		if (activeCount === 0 && event.delta > 0) segmentStart = event.beat;
+
+		activeCount += event.delta;
+
+		if (activeCount === 0) segments.push({ start: segmentStart, end: event.beat });
+	}
+
+	const stepsByNote = new Map<string, Array<ArpStep>>();
+
+	for (const segment of segments) {
 		let cycle = 0;
 		let stepIndex = 0;
 
 		for (;;) {
-			const mappingNote = mappingNotes[stepIndex % mappingNotes.length] ?? firstMappingNote;
-			const absoluteTick = cycle * mappingDuration + mappingNote.beat;
+			const mappingNote = mappingNotes[stepIndex % mappingNotes.length];
+			if (!mappingNote) break;
+			const absoluteBeat = segment.start + cycle * mappingDuration + mappingNote.startBeat;
 
-			if (absoluteTick >= total) break;
+			if (absoluteBeat >= segment.end) break;
 
-			const poolIndex = ((pitchKey(mappingNote.pitch) % pitchPool.length) + pitchPool.length) % pitchPool.length;
-			const pitch = pitchPool[poolIndex] ?? firstPitch;
-			result.push({ ...mappingNote, beat: absoluteTick, pitch });
+			const heldPitches = new Map<number, Pitch>();
+
+			for (const source of sourceNotes) {
+				if (source.startBeat <= absoluteBeat && source.endBeat > absoluteBeat) {
+					const key = pitchKey(source.pitch);
+
+					if (!heldPitches.has(key)) heldPitches.set(key, source.pitch);
+				}
+			}
+
+			if (heldPitches.size > 0) {
+				const pool = [...heldPitches.entries()].sort((entryA, entryB) => entryA[0] - entryB[0]).map(([, pitch]) => pitch);
+
+				const lowestPitch = pool[0];
+
+				if (!lowestPitch) {
+					stepIndex++;
+
+					if (stepIndex % mappingNotes.length === 0) cycle++;
+
+					continue;
+				}
+
+				const rank = mappingPitchRank.get(pitchKey(mappingNote.pitch)) ?? 0;
+				const selectedPitch = pool[rank] ?? lowestPitch;
+				const selectedKey = pitchKey(selectedPitch);
+				const stepDuration = mappingNote.endBeat - mappingNote.startBeat;
+
+				for (const source of sourceNotes) {
+					if (pitchKey(source.pitch) === selectedKey && source.startBeat <= absoluteBeat && source.endBeat > absoluteBeat) {
+						const noteId = `${source.startBeat}:${source.endBeat}:${selectedKey}`;
+						let steps = stepsByNote.get(noteId);
+
+						if (!steps) {
+							steps = [];
+							stepsByNote.set(noteId, steps);
+						}
+
+						steps.push({ absoluteBeat, pitch: selectedPitch, velocity: mappingNote.velocity, duration: stepDuration });
+
+						break;
+					}
+				}
+			}
 
 			stepIndex++;
 
 			if (stepIndex % mappingNotes.length === 0) cycle++;
 		}
-
-		this.notes = result;
 	}
 
-	validate(context: ValidateContext): void {
-		const childContext = this.outputs.length > 0 ? { ...context, insideRoute: true } : context;
+	// Walk the tree in-place, replacing each note with its assigned arp steps
+	const transformed = flatMapNotes(pattern, (scoreNote, absoluteOffset) => {
+		const absStart = absoluteOffset + scoreNote.startBeat;
+		const absEnd = absoluteOffset + scoreNote.endBeat;
+		const noteId = `${absStart}:${absEnd}:${pitchKey(scoreNote.pitch)}`;
+		const steps = stepsByNote.get(noteId);
 
-		this.child.validate(childContext);
-	}
+		if (!steps || steps.length === 0) return [];
 
+		return steps.map((step) => ({
+			pitch: step.pitch,
+			startBeat: step.absoluteBeat - absoluteOffset,
+			endBeat: step.absoluteBeat - absoluteOffset + step.duration,
+			velocity: step.velocity,
+		}));
+	});
 
-	schedule(offsetBeats: number, context: ScheduleContext): void {
-		if (!isInScope(offsetBeats, this.durationBeats, context)) return;
-
-		scheduleNotes(this.notes, offsetBeats, this.outputs, context);
-		this.child.schedule(offsetBeats, context);
-	}
+	return new ArpPattern(pattern, mappingPattern, transformed);
 }
 
-export function arp(pattern: Pattern, mappingPattern: Pattern): ArpPattern {
-	return new ArpPattern(pattern, mappingPattern);
-}
-
-export function arpUp(voices: number, rate: Duration | number): Pattern {
-	const steps: Array<Pattern> = [];
+export function arpUp(voices: number, rate: number): Pattern {
+	const steps: Array<ScoreNote> = [];
 
 	for (let voiceIndex = 0; voiceIndex < voices; voiceIndex++) {
-		steps.push(note(voiceIndex, rate));
+		steps.push(note(resolvePitch(voiceIndex), rate));
 	}
 
 	return sequence(...steps);
 }
 
-export function arpDown(voices: number, rate: Duration | number): Pattern {
-	const steps: Array<Pattern> = [];
+export function arpDown(voices: number, rate: number): Pattern {
+	const steps: Array<ScoreNote> = [];
 
 	for (let voiceIndex = voices - 1; voiceIndex >= 0; voiceIndex--) {
-		steps.push(note(voiceIndex, rate));
+		steps.push(note(resolvePitch(voiceIndex), rate));
 	}
 
 	return sequence(...steps);
 }
 
-export function arpUpDown(voices: number, rate: Duration | number): Pattern {
-	const steps: Array<Pattern> = [];
+export function arpUpDown(voices: number, rate: number): Pattern {
+	const steps: Array<ScoreNote> = [];
 
 	for (let voiceIndex = 0; voiceIndex < voices; voiceIndex++) {
-		steps.push(note(voiceIndex, rate));
+		steps.push(note(resolvePitch(voiceIndex), rate));
 	}
 
 	for (let voiceIndex = voices - 2; voiceIndex >= 1; voiceIndex--) {
-		steps.push(note(voiceIndex, rate));
+		steps.push(note(resolvePitch(voiceIndex), rate));
 	}
 
 	return sequence(...steps);
 }
 
-export function arpRandom(voices: number, rate: Duration | number, seed?: number): Pattern {
+export function arpRandom(voices: number, rate: number, seed?: number): Pattern {
 	const rng = seed !== undefined ? mulberry32(seed) : Math.random.bind(Math);
-	const steps: Array<Pattern> = [];
+	const steps: Array<ScoreNote> = [];
 
 	for (let stepIndex = 0; stepIndex < voices; stepIndex++) {
-		steps.push(note(Math.floor(rng() * voices), rate));
+		steps.push(note(resolvePitch(Math.floor(rng() * voices)), rate));
 	}
 
 	return sequence(...steps);

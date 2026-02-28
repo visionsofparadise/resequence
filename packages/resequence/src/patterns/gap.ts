@@ -1,42 +1,22 @@
-import type { ScheduleContext } from "../rendering/schedule-context";
 import type { Duration } from "../utils/duration";
 import { resolveDuration } from "../utils/duration";
-import type { ValidateContext } from "../validate";
-import type { PositionedAutomation, PositionedMetadata, ScoreNote } from "./pattern";
+import type { PatternNode } from "./pattern";
 import { Pattern } from "./pattern";
 
 export class GapPattern extends Pattern {
-	readonly type = "gap" as const;
-	readonly durationBeats: number;
-	readonly notes: ReadonlyArray<ScoreNote> = [];
-	readonly metadatas: ReadonlyArray<PositionedMetadata> = [];
-	readonly automations: ReadonlyArray<PositionedAutomation> = [];
-	readonly sampleKeys: ReadonlySet<string> = new Set();
-	readonly moduleUrls: ReadonlySet<string> = new Set();
-
-	constructor(readonly duration: Duration) {
-		super();
-		this.durationBeats = resolveDuration(duration);
+	constructor(
+		readonly duration: Duration,
+		node: PatternNode,
+	) {
+		super(node);
 	}
 
-	validate(_context: ValidateContext): void {
-		return;
-	}
-
-	setup(_context: ScheduleContext): void {
-		return;
-	}
-
-
-	schedule(_offsetBeats: number, _context: ScheduleContext): void {
-		return;
-	}
-
-	teardown(_context: ScheduleContext): void {
-		return;
+	clone(overrides: Partial<PatternNode>): GapPattern {
+		return new GapPattern(this.duration, this.overrideNode(overrides));
 	}
 }
 
 export function gap(duration: Duration): GapPattern {
-	return new GapPattern(duration);
+	const durationBeats = resolveDuration(duration);
+	return new GapPattern(duration, { notes: [], children: [], startBeat: 0, endBeat: durationBeats });
 }

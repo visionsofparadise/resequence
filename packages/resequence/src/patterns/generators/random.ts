@@ -1,25 +1,9 @@
-import type { ScheduleContext } from "../../rendering/schedule-context";
-import { isInScope, scheduleNotes } from "../../rendering/schedule-notes";
 import type { Duration } from "../../utils/duration";
 import { resolveDuration } from "../../utils/duration";
 import type { Pitch } from "../../utils/pitch";
 import { resolvePitch } from "../../utils/pitch";
-import type { ValidateContext } from "../../validate";
-import type { ScoreNote } from "../pattern";
+import type { PatternNode, RelativeNote } from "../pattern";
 import { MidiPattern } from "../pattern";
-
-export interface RandomVelocityRange {
-	readonly min: number;
-	readonly max: number;
-}
-
-export interface RandomOptions {
-	readonly pitches: ReadonlyArray<string | number | Pitch>;
-	readonly count: number;
-	readonly stepDuration: Duration | number;
-	readonly velocity?: RandomVelocityRange;
-	readonly seed?: number;
-}
 
 function mulberry32(seed: number): () => number {
 	let state = seed;
@@ -34,59 +18,56 @@ function mulberry32(seed: number): () => number {
 	};
 }
 
+export interface RandomVelocityRange {
+	readonly min: number;
+	readonly max: number;
+}
+
+export interface RandomOptions {
+	readonly pitches: ReadonlyArray<string | number | Pitch>;
+	readonly count: number;
+	readonly stepDuration: Duration | number;
+	readonly velocity?: RandomVelocityRange;
+	readonly seed?: number;
+}
+
 export class RandomPattern extends MidiPattern {
-	readonly type = "random" as const;
-	readonly durationBeats: number;
-	readonly notes: ReadonlyArray<ScoreNote>;
-
-	constructor(readonly options: RandomOptions) {
-		super();
-
-		const stepDurationBeats = resolveDuration(options.stepDuration);
-		this.durationBeats = options.count * stepDurationBeats;
-
-		const rng = options.seed !== undefined ? mulberry32(options.seed) : Math.random.bind(Math);
-		const result: Array<ScoreNote> = [];
-		const firstRaw = options.pitches[0];
-
-		if (firstRaw === undefined) {
-			this.notes = result;
-			return;
-		}
-
-		const resolvedPitches = options.pitches.map(resolvePitch);
-		const firstPitch = resolvePitch(firstRaw);
-
-		for (let stepIndex = 0; stepIndex < options.count; stepIndex++) {
-			const pitch = resolvedPitches[Math.floor(rng() * resolvedPitches.length)] ?? firstPitch;
-			const minVel = options.velocity?.min ?? 100;
-			const maxVel = options.velocity?.max ?? 100;
-			const velocity = Math.round(minVel + rng() * (maxVel - minVel));
-
-			result.push({
-				beat: stepIndex * stepDurationBeats,
-				pitch,
-				durationBeats: stepDurationBeats,
-				velocity,
-				outputs: [],
-			});
-		}
-
-		this.notes = result;
+	constructor(
+		readonly options: RandomOptions,
+		node: PatternNode,
+	) {
+		super(node);
 	}
 
-	validate(_context: ValidateContext): void {
-		return;
-	}
-
-
-	schedule(offsetBeats: number, context: ScheduleContext): void {
-		if (!isInScope(offsetBeats, this.durationBeats, context)) return;
-
-		scheduleNotes(this.notes, offsetBeats, this.outputs, context);
+	clone(overrides: Partial<PatternNode>): RandomPattern {
+		return new RandomPattern(this.options, this.overrideNode(overrides));
 	}
 }
 
 export function random(options: RandomOptions): RandomPattern {
-	return new RandomPattern(options);
+	const stepDurationBeats = resolveDuration(options.stepDuration);
+	const durationBeats = options.count * stepDurationBeats;
+	const rng = options.seed !== undefined ? mulberry32(options.seed) : Math.random.bind(Math);
+	const resolvedPitches = options.pitches.map(resolvePitch);
+	const firstPitch = resolvedPitches[0];
+
+	if (!firstPitch) {
+		return new RandomPattern(options, { notes: [], children: [], startBeat: 0, endBeat: durationBeats });
+	}
+
+	const notes: Array<RelativeNote> = [];
+
+	for (let stepIndex = 0; stepIndex < options.count; stepIndex++) {
+		const pitch = resolvedPitches[Math.floor(rng() * resolvedPitches.length)] ?? firstPitch;
+		const minVel = options.velocity?.min ?? 100;
+		const maxVel = options.velocity?.max ?? 100;
+		const velocity = Math.round(minVel + rng() * (maxVel - minVel));
+
+		notes.push({
+			offsetBeats: stepIndex * stepDurationBeats,
+			note: { pitch, startBeat: 0, endBeat: stepDurationBeats, velocity },
+		});
+	}
+
+	return new RandomPattern(options, { notes, children: [], startBeat: 0, endBeat: durationBeats });
 }

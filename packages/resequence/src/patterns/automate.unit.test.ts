@@ -1,11 +1,13 @@
 import { describe, expect, it, vi } from "vitest";
 import { ResequenceError } from "../error";
 import type { ScheduleContext } from "../rendering/schedule-context";
-import { bars } from "../utils/duration";
+import { bars, resolveDuration } from "../utils/duration";
 import { resolveLfo } from "../utils/lfo";
+import { resolvePitch } from "../utils/pitch";
 import { automate } from "./automate";
 import { layer } from "./layer";
 import { note } from "./note";
+import { sequence } from "./sequence";
 
 function mockAudioParam(): AudioParam {
 	return {
@@ -45,11 +47,12 @@ function mockContext(driverMap = new Map<string, ConstantSourceNode>()): Schedul
 			})),
 		} as unknown as BaseAudioContext,
 		sampleMap: new Map(),
-		nodeMap: new Map(),
 		driverMap,
-		tempo: 120,
+		tempoMap: [{ beat: 0, bpm: 120 }],
 		fromBeats: 0,
 		toBeats: Infinity,
+		outputs: [],
+		dispatch: vi.fn(),
 	};
 }
 
@@ -60,7 +63,7 @@ describe("AutomatePattern", () => {
 				{ time: 0, value: 80 },
 				{ time: 4, value: 2000, curve: "linear" },
 			]);
-			expect(auto.type).toBe("automate");
+			expect(auto).toBeInstanceOf(auto.constructor);
 			expect(auto.name).toBe("filter-sweep");
 			expect(auto.paths).toEqual(["bass.hp.frequency"]);
 		});
@@ -85,7 +88,7 @@ describe("AutomatePattern", () => {
 				{ time: 4, value: 2000 },
 				{ time: bars(2), value: 80 },
 			]);
-			expect(auto.durationBeats).toBe(bars(2));
+			expect(auto.endBeat - auto.startBeat).toBe(bars(2));
 		});
 
 		it("rejects empty envelope", () => {
@@ -155,8 +158,8 @@ describe("AutomatePattern", () => {
 				{ time: 0, value: 80 },
 				{ time: "4n", value: 2000 },
 			]);
-			const combined = layer(note("C4", "4n"), auto);
-			expect(combined.durationBeats).toBe(1);
+			const combined = layer(sequence(note(resolvePitch("C4"), resolveDuration("4n"))), auto);
+			expect(combined.endBeat - combined.startBeat).toBe(1);
 		});
 	});
 
@@ -176,7 +179,7 @@ describe("AutomatePattern", () => {
 		it("durationBeats is 0 for Lfo source", () => {
 			const lfo = resolveLfo({ shape: "sine", frequency: 2, value: 500 });
 			const auto = automate("filter-lfo", "bass.hp.frequency", lfo);
-			expect(auto.durationBeats).toBe(0);
+			expect(auto.endBeat - auto.startBeat).toBe(0);
 		});
 
 		it("envelope getter returns empty for Lfo source", () => {

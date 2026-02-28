@@ -1,54 +1,60 @@
 import { describe, expect, it } from "vitest";
+import { resolveDuration } from "../../utils/duration";
 import { resolvePitch } from "../../utils/pitch";
 import { gap } from "../gap";
 import { note } from "../note";
 import { sequence } from "../sequence";
+import { collectNotes } from "../utils/tree";
 import { GatePattern, gate } from "./gate";
 
 describe("GatePattern", () => {
 	describe("notes", () => {
 		it("passes note through unchanged when gate fully covers it", () => {
-			const pat = gate(note("C4", "4n"), note("E4", "4n"));
-			expect(pat.notes).toHaveLength(1);
-			expect(pat.notes[0]).toMatchObject({ beat: 0, pitch: resolvePitch("C4"), durationBeats: 1 });
+			const pat = gate(sequence(note(resolvePitch("C4"), resolveDuration("4n"))), sequence(note(resolvePitch("E4"), resolveDuration("4n"))));
+			const notes = collectNotes(pat);
+			expect(notes).toHaveLength(1);
+			expect(notes[0]).toMatchObject({ startBeat: 0, pitch: resolvePitch("C4"), endBeat: 1 });
 		});
 
 		it("trims note to the gate window when gate is shorter", () => {
 			// Input: C4@0 dur 1 beat; gate: E4@0 dur 0.25 beat → overlap [0, 0.25)
-			const pat = gate(note("C4", "4n"), note("E4", "16n"));
-			expect(pat.notes).toHaveLength(1);
-			expect(pat.notes[0]).toMatchObject({ beat: 0, durationBeats: 0.25 });
+			const pat = gate(sequence(note(resolvePitch("C4"), resolveDuration("4n"))), sequence(note(resolvePitch("E4"), resolveDuration("16n"))));
+			const notes = collectNotes(pat);
+			expect(notes).toHaveLength(1);
+			expect(notes[0]).toMatchObject({ startBeat: 0, endBeat: 0.25 });
 		});
 
 		it("preserves pitch of input note", () => {
-			const pat = gate(note("G4", "4n"), note("C4", "16n"));
-			expect(pat.notes[0]!.pitch).toEqual(resolvePitch("G4"));
+			const pat = gate(sequence(note(resolvePitch("G4"), resolveDuration("4n"))), sequence(note(resolvePitch("C4"), resolveDuration("16n"))));
+			expect(collectNotes(pat)[0]!.pitch).toEqual(resolvePitch("G4"));
 		});
 
 		it("emits nothing when note has zero duration", () => {
-			const pat = gate(note("C4", 0), note("E4", "4n"));
-			expect(pat.notes).toHaveLength(0);
+			const pat = gate(sequence(note(resolvePitch("C4"), 0)), sequence(note(resolvePitch("E4"), resolveDuration("4n"))));
+			expect(collectNotes(pat)).toHaveLength(0);
 		});
 
 		it("emits one fragment per overlapping gate window", () => {
 			// Two gate windows within a single long note (2 beats)
 			// gate: [0, 0.25) and [0.75, 1.0) → two fragments
-			const pat = gate(note("C4", 2), sequence(note("E4", "16n"), gap("8n"), note("F4", "16n")));
-			expect(pat.notes).toHaveLength(2);
-			expect(pat.notes[0]).toMatchObject({ beat: 0, durationBeats: 0.25 });
-			expect(pat.notes[1]).toMatchObject({ beat: 0.75, durationBeats: 0.25 });
+			const pat = gate(sequence(note(resolvePitch("C4"), 2)), sequence(note(resolvePitch("E4"), resolveDuration("16n")), gap("8n"), note(resolvePitch("F4"), resolveDuration("16n"))));
+			const notes = collectNotes(pat);
+			expect(notes).toHaveLength(2);
+			expect(notes[0]).toMatchObject({ startBeat: 0, endBeat: 0.25 });
+			expect(notes[1]).toMatchObject({ startBeat: 0.75, endBeat: 1 });
 		});
 	});
 
 	describe("durationBeats", () => {
 		it("preserves child duration", () => {
-			expect(gate(note("C4", "4n"), note("E4", "4n")).durationBeats).toBe(1);
+			const pat = gate(sequence(note(resolvePitch("C4"), resolveDuration("4n"))), sequence(note(resolvePitch("E4"), resolveDuration("4n"))));
+			expect(pat.endBeat - pat.startBeat).toBe(1);
 		});
 	});
 
 	describe("instanceof", () => {
 		it("is a GatePattern", () => {
-			expect(gate(note("C4", "4n"), note("E4", "4n"))).toBeInstanceOf(GatePattern);
+			expect(gate(sequence(note(resolvePitch("C4"), resolveDuration("4n"))), sequence(note(resolvePitch("E4"), resolveDuration("4n"))))).toBeInstanceOf(GatePattern);
 		});
 	});
 });

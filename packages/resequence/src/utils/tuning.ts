@@ -1,11 +1,12 @@
-import type { NotePattern } from "../patterns/note";
+import type { ScoreNote } from "../patterns/note";
 import { note } from "../patterns/note";
-import type { Duration } from "./duration";
 import type { Pitch, TuningConfig } from "./pitch";
+import { resolveDuration } from "./duration";
+import type { Duration } from "./duration";
 
 export interface TuningEntry {
 	readonly pitch: Pitch;
-	for(duration: Duration, velocity?: number): NotePattern;
+	for(duration: Duration, velocity?: number): ScoreNote;
 }
 
 export function createTuning(config: TuningConfig): Record<string, TuningEntry> {
@@ -26,8 +27,8 @@ export function createTuning(config: TuningConfig): Record<string, TuningEntry> 
 
 			namespace[key] = {
 				pitch,
-				for(duration: Duration, velocity?: number): NotePattern {
-					return note(pitch, duration, velocity !== undefined ? { velocity } : undefined);
+				for(duration: Duration, velocity?: number): ScoreNote {
+					return note(pitch, resolveDuration(duration), velocity !== undefined ? { velocity } : undefined);
 				},
 			};
 		}

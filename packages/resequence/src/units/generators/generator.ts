@@ -1,6 +1,6 @@
 import type { ScheduleContext } from "../../rendering/schedule-context";
 import { getOrCreateDriver } from "../../utils/driver";
-import { buildCurve } from "../build-curve";
+import { buildCurve } from "../utils/build-curve";
 import { CCEffectUnit } from "../effects/cc";
 import { linearGain, type GainEffectUnit } from "../effects/gain";
 import type { VoiceNote } from "../midi-unit";

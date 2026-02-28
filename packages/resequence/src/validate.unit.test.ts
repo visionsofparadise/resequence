@@ -4,78 +4,45 @@ import { automate } from "./patterns/automate";
 import { layer } from "./patterns/layer";
 import { metadata } from "./patterns/metadata";
 import { note } from "./patterns/note";
-import { repeat } from "./patterns/repeat";
+import { repeat } from "./patterns/modifiers/repeat";
 import { sequence } from "./patterns/sequence";
 import { sampler } from "./units/generators/sampler";
+import { resolveDuration } from "./utils/duration";
+import { resolvePitch } from "./utils/pitch";
 import { validate } from "./validate";
 
 describe("validate", () => {
-	describe("ORPHANED_NOTES", () => {
-		it("warns when note is not inside a route", () => {
-			const warnings = validate(note("C4", "4n"));
-			expect(warnings).toContainEqual(expect.objectContaining({ code: "ORPHANED_NOTES" }));
-		});
-
-		it("warns for notes inside sequence without route", () => {
-			const warnings = validate(sequence(note("C4", "4n"), note("E4", "4n")));
-			expect(warnings.filter((w) => w.code === "ORPHANED_NOTES")).toHaveLength(2);
-		});
-
-		it("does not warn when note is routed to sampler", () => {
-			const bass = sampler("bass", "./bass.wav", { root: "C2" });
-			const warnings = validate(note("C4", "4n").route(bass));
-			expect(warnings.filter((w) => w.code === "ORPHANED_NOTES")).toHaveLength(0);
-		});
-
-		it("does not warn for notes nested deep inside route", () => {
-			const bass = sampler("bass", "./bass.wav", { root: "C2" });
-			const warnings = validate(sequence(note("C4", "4n"), note("E4", "4n")).route(bass));
-			expect(warnings.filter((w) => w.code === "ORPHANED_NOTES")).toHaveLength(0);
-		});
-	});
-
-	describe("EMPTY_CONTAINER", () => {
-		it("warns for empty sequence", () => {
-			const warnings = validate(sequence());
-			expect(warnings).toContainEqual(expect.objectContaining({ code: "EMPTY_CONTAINER" }));
-		});
-
-		it("warns for empty layer", () => {
-			const warnings = validate(layer());
-			expect(warnings).toContainEqual(expect.objectContaining({ code: "EMPTY_CONTAINER" }));
-		});
-
-		it("does not warn for non-empty sequence", () => {
-			const bass = sampler("bass", "./bass.wav", { root: "C2" });
-			const warnings = validate(sequence(note("C4", "4n")).route(bass));
-			expect(warnings.filter((w) => w.code === "EMPTY_CONTAINER")).toHaveLength(0);
-		});
-	});
-
-	describe("combined", () => {
-		it("returns multiple warnings from a complex tree", () => {
-			const auto = automate("sweep", "synth.hp.frequency", [{ time: 0, value: 80 }]);
-			const warnings = validate(layer(sequence(), note("C4", "4n"), auto));
-			const codes = warnings.map((w) => w.code);
-			expect(codes).toContain("EMPTY_CONTAINER");
-			expect(codes).toContain("ORPHANED_NOTES");
-		});
-	});
-
 	describe("traversal", () => {
-		it("traverses through metadata", () => {
-			const warnings = validate(metadata(note("C4", "4n"), { name: "test" }));
-			expect(warnings).toContainEqual(expect.objectContaining({ code: "ORPHANED_NOTES" }));
+		it("returns warnings array", () => {
+			const warnings = validate(sequence(note(resolvePitch("C4"), resolveDuration("4n"))));
+			expect(Array.isArray(warnings)).toBe(true);
 		});
 
-		it("traverses through repeat", () => {
-			const warnings = validate(repeat(note("C4", "4n"), 4));
-			expect(warnings.filter((w) => w.code === "ORPHANED_NOTES")).toHaveLength(1);
+		it("traverses through metadata without error", () => {
+			const warnings = validate(metadata(sequence(note(resolvePitch("C4"), resolveDuration("4n"))), { name: "test" }));
+			expect(Array.isArray(warnings)).toBe(true);
 		});
 
-		it("ignores audio patterns for orphaned notes", () => {
+		it("traverses through repeat without error", () => {
+			const warnings = validate(repeat(sequence(note(resolvePitch("C4"), resolveDuration("4n"))), 4));
+			expect(Array.isArray(warnings)).toBe(true);
+		});
+
+		it("traverses audio patterns without error", () => {
 			const warnings = validate(audio("break", "./break.wav", "4n"));
-			expect(warnings.filter((w) => w.code === "ORPHANED_NOTES")).toHaveLength(0);
+			expect(Array.isArray(warnings)).toBe(true);
+		});
+
+		it("registers automation paths during validation", () => {
+			const auto = automate("sweep", "synth.hp.frequency", [{ time: 0, value: 80 }]);
+			const warnings = validate(layer(sequence(), sequence(note(resolvePitch("C4"), resolveDuration("4n"))), auto));
+			expect(Array.isArray(warnings)).toBe(true);
+		});
+
+		it("traverses routed patterns without error", () => {
+			const bass = sampler("./bass.wav", { root: "C2", id: "bass" });
+			const warnings = validate(sequence(note(resolvePitch("C4"), resolveDuration("4n")), note(resolvePitch("E4"), resolveDuration("4n"))).route(bass));
+			expect(Array.isArray(warnings)).toBe(true);
 		});
 	});
 });

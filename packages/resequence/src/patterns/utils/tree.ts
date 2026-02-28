@@ -1,54 +1,121 @@
-import { Pattern } from "../pattern";
+import type { ScoreNote } from "../note";
+import type { Pattern, RelativeChild, RelativeNote } from "../pattern";
 
-export interface PatternNode {
-	readonly pattern: Pattern;
-	readonly offsetBeats: number;
+function extentOf(notes: ReadonlyArray<RelativeNote>, children: ReadonlyArray<RelativeChild>): { startBeat: number; endBeat: number } {
+	let startBeat = Infinity;
+	let endBeat = -Infinity;
+
+	for (const { offsetBeats, note } of notes) {
+		startBeat = Math.min(startBeat, offsetBeats + note.startBeat);
+		endBeat = Math.max(endBeat, offsetBeats + note.endBeat);
+	}
+
+	for (const { offsetBeats, pattern } of children) {
+		startBeat = Math.min(startBeat, offsetBeats + pattern.startBeat);
+		endBeat = Math.max(endBeat, offsetBeats + pattern.endBeat);
+	}
+
+	if (startBeat === Infinity) return { startBeat: 0, endBeat: 0 };
+	if (endBeat === -Infinity) return { startBeat: 0, endBeat: 0 };
+
+	return { startBeat, endBeat };
 }
 
-export function childrenOf(pattern: Pattern, offsetBeats: number): ReadonlyArray<PatternNode> {
-	if (pattern.type === "sequence" && "children" in pattern) {
-		const children = (pattern as { children: ReadonlyArray<Pattern> }).children;
-		const result: Array<PatternNode> = [];
-		let cursor = offsetBeats;
-		for (const child of children) {
-			result.push({ pattern: child, offsetBeats: cursor });
-			cursor += child.durationBeats;
-		}
-		return result;
+export function mapNotes(pattern: Pattern, callback: (note: ScoreNote, absoluteOffset: number) => ScoreNote, parentOffset = 0): Pattern {
+	let changed = false;
+	const newChildren: Array<RelativeChild> = [];
+
+	for (const { offsetBeats, pattern: child } of pattern.children) {
+		const mapped = mapNotes(child, callback, parentOffset + offsetBeats);
+
+		if (mapped !== child) changed = true;
+
+		newChildren.push({ offsetBeats, pattern: mapped });
 	}
 
-	if (pattern.type === "repeat" && "child" in pattern && "count" in pattern) {
-		const rp = pattern as unknown as { child: Pattern; count: number };
-		const result: Array<PatternNode> = [];
-		for (let iteration = 0; iteration < rp.count; iteration++) {
-			result.push({ pattern: rp.child, offsetBeats: offsetBeats + rp.child.durationBeats * iteration });
-		}
-		return result;
+	const newNotes: Array<RelativeNote> = [];
+
+	for (const { offsetBeats, note } of pattern.notes) {
+		const mapped = callback(note, parentOffset + offsetBeats);
+
+		if (mapped !== note) changed = true;
+
+		newNotes.push({ offsetBeats, note: mapped });
 	}
 
-	if ("child" in pattern) {
-		const child = (pattern as { child: unknown }).child;
-		if (child instanceof Pattern) return [{ pattern: child, offsetBeats }];
-	}
+	if (!changed) return pattern;
 
-	if ("children" in pattern) {
-		const children = (pattern as { children: unknown }).children;
-		if (Array.isArray(children)) {
-			return children.filter((ch): ch is Pattern => ch instanceof Pattern).map((ch) => ({ pattern: ch, offsetBeats }));
-		}
-	}
-
-	return [];
+	return pattern.clone({ notes: newNotes, children: newChildren, ...extentOf(newNotes, newChildren) });
 }
 
-export function flatMapTree<T>(pattern: Pattern, visitor: (pattern: Pattern, offsetBeats: number) => ReadonlyArray<T>): Array<T> {
-	return walk(pattern, 0, visitor);
+export function flatMapNotes(pattern: Pattern, callback: (note: ScoreNote, absoluteOffset: number) => ReadonlyArray<ScoreNote>, parentOffset = 0): Pattern {
+	let changed = false;
+	const newChildren: Array<RelativeChild> = [];
+
+	for (const { offsetBeats, pattern: child } of pattern.children) {
+		const mapped = flatMapNotes(child, callback, parentOffset + offsetBeats);
+
+		if (mapped !== child) changed = true;
+
+		newChildren.push({ offsetBeats, pattern: mapped });
+	}
+
+	const expanded: Array<RelativeNote> = [];
+
+	for (const { offsetBeats, note } of pattern.notes) {
+		const result = callback(note, parentOffset + offsetBeats);
+
+		if (result.length !== 1 || result[0] !== note) changed = true;
+
+		for (const mapped of result) {
+			expanded.push({ offsetBeats, note: mapped });
+		}
+	}
+
+	if (!changed) return pattern;
+
+	return pattern.clone({ notes: expanded, children: newChildren, ...extentOf(expanded, newChildren) });
 }
 
-function walk<T>(pattern: Pattern, offsetBeats: number, visitor: (pattern: Pattern, offsetBeats: number) => ReadonlyArray<T>): Array<T> {
-	const results: Array<T> = [...visitor(pattern, offsetBeats)];
-	for (const child of childrenOf(pattern, offsetBeats)) {
-		results.push(...walk(child.pattern, child.offsetBeats, visitor));
+export function mapGroups(pattern: Pattern, callback: (notes: ReadonlyArray<RelativeNote>, absoluteOffset: number) => ReadonlyArray<RelativeNote>, parentOffset = 0): Pattern {
+	let changed = false;
+	const newChildren: Array<RelativeChild> = [];
+
+	for (const { offsetBeats, pattern: child } of pattern.children) {
+		const mapped = mapGroups(child, callback, parentOffset + offsetBeats);
+
+		if (mapped !== child) changed = true;
+
+		newChildren.push({ offsetBeats, pattern: mapped });
 	}
+
+	const newNotes = pattern.notes.length > 0 ? callback(pattern.notes, parentOffset) : pattern.notes;
+
+	if (newNotes !== pattern.notes) changed = true;
+
+	if (!changed) return pattern;
+
+	return pattern.clone({ notes: newNotes, children: newChildren, ...extentOf(newNotes, newChildren) });
+}
+
+export function walkNodes(pattern: Pattern, callback: (node: Pattern, absoluteOffset: number) => void, parentOffset = 0): void {
+	callback(pattern, parentOffset);
+
+	for (const { offsetBeats, pattern: child } of pattern.children) {
+		walkNodes(child, callback, parentOffset + offsetBeats);
+	}
+}
+
+export function collectNotes(pattern: Pattern, offsetBeats = 0): Array<ScoreNote> {
+	const results: Array<ScoreNote> = [];
+
+	walkNodes(pattern, (node, absoluteOffset) => {
+		for (const { offsetBeats: noteOffset, note } of node.notes) {
+			const totalOffset = absoluteOffset + noteOffset;
+
+			results.push({ ...note, startBeat: note.startBeat + totalOffset, endBeat: note.endBeat + totalOffset });
+		}
+	}, offsetBeats);
+
 	return results;
 }

@@ -38,7 +38,7 @@ describe("collectRouting", () => {
 	});
 
 	it("finds routing through metadata", () => {
-		const pattern = metadata(audio("break", "./break.wav", "1n"), { tempo: 120 });
+		const pattern = metadata(audio("break", "./break.wav", "1n"), { name: "break-section" });
 		const routing = collectRouting(pattern);
 
 		expect(routing.size).toBe(1);
@@ -60,7 +60,7 @@ describe("collectRouting", () => {
 	});
 
 	it("returns empty map when no samples", () => {
-		const pattern = metadata(audio("break", "./break.wav", "4n"), { tempo: 120 });
+		const pattern = metadata(audio("break", "./break.wav", "4n"), { name: "break-section" });
 		const routing = collectRouting(pattern);
 
 		expect(routing.has("break")).toBe(true);

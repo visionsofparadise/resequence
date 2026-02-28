@@ -1,13 +1,23 @@
-import type { PositionedMetadata } from "../patterns/pattern";
+import { MetadataPattern } from "../patterns/metadata";
+import type { Pattern } from "../patterns/pattern";
 
 export interface TimeSignaturePoint {
 	readonly beat: number;
 	readonly timeSignature: readonly [number, number];
 }
 
-export function collectTimeSignatures(metadatas: ReadonlyArray<PositionedMetadata>, offsetBeats = 0): ReadonlyArray<TimeSignaturePoint> {
-	return metadatas
-		.filter((positioned): positioned is typeof positioned & { meta: { timeSignature: readonly [number, number] } } => positioned.meta.timeSignature !== undefined)
-		.map((positioned) => ({ beat: positioned.beat + offsetBeats, timeSignature: positioned.meta.timeSignature }))
-		.sort((left, right) => left.beat - right.beat);
+export function collectTimeSignatures(pattern: Pattern, offsetBeats = 0): ReadonlyArray<TimeSignaturePoint> {
+	const points: Array<TimeSignaturePoint> = [];
+	walkForTimeSignatures(pattern, offsetBeats, points);
+	return points.sort((left, right) => left.beat - right.beat);
+}
+
+function walkForTimeSignatures(pattern: Pattern, offsetBeats: number, points: Array<TimeSignaturePoint>): void {
+	if (pattern instanceof MetadataPattern && pattern.meta.timeSignature !== undefined) {
+		points.push({ beat: offsetBeats, timeSignature: pattern.meta.timeSignature });
+	}
+
+	for (const { offsetBeats: childOffset, pattern: child } of pattern.children) {
+		walkForTimeSignatures(child, offsetBeats + childOffset, points);
+	}
 }

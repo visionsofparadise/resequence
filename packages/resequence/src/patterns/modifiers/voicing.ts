@@ -1,139 +1,120 @@
-import type { ScheduleContext } from "../../rendering/schedule-context";
-import { isInScope, scheduleNotes } from "../../rendering/schedule-notes";
 import { addSteps, pitchKey } from "../../utils/pitch";
-import type { ValidateContext } from "../../validate";
-import type { Pattern, PositionedAutomation, PositionedMetadata, ScoreNote } from "../pattern";
-import { MidiPattern } from "../pattern";
+import type { Pitch } from "../../utils/pitch";
+import type { ScoreNote } from "../note";
+import type { PatternNode } from "../pattern";
+import { MidiPattern, type Pattern } from "../pattern";
+import { collectNotes, mapNotes } from "../utils/tree";
 
 export type VoicingStyle = "close" | "drop2" | "drop3" | "open";
 
 export class VoicingPattern extends MidiPattern {
-	readonly type = "voicing" as const;
-	readonly durationBeats: number;
-	readonly notes: ReadonlyArray<ScoreNote>;
-	readonly metadatas: ReadonlyArray<PositionedMetadata>;
-	readonly automations: ReadonlyArray<PositionedAutomation>;
-
 	constructor(
-		readonly child: Pattern,
+		readonly source: Pattern,
 		readonly style: VoicingStyle,
+		node: PatternNode,
 	) {
-		super();
-
-		this.durationBeats = child.durationBeats;
-
-		const byTick = new Map<number, Array<ScoreNote>>();
-
-		for (const positionedNote of child.notes) {
-			let group = byTick.get(positionedNote.beat);
-
-			if (!group) {
-				group = [];
-				byTick.set(positionedNote.beat, group);
-			}
-
-			group.push(positionedNote);
-		}
-
-		const result: Array<ScoreNote> = [];
-
-		for (const group of byTick.values()) {
-			result.push(...applyVoicing(group, style));
-		}
-
-		this.notes = result;
-		this.metadatas = child.metadatas;
-		this.automations = child.automations;
+		super(node);
 	}
 
-	validate(context: ValidateContext): void {
-		const childContext = this.outputs.length > 0 ? { ...context, insideRoute: true } : context;
-
-		this.child.validate(childContext);
-	}
-
-
-	schedule(offsetBeats: number, context: ScheduleContext): void {
-		if (!isInScope(offsetBeats, this.durationBeats, context)) return;
-
-		scheduleNotes(this.notes, offsetBeats, this.outputs, context);
-
-		this.child.schedule(offsetBeats, context);
+	clone(overrides: Partial<PatternNode>): VoicingPattern {
+		return new VoicingPattern(this.source, this.style, this.overrideNode(overrides));
 	}
 }
 
-function applyVoicing(group: ReadonlyArray<ScoreNote>, style: VoicingStyle): Array<ScoreNote> {
-	if (group.length < 2) return group.slice();
+function applyVoicing(group: ReadonlyArray<ScoreNote>, style: VoicingStyle): Map<string, Pitch> {
+	const pitchMap = new Map<string, Pitch>();
+	if (group.length < 2) return pitchMap;
+
 	const sorted = group.slice().sort((noteA, noteB) => pitchKey(noteA.pitch) - pitchKey(noteB.pitch));
 	const firstSorted = sorted[0];
-	if (firstSorted === undefined) return group.slice();
+	if (!firstSorted) return pitchMap;
+
 	const baseKey = pitchKey(firstSorted.pitch);
 	const spo = firstSorted.pitch.stepsPerOctave;
 
-	// Close voicing: pack all notes within one octave above the lowest
-	const close = sorted.map((positionedNote, groupIndex) => {
-		if (groupIndex === 0) return positionedNote;
-		let pitch = positionedNote.pitch;
-
+	const close = sorted.map((scoreNote, groupIndex) => {
+		if (groupIndex === 0) return scoreNote.pitch;
+		let pitch = scoreNote.pitch;
 		while (pitchKey(pitch) > baseKey + spo) pitch = addSteps(pitch, -spo);
 		while (pitchKey(pitch) <= baseKey) pitch = addSteps(pitch, spo);
-
-		const shift = pitchKey(pitch) - pitchKey(positionedNote.pitch);
-		return {
-			...positionedNote,
-			pitch,
-			slides: positionedNote.slides?.map((sl) => ({ ...sl, pitch: addSteps(sl.pitch, shift) })),
-		};
+		return pitch;
 	});
 
-	if (style === "close") return close;
+	let voiced = close;
 
 	if (style === "drop2") {
-		const voiced = close.slice();
-		const secondFromTop = voiced[voiced.length - 2];
-
+		voiced = close.slice();
+		const dropIndex = voiced.length - 2;
+		const secondFromTop = voiced[dropIndex];
 		if (secondFromTop) {
-			voiced[voiced.length - 2] = {
-				...secondFromTop,
-				pitch: addSteps(secondFromTop.pitch, -spo),
-				slides: secondFromTop.slides?.map((sl) => ({ ...sl, pitch: addSteps(sl.pitch, -spo) })),
-			};
+			voiced[dropIndex] = addSteps(secondFromTop, -spo);
 		}
-
-		return voiced;
-	}
-
-	if (style === "drop3") {
-		const voiced = close.slice();
-
-		const thirdFromTop = voiced[voiced.length - 3];
+	} else if (style === "drop3") {
+		voiced = close.slice();
+		const dropIndex = voiced.length - 3;
+		const thirdFromTop = voiced[dropIndex];
 		if (thirdFromTop) {
-			voiced[voiced.length - 3] = {
-				...thirdFromTop,
-				pitch: addSteps(thirdFromTop.pitch, -spo),
-				slides: thirdFromTop.slides?.map((sl) => ({ ...sl, pitch: addSteps(sl.pitch, -spo) })),
-			};
+			voiced[dropIndex] = addSteps(thirdFromTop, -spo);
 		}
-
-		return voiced;
+	} else if (style === "open") {
+		voiced = close.slice();
+		for (let noteIndex = voiced.length - 1; noteIndex >= 0; noteIndex -= 2) {
+			const pitch = voiced[noteIndex];
+			if (pitch) {
+				voiced[noteIndex] = addSteps(pitch, spo);
+			}
+		}
 	}
 
-	// open: alternate notes up an octave (every other note from the top)
-	const voiced = close.slice();
-
-	for (let noteIndex = voiced.length - 1; noteIndex >= 0; noteIndex -= 2) {
-		const positionedNote = voiced[noteIndex];
-		if (positionedNote === undefined) continue;
-		voiced[noteIndex] = {
-			...positionedNote,
-			pitch: addSteps(positionedNote.pitch, spo),
-			slides: positionedNote.slides?.map((sl) => ({ ...sl, pitch: addSteps(sl.pitch, spo) })),
-		};
+	for (const [groupIndex, scoreNote] of sorted.entries()) {
+		const newPitch = voiced[groupIndex];
+		if (newPitch && pitchKey(newPitch) !== pitchKey(scoreNote.pitch)) {
+			const key = `${scoreNote.startBeat}:${scoreNote.endBeat}:${pitchKey(scoreNote.pitch)}`;
+			pitchMap.set(key, newPitch);
+		}
 	}
 
-	return voiced;
+	return pitchMap;
 }
 
 export function voicing(pattern: Pattern, style: VoicingStyle): VoicingPattern {
-	return new VoicingPattern(pattern, style);
+	const allNotes = collectNotes(pattern);
+
+	const byBeat = new Map<number, Array<ScoreNote>>();
+	for (const scoreNote of allNotes) {
+		let group = byBeat.get(scoreNote.startBeat);
+		if (!group) {
+			group = [];
+			byBeat.set(scoreNote.startBeat, group);
+		}
+		group.push(scoreNote);
+	}
+
+	const pitchChanges = new Map<string, Pitch>();
+	for (const group of byBeat.values()) {
+		const changes = applyVoicing(group, style);
+		for (const [key, pitch] of changes) {
+			pitchChanges.set(key, pitch);
+		}
+	}
+
+	const transformed = mapNotes(pattern, (note, absoluteOffset) => {
+		const absStart = absoluteOffset + note.startBeat;
+		const absEnd = absoluteOffset + note.endBeat;
+		const key = `${absStart}:${absEnd}:${pitchKey(note.pitch)}`;
+		const newPitch = pitchChanges.get(key);
+
+		if (newPitch) {
+			const shift = pitchKey(newPitch) - pitchKey(note.pitch);
+			return {
+				...note,
+				pitch: newPitch,
+				slides: note.slides?.map((sl) => ({ ...sl, pitch: addSteps(sl.pitch, shift) })),
+			};
+		}
+
+		return note;
+	});
+
+	return new VoicingPattern(pattern, style, transformed);
 }

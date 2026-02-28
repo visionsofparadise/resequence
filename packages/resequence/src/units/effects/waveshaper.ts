@@ -1,5 +1,5 @@
 import type { ScheduleContext } from "../../rendering/schedule-context";
-import { buildCurve } from "../build-curve";
+import { buildCurve } from "../utils/build-curve";
 import { Unit } from "../unit";
 
 export const WaveShaperCurve = {

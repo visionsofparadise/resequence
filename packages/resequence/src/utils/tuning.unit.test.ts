@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { note } from "../patterns/note";
+import { sequence } from "../patterns/sequence";
+import { collectNotes } from "../patterns/utils/tree";
 import { Chromatic, N } from "./chromatic";
+import { resolveDuration } from "./duration";
 import { resolvePitch, pitchToCents } from "./pitch";
 import { createTuning } from "./tuning";
 
@@ -30,14 +33,14 @@ describe("createTuning", () => {
 			expect(tuning["E3"]!.pitch).toEqual({ class: 2, stepsPerOctave: 3, octave: 3, octaveRatio: 2 });
 		});
 
-		it("entry.for() returns a NotePattern with the entry pitch", () => {
+		it("entry.for() returns a ScoreNote with the entry pitch", () => {
 			const tuning = createTuning({
 				classes: ["C", "D"],
 				octaveRatio: 2,
 				reference: { class: "C", octave: 4, hz: 264 },
 			});
-			const pat = tuning["C4"]!.for("4n");
-			expect(pat).toEqual(note(tuning["C4"]!.pitch, "4n"));
+			const scoreNote = tuning["C4"]!.for("4n");
+			expect(scoreNote).toEqual(note(tuning["C4"]!.pitch, resolveDuration("4n")));
 		});
 
 		it("entry.for() accepts velocity", () => {
@@ -46,8 +49,8 @@ describe("createTuning", () => {
 				octaveRatio: 2,
 				reference: { class: "C", octave: 4, hz: 264 },
 			});
-			const pat = tuning["C4"]!.for("4n", 80);
-			expect(pat.notes[0]!.velocity).toBe(80);
+			const scoreNote = tuning["C4"]!.for("4n", 80);
+			expect(scoreNote.velocity).toBe(80);
 		});
 
 		it("throws when reference class is not in classes", () => {
@@ -85,10 +88,10 @@ describe("N (chromatic 12-EDO namespace)", () => {
 		expect(N["Cb4"]!.pitch).toEqual(N["B3"]!.pitch);
 	});
 
-	it("N entry.for() produces correct NotePattern", () => {
-		const pat = N["C4"]!.for("8n");
-		expect(pat.durationBeats).toBe(0.5);
-		expect(pat.notes[0]!.pitch).toEqual(resolvePitch("C4"));
+	it("N entry.for() produces correct ScoreNote", () => {
+		const scoreNote = N["C4"]!.for("8n");
+		expect(scoreNote.endBeat - scoreNote.startBeat).toBe(0.5);
+		expect(scoreNote.pitch).toEqual(resolvePitch("C4"));
 	});
 });
 
@@ -101,19 +104,19 @@ describe("Chromatic", () => {
 	describe("chord()", () => {
 		it("builds a major triad from root pitch", () => {
 			const pat = Chromatic.chord(N["C4"]!.pitch, "", "4n");
-			expect(pat.notes).toHaveLength(3);
+			expect(collectNotes(pat)).toHaveLength(3);
 			// durationBeats of each note = 1 ("4n")
-			expect(pat.durationBeats).toBe(1);
+			expect(pat.endBeat - pat.startBeat).toBe(1);
 		});
 
 		it("builds a minor triad", () => {
 			const pat = Chromatic.chord(N["C4"]!.pitch, "m", "4n");
-			expect(pat.notes).toHaveLength(3);
+			expect(collectNotes(pat)).toHaveLength(3);
 		});
 
 		it("builds a major seventh chord", () => {
 			const pat = Chromatic.chord(N["C4"]!.pitch, "maj7", "4n");
-			expect(pat.notes).toHaveLength(4);
+			expect(collectNotes(pat)).toHaveLength(4);
 		});
 
 		it("throws on unknown quality", () => {

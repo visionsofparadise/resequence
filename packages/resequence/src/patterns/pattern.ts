@@ -1,86 +1,100 @@
 import type { ScheduleContext } from "../rendering/schedule-context";
 import type { MidiUnit } from "../units/midi-unit";
-import type { Pitch, TuningConfig } from "../utils/pitch";
 import type { ValidateContext } from "../validate";
-import type { AutomatePattern } from "./automate";
+import type { ScoreNote } from "./note";
 
-export interface TempoKeyframe {
-	readonly beat: number;
-	readonly bpm: number;
-	readonly curve?: "step" | "linear" | "exponential";
+export interface RelativeNote {
+	readonly offsetBeats: number;
+	readonly note: ScoreNote;
 }
 
-export interface Metadata {
-	readonly name?: string;
-	readonly description?: string;
-	readonly marker?: string;
-	readonly region?: string;
-	readonly timeSignature?: readonly [number, number];
-	readonly tuning?: TuningConfig;
+export interface RelativeChild {
+	readonly offsetBeats: number;
+	readonly pattern: Pattern;
 }
 
-export interface PositionedMetadata {
-	readonly beat: number;
-	readonly meta: Metadata;
+export interface PatternNode {
+	readonly notes: ReadonlyArray<RelativeNote>;
+	readonly children: ReadonlyArray<RelativeChild>;
+	readonly startBeat: number;
+	readonly endBeat: number;
 }
 
-export interface PositionedAutomation {
-	readonly beat: number;
-	readonly automation: AutomatePattern;
-}
+export abstract class Pattern implements PatternNode {
+	readonly notes: ReadonlyArray<RelativeNote>;
+	readonly children: ReadonlyArray<RelativeChild>;
+	readonly startBeat: number;
+	readonly endBeat: number;
 
-export interface ScoreSlide {
-	readonly beat: number;
-	readonly pitch: Pitch;
-	readonly curve: number;
-}
+	constructor(node: PatternNode) {
+		this.notes = node.notes;
+		this.children = node.children;
+		this.startBeat = node.startBeat;
+		this.endBeat = node.endBeat;
+	}
 
-export interface ScoreNote {
-	readonly beat: number;
-	readonly pitch: Pitch;
-	readonly durationBeats?: number;
-	readonly velocity?: number;
-	readonly lyric?: string;
-	readonly cc?: Partial<Record<number, number>>;
-	readonly slides?: ReadonlyArray<ScoreSlide>;
-	outputs: Array<string | undefined>;
-}
+	protected overrideNode(overrides: Partial<PatternNode>): PatternNode {
+		return {
+			notes: overrides.notes ?? this.notes,
+			children: overrides.children ?? this.children,
+			startBeat: overrides.startBeat ?? this.startBeat,
+			endBeat: overrides.endBeat ?? this.endBeat,
+		};
+	}
 
-export abstract class Pattern {
-	abstract readonly type: string;
-	abstract readonly durationBeats: number;
-	abstract readonly notes: ReadonlyArray<ScoreNote>;
-	abstract readonly metadatas: ReadonlyArray<PositionedMetadata>;
-	abstract readonly automations: ReadonlyArray<PositionedAutomation>;
-	abstract readonly sampleKeys: ReadonlySet<string>;
-	abstract readonly moduleUrls: ReadonlySet<string>;
+	get sampleKeys(): ReadonlySet<string> {
+		const keys = new Set<string>();
 
-	abstract setup(context: ScheduleContext): void;
-	abstract schedule(offsetBeats: number, context: ScheduleContext): void;
-	abstract teardown(context: ScheduleContext): void;
-	abstract validate(context: ValidateContext): void;
+		for (const { pattern } of this.children) {
+			for (const key of pattern.sampleKeys) keys.add(key);
+		}
+
+		return keys;
+	}
+
+	get moduleUrls(): ReadonlySet<string> {
+		const urls = new Set<string>();
+
+		for (const { pattern } of this.children) {
+			for (const url of pattern.moduleUrls) urls.add(url);
+		}
+
+		return urls;
+	}
+
+	setup(context: ScheduleContext): void {
+		for (const { pattern } of this.children) pattern.setup(context);
+	}
+
+	schedule(offsetBeats: number, context: ScheduleContext): void {
+		if (offsetBeats + this.endBeat <= context.fromBeats || offsetBeats + this.startBeat >= context.toBeats) return;
+
+		for (const { offsetBeats: childOffset, pattern } of this.children) {
+			pattern.schedule(offsetBeats + childOffset, context);
+		}
+	}
+
+	validate(context: ValidateContext): void {
+		for (const { pattern } of this.children) {
+			pattern.validate(context);
+		}
+	}
+
+	teardown(context: ScheduleContext): void {
+		for (const { pattern } of this.children) pattern.teardown(context);
+	}
+
+	abstract clone(overrides: Partial<PatternNode>): Pattern;
 }
 
 export abstract class MidiPattern extends Pattern {
-	abstract readonly type: string;
-	abstract readonly durationBeats: number;
-	readonly notes: ReadonlyArray<ScoreNote> = [];
-	readonly metadatas: ReadonlyArray<PositionedMetadata> = [];
-	readonly automations: ReadonlyArray<PositionedAutomation> = [];
-	abstract schedule(offsetBeats: number, context: ScheduleContext): void;
-	abstract validate(context: ValidateContext): void;
-
 	readonly outputs: Array<MidiUnit> = [];
 
 	get sampleKeys(): ReadonlySet<string> {
 		const keys = new Set<string>();
 
-		if ("child" in this && isPattern((this as { child: unknown }).child)) {
-			for (const key of (this as { child: Pattern }).child.sampleKeys) keys.add(key);
-		} else if ("children" in this && Array.isArray((this as { children: unknown }).children)) {
-			for (const child of (this as { children: ReadonlyArray<unknown> }).children) {
-				if (isPattern(child)) for (const key of child.sampleKeys) keys.add(key);
-			}
+		for (const { pattern } of this.children) {
+			for (const key of pattern.sampleKeys) keys.add(key);
 		}
 
 		for (const out of this.outputs) {
@@ -93,40 +107,44 @@ export abstract class MidiPattern extends Pattern {
 	get moduleUrls(): ReadonlySet<string> {
 		const urls = new Set<string>();
 
-		if ("child" in this && isPattern((this as { child: unknown }).child)) {
-			for (const url of (this as { child: Pattern }).child.moduleUrls) urls.add(url);
-		} else if ("children" in this && Array.isArray((this as { children: unknown }).children)) {
-			for (const child of (this as { children: ReadonlyArray<unknown> }).children) {
-				if (isPattern(child)) for (const url of child.moduleUrls) urls.add(url);
-			}
+		for (const { pattern } of this.children) {
+			for (const url of pattern.moduleUrls) urls.add(url);
 		}
 
-		for (const out of this.outputs) {
-			for (const url of out.collectModuleUrls()) urls.add(url);
+		for (const output of this.outputs) {
+			for (const url of output.collectModuleUrls()) urls.add(url);
 		}
 
 		return urls;
 	}
 
-	setup(context: ScheduleContext): void {
-		for (const out of this.outputs) out.setup(context);
-	}
-
-	teardown(context: ScheduleContext): void {
-		for (const out of this.outputs) out.teardown(context);
-	}
-
 	route(node: MidiUnit): this {
 		this.outputs.push(node);
 
-		for (const positioned of this.notes) {
-			positioned.outputs = [...positioned.outputs, node.id];
-		}
-
 		return this;
 	}
-}
 
-function isPattern(value: unknown): value is Pattern {
-	return value instanceof Pattern;
+	setup(context: ScheduleContext): void {
+		for (const output of this.outputs) output.setup(context);
+		for (const { pattern } of this.children) pattern.setup(context);
+	}
+
+	schedule(offsetBeats: number, context: ScheduleContext): void {
+		if (offsetBeats + this.endBeat <= context.fromBeats || offsetBeats + this.startBeat >= context.toBeats) return;
+
+		const routedContext = this.outputs.length > 0 ? { ...context, outputs: [...context.outputs, ...this.outputs] } : context;
+
+		for (const { offsetBeats: noteOffset, note } of this.notes) {
+			routedContext.dispatch(note, offsetBeats + noteOffset, routedContext.outputs, routedContext);
+		}
+
+		for (const { offsetBeats: childOffset, pattern } of this.children) {
+			pattern.schedule(offsetBeats + childOffset, routedContext);
+		}
+	}
+
+	teardown(context: ScheduleContext): void {
+		for (const output of this.outputs) output.teardown(context);
+		for (const { pattern } of this.children) pattern.teardown(context);
+	}
 }

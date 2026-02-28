@@ -1,5 +1,6 @@
 import type { AnyKeyframe, CurveKeyframe, Keyframe } from "../patterns/automate";
 import type { Pattern } from "../patterns/pattern";
+import { collectNotes } from "../patterns/utils/tree";
 import type { Duration } from "../utils/duration";
 import { resolveDuration } from "../utils/duration";
 
@@ -14,9 +15,11 @@ const CURVE_SAMPLES = 128;
 const EPSILON = 1e-6;
 
 export function trigger(pattern: Pattern, options: TriggerOptions): Array<AnyKeyframe> {
-	if (pattern.notes.length === 0) return [];
+	const allNotes = collectNotes(pattern);
 
-	const sorted = [...pattern.notes].sort((left, right) => left.beat - right.beat);
+	if (allNotes.length === 0) return [];
+
+	const sorted = allNotes.sort((left, right) => left.startBeat - right.startBeat);
 	const attackBeats = resolveDuration(options.attack);
 	const releaseBeats = resolveDuration(options.release);
 	const tension = options.tension ?? 1;
@@ -27,9 +30,9 @@ export function trigger(pattern: Pattern, options: TriggerOptions): Array<AnyKey
 
 		if (!current) continue;
 
-		const tick = current.beat;
+		const tick = current.startBeat;
 		const next = sorted[index + 1];
-		const nextBeat = next ? next.beat : Infinity;
+		const nextBeat = next ? next.startBeat : Infinity;
 		const releaseEnd = tick + attackBeats + releaseBeats;
 
 		const baseline: Keyframe = { time: tick as Duration, value: 0, curve: "step" };

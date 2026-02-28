@@ -1,4 +1,4 @@
-import type { ScoreNote } from "../patterns/pattern";
+import type { ScoreNote } from "../patterns/note";
 import type { MidiUnit, VoiceNote, VoiceSlide } from "../units/midi-unit";
 import { CC } from "../utils/cc";
 import { CHROMATIC_TUNING } from "../utils/chromatic";
@@ -7,16 +7,16 @@ import { pitchToCents } from "../utils/pitch";
 import type { ScheduleContext } from "./schedule-context";
 import { beatsToSeconds } from "./tempo-map";
 
-export function isInScope(offsetBeats: number, durationBeats: number, context: ScheduleContext): boolean {
-	return offsetBeats + durationBeats > context.fromBeats && offsetBeats < context.toBeats;
+export function isInScope(offsetBeats: number, startBeat: number, endBeat: number, context: ScheduleContext): boolean {
+	return offsetBeats + endBeat > context.fromBeats && offsetBeats + startBeat < context.toBeats;
 }
 
 export function scheduleNotes(notes: ReadonlyArray<ScoreNote>, offsetBeats: number, outputs: ReadonlyArray<MidiUnit>, scheduleContext: ScheduleContext): void {
 	if (outputs.length === 0) return;
 
 	for (const scoreNote of notes) {
-		const noteBeat = offsetBeats + scoreNote.beat;
-		const noteEnd = noteBeat + (scoreNote.durationBeats ?? 0);
+		const noteBeat = offsetBeats + scoreNote.startBeat;
+		const noteEnd = offsetBeats + scoreNote.endBeat;
 
 		if (noteEnd <= scheduleContext.fromBeats || noteBeat >= scheduleContext.toBeats) continue;
 
@@ -29,8 +29,9 @@ export function scheduleNotes(notes: ReadonlyArray<ScoreNote>, offsetBeats: numb
 }
 
 function buildVoiceNote(scoreNote: ScoreNote, absoluteBeat: number, scheduleContext: ScheduleContext): VoiceNote {
+	const durationBeats = scoreNote.endBeat - scoreNote.startBeat;
 	const startMs = beatsToSeconds(absoluteBeat, scheduleContext.tempoMap) * 1000;
-	const stopMs = beatsToSeconds(absoluteBeat + (scoreNote.durationBeats ?? 0), scheduleContext.tempoMap) * 1000;
+	const stopMs = beatsToSeconds(absoluteBeat + durationBeats, scheduleContext.tempoMap) * 1000;
 
 	const cc = scoreNote.cc;
 	const sustainValue = cc?.[CC.SUSTAIN];
@@ -54,7 +55,7 @@ function buildVoiceNote(scoreNote: ScoreNote, absoluteBeat: number, scheduleCont
 	return {
 		note,
 		bend,
-		velocity: scoreNote.velocity ?? 100,
+		velocity: scoreNote.velocity,
 		startMs,
 		stopMs,
 		cleanupMs: stopMs + releaseMs + 500,

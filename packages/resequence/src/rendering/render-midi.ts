@@ -1,4 +1,6 @@
+import type { ScoreNote } from "../patterns/note";
 import type { Pattern } from "../patterns/pattern";
+import type { MidiUnit } from "../units/midi-unit";
 import { PPQ } from "../utils/duration";
 import { pitchToMidi } from "../utils/pitch";
 import { evaluateSlideCents } from "../utils/slide";
@@ -6,6 +8,7 @@ import { collectMarkers } from "./collect-markers";
 import type { MidiNote, MidiPitchBend } from "./encode-midi";
 import { encodeMidi } from "./encode-midi";
 import { collectTimeSignatures } from "./collect-time-signatures";
+import type { ScheduleContext } from "./schedule-context";
 import { buildTempoMap } from "./tempo-map";
 
 export interface MidiRenderOptions {
@@ -21,9 +24,9 @@ export interface MidiRenderResult {
 
 export function renderMidi(pattern: Pattern, options?: MidiRenderOptions): MidiRenderResult {
 	const tempoChanges = buildTempoMap(pattern);
-	const timeSignatureChanges = collectTimeSignatures(pattern.metadatas);
+	const timeSignatureChanges = collectTimeSignatures(pattern);
 	const markers = collectMarkers(pattern);
-	const grouped = groupByTrack(pattern);
+	const grouped = collectMidiNotes(pattern, tempoChanges);
 
 	const filteredNames = filterTrackNames([...grouped.keys()], options?.include, options?.exclude);
 	const tracks = new Map<string, Uint8Array>();
@@ -58,54 +61,71 @@ export function renderMidi(pattern: Pattern, options?: MidiRenderOptions): MidiR
 	return { tracks, master };
 }
 
-function groupByTrack(pattern: Pattern): Map<string, Array<MidiNote>> {
+function collectMidiNotes(pattern: Pattern, tempoMap: ReadonlyArray<{ beat: number; bpm: number }>): Map<string, Array<MidiNote>> {
 	const grouped = new Map<string, Array<MidiNote>>();
 
-	for (const pn of pattern.notes) {
-		for (const outputId of pn.outputs) {
-			const trackName = outputId ?? "unknown";
+	const context: ScheduleContext = {
+		audioContext: undefined as unknown as BaseAudioContext,
+		sampleMap: new Map(),
+		driverMap: new Map(),
+		tempoMap,
+		fromBeats: 0,
+		toBeats: pattern.endBeat - pattern.startBeat,
+		outputs: [],
+		dispatch: (note: ScoreNote, offsetBeats: number, outputs: ReadonlyArray<MidiUnit>) => {
+			addNoteToTracks(note, offsetBeats, outputs, grouped);
+		},
+	};
 
-			let track = grouped.get(trackName);
-
-			if (!track) {
-				track = [];
-				grouped.set(trackName, track);
-			}
-
-			const { note: midiNote, bend } = pitchToMidi(pn.pitch);
-
-			let pitchBends: ReadonlyArray<MidiPitchBend> | undefined;
-
-			if (pn.slides && pn.slides.length > 0) {
-				const noteTick = Math.round(pn.beat * PPQ);
-				const durationTicks = Math.round((pn.durationBeats ?? 0) * PPQ);
-				const sampleInterval = 10;
-				const bends: Array<MidiPitchBend> = [];
-
-				for (let tickOffset = 0; tickOffset <= durationTicks; tickOffset += sampleInterval) {
-					const beatOffset = tickOffset / PPQ;
-					const slideCents = evaluateSlideCents(pn.pitch, pn.slides, beatOffset);
-					const totalCents = (bend || 0) + slideCents;
-					bends.push({ tick: noteTick + tickOffset, bend: totalCents });
-				}
-
-				pitchBends = bends;
-			}
-
-			track.push({
-				tick: Math.round(pn.beat * PPQ),
-				note: midiNote,
-				bend: !pitchBends && bend !== 0 ? bend : undefined,
-				durationTicks: Math.round((pn.durationBeats ?? 0) * PPQ),
-				velocity: pn.velocity ?? 100,
-				lyric: pn.lyric,
-				cc: pn.cc,
-				pitchBends,
-			});
-		}
-	}
+	pattern.schedule(0, context);
 
 	return grouped;
+}
+
+function addNoteToTracks(scoreNote: ScoreNote, offsetBeats: number, outputs: ReadonlyArray<MidiUnit>, grouped: Map<string, Array<MidiNote>>): void {
+	const absoluteBeat = offsetBeats + scoreNote.startBeat;
+	const durationBeats = scoreNote.endBeat - scoreNote.startBeat;
+
+	for (const output of outputs) {
+		const trackName = output.id ?? "unknown";
+
+		let track = grouped.get(trackName);
+		if (!track) {
+			track = [];
+			grouped.set(trackName, track);
+		}
+
+		const { note: midiNote, bend } = pitchToMidi(scoreNote.pitch);
+
+		let pitchBends: ReadonlyArray<MidiPitchBend> | undefined;
+
+		if (scoreNote.slides && scoreNote.slides.length > 0) {
+			const noteTick = Math.round(absoluteBeat * PPQ);
+			const durationTicks = Math.round(durationBeats * PPQ);
+			const sampleInterval = 10;
+			const bends: Array<MidiPitchBend> = [];
+
+			for (let tickOffset = 0; tickOffset <= durationTicks; tickOffset += sampleInterval) {
+				const beatOffset = tickOffset / PPQ;
+				const slideCents = evaluateSlideCents(scoreNote.pitch, scoreNote.slides, beatOffset);
+				const totalCents = (bend || 0) + slideCents;
+				bends.push({ tick: noteTick + tickOffset, bend: totalCents });
+			}
+
+			pitchBends = bends;
+		}
+
+		track.push({
+			tick: Math.round(absoluteBeat * PPQ),
+			note: midiNote,
+			bend: !pitchBends && bend !== 0 ? bend : undefined,
+			durationTicks: Math.round(durationBeats * PPQ),
+			velocity: scoreNote.velocity,
+			lyric: scoreNote.lyric,
+			cc: scoreNote.cc,
+			pitchBends,
+		});
+	}
 }
 
 function filterTrackNames(names: ReadonlyArray<string>, include?: ReadonlyArray<string>, exclude?: ReadonlyArray<string>): ReadonlyArray<string> {

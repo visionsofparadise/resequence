@@ -1,77 +1,58 @@
-import type { ScheduleContext } from "../../rendering/schedule-context";
-import { isInScope, scheduleNotes } from "../../rendering/schedule-notes";
 import type { Duration } from "../../utils/duration";
 import { resolveDuration } from "../../utils/duration";
-import type { ValidateContext } from "../../validate";
-import type { Pattern, PositionedAutomation, PositionedMetadata, ScoreNote } from "../pattern";
-import { MidiPattern } from "../pattern";
+import type { PatternNode } from "../pattern";
+import { MidiPattern, type Pattern } from "../pattern";
+import { mapNotes } from "../utils/tree";
 
 export class AccentPattern extends MidiPattern {
-	readonly type = "accent" as const;
-	readonly durationBeats: number;
-	readonly notes: ReadonlyArray<ScoreNote>;
-	readonly metadatas: ReadonlyArray<PositionedMetadata>;
-	readonly automations: ReadonlyArray<PositionedAutomation>;
-
 	constructor(
-		readonly child: Pattern,
+		readonly source: Pattern,
 		readonly positions: ReadonlyArray<number>,
 		readonly amount: number,
+		node: PatternNode,
 	) {
-		super();
-
-		this.durationBeats = child.durationBeats;
-
-		const cycle = positions.reduce((sum, pos) => sum + pos, 0);
-
-		const accentedTicks = new Set<number>();
-
-		if (cycle > 0) {
-			const relativeOffsets: Array<number> = [];
-			let cursor = 0;
-
-			for (const pos of positions) {
-				relativeOffsets.push(cursor);
-				cursor += pos;
-			}
-
-			let start = 0;
-
-			while (start < child.durationBeats) {
-				for (const relOffset of relativeOffsets) {
-					accentedTicks.add(start + relOffset);
-				}
-
-				start += cycle;
-			}
-		}
-
-		this.notes = child.notes.map((positionedNote) => {
-			if (accentedTicks.has(positionedNote.beat)) {
-				return { ...positionedNote, velocity: Math.min(127, (positionedNote.velocity ?? 100) + amount) };
-			}
-
-			return positionedNote;
-		});
-		this.metadatas = child.metadatas;
-		this.automations = child.automations;
+		super(node);
 	}
 
-	validate(context: ValidateContext): void {
-		const childContext = this.outputs.length > 0 ? { ...context, insideRoute: true } : context;
-
-		this.child.validate(childContext);
-	}
-
-
-	schedule(offsetBeats: number, context: ScheduleContext): void {
-		if (!isInScope(offsetBeats, this.durationBeats, context)) return;
-
-		scheduleNotes(this.notes, offsetBeats, this.outputs, context);
-		this.child.schedule(offsetBeats, context);
+	clone(overrides: Partial<PatternNode>): AccentPattern {
+		return new AccentPattern(this.source, this.positions, this.amount, this.overrideNode(overrides));
 	}
 }
 
 export function accent(pattern: Pattern, positions: ReadonlyArray<Duration | number>, amount: number): AccentPattern {
-	return new AccentPattern(pattern, positions.map(resolveDuration), amount);
+	const resolvedPositions = positions.map(resolveDuration);
+	const totalDuration = pattern.endBeat - pattern.startBeat;
+	const cycle = resolvedPositions.reduce((sum, pos) => sum + pos, 0);
+
+	const accentedTicks = new Set<number>();
+
+	if (cycle > 0) {
+		const relativeOffsets: Array<number> = [];
+		let cursor = 0;
+
+		for (const pos of resolvedPositions) {
+			relativeOffsets.push(cursor);
+			cursor += pos;
+		}
+
+		let start = 0;
+
+		while (start < totalDuration) {
+			for (const relOffset of relativeOffsets) {
+				accentedTicks.add(start + relOffset);
+			}
+
+			start += cycle;
+		}
+	}
+
+	const transformed = mapNotes(pattern, (note, absoluteOffset) => {
+		if (accentedTicks.has(absoluteOffset + note.startBeat)) {
+			return { ...note, velocity: Math.min(127, note.velocity + amount) };
+		}
+
+		return note;
+	});
+
+	return new AccentPattern(pattern, resolvedPositions, amount, transformed);
 }

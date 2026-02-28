@@ -1,52 +1,59 @@
 import { describe, expect, it } from "vitest";
+import { resolveDuration } from "../../utils/duration";
 import { resolvePitch } from "../../utils/pitch";
 import { note } from "../note";
+import { sequence } from "../sequence";
+import { collectNotes } from "../utils/tree";
 import { EchoPattern, echo } from "./echo";
 
 describe("EchoPattern", () => {
 	describe("notes", () => {
 		it("adds the specified number of echo copies", () => {
-			const pat = echo(note("C4", "4n"), 1, 2, 0.5);
-			expect(pat.notes).toHaveLength(3); // original + 2 echoes
+			const pat = echo(sequence(note(resolvePitch("C4"), resolveDuration("4n"))), 1, 2, 0.5);
+			expect(collectNotes(pat)).toHaveLength(3); // original + 2 echoes
 		});
 
 		it("spaces echoes by interval", () => {
-			const pat = echo(note("C4", "4n"), 1, 2, 0.5);
-			expect(pat.notes[0]).toMatchObject({ beat: 0 });
-			expect(pat.notes[1]).toMatchObject({ beat: 1 });
-			expect(pat.notes[2]).toMatchObject({ beat: 2 });
+			const pat = echo(sequence(note(resolvePitch("C4"), resolveDuration("4n"))), 1, 2, 0.5);
+			const notes = collectNotes(pat);
+			expect(notes[0]).toMatchObject({ startBeat: 0 });
+			expect(notes[1]).toMatchObject({ startBeat: 1 });
+			expect(notes[2]).toMatchObject({ startBeat: 2 });
 		});
 
 		it("applies decay to echo velocity", () => {
-			const pat = echo(note("C4", "4n", { velocity: 100 }), 1, 2, 0.5);
-			expect(pat.notes[0]!.velocity).toBe(100);
-			expect(pat.notes[1]!.velocity).toBe(50); // 100 * 0.5^1
-			expect(pat.notes[2]!.velocity).toBe(25); // 100 * 0.5^2
+			const pat = echo(sequence(note(resolvePitch("C4"), resolveDuration("4n"), { velocity: 100 })), 1, 2, 0.5);
+			const notes = collectNotes(pat);
+			expect(notes[0]!.velocity).toBe(100);
+			expect(notes[1]!.velocity).toBe(50); // 100 * 0.5^1
+			expect(notes[2]!.velocity).toBe(25); // 100 * 0.5^2
 		});
 
 		it("clamps echo velocity to minimum 1", () => {
 			// 1 * 0.1^1 = 0.1, rounds to 0, clamped to 1
-			const pat = echo(note("C4", "4n", { velocity: 1 }), 1, 1, 0.1);
-			expect(pat.notes[1]!.velocity).toBe(1);
+			const pat = echo(sequence(note(resolvePitch("C4"), resolveDuration("4n"), { velocity: 1 })), 1, 1, 0.1);
+			expect(collectNotes(pat)[1]!.velocity).toBe(1);
 		});
 
 		it("preserves pitch on all copies", () => {
-			const pat = echo(note("G4", "4n"), 1, 2, 0.5);
-			for (const positionedNote of pat.notes) {
+			const pat = echo(sequence(note(resolvePitch("G4"), resolveDuration("4n"))), 1, 2, 0.5);
+			for (const positionedNote of collectNotes(pat)) {
 				expect(positionedNote.pitch).toEqual(resolvePitch("G4"));
 			}
 		});
 	});
 
 	describe("durationBeats", () => {
-		it("preserves child duration", () => {
-			expect(echo(note("C4", "4n"), 1, 2, 0.5).durationBeats).toBe(1);
+		it("extends to cover echoed notes", () => {
+			// original: 0-1, echo1: 1-2, echo2: 2-3 → extent = 3
+			const pat = echo(sequence(note(resolvePitch("C4"), resolveDuration("4n"))), 1, 2, 0.5);
+			expect(pat.endBeat - pat.startBeat).toBe(3);
 		});
 	});
 
 	describe("instanceof", () => {
 		it("is an EchoPattern", () => {
-			expect(echo(note("C4", "4n"), 1, 2, 0.5)).toBeInstanceOf(EchoPattern);
+			expect(echo(sequence(note(resolvePitch("C4"), resolveDuration("4n"))), 1, 2, 0.5)).toBeInstanceOf(EchoPattern);
 		});
 	});
 });

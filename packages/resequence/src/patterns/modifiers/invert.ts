@@ -1,92 +1,75 @@
-import type { ScheduleContext } from "../../rendering/schedule-context";
-import { isInScope, scheduleNotes } from "../../rendering/schedule-notes";
 import { addSteps, pitchKey } from "../../utils/pitch";
-import type { ValidateContext } from "../../validate";
-import type { Pattern, PositionedAutomation, PositionedMetadata, ScoreNote } from "../pattern";
-import { MidiPattern } from "../pattern";
+import type { ScoreNote } from "../note";
+import type { PatternNode } from "../pattern";
+import { MidiPattern, type Pattern } from "../pattern";
+import { collectNotes, mapNotes } from "../utils/tree";
 
 export class InvertPattern extends MidiPattern {
-	readonly type = "invert" as const;
-	readonly durationBeats: number;
-	readonly notes: ReadonlyArray<ScoreNote>;
-	readonly metadatas: ReadonlyArray<PositionedMetadata>;
-	readonly automations: ReadonlyArray<PositionedAutomation>;
-
 	constructor(
-		readonly child: Pattern,
-		readonly n: number,
+		readonly source: Pattern,
+		readonly inversions: number,
+		node: PatternNode,
 	) {
-		super();
-		this.durationBeats = child.durationBeats;
-
-		const byTick = new Map<number, Array<ScoreNote>>();
-
-		for (const positionedNote of child.notes) {
-			let group = byTick.get(positionedNote.beat);
-			if (!group) {
-				group = [];
-				byTick.set(positionedNote.beat, group);
-			}
-			group.push(positionedNote);
-		}
-
-		const result: Array<ScoreNote> = [];
-
-		for (const group of byTick.values()) {
-			const sorted = group.slice().sort((noteA, noteB) => pitchKey(noteA.pitch) - pitchKey(noteB.pitch));
-
-			if (n > 0) {
-				for (const [noteIndex, positionedNote] of sorted.entries()) {
-					if (noteIndex < n) {
-						const shift = positionedNote.pitch.stepsPerOctave;
-						result.push({
-							...positionedNote,
-							pitch: addSteps(positionedNote.pitch, shift),
-							slides: positionedNote.slides?.map((sl) => ({ ...sl, pitch: addSteps(sl.pitch, shift) })),
-						});
-					} else {
-						result.push(positionedNote);
-					}
-				}
-			} else if (n < 0) {
-				const count = -n;
-				for (const [noteIndex, positionedNote] of sorted.entries()) {
-					if (noteIndex >= sorted.length - count) {
-						const shift = -positionedNote.pitch.stepsPerOctave;
-						result.push({
-							...positionedNote,
-							pitch: addSteps(positionedNote.pitch, shift),
-							slides: positionedNote.slides?.map((sl) => ({ ...sl, pitch: addSteps(sl.pitch, shift) })),
-						});
-					} else {
-						result.push(positionedNote);
-					}
-				}
-			} else {
-				result.push(...sorted);
-			}
-		}
-
-		this.notes = result;
-		this.metadatas = child.metadatas;
-		this.automations = child.automations;
+		super(node);
 	}
 
-	validate(context: ValidateContext): void {
-		const childContext = this.outputs.length > 0 ? { ...context, insideRoute: true } : context;
-
-		this.child.validate(childContext);
-	}
-
-
-	schedule(offsetBeats: number, context: ScheduleContext): void {
-		if (!isInScope(offsetBeats, this.durationBeats, context)) return;
-
-		scheduleNotes(this.notes, offsetBeats, this.outputs, context);
-		this.child.schedule(offsetBeats, context);
+	clone(overrides: Partial<PatternNode>): InvertPattern {
+		return new InvertPattern(this.source, this.inversions, this.overrideNode(overrides));
 	}
 }
 
 export function invertChord(pattern: Pattern, inversions: number): InvertPattern {
-	return new InvertPattern(pattern, inversions);
+	const allNotes = collectNotes(pattern);
+
+	const byBeat = new Map<number, Array<ScoreNote>>();
+	for (const scoreNote of allNotes) {
+		let group = byBeat.get(scoreNote.startBeat);
+		if (!group) {
+			group = [];
+			byBeat.set(scoreNote.startBeat, group);
+		}
+		group.push(scoreNote);
+	}
+
+	const shiftMap = new Map<string, number>();
+
+	for (const group of byBeat.values()) {
+		const sorted = group.slice().sort((noteA, noteB) => pitchKey(noteA.pitch) - pitchKey(noteB.pitch));
+
+		if (inversions > 0) {
+			for (const [noteIndex, scoreNote] of sorted.entries()) {
+				if (noteIndex < inversions) {
+					const key = `${scoreNote.startBeat}:${scoreNote.endBeat}:${pitchKey(scoreNote.pitch)}`;
+					shiftMap.set(key, scoreNote.pitch.stepsPerOctave);
+				}
+			}
+		} else if (inversions < 0) {
+			const count = -inversions;
+			for (const [noteIndex, scoreNote] of sorted.entries()) {
+				if (noteIndex >= sorted.length - count) {
+					const key = `${scoreNote.startBeat}:${scoreNote.endBeat}:${pitchKey(scoreNote.pitch)}`;
+					shiftMap.set(key, -scoreNote.pitch.stepsPerOctave);
+				}
+			}
+		}
+	}
+
+	const transformed = mapNotes(pattern, (note, absoluteOffset) => {
+		const absStart = absoluteOffset + note.startBeat;
+		const absEnd = absoluteOffset + note.endBeat;
+		const key = `${absStart}:${absEnd}:${pitchKey(note.pitch)}`;
+		const shift = shiftMap.get(key);
+
+		if (shift) {
+			return {
+				...note,
+				pitch: addSteps(note.pitch, shift),
+				slides: note.slides?.map((sl) => ({ ...sl, pitch: addSteps(sl.pitch, shift) })),
+			};
+		}
+
+		return note;
+	});
+
+	return new InvertPattern(pattern, inversions, transformed);
 }

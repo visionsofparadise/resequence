@@ -1,60 +1,37 @@
-import type { ScheduleContext } from "../../rendering/schedule-context";
-import { isInScope, scheduleNotes } from "../../rendering/schedule-notes";
 import type { Duration } from "../../utils/duration";
 import { resolveDuration } from "../../utils/duration";
-import type { ValidateContext } from "../../validate";
-import type { Pattern, PositionedAutomation, PositionedMetadata, ScoreNote } from "../pattern";
-import { MidiPattern } from "../pattern";
+import type { PatternNode } from "../pattern";
+import { MidiPattern, type Pattern } from "../pattern";
+import { flatMapNotes } from "../utils/tree";
 
 export class FlamPattern extends MidiPattern {
-	readonly type = "flam" as const;
-	readonly durationBeats: number;
-	readonly notes: ReadonlyArray<ScoreNote>;
-	readonly metadatas: ReadonlyArray<PositionedMetadata>;
-	readonly automations: ReadonlyArray<PositionedAutomation>;
-
 	constructor(
-		readonly child: Pattern,
+		readonly source: Pattern,
 		readonly flamOffset: number,
 		readonly graceVelocity: number,
+		node: PatternNode,
 	) {
-		super();
-
-		this.durationBeats = child.durationBeats;
-
-		const result: Array<ScoreNote> = [];
-
-		for (const positionedNote of child.notes) {
-			result.push({
-				...positionedNote,
-				beat: Math.max(0, positionedNote.beat - flamOffset),
-				velocity: graceVelocity,
-				durationBeats: flamOffset,
-			});
-
-			result.push(positionedNote);
-		}
-
-		this.notes = result;
-		this.metadatas = child.metadatas;
-		this.automations = child.automations;
+		super(node);
 	}
 
-	validate(context: ValidateContext): void {
-		const childContext = this.outputs.length > 0 ? { ...context, insideRoute: true } : context;
-
-		this.child.validate(childContext);
-	}
-
-
-	schedule(offsetBeats: number, context: ScheduleContext): void {
-		if (!isInScope(offsetBeats, this.durationBeats, context)) return;
-
-		scheduleNotes(this.notes, offsetBeats, this.outputs, context);
-		this.child.schedule(offsetBeats, context);
+	clone(overrides: Partial<PatternNode>): FlamPattern {
+		return new FlamPattern(this.source, this.flamOffset, this.graceVelocity, this.overrideNode(overrides));
 	}
 }
 
 export function flam(pattern: Pattern, flamOffset: Duration | number, graceVelocity = 40): FlamPattern {
-	return new FlamPattern(pattern, resolveDuration(flamOffset), graceVelocity);
+	const resolvedOffset = resolveDuration(flamOffset);
+
+	const transformed = flatMapNotes(pattern, (note) => [
+		{
+			...note,
+			startBeat: note.startBeat - resolvedOffset,
+			endBeat: note.startBeat,
+			velocity: graceVelocity,
+			slides: undefined,
+		},
+		note,
+	]);
+
+	return new FlamPattern(pattern, resolvedOffset, graceVelocity, transformed);
 }

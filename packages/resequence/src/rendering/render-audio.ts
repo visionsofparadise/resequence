@@ -1,5 +1,6 @@
 import type { Pattern } from "../patterns/pattern";
 import { loadSample } from "./load-sample";
+import { scheduleNotes } from "./schedule-notes";
 import type { ScheduleContext } from "./schedule-context";
 import { buildTempoMap } from "./tempo-map";
 
@@ -32,8 +33,12 @@ export async function renderAudio(pattern: Pattern, audioContext: OfflineAudioCo
 		driverMap,
 		tempoMap,
 		fromBeats: 0,
-		toBeats: pattern.durationBeats,
+		toBeats: pattern.endBeat - pattern.startBeat,
 		trackFilter: options.trackFilter,
+		outputs: [],
+		dispatch: (note, offsetBeats, outputs, scheduleContext) => {
+			scheduleNotes([note], offsetBeats, outputs, scheduleContext);
+		},
 	};
 
 	pattern.setup(context);

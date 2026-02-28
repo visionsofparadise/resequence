@@ -1,4 +1,6 @@
-import type { PositionedAutomation } from "../patterns/pattern";
+import { AutomatePattern } from "../patterns/automate";
+import type { AnyResolvedKeyframe } from "../patterns/automate";
+import type { Pattern } from "../patterns/pattern";
 import type { ScheduleContext } from "../rendering/schedule-context";
 import { beatsToSeconds } from "../rendering/tempo-map";
 import { lastBefore } from "../utils/sorted";
@@ -12,27 +14,9 @@ interface AutomationClip {
 	readonly finalValue: number;
 }
 
-export function seekAutomation(automations: ReadonlyArray<PositionedAutomation>, seekBeat: number, context: ScheduleContext): void {
+export function seekAutomation(pattern: Pattern, seekBeat: number, context: ScheduleContext): void {
 	const clips: Array<AutomationClip> = [];
-
-	for (const { beat, automation } of automations) {
-		if (!Array.isArray(automation.source)) continue;
-
-		const keyframes: Array<AbsoluteKeyframe> = automation.envelope.map((kf) => {
-			if (kf.kind === "curve") {
-				return { kind: "curve" as const, beat: beat + kf.timeBeats, durationBeats: kf.durationBeats, values: kf.values };
-			}
-
-			return { kind: "point" as const, beat: beat + kf.timeBeats, value: kf.value, curve: kf.curve };
-		});
-
-		clips.push({
-			endBeat: beat + automation.durationBeats,
-			paths: automation.paths,
-			keyframes,
-			finalValue: evaluateAt(keyframes, beat + automation.durationBeats),
-		});
-	}
+	collectAutomationClips(pattern, 0, clips);
 
 	const byPathEnd = new Map<string, Array<AutomationClip>>();
 
@@ -64,5 +48,31 @@ export function seekAutomation(automations: ReadonlyArray<PositionedAutomation>,
 				driver.offset.setValueAtTime(lastCompleted.finalValue, seekSeconds);
 			}
 		}
+	}
+}
+
+function collectAutomationClips(pattern: Pattern, offsetBeats: number, clips: Array<AutomationClip>): void {
+	if (pattern instanceof AutomatePattern && Array.isArray(pattern.source)) {
+		const envelope = pattern.source as ReadonlyArray<AnyResolvedKeyframe>;
+		const durationBeats = pattern.endBeat - pattern.startBeat;
+
+		const keyframes: Array<AbsoluteKeyframe> = envelope.map((kf) => {
+			if (kf.kind === "curve") {
+				return { kind: "curve" as const, beat: offsetBeats + kf.timeBeats, durationBeats: kf.durationBeats, values: kf.values };
+			}
+
+			return { kind: "point" as const, beat: offsetBeats + kf.timeBeats, value: kf.value, curve: kf.curve };
+		});
+
+		clips.push({
+			endBeat: offsetBeats + durationBeats,
+			paths: [...pattern.paths],
+			keyframes,
+			finalValue: evaluateAt(keyframes, offsetBeats + durationBeats),
+		});
+	}
+
+	for (const { offsetBeats: childOffset, pattern: child } of pattern.children) {
+		collectAutomationClips(child, offsetBeats + childOffset, clips);
 	}
 }

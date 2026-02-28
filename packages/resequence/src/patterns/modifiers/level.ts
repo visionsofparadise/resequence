@@ -1,8 +1,6 @@
-import type { ScheduleContext } from "../../rendering/schedule-context";
-import { isInScope, scheduleNotes } from "../../rendering/schedule-notes";
-import type { ValidateContext } from "../../validate";
-import type { Pattern, PositionedAutomation, PositionedMetadata, ScoreNote } from "../pattern";
-import { MidiPattern } from "../pattern";
+import type { PatternNode } from "../pattern";
+import { MidiPattern, type Pattern } from "../pattern";
+import { collectNotes, mapNotes } from "../utils/tree";
 
 export interface LevelPropOptions {
 	readonly value?: number;
@@ -33,101 +31,113 @@ function mulberry32(seed: number): () => number {
 	};
 }
 
-function applyProp(originalValues: ReadonlyArray<number>, spec: LevelProp): Array<number> {
-	if (typeof spec === "number") {
-		return originalValues.map(() => spec);
+function applyPropToValue(value: number, spec: LevelProp, mean: number, rng: () => number): number {
+	if (typeof spec === "number") return spec;
+
+	let computed = spec.value ?? value;
+
+	const scaleFactor = spec.expand ?? spec.compress;
+	if (scaleFactor !== undefined) {
+		computed = mean + scaleFactor * (value - mean);
 	}
 
-	const mean = spec.expand !== undefined || spec.compress !== undefined ? originalValues.reduce((sum, currentValue) => sum + currentValue, 0) / originalValues.length : 0;
-	const rng = spec.seed !== undefined ? mulberry32(spec.seed) : Math.random.bind(Math);
-	const scaleFactor = spec.expand ?? spec.compress;
+	if (spec.randomize !== undefined) {
+		computed += (rng() * 2 - 1) * spec.randomize;
+	}
 
-	return originalValues.map((originalValue) => {
-		let computed = spec.value ?? originalValue;
+	computed = Math.round(computed);
 
-		if (scaleFactor !== undefined) {
-			computed = mean + scaleFactor * (originalValue - mean);
-		}
+	if (spec.min !== undefined) computed = Math.max(spec.min, computed);
+	if (spec.max !== undefined) computed = Math.min(spec.max, computed);
 
-		if (spec.randomize !== undefined) {
-			computed += (rng() * 2 - 1) * spec.randomize;
-		}
+	return computed;
+}
 
-		computed = Math.round(computed);
+function createRng(spec: LevelProp): () => number {
+	if (typeof spec === "number") return Math.random;
+	return spec.seed !== undefined ? mulberry32(spec.seed) : Math.random.bind(Math);
+}
 
-		if (spec.min !== undefined) computed = Math.max(spec.min, computed);
-		if (spec.max !== undefined) computed = Math.min(spec.max, computed);
-
-		return computed;
-	});
+function needsMean(spec: LevelProp): boolean {
+	if (typeof spec === "number") return false;
+	return spec.expand !== undefined || spec.compress !== undefined;
 }
 
 export class LevelPattern extends MidiPattern {
-	readonly type = "level" as const;
-	readonly durationBeats: number;
-	readonly notes: ReadonlyArray<ScoreNote>;
-	readonly metadatas: ReadonlyArray<PositionedMetadata>;
-	readonly automations: ReadonlyArray<PositionedAutomation>;
-
 	constructor(
-		readonly child: Pattern,
+		readonly source: Pattern,
 		readonly config: LevelConfig,
+		node: PatternNode,
 	) {
-		super();
-
-		this.durationBeats = child.durationBeats;
-
-		let notes = child.notes.slice();
-
-		if (config.velocity !== undefined) {
-			const velocitySpec = config.velocity;
-			const velocities = notes.map((positionedNote) => positionedNote.velocity ?? 100);
-			const newVelocities = applyProp(velocities, velocitySpec);
-
-			notes = notes.map((positionedNote, noteIndex) => ({
-				...positionedNote,
-				velocity: newVelocities[noteIndex],
-			}));
-		}
-
-		if (config.cc) {
-			for (const [ccKey, ccSpec] of Object.entries(config.cc)) {
-				if (ccSpec === undefined) continue;
-
-				const ccNum = Number(ccKey);
-				const ccValues = notes.map((positionedNote) => positionedNote.cc?.[ccNum] ?? 0);
-				const newCcValues = applyProp(ccValues, ccSpec);
-
-				notes = notes.map((positionedNote, noteIndex) => ({
-					...positionedNote,
-					cc: { ...positionedNote.cc, [ccNum]: newCcValues[noteIndex] },
-				}));
-			}
-		}
-
-		this.notes = notes;
-		this.metadatas = child.metadatas;
-		this.automations = child.automations;
+		super(node);
 	}
 
-	validate(context: ValidateContext): void {
-		const childContext = this.outputs.length > 0 ? { ...context, insideRoute: true } : context;
-
-		this.child.validate(childContext);
-	}
-
-
-	schedule(offsetBeats: number, context: ScheduleContext): void {
-		if (!isInScope(offsetBeats, this.durationBeats, context)) return;
-		scheduleNotes(this.notes, offsetBeats, this.outputs, context);
-		this.child.schedule(offsetBeats, context);
+	clone(overrides: Partial<PatternNode>): LevelPattern {
+		return new LevelPattern(this.source, this.config, this.overrideNode(overrides));
 	}
 }
 
 export function level(pattern: Pattern, config: LevelConfig): LevelPattern {
-	return new LevelPattern(pattern, config);
+	let velocityMean = 0;
+	const ccMeans = new Map<number, number>();
+
+	const needsCollect = (config.velocity !== undefined && needsMean(config.velocity)) ||
+		(config.cc && Object.values(config.cc).some((spec) => spec !== undefined && needsMean(spec)));
+
+	if (needsCollect) {
+		const allNotes = collectNotes(pattern);
+		if (allNotes.length > 0) {
+			if (config.velocity !== undefined && needsMean(config.velocity)) {
+				velocityMean = allNotes.reduce((sum, scoreNote) => sum + scoreNote.velocity, 0) / allNotes.length;
+			}
+
+			if (config.cc) {
+				for (const [ccKey, ccSpec] of Object.entries(config.cc)) {
+					if (ccSpec === undefined || !needsMean(ccSpec)) continue;
+					const ccNum = Number(ccKey);
+					ccMeans.set(ccNum, allNotes.reduce((sum, scoreNote) => sum + (scoreNote.cc?.[ccNum] ?? 0), 0) / allNotes.length);
+				}
+			}
+		}
+	}
+
+	const velocityRng = config.velocity !== undefined ? createRng(config.velocity) : Math.random;
+	const ccRngs = new Map<number, () => number>();
+
+	if (config.cc) {
+		for (const [ccKey, ccSpec] of Object.entries(config.cc)) {
+			if (ccSpec === undefined) continue;
+			ccRngs.set(Number(ccKey), createRng(ccSpec));
+		}
+	}
+
+	const transformed = mapNotes(pattern, (note) => {
+		let velocity = note.velocity;
+		let cc = note.cc;
+
+		if (config.velocity !== undefined) {
+			velocity = applyPropToValue(note.velocity, config.velocity, velocityMean, velocityRng);
+		}
+
+		if (config.cc) {
+			const newCc: Partial<Record<number, number>> = { ...cc };
+
+			for (const [ccKey, ccSpec] of Object.entries(config.cc)) {
+				if (ccSpec === undefined) continue;
+				const ccNum = Number(ccKey);
+				const ccRng = ccRngs.get(ccNum) ?? Math.random;
+				newCc[ccNum] = applyPropToValue(note.cc?.[ccNum] ?? 0, ccSpec, ccMeans.get(ccNum) ?? 0, ccRng);
+			}
+
+			cc = newCc;
+		}
+
+		return { ...note, velocity, cc };
+	});
+
+	return new LevelPattern(pattern, config, transformed);
 }
 
 export function humanize(pattern: Pattern, amount: number, seed?: number): LevelPattern {
-	return new LevelPattern(pattern, { velocity: { randomize: amount, seed } });
+	return level(pattern, { velocity: { randomize: amount, seed } });
 }

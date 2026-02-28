@@ -2,15 +2,13 @@ import type { AbsoluteKeyframe } from "../automation/utils";
 import { evaluateAt, firstPointAt, schedulePointKeyframe } from "../automation/utils";
 import { ResequenceError } from "../error";
 import type { ScheduleContext } from "../rendering/schedule-context";
-import { isInScope } from "../rendering/schedule-notes";
-import { beatsToSeconds } from "../rendering/tempo-map";
 import type { TempoMap } from "../rendering/tempo-map";
-
+import { beatsToSeconds } from "../rendering/tempo-map";
 import type { Duration } from "../utils/duration";
 import { resolveDuration } from "../utils/duration";
 import type { Lfo } from "../utils/lfo";
 import type { ValidateContext } from "../validate";
-import type { PositionedAutomation, ScoreNote } from "./pattern";
+import type { PatternNode } from "./pattern";
 import { Pattern } from "./pattern";
 
 export type KeyframeCurve = "linear" | "exponential" | "step";
@@ -64,63 +62,18 @@ function resolveKeyframe(keyframe: AnyKeyframe): AnyResolvedKeyframe {
 }
 
 export class AutomatePattern extends Pattern {
-	readonly type = "automate" as const;
-	readonly durationBeats: number;
-	readonly notes: ReadonlyArray<ScoreNote> = [];
-	readonly metadatas: [] = [];
-	readonly automations: ReadonlyArray<PositionedAutomation>;
-	readonly sampleKeys: ReadonlySet<string> = new Set();
-	readonly moduleUrls: ReadonlySet<string> = new Set();
-	readonly paths: ReadonlyArray<string>;
-	readonly source: ReadonlyArray<AnyResolvedKeyframe> | Lfo;
-
 	constructor(
 		readonly name: string,
-		paths: string | ReadonlyArray<string>,
-		source: ReadonlyArray<AnyKeyframe> | Lfo,
+		readonly paths: ReadonlyArray<string>,
+		readonly source: ReadonlyArray<AnyResolvedKeyframe> | Lfo,
+		node: PatternNode,
 	) {
-		super();
-		this.paths = typeof paths === "string" ? [paths] : paths;
-
-		if (Array.isArray(source)) {
-			const keyframes = source;
-
-			if (keyframes.length === 0) {
-				throw new ResequenceError("EMPTY_KEYFRAMES", "automate(): keyframes array must not be empty");
-			}
-
-			const resolved = keyframes.map(resolveKeyframe);
-
-			this.source = resolved;
-			this.durationBeats = Math.max(...resolved.map((point) => point.timeBeats));
-		} else {
-			this.source = source as Lfo;
-			this.durationBeats = 0;
-		}
-
-		for (const path of this.paths) {
-			if (path === "tempo") {
-				throw new ResequenceError("INVALID_AUTOMATION_PATH", `automate() cannot target "tempo". Use tempo() with keyframes instead.`);
-			}
-
-			const segments = path.split(".");
-
-			if (segments.length < 2) {
-				throw new ResequenceError("INVALID_AUTOMATION_PATH", `Automation path must be nodeId.property, got: ${path}`);
-			}
-		}
-
-		this.automations = [{ beat: 0, automation: this }];
+		super(node);
 	}
 
 	get envelope(): ReadonlyArray<AnyResolvedKeyframe> {
 		if (Array.isArray(this.source)) return this.source as ReadonlyArray<AnyResolvedKeyframe>;
-
 		return [];
-	}
-
-	validate(context: ValidateContext): void {
-		context.automationPaths.push({ name: this.name, paths: [...this.paths] });
 	}
 
 	setup(context: ScheduleContext): void {
@@ -138,7 +91,7 @@ export class AutomatePattern extends Pattern {
 			return;
 		}
 
-		if (!isInScope(offsetBeats, this.durationBeats, context)) return;
+		if (offsetBeats + this.endBeat <= context.fromBeats || offsetBeats + this.startBeat >= context.toBeats) return;
 
 		const envelope = this.source as ReadonlyArray<AnyResolvedKeyframe>;
 		if (envelope.length === 0) return;
@@ -150,7 +103,7 @@ export class AutomatePattern extends Pattern {
 			return { kind: "point" as const, beat: offsetBeats + kf.timeBeats, value: kf.value, curve: kf.curve };
 		});
 
-		const clipEndBeat = offsetBeats + this.durationBeats;
+		const clipEndBeat = offsetBeats + (this.endBeat - this.startBeat);
 		const evalBeat = Math.max(context.fromBeats, offsetBeats);
 		const initialValue = evaluateAt(absoluteKeyframes, evalBeat);
 		const evalSeconds = beatsToSeconds(evalBeat, context.tempoMap);
@@ -209,7 +162,7 @@ export class AutomatePattern extends Pattern {
 
 		const elapsedSeconds = Math.max(0, windowStartSeconds - effectiveStartSeconds);
 		const phase = (2 * Math.PI * freqHz * elapsedSeconds) % (2 * Math.PI);
-		const phaseSeconds = (phase / (2 * Math.PI)) / freqHz;
+		const phaseSeconds = phase / (2 * Math.PI) / freqHz;
 
 		const oscStartSeconds = Math.max(effectiveStartSeconds, windowStartSeconds - phaseSeconds);
 
@@ -257,10 +210,50 @@ export class AutomatePattern extends Pattern {
 			context.driverMap.delete(path);
 		}
 	}
+
+	clone(overrides: Partial<PatternNode>): AutomatePattern {
+		return new AutomatePattern(
+			this.name,
+			this.paths,
+			this.source,
+			this.overrideNode(overrides),
+		);
+	}
+
+	validate(context: ValidateContext): void {
+		context.automationPaths.push({ name: this.name, paths: [...this.paths] });
+	}
 }
 
 export function automate(name: string, paths: string | ReadonlyArray<string>, source: ReadonlyArray<AnyKeyframe> | Lfo): AutomatePattern {
-	return new AutomatePattern(name, paths, source);
+	const resolvedPaths = typeof paths === "string" ? [paths] : [...paths];
+
+	for (const path of resolvedPaths) {
+		if (path === "tempo") {
+			throw new ResequenceError("INVALID_AUTOMATION_PATH", `automate() cannot target "tempo". Use tempo() with keyframes instead.`);
+		}
+
+		const segments = path.split(".");
+
+		if (segments.length < 2) {
+			throw new ResequenceError("INVALID_AUTOMATION_PATH", `Automation path must be nodeId.property, got: ${path}`);
+		}
+	}
+
+	if (Array.isArray(source)) {
+		const keyframes = source as ReadonlyArray<AnyKeyframe>;
+
+		if (keyframes.length === 0) {
+			throw new ResequenceError("EMPTY_KEYFRAMES", "automate(): keyframes array must not be empty");
+		}
+
+		const resolved = keyframes.map(resolveKeyframe);
+		const endBeat = Math.max(...resolved.map((point) => point.timeBeats));
+
+		return new AutomatePattern(name, resolvedPaths, resolved, { notes: [], children: [], startBeat: 0, endBeat });
+	}
+
+	return new AutomatePattern(name, resolvedPaths, source as Lfo, { notes: [], children: [], startBeat: 0, endBeat: 0 });
 }
 
 function lfoFrequencyHz(lfo: Lfo, offsetBeats: number, tempoMap: TempoMap): number {

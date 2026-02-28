@@ -1,10 +1,8 @@
-import type { ScheduleContext } from "../../rendering/schedule-context";
-import { isInScope, scheduleNotes } from "../../rendering/schedule-notes";
 import type { Duration } from "../../utils/duration";
 import { resolveDuration } from "../../utils/duration";
-import type { ValidateContext } from "../../validate";
-import type { Pattern, PositionedAutomation, PositionedMetadata, ScoreNote } from "../pattern";
-import { MidiPattern } from "../pattern";
+import type { PatternNode } from "../pattern";
+import { MidiPattern, type Pattern } from "../pattern";
+import { mapNotes } from "../utils/tree";
 
 function mulberry32(seed: number): () => number {
 	let state = seed;
@@ -18,46 +16,32 @@ function mulberry32(seed: number): () => number {
 }
 
 export class JitterPattern extends MidiPattern {
-	readonly type = "jitter" as const;
-	readonly durationBeats: number;
-	readonly notes: ReadonlyArray<ScoreNote>;
-	readonly metadatas: ReadonlyArray<PositionedMetadata>;
-	readonly automations: ReadonlyArray<PositionedAutomation>;
-
 	constructor(
-		readonly child: Pattern,
+		readonly source: Pattern,
 		readonly amount: number,
-		readonly seed?: number,
+		readonly seed: number | undefined,
+		node: PatternNode,
 	) {
-		super();
-
-		this.durationBeats = child.durationBeats;
-
-		const rng = seed !== undefined ? mulberry32(seed) : Math.random.bind(Math);
-
-		this.notes = child.notes.map((positionedNote) => ({
-			...positionedNote,
-			beat: Math.max(0, Math.round(positionedNote.beat + (rng() * 2 - 1) * amount)),
-		}));
-		this.metadatas = child.metadatas;
-		this.automations = child.automations;
+		super(node);
 	}
 
-	validate(context: ValidateContext): void {
-		const childContext = this.outputs.length > 0 ? { ...context, insideRoute: true } : context;
-
-		this.child.validate(childContext);
-	}
-
-
-	schedule(offsetBeats: number, context: ScheduleContext): void {
-		if (!isInScope(offsetBeats, this.durationBeats, context)) return;
-
-		scheduleNotes(this.notes, offsetBeats, this.outputs, context);
-		this.child.schedule(offsetBeats, context);
+	clone(overrides: Partial<PatternNode>): JitterPattern {
+		return new JitterPattern(this.source, this.amount, this.seed, this.overrideNode(overrides));
 	}
 }
 
 export function jitter(pattern: Pattern, amount: Duration | number, seed?: number): JitterPattern {
-	return new JitterPattern(pattern, resolveDuration(amount), seed);
+	const resolvedAmount = resolveDuration(amount);
+	const rng = seed !== undefined ? mulberry32(seed) : Math.random.bind(Math);
+
+	const transformed = mapNotes(pattern, (note) => {
+		const shift = Math.round((rng() * 2 - 1) * resolvedAmount);
+		return {
+			...note,
+			startBeat: note.startBeat + shift,
+			endBeat: note.endBeat + shift,
+		};
+	});
+
+	return new JitterPattern(pattern, resolvedAmount, seed, transformed);
 }

@@ -1,8 +1,10 @@
 import { seekAutomation } from "../automation/seek";
-import type { Pattern, ScoreNote } from "../patterns/pattern";
+import type { ScoreNote } from "../patterns/note";
+import type { Pattern } from "../patterns/pattern";
 import type { MarkerPoint } from "./collect-markers";
 import { collectMarkers } from "./collect-markers";
 import { loadSample } from "./load-sample";
+import { scheduleNotes } from "./schedule-notes";
 import type { ScheduleContext } from "./schedule-context";
 import { buildTempoMap } from "./tempo-map";
 import { lowerBound } from "../utils/sorted";
@@ -42,6 +44,7 @@ export class Playback {
 	private startedAtBeats = 0;
 	private tickTimer: ReturnType<typeof setInterval> | undefined;
 	private _state: PlaybackState = "stopped";
+	private pendingNoteEvents: Array<{ note: ScoreNote; beat: number }> = [];
 
 	constructor(pattern: Pattern, audioContext: AudioContext, options: PlaybackOptions = {}) {
 		this.pattern = pattern;
@@ -98,6 +101,11 @@ export class Playback {
 			fromBeats: 0,
 			toBeats: Infinity,
 			trackFilter: this.options.trackFilter,
+			outputs: [],
+			dispatch: (note, offsetBeats, outputs, scheduleContext) => {
+				scheduleNotes([note], offsetBeats, outputs, scheduleContext);
+				this.pendingNoteEvents.push({ note, beat: offsetBeats + note.startBeat });
+			},
 		};
 
 		this.pattern.setup(baseContext);
@@ -143,7 +151,7 @@ export class Playback {
 		this.scheduledToBeats = beat;
 		this.startedAtSeconds = this.audioContext.currentTime;
 		this.markerCursor = lowerBound(this.markers, beat, (marker) => marker.beat);
-		seekAutomation(this.pattern.automations, beat, this.context);
+		seekAutomation(this.pattern, beat, this.context);
 	}
 
 	stop(): void {
@@ -192,32 +200,36 @@ export class Playback {
 		if (lookaheadBeat <= this.scheduledToBeats) return;
 
 		const fromBeats = this.scheduledToBeats;
-		const toBeats = Math.min(lookaheadBeat, this.pattern.durationBeats);
+		const toBeats = Math.min(lookaheadBeat, this.pattern.endBeat - this.pattern.startBeat);
 
+		this.pendingNoteEvents = [];
 		const context = { ...this.context, fromBeats, toBeats };
 		this.pattern.schedule(0, context);
 
-		this.emitNoteEvents(context);
+		this.emitNoteEvents();
 		this.emitMarkerEvents(fromBeats, toBeats);
 
 		this.scheduledToBeats = toBeats;
 
-		if (toBeats >= this.pattern.durationBeats) {
+		if (toBeats >= this.pattern.endBeat - this.pattern.startBeat) {
 			this.stopTicking();
 			this.setState("stopped");
 		}
 	}
 
-	private emitNoteEvents(context: ScheduleContext): void {
-		if (this.listeners.note.length === 0) return;
+	private emitNoteEvents(): void {
+		if (this.listeners.note.length === 0) {
+			this.pendingNoteEvents = [];
+			return;
+		}
 
-		for (const note of this.pattern.notes) {
-			if (note.beat >= context.fromBeats && note.beat < context.toBeats) {
-				for (const listener of this.listeners.note) {
-					listener(note, note.beat);
-				}
+		for (const { note, beat } of this.pendingNoteEvents) {
+			for (const listener of this.listeners.note) {
+				listener(note, beat);
 			}
 		}
+
+		this.pendingNoteEvents = [];
 	}
 
 	private emitMarkerEvents(fromBeats: number, toBeats: number): void {

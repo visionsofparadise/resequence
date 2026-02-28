@@ -1,6 +1,6 @@
-import type { Pattern, TempoKeyframe } from "../patterns/pattern";
-import type { TempoPattern } from "../patterns/tempo";
-import { childrenOf } from "../patterns/utils/tree";
+import type { Pattern } from "../patterns/pattern";
+import type { TempoKeyframe } from "../patterns/tempo";
+import { TempoPattern } from "../patterns/tempo";
 
 export interface TempoPoint {
 	readonly beat: number;
@@ -20,18 +20,17 @@ export function buildTempoMap(pattern: Pattern): TempoMap {
 function walkTempoTree(pattern: Pattern, offsetBeats: number, entries: Array<TempoPoint>, ancestorHasTempo: boolean): void {
 	let tempoForChildren = ancestorHasTempo;
 
-	if (pattern.type === "tempo") {
-		const tp = pattern as TempoPattern;
-		const shouldTakeEffect = !ancestorHasTempo || tp.isOverride;
+	if (pattern instanceof TempoPattern) {
+		const shouldTakeEffect = !ancestorHasTempo || pattern.isOverride;
 
 		if (shouldTakeEffect) {
-			collectTempoPoints(tp.bpm, tp.keyframes, offsetBeats, entries);
+			collectTempoPoints(pattern.bpm, pattern.keyframes, offsetBeats, entries);
 			tempoForChildren = true;
 		}
 	}
 
-	for (const child of childrenOf(pattern, offsetBeats)) {
-		walkTempoTree(child.pattern, child.offsetBeats, entries, tempoForChildren);
+	for (const { offsetBeats: childOffset, pattern: child } of pattern.children) {
+		walkTempoTree(child, offsetBeats + childOffset, entries, tempoForChildren);
 	}
 }
 

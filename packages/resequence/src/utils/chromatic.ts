@@ -4,6 +4,7 @@ import type { LayerPattern } from "../patterns/layer";
 import { layer } from "../patterns/layer";
 import { note } from "../patterns/note";
 import type { Duration } from "./duration";
+import { resolveDuration } from "./duration";
 import type { Pitch, TuningConfig } from "./pitch";
 import { addSteps, pitchKey, resolvePitch } from "./pitch";
 import type { ScaleAccessor } from "./scale";
@@ -73,11 +74,13 @@ function chromaticChord(root: Pitch, quality: string, duration: Duration): Layer
 
 	if (chordData.empty) throw new ResequenceError("UNKNOWN_CHORD_QUALITY", `Unknown chord quality: ${quality}`);
 
+	const durationBeats = resolveDuration(duration);
+
 	const notes = chordData.notes.map((pitchClass) => {
 		const notePitch = resolvePitch(`${pitchClass}${root.octave}`);
 		const adjusted = pitchKey(notePitch) < pitchKey(root) ? addSteps(notePitch, notePitch.stepsPerOctave) : notePitch;
 
-		return note(adjusted, duration);
+		return note(adjusted, durationBeats);
 	});
 
 	return layer(...notes);

@@ -1,6 +1,6 @@
 import type { ScheduleContext } from "../rendering/schedule-context";
 import { getOrCreateDriver } from "../utils/driver";
-import { buildCurve } from "./build-curve";
+import { buildCurve } from "./utils/build-curve";
 
 export interface ModDeclaration {
 	readonly paths: ReadonlyArray<string>;

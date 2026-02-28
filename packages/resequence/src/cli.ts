@@ -106,7 +106,7 @@ async function runCli(args: CliOptions): Promise<void> {
 			process.exit(1);
 		}
 
-		process.stdout.write(`Pattern: type=${pattern.type}, duration=${pattern.durationBeats} beats\n`);
+		process.stdout.write(`Pattern: duration=${pattern.endBeat - pattern.startBeat} beats\n`);
 
 		const tempoMap = buildTempoMap(pattern);
 		const markers = collectMarkers(pattern);
@@ -145,7 +145,7 @@ async function runCli(args: CliOptions): Promise<void> {
 			const { default: nodeWebAudio } = (await import("node-web-audio-api")) as { default: { OfflineAudioContext: typeof OfflineAudioContext } };
 			const { OfflineAudioContext: NodeOfflineAudioContext } = nodeWebAudio;
 
-			const totalSeconds = beatsToSeconds(pattern.durationBeats, tempoMap);
+			const totalSeconds = beatsToSeconds(pattern.endBeat - pattern.startBeat, tempoMap);
 			const sampleRate = 44100;
 
 			const fetchProjectBuffer = (path: string) =>
