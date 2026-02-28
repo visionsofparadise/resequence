@@ -3,12 +3,12 @@ import { readFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { parseArgs } from "node:util";
 import { Pattern } from "./patterns/pattern";
-import { collectMarkers } from "./rendering/collect-markers";
-import { collectRouting } from "./rendering/collect-routing";
 import { encodeWav } from "./rendering/encode-wav";
+import { collectMetadata } from "./rendering/pattern-metadata";
 import { renderAudio } from "./rendering/render-audio";
 import { renderMidi } from "./rendering/render-midi";
-import { beatsToSeconds, buildTempoMap } from "./rendering/tempo-map";
+import { beatsToSeconds } from "./rendering/tempo-map";
+import { filterNames } from "./utils/filter-names";
 
 interface CliOptions {
 	readonly entrypoint: string;
@@ -108,11 +108,9 @@ async function runCli(args: CliOptions): Promise<void> {
 
 		process.stdout.write(`Pattern: duration=${pattern.endBeat - pattern.startBeat} beats\n`);
 
-		const tempoMap = buildTempoMap(pattern);
-		const markers = collectMarkers(pattern);
-		const routing = collectRouting(pattern);
+		const metadata = collectMetadata(pattern);
 
-		const trackNames = [...routing.keys()];
+		const trackNames = [...metadata.tracks];
 		const filteredNames = filterNames(trackNames, args.include, args.exclude);
 
 		process.stdout.write(`Tracks: ${filteredNames.join(", ")}\n`);
@@ -122,6 +120,7 @@ async function runCli(args: CliOptions): Promise<void> {
 				include: args.include ? [...args.include] : undefined,
 				exclude: args.exclude ? [...args.exclude] : undefined,
 				master: args.master,
+				metadata,
 			});
 
 			for (const [name, data] of midiResult.tracks) {
@@ -145,7 +144,7 @@ async function runCli(args: CliOptions): Promise<void> {
 			const { default: nodeWebAudio } = (await import("node-web-audio-api")) as { default: { OfflineAudioContext: typeof OfflineAudioContext } };
 			const { OfflineAudioContext: NodeOfflineAudioContext } = nodeWebAudio;
 
-			const totalSeconds = beatsToSeconds(pattern.endBeat - pattern.startBeat, tempoMap);
+			const totalSeconds = beatsToSeconds(pattern.endBeat - pattern.startBeat, metadata.tempoMap);
 			const sampleRate = 44100;
 
 			const fetchProjectBuffer = (path: string) =>
@@ -158,12 +157,12 @@ async function runCli(args: CliOptions): Promise<void> {
 			for (const trackName of filteredNames) {
 				const offlineCtx = new NodeOfflineAudioContext(2, Math.ceil(totalSeconds * sampleRate), sampleRate);
 
-				// FIX: We do things like gather markers here, we should just be getting that from the return of this instead of having to get it ourselves
-				const rendered = await renderAudio(pattern, offlineCtx as unknown as OfflineAudioContext, fetchProjectBuffer, {
+				const result = await renderAudio(pattern, offlineCtx as unknown as OfflineAudioContext, fetchProjectBuffer, {
 					trackFilter: new Set([trackName]),
+					metadata,
 				});
 
-				const wav = encodeWav(rendered as unknown as AudioBuffer, markers, tempoMap);
+				const wav = encodeWav(result.buffer as unknown as AudioBuffer, metadata.markers, metadata.tempoMap, metadata.regions);
 				const filePath = resolve(outDir, `${trackName}.wav`);
 
 				writeFileSync(filePath, Buffer.from(wav));
@@ -174,9 +173,9 @@ async function runCli(args: CliOptions): Promise<void> {
 			if (args.master) {
 				const offlineCtx = new NodeOfflineAudioContext(2, Math.ceil(totalSeconds * sampleRate), sampleRate);
 
-				const rendered = await renderAudio(pattern, offlineCtx as unknown as OfflineAudioContext, fetchProjectBuffer);
+				const result = await renderAudio(pattern, offlineCtx as unknown as OfflineAudioContext, fetchProjectBuffer, { metadata });
 
-				const wav = encodeWav(rendered as unknown as AudioBuffer, markers, tempoMap);
+				const wav = encodeWav(result.buffer as unknown as AudioBuffer, metadata.markers, metadata.tempoMap, metadata.regions);
 				const filePath = resolve(outDir, "master.wav");
 
 				writeFileSync(filePath, Buffer.from(wav));
@@ -189,24 +188,6 @@ async function runCli(args: CliOptions): Promise<void> {
 	} finally {
 		await unregister();
 	}
-}
-
-function filterNames(names: ReadonlyArray<string>, include?: ReadonlyArray<string>, exclude?: ReadonlyArray<string>): ReadonlyArray<string> {
-	let filtered = [...names];
-
-	if (include && include.length > 0) {
-		const includeSet = new Set(include);
-
-		filtered = filtered.filter((name) => includeSet.has(name));
-	}
-
-	if (exclude && exclude.length > 0) {
-		const excludeSet = new Set(exclude);
-
-		filtered = filtered.filter((name) => !excludeSet.has(name));
-	}
-
-	return filtered;
 }
 
 main().catch((error: unknown) => {

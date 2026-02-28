@@ -49,12 +49,12 @@ describe("sampler", () => {
 			const c5Soft = { id: "c5-soft" } as unknown as AudioBuffer;
 			const c5Hard = { id: "c5-hard" } as unknown as AudioBuffer;
 
-			const sampleMap = new Map<string, AudioBuffer>([
-				["./piano-C4-soft.wav", c4Soft],
-				["./piano-C4-hard.wav", c4Hard],
-				["./piano-C5-soft.wav", c5Soft],
-				["./piano-C5-hard.wav", c5Hard],
-			]);
+			// Populate internal buffers directly (bypassing setup for unit test isolation)
+			const buffers = (node as unknown as { buffers: Map<string, AudioBuffer> }).buffers;
+			buffers.set("./piano-C4-soft.wav", c4Soft);
+			buffers.set("./piano-C4-hard.wav", c4Hard);
+			buffers.set("./piano-C5-soft.wav", c5Soft);
+			buffers.set("./piano-C5-hard.wav", c5Hard);
 
 			let assignedBuffer: AudioBuffer | null = null;
 			const mockSourceNode = {
@@ -72,7 +72,7 @@ describe("sampler", () => {
 			const mockConstantSourceNode = { offset: { value: 1, setValueAtTime: () => undefined, cancelScheduledValues: () => undefined, linearRampToValueAtTime: () => undefined }, connect: () => undefined, start: () => undefined };
 			const mockContext = {
 				audioContext: { createBufferSource: () => mockSourceNode, createGain: () => mockGainNode, createConstantSource: () => mockConstantSourceNode, destination: {} },
-				sampleMap,
+
 				driverMap: new Map(),
 				tempoMap: [],
 				fromBeats: 0,

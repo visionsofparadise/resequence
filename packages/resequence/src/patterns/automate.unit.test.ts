@@ -42,7 +42,6 @@ function mockContext(driverMap = new Map<string, ConstantSourceNode>()): Schedul
 				connect: vi.fn(),
 			})),
 		} as unknown as BaseAudioContext,
-		sampleMap: new Map(),
 		driverMap,
 		tempoMap: [{ beat: 0, bpm: 120 }],
 		fromBeats: 0,

@@ -20,7 +20,6 @@ class CaptureMidiUnit extends MidiUnit {
 // Minimal ScheduleContext stub (portamento only uses tempoMap)
 const stubContext: ScheduleContext = {
 	audioContext: {} as BaseAudioContext,
-	sampleMap: new Map(),
 	driverMap: new Map(),
 	tempoMap: [{ beat: 0, bpm: 120 }],
 	fromBeats: 0,

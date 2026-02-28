@@ -1,23 +1,29 @@
 import type { Pattern } from "../patterns/pattern";
 import { loadSample } from "./load-sample";
+import type { PatternMetadata } from "./pattern-metadata";
+import { collectMetadata } from "./pattern-metadata";
 import type { ScheduleContext } from "./schedule-context";
 import { scheduleNotes } from "./schedule-notes";
-import { buildTempoMap } from "./tempo-map";
 
 export interface RenderAudioOptions {
 	readonly trackFilter?: ReadonlySet<string>;
+	readonly metadata?: PatternMetadata;
 }
 
-export async function renderAudio(pattern: Pattern, audioContext: OfflineAudioContext, fetchBuffer: (path: string) => Promise<ArrayBuffer>, options: RenderAudioOptions = {}): Promise<AudioBuffer> {
-	// FIX: Tempo map is never used by anything in the setup phase, we could just collect it while doing our setup walk. This would also apply for metadatas, which we need to gather markers in playback renderer
-	const tempoMap = buildTempoMap(pattern);
-	const sampleMap = new Map<string, AudioBuffer>();
+export interface RenderAudioResult {
+	readonly buffer: AudioBuffer;
+	readonly metadata: PatternMetadata;
+}
+
+export async function renderAudio(pattern: Pattern, audioContext: OfflineAudioContext, fetchBuffer: (path: string) => Promise<ArrayBuffer>, options: RenderAudioOptions = {}): Promise<RenderAudioResult> {
+	const metadata = options.metadata ?? collectMetadata(pattern);
+	const tempoMap = metadata.tempoMap;
+	const sampleCache = new Map<string, AudioBuffer>();
 	const loadedModules = new Set<string>();
 	const driverMap = new Map<string, ConstantSourceNode>();
 
 	const context: ScheduleContext = {
 		audioContext,
-		sampleMap,
 		driverMap,
 		tempoMap,
 		fromBeats: 0,
@@ -25,16 +31,21 @@ export async function renderAudio(pattern: Pattern, audioContext: OfflineAudioCo
 		trackFilter: options.trackFilter,
 		outputs: [],
 		dispatch: (note, offsetBeats, outputs, scheduleContext) => {
-			scheduleNotes([note], offsetBeats, outputs, scheduleContext);
+			const { trackFilter } = scheduleContext;
+			const filtered = trackFilter
+				? outputs.filter((output) => output.id !== undefined && trackFilter.has(output.id))
+				: outputs;
+			if (filtered.length === 0) return;
+			scheduleNotes([note], offsetBeats, filtered, scheduleContext);
 		},
 		getSample: async (path: string) => {
-			const cached = sampleMap.get(path);
+			const cached = sampleCache.get(path);
 
 			if (cached) return cached;
 
 			const buffer = await loadSample(path, audioContext, fetchBuffer);
 
-			sampleMap.set(path, buffer);
+			sampleCache.set(path, buffer);
 
 			return buffer;
 		},
@@ -54,5 +65,5 @@ export async function renderAudio(pattern: Pattern, audioContext: OfflineAudioCo
 
 	pattern.teardown(context);
 
-	return buffer;
+	return { buffer, metadata };
 }

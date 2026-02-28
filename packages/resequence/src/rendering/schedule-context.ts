@@ -7,7 +7,6 @@ export type NoteDispatch = (note: ScoreNote, offsetBeats: number, outputs: Reado
 
 export interface ScheduleContext {
 	readonly audioContext: BaseAudioContext;
-	readonly sampleMap: Map<string, AudioBuffer>; // FIX: We no longer use this, we use getSample
 	readonly driverMap: Map<string, ConstantSourceNode>;
 	readonly tempoMap: TempoMap;
 	readonly fromBeats: number;

@@ -18,7 +18,6 @@ class CaptureMidiUnit extends MidiUnit {
 
 const stubContext = {
 	audioContext: {} as BaseAudioContext,
-	sampleMap: new Map(),
 	driverMap: new Map(),
 	tempoMap: [],
 	fromBeats: 0,

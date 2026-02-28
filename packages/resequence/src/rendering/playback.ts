@@ -2,12 +2,12 @@ import { seekAutomation } from "../automation/seek";
 import type { ScoreNote } from "../patterns/note";
 import type { Pattern } from "../patterns/pattern";
 import { lowerBound } from "../utils/sorted";
-import type { MarkerPoint } from "./collect-markers";
-import { collectMarkers } from "./collect-markers";
+import type { MarkerPoint } from "./pattern-metadata";
 import { loadSample } from "./load-sample";
+import type { PatternMetadata } from "./pattern-metadata";
+import { collectMetadata } from "./pattern-metadata";
 import type { ScheduleContext } from "./schedule-context";
 import { scheduleNotes } from "./schedule-notes";
-import { buildTempoMap } from "./tempo-map";
 
 export type PlaybackState = "playing" | "paused" | "stopped";
 
@@ -21,6 +21,7 @@ interface PlaybackOptions {
 	readonly trackFilter?: ReadonlySet<string>;
 	readonly lookaheadMs?: number;
 	readonly tickMs?: number;
+	readonly metadata?: PatternMetadata;
 }
 
 const DEFAULT_LOOKAHEAD_MS = 100;
@@ -78,12 +79,12 @@ export class Playback {
 	async setup(fetchBuffer: (path: string) => Promise<ArrayBuffer>): Promise<void> {
 		const driverMap = new Map<string, ConstantSourceNode>();
 		const loadedModules = new Set<string>();
-		const sampleMap = new Map<string, AudioBuffer>();
-		const tempoMap = buildTempoMap(this.pattern);
+		const sampleCache = new Map<string, AudioBuffer>();
+		const metadata = this.options.metadata ?? collectMetadata(this.pattern);
+		const tempoMap = metadata.tempoMap;
 
 		const baseContext: ScheduleContext = {
 			audioContext: this.audioContext,
-			sampleMap,
 			driverMap,
 			tempoMap,
 			fromBeats: 0,
@@ -91,18 +92,23 @@ export class Playback {
 			trackFilter: this.options.trackFilter,
 			outputs: [],
 			dispatch: (note, offsetBeats, outputs, scheduleContext) => {
-				scheduleNotes([note], offsetBeats, outputs, scheduleContext);
+				const { trackFilter } = scheduleContext;
+				const filtered = trackFilter
+					? outputs.filter((output) => output.id !== undefined && trackFilter.has(output.id))
+					: outputs;
+				if (filtered.length === 0) return;
+				scheduleNotes([note], offsetBeats, filtered, scheduleContext);
 
 				this.pendingNoteEvents.push({ note, beat: offsetBeats + note.startBeat });
 			},
 			getSample: async (path: string) => {
-				const cached = sampleMap.get(path);
+				const cached = sampleCache.get(path);
 
 				if (cached) return cached;
 
 				const buffer = await loadSample(path, this.audioContext, fetchBuffer);
 
-				sampleMap.set(path, buffer);
+				sampleCache.set(path, buffer);
 
 				return buffer;
 			},
@@ -117,7 +123,7 @@ export class Playback {
 
 		await this.pattern.setup(baseContext);
 
-		this.markers = collectMarkers(this.pattern);
+		this.markers = metadata.markers;
 		this.context = baseContext;
 	}
 

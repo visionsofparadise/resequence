@@ -38,6 +38,7 @@ interface NormalizedZone {
 
 export class SamplerUnit extends GeneratorUnit {
 	private readonly config: SamplerConfig;
+	private readonly buffers = new Map<string, AudioBuffer>();
 
 	constructor(
 		public readonly id: string | undefined,
@@ -51,7 +52,23 @@ export class SamplerUnit extends GeneratorUnit {
 		const result = await super._setup(context);
 
 		const paths = this.collectSamplePaths();
-		await Promise.all(paths.map((path) => context.getSample(path).catch(() => {})));
+
+		const results = await Promise.allSettled(
+			paths.map(async (path) => {
+				const buffer = await context.getSample(path);
+
+				return {
+					path,
+					buffer,
+				};
+			}),
+		);
+
+		for (const result of results) {
+			if (result.status === "fulfilled") {
+				this.buffers.set(result.value.path, result.value.buffer);
+			}
+		}
 
 		return result;
 	}
@@ -72,7 +89,7 @@ export class SamplerUnit extends GeneratorUnit {
 
 	protected _schedule(voiceNote: VoiceNote, scheduleContext: ScheduleContext): void {
 		const midiNote = voiceNote.note;
-		const result = this.selectSample(midiNote, voiceNote.velocity, scheduleContext.sampleMap);
+		const result = this.selectSample(midiNote, voiceNote.velocity);
 
 		if (!result) return;
 
@@ -81,13 +98,7 @@ export class SamplerUnit extends GeneratorUnit {
 		source.playbackRate.value = result.playbackRate;
 
 		if (voiceNote.slides && voiceNote.slides.length > 0) {
-			scheduleSlideRamps(
-				source.playbackRate,
-				result.playbackRate,
-				voiceNote.slides,
-				voiceNote.startMs / 1000,
-				(cents) => result.playbackRate * 2 ** (cents / 1200),
-			);
+			scheduleSlideRamps(source.playbackRate, result.playbackRate, voiceNote.slides, voiceNote.startMs / 1000, (cents) => result.playbackRate * 2 ** (cents / 1200));
 		}
 
 		if (result.loopStartMs !== undefined && result.loopEndMs !== undefined) {
@@ -104,9 +115,9 @@ export class SamplerUnit extends GeneratorUnit {
 		source.addEventListener("ended", cleanup);
 	}
 
-	private selectSample(midiNote: number, velocity: number, sampleMap: ReadonlyMap<string, AudioBuffer>): ResolvedSample | null {
+	private selectSample(midiNote: number, velocity: number): ResolvedSample | null {
 		if (this.config.kind === "single") {
-			const buffer = sampleMap.get(this.config.path);
+			const buffer = this.buffers.get(this.config.path);
 			if (!buffer) return null;
 
 			const playbackRate = this.config.rootMidi !== undefined ? 2 ** ((midiNote - this.config.rootMidi) / 12) : 1;
@@ -114,7 +125,7 @@ export class SamplerUnit extends GeneratorUnit {
 			return { buffer, playbackRate, loopStartMs: this.config.loopStartMs, loopEndMs: this.config.loopEndMs };
 		}
 
-		return resolveFromZones(this.config.zones, midiNote, velocity, sampleMap);
+		return resolveFromZones(this.config.zones, midiNote, velocity, this.buffers);
 	}
 }
 
@@ -191,7 +202,6 @@ function normalizeZone(zone: SamplerZone): NormalizedZone {
 export function sampler(source: string, options?: { root?: Pitch; loopStartMs?: number; loopEndMs?: number; id?: string }): SamplerUnit;
 export function sampler(source: ReadonlyArray<SamplerZone>, options?: { id?: string }): SamplerUnit;
 export function sampler(source: string | ReadonlyArray<SamplerZone>, options?: { root?: Pitch; loopStartMs?: number; loopEndMs?: number; id?: string }): SamplerUnit {
-
 	const id = options?.id;
 
 	if (typeof source === "string") {

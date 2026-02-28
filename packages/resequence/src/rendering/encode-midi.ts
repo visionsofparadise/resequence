@@ -1,7 +1,6 @@
 import type { MidiData, MidiEvent } from "midi-file";
 import { writeMidi } from "midi-file";
-import type { MarkerPoint } from "./collect-markers";
-import type { TimeSignaturePoint } from "./collect-time-signatures";
+import type { MarkerPoint, TimeSignaturePoint } from "./pattern-metadata";
 import type { TempoPoint } from "./tempo-map";
 import { PPQ } from "../utils/duration";
 

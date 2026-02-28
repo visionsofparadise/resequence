@@ -2,19 +2,20 @@ import type { ScoreNote } from "../patterns/note";
 import type { Pattern } from "../patterns/pattern";
 import type { MidiUnit } from "../units/midi-unit";
 import { PPQ } from "../utils/duration";
+import { filterNames } from "../utils/filter-names";
 import { pitchToMidi } from "../utils/pitch";
 import { evaluateSlideCents } from "../utils/slide";
-import { collectMarkers } from "./collect-markers";
-import { collectTimeSignatures } from "./collect-time-signatures";
 import type { MidiNote, MidiPitchBend } from "./encode-midi";
 import { encodeMidi } from "./encode-midi";
+import type { PatternMetadata } from "./pattern-metadata";
+import { collectMetadata } from "./pattern-metadata";
 import type { ScheduleContext } from "./schedule-context";
-import { buildTempoMap } from "./tempo-map";
 
 export interface MidiRenderOptions {
 	readonly include?: ReadonlyArray<string>;
 	readonly exclude?: ReadonlyArray<string>;
 	readonly master?: boolean;
+	readonly metadata?: PatternMetadata;
 }
 
 export interface MidiRenderResult {
@@ -23,13 +24,13 @@ export interface MidiRenderResult {
 }
 
 export function renderMidi(pattern: Pattern, options?: MidiRenderOptions): MidiRenderResult {
-	// FIX: All of these could be gathered in a single walk
-	const tempoChanges = buildTempoMap(pattern);
-	const timeSignatureChanges = collectTimeSignatures(pattern);
-	const markers = collectMarkers(pattern);
+	const metadata = options?.metadata ?? collectMetadata(pattern);
+	const tempoChanges = metadata.tempoMap;
+	const timeSignatureChanges = metadata.timeSignatures;
+	const markers = metadata.markers;
 	const grouped = collectMidiNotes(pattern, tempoChanges);
 
-	const filteredNames = filterTrackNames([...grouped.keys()], options?.include, options?.exclude);
+	const filteredNames = filterNames([...grouped.keys()], options?.include, options?.exclude);
 	const tracks = new Map<string, Uint8Array>();
 
 	for (const name of filteredNames) {
@@ -67,7 +68,6 @@ function collectMidiNotes(pattern: Pattern, tempoMap: ReadonlyArray<{ beat: numb
 
 	const context: ScheduleContext = {
 		audioContext: undefined as unknown as BaseAudioContext,
-		sampleMap: new Map(),
 		driverMap: new Map(),
 		tempoMap,
 		fromBeats: 0,
@@ -131,20 +131,3 @@ function addNoteToTracks(scoreNote: ScoreNote, offsetBeats: number, outputs: Rea
 	}
 }
 
-function filterTrackNames(names: ReadonlyArray<string>, include?: ReadonlyArray<string>, exclude?: ReadonlyArray<string>): ReadonlyArray<string> {
-	let filtered = [...names];
-
-	if (include && include.length > 0) {
-		const includeSet = new Set(include);
-
-		filtered = filtered.filter((name) => includeSet.has(name));
-	}
-
-	if (exclude && exclude.length > 0) {
-		const excludeSet = new Set(exclude);
-
-		filtered = filtered.filter((name) => !excludeSet.has(name));
-	}
-
-	return filtered;
-}

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ResequenceError } from "../error";
-import { collectTimeSignatures } from "../rendering/collect-time-signatures";
+import { collectMetadata } from "../rendering/pattern-metadata";
 import { N } from "../tunings/chromatic";
 import { MetadataPattern, timeSignature } from "./metadata";
 import { sequence } from "./sequence";
@@ -18,19 +18,19 @@ describe("timeSignature alias", () => {
 	});
 });
 
-describe("collectTimeSignatures", () => {
+describe("collectTimeSignatures via collectMetadata", () => {
 	it("returns empty array when no timeSignature wrappers present", () => {
-		expect(collectTimeSignatures(sequence(N.C4(1)))).toEqual([]);
+		expect(collectMetadata(sequence(N.C4(1))).timeSignatures).toEqual([]);
 	});
 
 	it("captures single timeSignature at root", () => {
-		const result = collectTimeSignatures(timeSignature(sequence(N.C4(1)), [3, 4]));
-		expect(result).toEqual([{ beat: 0, timeSignature: [3, 4] }]);
+		const result = collectMetadata(timeSignature(sequence(N.C4(1)), [3, 4]));
+		expect(result.timeSignatures).toEqual([{ beat: 0, timeSignature: [3, 4] }]);
 	});
 
 	it("captures nested timeSignature inside sequence at correct beat offset", () => {
 		const pattern = sequence(N.C4(1), timeSignature(sequence(N.E4(1)), [5, 8]));
-		const result = collectTimeSignatures(pattern);
-		expect(result).toEqual([{ beat: 1, timeSignature: [5, 8] }]);
+		const result = collectMetadata(pattern);
+		expect(result.timeSignatures).toEqual([{ beat: 1, timeSignature: [5, 8] }]);
 	});
 });
