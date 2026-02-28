@@ -1,10 +1,12 @@
+import type { ScoreNote } from "../note";
 import type { PatternNode } from "../pattern";
 import { MidiPattern, type Pattern } from "../pattern";
+import { toPattern } from "../sequence";
 import { collectNotes, mapNotes } from "../utils/tree";
 
 export class LegatoPattern extends MidiPattern {
 	constructor(
-		readonly source: Pattern,
+		readonly source: Pattern | ScoreNote,
 		readonly extendLast: boolean,
 		node: PatternNode,
 	) {
@@ -16,8 +18,9 @@ export class LegatoPattern extends MidiPattern {
 	}
 }
 
-export function legato(pattern: Pattern, extendLast = true): LegatoPattern {
-	const allNotes = collectNotes(pattern);
+export function legato(pattern: Pattern | ScoreNote, extendLast = true): LegatoPattern {
+	const resolved = toPattern(pattern);
+	const allNotes = collectNotes(resolved);
 	const sorted = allNotes.slice().sort((noteA, noteB) => noteA.startBeat - noteB.startBeat);
 	const totalDuration = pattern.endBeat - pattern.startBeat;
 
@@ -36,7 +39,7 @@ export function legato(pattern: Pattern, extendLast = true): LegatoPattern {
 		}
 	}
 
-	const transformed = mapNotes(pattern, (note, absoluteOffset) => {
+	const transformed = mapNotes(resolved, (note, absoluteOffset) => {
 		const absStart = absoluteOffset + note.startBeat;
 		const absEnd = absoluteOffset + note.endBeat;
 		const key = `${absStart}:${absEnd}:${note.velocity}`;

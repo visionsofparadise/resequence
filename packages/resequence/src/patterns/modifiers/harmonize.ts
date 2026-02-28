@@ -1,11 +1,13 @@
 import { addSteps } from "../../utils/pitch";
+import type { ScoreNote } from "../note";
 import type { PatternNode } from "../pattern";
 import { MidiPattern, type Pattern } from "../pattern";
+import { toPattern } from "../sequence";
 import { flatMapNotes } from "../utils/tree";
 
 export class HarmonizePattern extends MidiPattern {
 	constructor(
-		readonly source: Pattern,
+		readonly source: Pattern | ScoreNote,
 		readonly interval: number,
 		node: PatternNode,
 	) {
@@ -17,8 +19,9 @@ export class HarmonizePattern extends MidiPattern {
 	}
 }
 
-export function harmonize(pattern: Pattern, interval: number): HarmonizePattern {
-	const transformed = flatMapNotes(pattern, (note) => [
+export function harmonize(pattern: Pattern | ScoreNote, interval: number): HarmonizePattern {
+	const resolved = toPattern(pattern);
+	const transformed = flatMapNotes(resolved, (note) => [
 		note,
 		{
 			...note,

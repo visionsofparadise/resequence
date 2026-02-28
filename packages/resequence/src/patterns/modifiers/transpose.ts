@@ -1,11 +1,13 @@
 import { addSteps } from "../../utils/pitch";
+import type { ScoreNote } from "../note";
 import type { PatternNode } from "../pattern";
 import { MidiPattern, type Pattern } from "../pattern";
+import { toPattern } from "../sequence";
 import { mapNotes } from "../utils/tree";
 
 export class TransposePattern extends MidiPattern {
 	constructor(
-		readonly source: Pattern,
+		readonly source: Pattern | ScoreNote,
 		readonly interval: number,
 		node: PatternNode,
 	) {
@@ -17,8 +19,9 @@ export class TransposePattern extends MidiPattern {
 	}
 }
 
-export function transpose(pattern: Pattern, interval: number): TransposePattern {
-	const transformed = mapNotes(pattern, (note) => ({
+export function transpose(pattern: Pattern | ScoreNote, interval: number): TransposePattern {
+	const resolved = toPattern(pattern);
+	const transformed = mapNotes(resolved, (note) => ({
 		...note,
 		pitch: addSteps(note.pitch, interval),
 		slides: note.slides?.map((sl) => ({ ...sl, pitch: addSteps(sl.pitch, interval) })),

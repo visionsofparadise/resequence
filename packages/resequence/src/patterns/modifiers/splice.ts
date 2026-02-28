@@ -1,7 +1,9 @@
 ;
 ;
+import type { ScoreNote } from "../note";
 import type { PatternNode, RelativeNote } from "../pattern";
 import { MidiPattern, type Pattern } from "../pattern";
+import { toPattern } from "../sequence";
 import { collectNotes } from "../utils/tree";
 
 export interface SpliceOptions {
@@ -18,7 +20,7 @@ export interface InsertOptions {
 
 export class SplicePattern extends MidiPattern {
 	constructor(
-		readonly source: Pattern,
+		readonly source: Pattern | ScoreNote,
 		readonly spliceOptions: SpliceOptions,
 		node: PatternNode,
 	) {
@@ -32,7 +34,7 @@ export class SplicePattern extends MidiPattern {
 
 export class InsertPattern extends MidiPattern {
 	constructor(
-		readonly source: Pattern,
+		readonly source: Pattern | ScoreNote,
 		readonly insertOptions: InsertOptions,
 		node: PatternNode,
 	) {
@@ -44,8 +46,9 @@ export class InsertPattern extends MidiPattern {
 	}
 }
 
-export function splice(pattern: Pattern, options: SpliceOptions): SplicePattern {
-	const allNotes = collectNotes(pattern);
+export function splice(pattern: Pattern | ScoreNote, options: SpliceOptions): SplicePattern {
+	const resolved = toPattern(pattern);
+	const allNotes = collectNotes(resolved);
 	const sorted = allNotes.slice().sort((noteA, noteB) => noteA.startBeat - noteB.startBeat);
 	const removeCount = options.remove ?? 0;
 	const before = sorted.slice(0, options.at);
@@ -84,8 +87,9 @@ export function splice(pattern: Pattern, options: SpliceOptions): SplicePattern 
 	return new SplicePattern(pattern, options, { notes, children: [], startBeat: 0, endBeat: newDuration });
 }
 
-export function insert(pattern: Pattern, options: InsertOptions): InsertPattern {
-	const allNotes = collectNotes(pattern);
+export function insert(pattern: Pattern | ScoreNote, options: InsertOptions): InsertPattern {
+	const resolved = toPattern(pattern);
+	const allNotes = collectNotes(resolved);
 	const atTick = options.at;
 	const removeDuration = options.remove ?? 0;
 	const removeEndTick = atTick + removeDuration;

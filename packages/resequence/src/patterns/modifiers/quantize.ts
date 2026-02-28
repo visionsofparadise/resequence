@@ -1,12 +1,13 @@
 import { N } from "../../tunings/chromatic";
+import type { ScoreNote } from "../note";
 import type { PatternNode } from "../pattern";
 import { MidiPattern, type Pattern } from "../pattern";
-import { sequence } from "../sequence";
+import { sequence, toPattern } from "../sequence";
 import { collectNotes, mapNotes } from "../utils/tree";
 
 export class QuantizePattern extends MidiPattern {
 	constructor(
-		readonly source: Pattern,
+		readonly source: Pattern | ScoreNote,
 		readonly subdivision: number,
 		readonly grooveMap: Pattern | undefined,
 		node: PatternNode,
@@ -19,13 +20,14 @@ export class QuantizePattern extends MidiPattern {
 	}
 }
 
-export function quantize(pattern: Pattern, subdivision: number, grooveMap?: Pattern): QuantizePattern {
+export function quantize(pattern: Pattern | ScoreNote, subdivision: number, grooveMap?: Pattern): QuantizePattern {
+	const resolved = toPattern(pattern);
 	const grid = subdivision;
 
 	let transformed: Pattern;
 
 	if (!grooveMap) {
-		transformed = mapNotes(pattern, (note, absoluteOffset) => {
+		transformed = mapNotes(resolved, (note, absoluteOffset) => {
 			const absBeat = absoluteOffset + note.startBeat;
 			const remainder = absBeat % grid;
 			const snapped = absBeat - remainder + (remainder <= grid / 2 ? 0 : grid);
@@ -35,7 +37,7 @@ export function quantize(pattern: Pattern, subdivision: number, grooveMap?: Patt
 	} else {
 		const groovePositions = collectNotes(grooveMap).map((grooveNote) => grooveNote.startBeat % grid).sort((tickA, tickB) => tickA - tickB);
 
-		transformed = mapNotes(pattern, (note, absoluteOffset) => {
+		transformed = mapNotes(resolved, (note, absoluteOffset) => {
 			const absBeat = absoluteOffset + note.startBeat;
 			const cycle = Math.floor(absBeat / grid);
 			const remainder = absBeat % grid;
@@ -52,6 +54,6 @@ function buildSwingMap(amount: number): Pattern {
 	return sequence(N.C4(amount), N.C4(1 - amount));
 }
 
-export function shuffle(pattern: Pattern, amount: number): QuantizePattern {
+export function shuffle(pattern: Pattern | ScoreNote, amount: number): QuantizePattern {
 	return quantize(pattern, 1, buildSwingMap(amount));
 }

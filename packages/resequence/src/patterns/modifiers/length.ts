@@ -1,10 +1,12 @@
+import type { ScoreNote } from "../note";
 import type { PatternNode } from "../pattern";
 import { MidiPattern, type Pattern } from "../pattern";
+import { toPattern } from "../sequence";
 import { mapNotes } from "../utils/tree";
 
 export class LengthPattern extends MidiPattern {
 	constructor(
-		readonly source: Pattern,
+		readonly source: Pattern | ScoreNote,
 		readonly noteDuration: number,
 		node: PatternNode,
 	) {
@@ -16,8 +18,9 @@ export class LengthPattern extends MidiPattern {
 	}
 }
 
-export function length(pattern: Pattern, duration: number): LengthPattern {
-	const transformed = mapNotes(pattern, (note) => {
+export function length(pattern: Pattern | ScoreNote, duration: number): LengthPattern {
+	const resolved = toPattern(pattern);
+	const transformed = mapNotes(resolved, (note) => {
 		const truncatedSlides = note.slides?.filter((sl) => sl.beat <= duration);
 		return {
 			...note,

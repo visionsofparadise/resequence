@@ -1,10 +1,12 @@
+import type { ScoreNote } from "../note";
 import type { PatternNode } from "../pattern";
 import { MidiPattern, type Pattern } from "../pattern";
+import { toPattern } from "../sequence";
 import { flatMapNotes } from "../utils/tree";
 
 export class EchoPattern extends MidiPattern {
 	constructor(
-		readonly source: Pattern,
+		readonly source: Pattern | ScoreNote,
 		readonly interval: number,
 		readonly repeats: number,
 		readonly decay: number,
@@ -18,8 +20,9 @@ export class EchoPattern extends MidiPattern {
 	}
 }
 
-export function echo(pattern: Pattern, interval: number, repeats: number, decay: number): EchoPattern {
-	const transformed = flatMapNotes(pattern, (note) => {
+export function echo(pattern: Pattern | ScoreNote, interval: number, repeats: number, decay: number): EchoPattern {
+	const resolved = toPattern(pattern);
+	const transformed = flatMapNotes(resolved, (note) => {
 		const result = [note];
 
 		for (let echoIndex = 1; echoIndex <= repeats; echoIndex++) {

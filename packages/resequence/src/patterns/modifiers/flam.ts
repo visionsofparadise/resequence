@@ -1,10 +1,12 @@
+import type { ScoreNote } from "../note";
 import type { PatternNode } from "../pattern";
 import { MidiPattern, type Pattern } from "../pattern";
+import { toPattern } from "../sequence";
 import { flatMapNotes } from "../utils/tree";
 
 export class FlamPattern extends MidiPattern {
 	constructor(
-		readonly source: Pattern,
+		readonly source: Pattern | ScoreNote,
 		readonly flamOffset: number,
 		readonly graceVelocity: number,
 		node: PatternNode,
@@ -17,8 +19,9 @@ export class FlamPattern extends MidiPattern {
 	}
 }
 
-export function flam(pattern: Pattern, flamOffset: number, graceVelocity = 40): FlamPattern {
-	const transformed = flatMapNotes(pattern, (note) => [
+export function flam(pattern: Pattern | ScoreNote, flamOffset: number, graceVelocity = 40): FlamPattern {
+	const resolved = toPattern(pattern);
+	const transformed = flatMapNotes(resolved, (note) => [
 		{
 			...note,
 			startBeat: note.startBeat - flamOffset,

@@ -60,7 +60,7 @@ describe("SlidePattern", () => {
 	});
 
 	it("returns notes unchanged for single note", () => {
-		const pat = slide(sequence(N.C4(1)));
+		const pat = slide(N.C4(1));
 		expect(collectNotes(pat)).toHaveLength(1);
 		expect(collectNotes(pat)[0]!.slides).toBeUndefined();
 	});

@@ -30,3 +30,8 @@ export function sequence(...inputs: ReadonlyArray<Pattern | ScoreNote>): Sequenc
 
 	return new SequencePattern({ notes, children, startBeat, endBeat });
 }
+
+export function toPattern(input: Pattern | ScoreNote): Pattern {
+	if (input instanceof Pattern) return input;
+	return sequence(input);
+}

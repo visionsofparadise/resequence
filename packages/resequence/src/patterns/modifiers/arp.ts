@@ -4,7 +4,7 @@ import { pitchKey } from "../../utils/pitch";
 import type { ScoreNote } from "../note";
 import type { PatternNode } from "../pattern";
 import { MidiPattern, type Pattern } from "../pattern";
-import { sequence } from "../sequence";
+import { sequence, toPattern } from "../sequence";
 import { collectNotes, flatMapNotes } from "../utils/tree";
 
 function mulberry32(seed: number): () => number {
@@ -29,7 +29,7 @@ interface ArpStep {
 
 export class ArpPattern extends MidiPattern {
 	constructor(
-		readonly source: Pattern,
+		readonly source: Pattern | ScoreNote,
 		readonly mapping: Pattern,
 		node: PatternNode,
 	) {
@@ -41,14 +41,15 @@ export class ArpPattern extends MidiPattern {
 	}
 }
 
-export function arp(pattern: Pattern, mappingPattern: Pattern): ArpPattern {
-	const sourceNotes = collectNotes(pattern);
+export function arp(pattern: Pattern | ScoreNote, mappingPattern: Pattern): ArpPattern {
+	const resolved = toPattern(pattern);
+	const sourceNotes = collectNotes(resolved);
 	const mappingNotes = collectNotes(mappingPattern).sort((noteA, noteB) => noteA.startBeat - noteB.startBeat);
 
 	const mappingDuration = mappingPattern.endBeat - mappingPattern.startBeat;
 
 	if (sourceNotes.length === 0 || mappingNotes.length === 0 || mappingDuration === 0) {
-		return new ArpPattern(pattern, mappingPattern, { notes: [], children: [{ offsetBeats: 0, pattern }], startBeat: pattern.startBeat, endBeat: pattern.endBeat });
+		return new ArpPattern(pattern, mappingPattern, { notes: [], children: [{ offsetBeats: 0, pattern: resolved }], startBeat: pattern.startBeat, endBeat: pattern.endBeat });
 	}
 
 	const mappingPitchKeys = [...new Set(mappingNotes.map((mappingNote) => pitchKey(mappingNote.pitch)))].sort((keyA, keyB) => keyA - keyB);
@@ -140,7 +141,7 @@ export function arp(pattern: Pattern, mappingPattern: Pattern): ArpPattern {
 	}
 
 	// Walk the tree in-place, replacing each note with its assigned arp steps
-	const transformed = flatMapNotes(pattern, (scoreNote, absoluteOffset) => {
+	const transformed = flatMapNotes(resolved, (scoreNote, absoluteOffset) => {
 		const absStart = absoluteOffset + scoreNote.startBeat;
 		const absEnd = absoluteOffset + scoreNote.endBeat;
 		const noteId = `${absStart}:${absEnd}:${pitchKey(scoreNote.pitch)}`;

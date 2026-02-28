@@ -1,10 +1,12 @@
+import type { ScoreNote } from "../note";
 import type { PatternNode } from "../pattern";
 import { MidiPattern, type Pattern } from "../pattern";
+import { toPattern } from "../sequence";
 import { mapNotes } from "../utils/tree";
 
 export class AccentPattern extends MidiPattern {
 	constructor(
-		readonly source: Pattern,
+		readonly source: Pattern | ScoreNote,
 		readonly positions: ReadonlyArray<number>,
 		readonly amount: number,
 		node: PatternNode,
@@ -17,7 +19,8 @@ export class AccentPattern extends MidiPattern {
 	}
 }
 
-export function accent(pattern: Pattern, positions: ReadonlyArray<number>, amount: number): AccentPattern {
+export function accent(pattern: Pattern | ScoreNote, positions: ReadonlyArray<number>, amount: number): AccentPattern {
+	const resolved = toPattern(pattern);
 	const resolvedPositions = positions;
 	const totalDuration = pattern.endBeat - pattern.startBeat;
 	const cycle = resolvedPositions.reduce((sum, pos) => sum + pos, 0);
@@ -44,7 +47,7 @@ export function accent(pattern: Pattern, positions: ReadonlyArray<number>, amoun
 		}
 	}
 
-	const transformed = mapNotes(pattern, (note, absoluteOffset) => {
+	const transformed = mapNotes(resolved, (note, absoluteOffset) => {
 		if (accentedTicks.has(absoluteOffset + note.startBeat)) {
 			return { ...note, velocity: Math.min(127, note.velocity + amount) };
 		}

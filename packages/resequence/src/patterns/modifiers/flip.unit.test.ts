@@ -14,7 +14,7 @@ describe("flip", () => {
 	});
 
 	it("octave-shifts to stay within range", () => {
-		const pat = flip(sequence(N.E4(1)), N.C4, [N.C3, N.C5]);
+		const pat = flip(N.E4(1), N.C4, [N.C3, N.C5]);
 		expect(pitchToMidi(collectNotes(pat)[0]!.pitch).note).toBeGreaterThanOrEqual(48);
 		expect(pitchToMidi(collectNotes(pat)[0]!.pitch).note).toBeLessThanOrEqual(72);
 	});

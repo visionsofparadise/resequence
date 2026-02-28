@@ -1,13 +1,14 @@
 import type { Pitch } from "../../utils/pitch";
 import { evaluateSlide } from "../../utils/slide";
-import type { ScoreNoteSlide } from "../note";
+import type { ScoreNote, ScoreNoteSlide } from "../note";
 import type { PatternNode } from "../pattern";
 import { MidiPattern, type Pattern } from "../pattern";
+import { toPattern } from "../sequence";
 import { flatMapNotes } from "../utils/tree";
 
 export class ChopPattern extends MidiPattern {
 	constructor(
-		readonly source: Pattern,
+		readonly source: Pattern | ScoreNote,
 		readonly subdivision: number,
 		node: PatternNode,
 	) {
@@ -19,8 +20,9 @@ export class ChopPattern extends MidiPattern {
 	}
 }
 
-export function chop(pattern: Pattern, subdivision: number): ChopPattern {
-	const transformed = flatMapNotes(pattern, (note) => {
+export function chop(pattern: Pattern | ScoreNote, subdivision: number): ChopPattern {
+	const resolved = toPattern(pattern);
+	const transformed = flatMapNotes(resolved, (note) => {
 		const duration = note.endBeat - note.startBeat;
 		const chopCount = Math.floor(duration / subdivision);
 		const result = [];

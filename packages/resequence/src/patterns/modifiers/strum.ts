@@ -2,6 +2,7 @@ import { pitchKey } from "../../utils/pitch";
 import type { ScoreNote } from "../note";
 import type { PatternNode } from "../pattern";
 import { MidiPattern, type Pattern } from "../pattern";
+import { toPattern } from "../sequence";
 import { collectNotes, mapNotes } from "../utils/tree";
 
 export interface StrumOptions {
@@ -11,7 +12,7 @@ export interface StrumOptions {
 
 export class StrumPattern extends MidiPattern {
 	constructor(
-		readonly source: Pattern,
+		readonly source: Pattern | ScoreNote,
 		readonly strumOptions: StrumOptions,
 		node: PatternNode,
 	) {
@@ -23,10 +24,11 @@ export class StrumPattern extends MidiPattern {
 	}
 }
 
-export function strum(pattern: Pattern, options: StrumOptions = {}): StrumPattern {
+export function strum(pattern: Pattern | ScoreNote, options: StrumOptions = {}): StrumPattern {
+	const resolved = toPattern(pattern);
 	const strumOffset = options.strumOffset ?? 15;
 	const direction = options.direction ?? "up";
-	const allNotes = collectNotes(pattern);
+	const allNotes = collectNotes(resolved);
 
 	const byBeat = new Map<number, Array<ScoreNote>>();
 	for (const scoreNote of allNotes) {
@@ -51,7 +53,7 @@ export function strum(pattern: Pattern, options: StrumOptions = {}): StrumPatter
 		}
 	}
 
-	const transformed = mapNotes(pattern, (note, absoluteOffset) => {
+	const transformed = mapNotes(resolved, (note, absoluteOffset) => {
 		const absStart = absoluteOffset + note.startBeat;
 		const absEnd = absoluteOffset + note.endBeat;
 		const key = `${absStart}:${absEnd}:${pitchKey(note.pitch)}`;

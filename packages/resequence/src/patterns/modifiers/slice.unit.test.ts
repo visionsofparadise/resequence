@@ -19,7 +19,7 @@ describe("slice", () => {
 	});
 
 	it("returns empty notes and zero duration when range is empty", () => {
-		const pat = slice(sequence(N.C4(1)), 5, 10);
+		const pat = slice(N.C4(1), 5, 10);
 		expect(collectNotes(pat)).toHaveLength(0);
 		expect(pat.endBeat - pat.startBeat).toBe(0);
 	});
@@ -33,7 +33,7 @@ describe("trim", () => {
 	});
 
 	it("clips notes that span the window boundary", () => {
-		const pat = trim(sequence(N.C4(1)), 0.5, 1);
+		const pat = trim(N.C4(1), 0.5, 1);
 		expect(collectNotes(pat)).toHaveLength(1);
 		expect(collectNotes(pat)[0]).toMatchObject({ startBeat: 0, endBeat: 0.5 });
 	});

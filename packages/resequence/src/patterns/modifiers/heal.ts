@@ -4,11 +4,12 @@ import { pitchKey } from "../../utils/pitch";
 import type { ScoreNote } from "../note";
 import type { PatternNode } from "../pattern";
 import { MidiPattern, type Pattern } from "../pattern";
+import { toPattern } from "../sequence";
 import { collectNotes, flatMapNotes } from "../utils/tree";
 
 export class HealPattern extends MidiPattern {
 	constructor(
-		readonly source: Pattern,
+		readonly source: Pattern | ScoreNote,
 		readonly threshold: number,
 		node: PatternNode,
 	) {
@@ -20,9 +21,10 @@ export class HealPattern extends MidiPattern {
 	}
 }
 
-export function heal(pattern: Pattern, threshold?: number): HealPattern {
+export function heal(pattern: Pattern | ScoreNote, threshold?: number): HealPattern {
+	const resolved = toPattern(pattern);
 	const resolvedThreshold = threshold ?? 0;
-	const allNotes = collectNotes(pattern);
+	const allNotes = collectNotes(resolved);
 	const sorted = allNotes.slice().sort((noteA, noteB) => noteA.startBeat - noteB.startBeat || pitchKey(noteA.pitch) - pitchKey(noteB.pitch));
 
 	const merged = new Set<string>();
@@ -49,7 +51,7 @@ export function heal(pattern: Pattern, threshold?: number): HealPattern {
 		last = scoreNote;
 	}
 
-	const transformed = flatMapNotes(pattern, (note, absoluteOffset) => {
+	const transformed = flatMapNotes(resolved, (note, absoluteOffset) => {
 		const absStart = absoluteOffset + note.startBeat;
 		const absEnd = absoluteOffset + note.endBeat;
 		const key = `${absStart}:${absEnd}:${pitchKey(note.pitch)}`;

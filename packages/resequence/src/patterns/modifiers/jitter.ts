@@ -1,5 +1,7 @@
+import type { ScoreNote } from "../note";
 import type { PatternNode } from "../pattern";
 import { MidiPattern, type Pattern } from "../pattern";
+import { toPattern } from "../sequence";
 import { mapNotes } from "../utils/tree";
 
 function mulberry32(seed: number): () => number {
@@ -15,7 +17,7 @@ function mulberry32(seed: number): () => number {
 
 export class JitterPattern extends MidiPattern {
 	constructor(
-		readonly source: Pattern,
+		readonly source: Pattern | ScoreNote,
 		readonly amount: number,
 		readonly seed: number | undefined,
 		node: PatternNode,
@@ -28,10 +30,11 @@ export class JitterPattern extends MidiPattern {
 	}
 }
 
-export function jitter(pattern: Pattern, amount: number, seed?: number): JitterPattern {
+export function jitter(pattern: Pattern | ScoreNote, amount: number, seed?: number): JitterPattern {
+	const resolved = toPattern(pattern);
 	const rng = seed !== undefined ? mulberry32(seed) : Math.random.bind(Math);
 
-	const transformed = mapNotes(pattern, (note) => {
+	const transformed = mapNotes(resolved, (note) => {
 		const shift = Math.round((rng() * 2 - 1) * amount);
 		return {
 			...note,

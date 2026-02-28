@@ -1,10 +1,12 @@
+import type { ScoreNote } from "../note";
 import type { PatternNode, RelativeNote } from "../pattern";
 import { MidiPattern, type Pattern } from "../pattern";
+import { toPattern } from "../sequence";
 import { collectNotes, flatMapNotes } from "../utils/tree";
 
 export class SlicePattern extends MidiPattern {
 	constructor(
-		readonly source: Pattern,
+		readonly source: Pattern | ScoreNote,
 		readonly from: number,
 		readonly to: number,
 		node: PatternNode,
@@ -17,8 +19,9 @@ export class SlicePattern extends MidiPattern {
 	}
 }
 
-export function slice(pattern: Pattern, from: number, to: number): SlicePattern {
-	const allNotes = collectNotes(pattern);
+export function slice(pattern: Pattern | ScoreNote, from: number, to: number): SlicePattern {
+	const resolved = toPattern(pattern);
+	const allNotes = collectNotes(resolved);
 	const sorted = allNotes.slice().sort((noteA, noteB) => noteA.startBeat - noteB.startBeat);
 	const kept = sorted.slice(from, to);
 
@@ -45,7 +48,7 @@ export function slice(pattern: Pattern, from: number, to: number): SlicePattern 
 
 export class TrimPattern extends MidiPattern {
 	constructor(
-		readonly source: Pattern,
+		readonly source: Pattern | ScoreNote,
 		readonly fromBeats: number,
 		readonly toBeats: number,
 		node: PatternNode,
@@ -58,8 +61,9 @@ export class TrimPattern extends MidiPattern {
 	}
 }
 
-export function trim(pattern: Pattern, fromBeats: number, toBeats: number): TrimPattern {
-	const transformed = flatMapNotes(pattern, (note, absoluteOffset) => {
+export function trim(pattern: Pattern | ScoreNote, fromBeats: number, toBeats: number): TrimPattern {
+	const resolved = toPattern(pattern);
+	const transformed = flatMapNotes(resolved, (note, absoluteOffset) => {
 		const noteStart = absoluteOffset + note.startBeat;
 		const noteEnd = absoluteOffset + note.endBeat;
 		const overlapStart = Math.max(noteStart, fromBeats);

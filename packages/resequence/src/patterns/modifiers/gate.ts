@@ -1,10 +1,12 @@
+import type { ScoreNote } from "../note";
 import type { PatternNode } from "../pattern";
 import { MidiPattern, type Pattern } from "../pattern";
+import { toPattern } from "../sequence";
 import { collectNotes, flatMapNotes } from "../utils/tree";
 
 export class GatePattern extends MidiPattern {
 	constructor(
-		readonly source: Pattern,
+		readonly source: Pattern | ScoreNote,
 		readonly gateSource: Pattern,
 		node: PatternNode,
 	) {
@@ -16,10 +18,11 @@ export class GatePattern extends MidiPattern {
 	}
 }
 
-export function gate(pattern: Pattern, gatePattern: Pattern): GatePattern {
+export function gate(pattern: Pattern | ScoreNote, gatePattern: Pattern): GatePattern {
+	const resolved = toPattern(pattern);
 	const gateNotes = collectNotes(gatePattern);
 
-	const transformed = flatMapNotes(pattern, (note, absoluteOffset) => {
+	const transformed = flatMapNotes(resolved, (note, absoluteOffset) => {
 		const noteStart = absoluteOffset + note.startBeat;
 		const noteEnd = absoluteOffset + note.endBeat;
 		const result = [];

@@ -3,11 +3,12 @@ import { evaluateSlide, mergeSlides } from "../../utils/slide";
 import type { ScoreNote, ScoreNoteSlide } from "../note";
 import type { PatternNode } from "../pattern";
 import { MidiPattern, type Pattern } from "../pattern";
+import { toPattern } from "../sequence";
 import { collectNotes, mapNotes } from "../utils/tree";
 
 export class SlidePattern extends MidiPattern {
 	constructor(
-		readonly source: Pattern,
+		readonly source: Pattern | ScoreNote,
 		node: PatternNode,
 	) {
 		super(node);
@@ -18,11 +19,12 @@ export class SlidePattern extends MidiPattern {
 	}
 }
 
-export function slide(pattern: Pattern): SlidePattern {
-	const allNotes = collectNotes(pattern);
+export function slide(pattern: Pattern | ScoreNote): SlidePattern {
+	const resolved = toPattern(pattern);
+	const allNotes = collectNotes(resolved);
 
 	if (allNotes.length < 2) {
-		return new SlidePattern(pattern, pattern);
+		return new SlidePattern(pattern, resolved);
 	}
 
 	const sorted = allNotes.slice().sort((noteA, noteB) => noteA.startBeat - noteB.startBeat);
@@ -68,10 +70,10 @@ export function slide(pattern: Pattern): SlidePattern {
 	}
 
 	if (slideMap.size === 0) {
-		return new SlidePattern(pattern, pattern);
+		return new SlidePattern(pattern, resolved);
 	}
 
-	const transformed = mapNotes(pattern, (note, absoluteOffset) => {
+	const transformed = mapNotes(resolved, (note, absoluteOffset) => {
 		const absStart = absoluteOffset + note.startBeat;
 		const absEnd = absoluteOffset + note.endBeat;
 		const key = `${absStart}:${absEnd}:${pitchKey(note.pitch)}`;

@@ -3,13 +3,14 @@ import type { Pitch } from "../../utils/pitch";
 import type { ScoreNote } from "../note";
 import type { PatternNode } from "../pattern";
 import { MidiPattern, type Pattern } from "../pattern";
+import { toPattern } from "../sequence";
 import { collectNotes, mapNotes } from "../utils/tree";
 
 export type VoicingStyle = "close" | "drop2" | "drop3" | "open";
 
 export class VoicingPattern extends MidiPattern {
 	constructor(
-		readonly source: Pattern,
+		readonly source: Pattern | ScoreNote,
 		readonly style: VoicingStyle,
 		node: PatternNode,
 	) {
@@ -77,8 +78,9 @@ function applyVoicing(group: ReadonlyArray<ScoreNote>, style: VoicingStyle): Map
 	return pitchMap;
 }
 
-export function voicing(pattern: Pattern, style: VoicingStyle): VoicingPattern {
-	const allNotes = collectNotes(pattern);
+export function voicing(pattern: Pattern | ScoreNote, style: VoicingStyle): VoicingPattern {
+	const resolved = toPattern(pattern);
+	const allNotes = collectNotes(resolved);
 
 	const byBeat = new Map<number, Array<ScoreNote>>();
 	for (const scoreNote of allNotes) {
@@ -98,7 +100,7 @@ export function voicing(pattern: Pattern, style: VoicingStyle): VoicingPattern {
 		}
 	}
 
-	const transformed = mapNotes(pattern, (note, absoluteOffset) => {
+	const transformed = mapNotes(resolved, (note, absoluteOffset) => {
 		const absStart = absoluteOffset + note.startBeat;
 		const absEnd = absoluteOffset + note.endBeat;
 		const key = `${absStart}:${absEnd}:${pitchKey(note.pitch)}`;

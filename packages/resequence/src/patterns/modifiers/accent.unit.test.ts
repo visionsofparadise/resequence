@@ -17,7 +17,7 @@ describe("accent", () => {
 	});
 
 	it("clamps velocity to 127", () => {
-		const pat = accent(sequence(N.C4(1, { velocity: 120 })), [1], 20);
+		const pat = accent(N.C4(1, { velocity: 120 }), [1], 20);
 		expect(collectNotes(pat)[0]!.velocity).toBe(127);
 	});
 });

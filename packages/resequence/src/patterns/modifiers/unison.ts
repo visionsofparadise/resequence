@@ -1,6 +1,8 @@
 import { addSteps } from "../../utils/pitch";
+import type { ScoreNote } from "../note";
 import type { PatternNode } from "../pattern";
 import { MidiPattern, type Pattern } from "../pattern";
+import { toPattern } from "../sequence";
 import { flatMapNotes } from "../utils/tree";
 
 export interface UnisonSpread {
@@ -10,7 +12,7 @@ export interface UnisonSpread {
 
 export class UnisonPattern extends MidiPattern {
 	constructor(
-		readonly source: Pattern,
+		readonly source: Pattern | ScoreNote,
 		readonly voices: number,
 		readonly spread: UnisonSpread,
 		node: PatternNode,
@@ -23,8 +25,9 @@ export class UnisonPattern extends MidiPattern {
 	}
 }
 
-export function unison(pattern: Pattern, voices: number, spread: UnisonSpread = {}): UnisonPattern {
-	const transformed = flatMapNotes(pattern, (note) => {
+export function unison(pattern: Pattern | ScoreNote, voices: number, spread: UnisonSpread = {}): UnisonPattern {
+	const resolved = toPattern(pattern);
+	const transformed = flatMapNotes(resolved, (note) => {
 		const result = [];
 
 		for (let voiceIndex = 0; voiceIndex < voices; voiceIndex++) {

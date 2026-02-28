@@ -1,11 +1,13 @@
 import { pitchKey } from "../../utils/pitch";
+import type { ScoreNote } from "../note";
 import type { PatternNode } from "../pattern";
 import { MidiPattern, type Pattern } from "../pattern";
+import { toPattern } from "../sequence";
 import { collectNotes, mapNotes } from "../utils/tree";
 
 export class RotatePattern extends MidiPattern {
 	constructor(
-		readonly source: Pattern,
+		readonly source: Pattern | ScoreNote,
 		readonly steps: number,
 		node: PatternNode,
 	) {
@@ -17,12 +19,13 @@ export class RotatePattern extends MidiPattern {
 	}
 }
 
-export function rotate(pattern: Pattern, steps: number): RotatePattern {
-	const allNotes = collectNotes(pattern);
+export function rotate(pattern: Pattern | ScoreNote, steps: number): RotatePattern {
+	const resolved = toPattern(pattern);
+	const allNotes = collectNotes(resolved);
 	const sorted = allNotes.slice().sort((noteA, noteB) => noteA.startBeat - noteB.startBeat);
 
 	if (sorted.length === 0) {
-		return new RotatePattern(pattern, steps, pattern);
+		return new RotatePattern(pattern, steps, resolved);
 	}
 
 	const totalDuration = pattern.endBeat - pattern.startBeat;
@@ -30,7 +33,7 @@ export function rotate(pattern: Pattern, steps: number): RotatePattern {
 	const firstNote = sorted[0];
 
 	if (!firstNote) {
-		return new RotatePattern(pattern, steps, pattern);
+		return new RotatePattern(pattern, steps, resolved);
 	}
 
 	const gaps: Array<number> = [];
@@ -65,7 +68,7 @@ export function rotate(pattern: Pattern, steps: number): RotatePattern {
 		beat += rotatedGap;
 	}
 
-	const transformed = mapNotes(pattern, (note, absoluteOffset) => {
+	const transformed = mapNotes(resolved, (note, absoluteOffset) => {
 		const absStart = absoluteOffset + note.startBeat;
 		const absEnd = absoluteOffset + note.endBeat;
 		const key = `${absStart}:${absEnd}:${pitchKey(note.pitch)}`;

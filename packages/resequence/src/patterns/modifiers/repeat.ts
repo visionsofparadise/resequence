@@ -1,6 +1,8 @@
 import { ResequenceError } from "../../error";
+import type { ScoreNote } from "../note";
 import type { PatternNode } from "../pattern";
 import { MidiPattern, type Pattern } from "../pattern";
+import { toPattern } from "../sequence";
 import { flatMapNotes } from "../utils/tree";
 
 export class RepeatPattern extends MidiPattern {
@@ -16,14 +18,15 @@ export class RepeatPattern extends MidiPattern {
 	}
 }
 
-export function repeat(pattern: Pattern, count: number): RepeatPattern {
+export function repeat(pattern: Pattern | ScoreNote, count: number): RepeatPattern {
+	const resolved = toPattern(pattern);
 	if (count < 1 || !Number.isInteger(count)) {
 		throw new ResequenceError("INVALID_REPEAT_COUNT", `repeat(): count must be a positive integer, got ${count}`);
 	}
 
 	const durationBeats = pattern.endBeat - pattern.startBeat;
 
-	const transformed = flatMapNotes(pattern, (note) => {
+	const transformed = flatMapNotes(resolved, (note) => {
 		const copies = [];
 
 		for (let index = 0; index < count; index++) {

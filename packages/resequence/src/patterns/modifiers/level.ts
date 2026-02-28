@@ -1,5 +1,7 @@
+import type { ScoreNote } from "../note";
 import type { PatternNode } from "../pattern";
 import { MidiPattern, type Pattern } from "../pattern";
+import { toPattern } from "../sequence";
 import { collectNotes, mapNotes } from "../utils/tree";
 
 export interface LevelPropOptions {
@@ -65,7 +67,7 @@ function needsMean(spec: LevelProp): boolean {
 
 export class LevelPattern extends MidiPattern {
 	constructor(
-		readonly source: Pattern,
+		readonly source: Pattern | ScoreNote,
 		readonly config: LevelConfig,
 		node: PatternNode,
 	) {
@@ -77,7 +79,8 @@ export class LevelPattern extends MidiPattern {
 	}
 }
 
-export function level(pattern: Pattern, config: LevelConfig): LevelPattern {
+export function level(pattern: Pattern | ScoreNote, config: LevelConfig): LevelPattern {
+	const resolved = toPattern(pattern);
 	let velocityMean = 0;
 	const ccMeans = new Map<number, number>();
 
@@ -85,7 +88,7 @@ export function level(pattern: Pattern, config: LevelConfig): LevelPattern {
 		(config.cc && Object.values(config.cc).some((spec) => spec !== undefined && needsMean(spec)));
 
 	if (needsCollect) {
-		const allNotes = collectNotes(pattern);
+		const allNotes = collectNotes(resolved);
 		if (allNotes.length > 0) {
 			if (config.velocity !== undefined && needsMean(config.velocity)) {
 				velocityMean = allNotes.reduce((sum, scoreNote) => sum + scoreNote.velocity, 0) / allNotes.length;
@@ -111,7 +114,7 @@ export function level(pattern: Pattern, config: LevelConfig): LevelPattern {
 		}
 	}
 
-	const transformed = mapNotes(pattern, (note) => {
+	const transformed = mapNotes(resolved, (note) => {
 		let velocity = note.velocity;
 		let cc = note.cc;
 
@@ -138,6 +141,6 @@ export function level(pattern: Pattern, config: LevelConfig): LevelPattern {
 	return new LevelPattern(pattern, config, transformed);
 }
 
-export function humanize(pattern: Pattern, amount: number, seed?: number): LevelPattern {
+export function humanize(pattern: Pattern | ScoreNote, amount: number, seed?: number): LevelPattern {
 	return level(pattern, { velocity: { randomize: amount, seed } });
 }

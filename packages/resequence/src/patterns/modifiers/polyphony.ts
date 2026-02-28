@@ -2,11 +2,12 @@ import { pitchKey } from "../../utils/pitch";
 import type { ScoreNote } from "../note";
 import type { PatternNode } from "../pattern";
 import { MidiPattern, type Pattern } from "../pattern";
+import { toPattern } from "../sequence";
 import { collectNotes, flatMapNotes } from "../utils/tree";
 
 export class PolyphonyPattern extends MidiPattern {
 	constructor(
-		readonly source: Pattern,
+		readonly source: Pattern | ScoreNote,
 		readonly max: number,
 		readonly isGreedy: boolean,
 		node: PatternNode,
@@ -19,8 +20,9 @@ export class PolyphonyPattern extends MidiPattern {
 	}
 }
 
-export function polyphony(pattern: Pattern, max: number, isGreedy = false): PolyphonyPattern {
-	const allNotes = collectNotes(pattern);
+export function polyphony(pattern: Pattern | ScoreNote, max: number, isGreedy = false): PolyphonyPattern {
+	const resolved = toPattern(pattern);
+	const allNotes = collectNotes(resolved);
 	const sorted = allNotes.slice().sort((noteA, noteB) => noteA.startBeat - noteB.startBeat);
 
 	const kept = new Set<string>();
@@ -52,7 +54,7 @@ export function polyphony(pattern: Pattern, max: number, isGreedy = false): Poly
 		}
 	}
 
-	const transformed = flatMapNotes(pattern, (note, absoluteOffset) => {
+	const transformed = flatMapNotes(resolved, (note, absoluteOffset) => {
 		const absStart = absoluteOffset + note.startBeat;
 		const absEnd = absoluteOffset + note.endBeat;
 		const key = `${absStart}:${absEnd}:${pitchKey(note.pitch)}`;

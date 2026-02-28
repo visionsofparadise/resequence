@@ -1,12 +1,14 @@
 import type { Pitch } from "../../utils/pitch";
 import { addSteps, pitchKey } from "../../utils/pitch";
+import type { ScoreNote } from "../note";
 import type { PatternNode } from "../pattern";
 import { MidiPattern, type Pattern } from "../pattern";
+import { toPattern } from "../sequence";
 import { mapNotes } from "../utils/tree";
 
 export class FlipPattern extends MidiPattern {
 	constructor(
-		readonly source: Pattern,
+		readonly source: Pattern | ScoreNote,
 		readonly center: Pitch,
 		readonly range: [Pitch, Pitch] | undefined,
 		node: PatternNode,
@@ -19,12 +21,13 @@ export class FlipPattern extends MidiPattern {
 	}
 }
 
-export function flip(pattern: Pattern, center: Pitch, range?: [Pitch, Pitch]): FlipPattern {
+export function flip(pattern: Pattern | ScoreNote, center: Pitch, range?: [Pitch, Pitch]): FlipPattern {
+	const resolved = toPattern(pattern);
 	const centerPitch = center;
 	const resolvedRange = range;
 	const centerKey = pitchKey(centerPitch);
 
-	const transformed = mapNotes(pattern, (note) => {
+	const transformed = mapNotes(resolved, (note) => {
 		const spo = note.pitch.stepsPerOctave;
 		const newKey = centerKey * 2 - pitchKey(note.pitch);
 		const newOctave = Math.floor(newKey / spo);

@@ -1,10 +1,12 @@
+import type { ScoreNote } from "../note";
 import type { PatternNode } from "../pattern";
 import { MidiPattern, type Pattern } from "../pattern";
+import { toPattern } from "../sequence";
 import { mapNotes } from "../utils/tree";
 
 export class ReversePattern extends MidiPattern {
 	constructor(
-		readonly source: Pattern,
+		readonly source: Pattern | ScoreNote,
 		node: PatternNode,
 	) {
 		super(node);
@@ -15,10 +17,11 @@ export class ReversePattern extends MidiPattern {
 	}
 }
 
-export function reverse(pattern: Pattern): ReversePattern {
+export function reverse(pattern: Pattern | ScoreNote): ReversePattern {
+	const resolved = toPattern(pattern);
 	const totalDuration = pattern.endBeat - pattern.startBeat;
 
-	const transformed = mapNotes(pattern, (note, absoluteOffset) => {
+	const transformed = mapNotes(resolved, (note, absoluteOffset) => {
 		const noteDuration = note.endBeat - note.startBeat;
 		const absEnd = absoluteOffset + note.endBeat;
 		const newAbsStart = totalDuration - absEnd;

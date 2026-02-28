@@ -58,7 +58,7 @@ export { note as n, note } from "./patterns/note";
 export type { ScoreNote, ScoreNoteSlide, ScoreNoteSlideInput as SlideInput } from "./patterns/note";
 export { MidiPattern, Pattern } from "./patterns/pattern";
 export type { PatternNode, RelativeChild, RelativeNote } from "./patterns/pattern";
-export { sequence, SequencePattern } from "./patterns/sequence";
+export { sequence, SequencePattern, toPattern } from "./patterns/sequence";
 export { tempo, TempoPattern } from "./patterns/tempo";
 export type { TempoKeyframe, TempoOptions } from "./patterns/tempo";
 export { collectMarkers } from "./rendering/collect-markers";

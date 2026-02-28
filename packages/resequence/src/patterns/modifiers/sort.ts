@@ -3,13 +3,14 @@ import type { Pitch } from "../../utils/pitch";
 import type { ScoreNote } from "../note";
 import type { PatternNode } from "../pattern";
 import { MidiPattern, type Pattern } from "../pattern";
+import { toPattern } from "../sequence";
 import { collectNotes, mapNotes } from "../utils/tree";
 
 export type SortKey = "asc" | "desc" | ((noteA: ScoreNote, noteB: ScoreNote) => number);
 
 export class SortPattern extends MidiPattern {
 	constructor(
-		readonly source: Pattern,
+		readonly source: Pattern | ScoreNote,
 		readonly key: SortKey,
 		node: PatternNode,
 	) {
@@ -21,8 +22,9 @@ export class SortPattern extends MidiPattern {
 	}
 }
 
-export function sort(pattern: Pattern, key: SortKey = "asc"): SortPattern {
-	const allNotes = collectNotes(pattern);
+export function sort(pattern: Pattern | ScoreNote, key: SortKey = "asc"): SortPattern {
+	const resolved = toPattern(pattern);
+	const allNotes = collectNotes(resolved);
 	const byTick = allNotes.slice().sort((noteA, noteB) => noteA.startBeat - noteB.startBeat);
 
 	let pitches: Array<Pitch>;
@@ -45,7 +47,7 @@ export function sort(pattern: Pattern, key: SortKey = "asc"): SortPattern {
 		}
 	}
 
-	const transformed = mapNotes(pattern, (note, absoluteOffset) => {
+	const transformed = mapNotes(resolved, (note, absoluteOffset) => {
 		const absStart = absoluteOffset + note.startBeat;
 		const absEnd = absoluteOffset + note.endBeat;
 		const noteKey = `${absStart}:${absEnd}:${pitchKey(note.pitch)}`;
