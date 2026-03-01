@@ -1,8 +1,9 @@
+import type { OptionalProperties } from "../../utils/RequiredProperties";
 import type { ScoreNote } from "../note";
-import type { PatternNode, RelativeChild, RelativeNote } from "../pattern";
-import { MidiPattern, type Pattern } from "../pattern";
+import type { Pattern, PatternProperties, RelativeChild, RelativeNote } from "../pattern";
 import { toPattern } from "../sequence";
 import { collectNotes, flatMapNotes, walkNodes } from "../utils/tree";
+import { ModifierPattern, type ModifierProperties } from "./modifier";
 
 export interface SpliceOptions {
 	readonly at: number;
@@ -16,31 +17,53 @@ export interface InsertOptions {
 	readonly insert?: Pattern;
 }
 
-export class SplicePattern extends MidiPattern {
-	constructor(
-		readonly source: Pattern | ScoreNote,
-		readonly spliceOptions: SpliceOptions,
-		node: PatternNode,
-	) {
-		super(node);
+export interface SpliceProperties extends ModifierProperties {
+	readonly spliceOptions: SpliceOptions;
+}
+
+export class SplicePattern extends ModifierPattern {
+	readonly properties: SpliceProperties;
+
+	constructor(properties: OptionalProperties<SpliceProperties, "outputs">) {
+		super(properties);
+
+		this.properties = {
+			...properties,
+			outputs: properties.outputs ?? [],
+		};
 	}
 
-	clone(overrides: Partial<PatternNode>): SplicePattern {
-		return new SplicePattern(this.source, this.spliceOptions, this.overrideNode(overrides));
+	clone(overrides: Partial<PatternProperties>): SplicePattern {
+		return new SplicePattern({
+			...this.properties,
+			...overrides,
+			previousProperties: this.properties,
+		});
 	}
 }
 
-export class InsertPattern extends MidiPattern {
-	constructor(
-		readonly source: Pattern | ScoreNote,
-		readonly insertOptions: InsertOptions,
-		node: PatternNode,
-	) {
-		super(node);
+export interface InsertProperties extends ModifierProperties {
+	readonly insertOptions: InsertOptions;
+}
+
+export class InsertPattern extends ModifierPattern {
+	readonly properties: InsertProperties;
+
+	constructor(properties: OptionalProperties<InsertProperties, "outputs">) {
+		super(properties);
+
+		this.properties = {
+			...properties,
+			outputs: properties.outputs ?? [],
+		};
 	}
 
-	clone(overrides: Partial<PatternNode>): InsertPattern {
-		return new InsertPattern(this.source, this.insertOptions, this.overrideNode(overrides));
+	clone(overrides: Partial<PatternProperties>): InsertPattern {
+		return new InsertPattern({
+			...this.properties,
+			...overrides,
+			previousProperties: this.properties,
+		});
 	}
 }
 
@@ -93,7 +116,7 @@ export function splice(pattern: Pattern | ScoreNote, options: SpliceOptions): Sp
 	notes.sort((ra, rb) => ra.offsetBeats + ra.note.startBeat - (rb.offsetBeats + rb.note.startBeat));
 
 	const newDuration = totalDuration + shift;
-	return new SplicePattern(pattern, options, { notes, children: transformed.children, startBeat: 0, endBeat: newDuration });
+	return new SplicePattern({ notes, children: transformed.children, startBeat: 0, endBeat: newDuration, spliceOptions: options, input: resolved });
 }
 
 export function insert(pattern: Pattern | ScoreNote, options: InsertOptions): InsertPattern {
@@ -123,5 +146,5 @@ export function insert(pattern: Pattern | ScoreNote, options: InsertOptions): In
 	}
 
 	const newDuration = totalDuration + shift;
-	return new InsertPattern(pattern, options, { notes: transformed.notes, children, startBeat: 0, endBeat: newDuration });
+	return new InsertPattern({ notes: transformed.notes, children, startBeat: 0, endBeat: newDuration, insertOptions: options, input: resolved });
 }

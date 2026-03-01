@@ -1,6 +1,6 @@
 import type { Keyframe } from "../automation/keyframe";
 import { ResequenceError } from "../error";
-import type { PatternNode } from "./pattern";
+import type { PatternProperties } from "./pattern";
 import { Pattern } from "./pattern";
 
 export interface TempoKeyframe {
@@ -15,20 +15,25 @@ export interface TempoOptions {
 	readonly override?: boolean;
 }
 
+export interface TempoProperties extends PatternProperties {
+	readonly bpm: number;
+	readonly keyframes: ReadonlyArray<Keyframe>;
+	readonly bpmMin: number;
+	readonly bpmMax: number;
+	readonly isOverride: boolean;
+}
+
 export class TempoPattern extends Pattern {
-	constructor(
-		readonly bpm: number,
-		readonly keyframes: ReadonlyArray<Keyframe>,
-		readonly bpmMin: number,
-		readonly bpmMax: number,
-		readonly isOverride: boolean,
-		node: PatternNode,
-	) {
-		super(node);
+	constructor(readonly properties: TempoProperties) {
+		super(properties);
 	}
 
-	clone(overrides: Partial<PatternNode>): TempoPattern {
-		return new TempoPattern(this.bpm, this.keyframes, this.bpmMin, this.bpmMax, this.isOverride, this.overrideNode(overrides));
+	clone(overrides: Partial<PatternProperties>): TempoPattern {
+		return new TempoPattern({
+			...this.properties,
+			...overrides,
+			previousProperties: this.properties,
+		});
 	}
 }
 
@@ -60,10 +65,11 @@ export function tempo(pattern: Pattern, bpm: number, options?: TempoOptions): Te
 		step: kf.step,
 	}));
 
-	return new TempoPattern(bpm, keyframes, bpmMin, bpmMax, options?.override ?? false, {
+	return new TempoPattern({
 		notes: [],
 		children: [{ offsetBeats: 0, pattern }],
 		startBeat: pattern.startBeat,
 		endBeat: pattern.endBeat,
+		bpm, keyframes, bpmMin, bpmMax, isOverride: options?.override ?? false,
 	});
 }

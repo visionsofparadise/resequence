@@ -1,26 +1,38 @@
+import type { OptionalProperties } from "../../utils/RequiredProperties";
 import { pitchKey } from "../../utils/pitch";
 import type { ScoreNote } from "../note";
-import type { PatternNode } from "../pattern";
-import { MidiPattern, type Pattern } from "../pattern";
+import type { Pattern, PatternProperties } from "../pattern";
 import { toPattern } from "../sequence";
 import { mapNotes, walkNotes } from "../utils/tree";
+import { ModifierPattern, type ModifierProperties } from "./modifier";
 
 export interface StrumOptions {
 	readonly strumOffset?: number;
 	readonly direction?: "up" | "down";
 }
 
-export class StrumPattern extends MidiPattern {
-	constructor(
-		readonly source: Pattern | ScoreNote,
-		readonly strumOptions: StrumOptions,
-		node: PatternNode,
-	) {
-		super(node);
+export interface StrumProperties extends ModifierProperties {
+	readonly strumOptions: StrumOptions;
+}
+
+export class StrumPattern extends ModifierPattern {
+	readonly properties: StrumProperties;
+
+	constructor(properties: OptionalProperties<StrumProperties, "outputs">) {
+		super(properties);
+
+		this.properties = {
+			...properties,
+			outputs: properties.outputs ?? [],
+		};
 	}
 
-	clone(overrides: Partial<PatternNode>): StrumPattern {
-		return new StrumPattern(this.source, this.strumOptions, this.overrideNode(overrides));
+	clone(overrides: Partial<PatternProperties>): StrumPattern {
+		return new StrumPattern({
+			...this.properties,
+			...overrides,
+			previousProperties: this.properties,
+		});
 	}
 }
 
@@ -46,9 +58,7 @@ export function strum(pattern: Pattern | ScoreNote, options: StrumOptions = {}):
 	const shiftMap = new Map<string, number>();
 
 	for (const group of byBeat.values()) {
-		const sorted = direction === "up"
-			? group.slice().sort((ea, eb) => ea.key - eb.key)
-			: group.slice().sort((ea, eb) => eb.key - ea.key);
+		const sorted = direction === "up" ? group.slice().sort((ea, eb) => ea.key - eb.key) : group.slice().sort((ea, eb) => eb.key - ea.key);
 
 		for (const [voiceIndex, entry] of sorted.entries()) {
 			shiftMap.set(entry.id, voiceIndex * strumOffset);
@@ -65,5 +75,12 @@ export function strum(pattern: Pattern | ScoreNote, options: StrumOptions = {}):
 		return note;
 	});
 
-	return new StrumPattern(pattern, options, transformed);
+	return new StrumPattern({
+		notes: transformed.notes,
+		children: transformed.children,
+		startBeat: transformed.startBeat,
+		endBeat: transformed.endBeat,
+		strumOptions: options,
+		input: resolved,
+	});
 }

@@ -2,21 +2,31 @@ import type { Keyframe } from "../../automation/keyframe";
 import { normalizePitch, pitchKey } from "../../utils/pitch";
 import { evaluateSlide, mergeSlides } from "../../utils/slide";
 import type { ScoreNote } from "../note";
-import type { PatternNode } from "../pattern";
-import { MidiPattern, type Pattern } from "../pattern";
+import type { Pattern, PatternProperties } from "../pattern";
 import { toPattern } from "../sequence";
+import type { OptionalProperties } from "../../utils/RequiredProperties";
 import { mapNotes, walkNotes } from "../utils/tree";
+import { ModifierPattern } from "./modifier";
+import type { ModifierProperties } from "./modifier";
 
-export class SlidePattern extends MidiPattern {
-	constructor(
-		readonly source: Pattern | ScoreNote,
-		node: PatternNode,
-	) {
-		super(node);
+export class SlidePattern extends ModifierPattern {
+	readonly properties: ModifierProperties;
+
+	constructor(properties: OptionalProperties<ModifierProperties, "outputs">) {
+		super(properties);
+
+		this.properties = {
+			...properties,
+			outputs: properties.outputs ?? [],
+		};
 	}
 
-	clone(overrides: Partial<PatternNode>): SlidePattern {
-		return new SlidePattern(this.source, this.overrideNode(overrides));
+	clone(overrides: Partial<PatternProperties>): SlidePattern {
+		return new SlidePattern({
+			...this.properties,
+			...overrides,
+			previousProperties: this.properties,
+		});
 	}
 }
 
@@ -28,7 +38,13 @@ export function slide(pattern: Pattern | ScoreNote): SlidePattern {
 	});
 
 	if (entries.length < 2) {
-		return new SlidePattern(pattern, resolved);
+		return new SlidePattern({
+			notes: resolved.notes,
+			children: resolved.children,
+			startBeat: resolved.startBeat,
+			endBeat: resolved.endBeat,
+			input: resolved,
+		});
 	}
 
 	entries.sort((ea, eb) => ea.absoluteStart - eb.absoluteStart);
@@ -37,7 +53,7 @@ export function slide(pattern: Pattern | ScoreNote): SlidePattern {
 
 	for (const entryA of entries) {
 		const aEnd = entryA.absoluteEnd;
-		let bestMatch: typeof entries[number] | undefined;
+		let bestMatch: (typeof entries)[number] | undefined;
 		let bestDistance = Infinity;
 
 		for (const entryB of entries) {
@@ -56,9 +72,7 @@ export function slide(pattern: Pattern | ScoreNote): SlidePattern {
 		const slideStartBeat = bestMatch.absoluteStart - entryA.absoluteStart;
 		const slideEndBeat = entryA.absoluteEnd - entryA.absoluteStart;
 
-		const currentPitchAtSlideStart = entryA.note.slides
-			? evaluateSlide(entryA.note.pitch, entryA.note.slides, slideStartBeat)
-			: entryA.note.pitch;
+		const currentPitchAtSlideStart = entryA.note.slides ? evaluateSlide(entryA.note.pitch, entryA.note.slides, slideStartBeat) : entryA.note.pitch;
 
 		const holdKeyframe: Keyframe = { beat: slideStartBeat, value: normalizePitch(currentPitchAtSlideStart) };
 		const targetKeyframe: Keyframe = { beat: slideEndBeat, value: normalizePitch(bestMatch.note.pitch) };
@@ -73,7 +87,13 @@ export function slide(pattern: Pattern | ScoreNote): SlidePattern {
 	}
 
 	if (slideMap.size === 0) {
-		return new SlidePattern(pattern, resolved);
+		return new SlidePattern({
+			notes: resolved.notes,
+			children: resolved.children,
+			startBeat: resolved.startBeat,
+			endBeat: resolved.endBeat,
+			input: resolved,
+		});
 	}
 
 	const transformed = mapNotes(resolved, (note, { id }) => {
@@ -86,5 +106,11 @@ export function slide(pattern: Pattern | ScoreNote): SlidePattern {
 		return note;
 	});
 
-	return new SlidePattern(pattern, transformed);
+	return new SlidePattern({
+		notes: transformed.notes,
+		children: transformed.children,
+		startBeat: transformed.startBeat,
+		endBeat: transformed.endBeat,
+		input: resolved,
+	});
 }

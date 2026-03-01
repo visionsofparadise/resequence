@@ -11,8 +11,8 @@ describe("AudioPattern", () => {
 	it("creates with name, path, and duration", () => {
 		const pattern = audio("break", "./break.wav", 1);
 		expect(pattern).toBeInstanceOf(AudioPattern);
-		expect(pattern.name).toBe("break");
-		expect(pattern.path).toBe("./break.wav");
+		expect(pattern.properties.name).toBe("break");
+		expect(pattern.properties.path).toBe("./break.wav");
 		expect(pattern.endBeat - pattern.startBeat).toBe(1);
 	});
 
@@ -23,7 +23,7 @@ describe("AudioPattern", () => {
 
 	it("stores loop points from factory", () => {
 		const pattern = audio("pad", "./pad.wav", 4, { loopStartMs: 500, loopEndMs: 2000 });
-		expect(pattern.loopStartMs).toBe(500);
-		expect(pattern.loopEndMs).toBe(2000);
+		expect(pattern.properties.loopStartMs).toBe(500);
+		expect(pattern.properties.loopEndMs).toBe(2000);
 	});
 });

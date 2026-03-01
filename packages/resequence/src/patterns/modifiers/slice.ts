@@ -1,21 +1,33 @@
+import type { OptionalProperties } from "../../utils/RequiredProperties";
 import type { ScoreNote } from "../note";
-import type { PatternNode } from "../pattern";
-import { MidiPattern, type Pattern } from "../pattern";
+import type { Pattern, PatternProperties } from "../pattern";
 import { toPattern } from "../sequence";
 import { flatMapNotes, walkNodes } from "../utils/tree";
+import { ModifierPattern, type ModifierProperties } from "./modifier";
 
-export class SlicePattern extends MidiPattern {
-	constructor(
-		readonly source: Pattern | ScoreNote,
-		readonly from: number,
-		readonly to: number,
-		node: PatternNode,
-	) {
-		super(node);
+export interface SliceProperties extends ModifierProperties {
+	readonly from: number;
+	readonly to: number;
+}
+
+export class SlicePattern extends ModifierPattern {
+	readonly properties: SliceProperties;
+
+	constructor(properties: OptionalProperties<SliceProperties, "outputs">) {
+		super(properties);
+
+		this.properties = {
+			...properties,
+			outputs: properties.outputs ?? [],
+		};
 	}
 
-	clone(overrides: Partial<PatternNode>): SlicePattern {
-		return new SlicePattern(this.source, this.from, this.to, this.overrideNode(overrides));
+	clone(overrides: Partial<PatternProperties>): SlicePattern {
+		return new SlicePattern({
+			...this.properties,
+			...overrides,
+			previousProperties: this.properties,
+		});
 	}
 }
 
@@ -37,7 +49,7 @@ export function slice(pattern: Pattern | ScoreNote, from: number, to: number): S
 	const last = keptEntries[keptEntries.length - 1];
 
 	if (!first || !last) {
-		return new SlicePattern(pattern, from, to, { notes: [], children: [], startBeat: 0, endBeat: 0 });
+		return new SlicePattern({ notes: [], children: [], startBeat: 0, endBeat: 0, from, to, input: resolved });
 	}
 
 	const kept = new Set(keptEntries.map((entry) => entry.note));
@@ -49,21 +61,32 @@ export function slice(pattern: Pattern | ScoreNote, from: number, to: number): S
 		return [{ ...note, startBeat: note.startBeat - firstStart, endBeat: note.endBeat - firstStart }];
 	});
 
-	return new SlicePattern(pattern, from, to, { notes: transformed.notes, children: transformed.children, startBeat: 0, endBeat: durationBeats });
+	return new SlicePattern({ notes: transformed.notes, children: transformed.children, startBeat: 0, endBeat: durationBeats, from, to, input: resolved });
 }
 
-export class TrimPattern extends MidiPattern {
-	constructor(
-		readonly source: Pattern | ScoreNote,
-		readonly fromBeats: number,
-		readonly toBeats: number,
-		node: PatternNode,
-	) {
-		super(node);
+export interface TrimProperties extends ModifierProperties {
+	readonly fromBeats: number;
+	readonly toBeats: number;
+}
+
+export class TrimPattern extends ModifierPattern {
+	readonly properties: TrimProperties;
+
+	constructor(properties: OptionalProperties<TrimProperties, "outputs">) {
+		super(properties);
+
+		this.properties = {
+			...properties,
+			outputs: properties.outputs ?? [],
+		};
 	}
 
-	clone(overrides: Partial<PatternNode>): TrimPattern {
-		return new TrimPattern(this.source, this.fromBeats, this.toBeats, this.overrideNode(overrides));
+	clone(overrides: Partial<PatternProperties>): TrimPattern {
+		return new TrimPattern({
+			...this.properties,
+			...overrides,
+			previousProperties: this.properties,
+		});
 	}
 }
 
@@ -90,5 +113,5 @@ export function trim(pattern: Pattern | ScoreNote, fromBeats: number, toBeats: n
 
 	const trimDuration = Math.max(0, toBeats - fromBeats);
 
-	return new TrimPattern(pattern, fromBeats, toBeats, { notes: transformed.notes, children: transformed.children, startBeat: 0, endBeat: trimDuration });
+	return new TrimPattern({ notes: transformed.notes, children: transformed.children, startBeat: 0, endBeat: trimDuration, fromBeats, toBeats, input: resolved });
 }

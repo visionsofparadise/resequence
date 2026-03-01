@@ -1,20 +1,32 @@
+import type { OptionalProperties } from "../../utils/RequiredProperties";
 import type { ScoreNote } from "../note";
-import type { PatternNode } from "../pattern";
-import { MidiPattern, type Pattern } from "../pattern";
+import type { Pattern, PatternProperties } from "../pattern";
 import { toPattern } from "../sequence";
 import { mapNotes } from "../utils/tree";
+import { ModifierPattern, type ModifierProperties } from "./modifier";
 
-export class OffsetPattern extends MidiPattern {
-	constructor(
-		readonly source: Pattern | ScoreNote,
-		readonly amount: number,
-		node: PatternNode,
-	) {
-		super(node);
+export interface OffsetProperties extends ModifierProperties {
+	readonly amount: number;
+}
+
+export class OffsetPattern extends ModifierPattern {
+	readonly properties: OffsetProperties;
+
+	constructor(properties: OptionalProperties<OffsetProperties, "outputs">) {
+		super(properties);
+
+		this.properties = {
+			...properties,
+			outputs: properties.outputs ?? [],
+		};
 	}
 
-	clone(overrides: Partial<PatternNode>): OffsetPattern {
-		return new OffsetPattern(this.source, this.amount, this.overrideNode(overrides));
+	clone(overrides: Partial<PatternProperties>): OffsetPattern {
+		return new OffsetPattern({
+			...this.properties,
+			...overrides,
+			previousProperties: this.properties,
+		});
 	}
 }
 
@@ -26,5 +38,12 @@ export function offset(pattern: Pattern | ScoreNote, amount: number): OffsetPatt
 		endBeat: note.endBeat + amount,
 	}));
 
-	return new OffsetPattern(pattern, amount, transformed);
+	return new OffsetPattern({
+		notes: transformed.notes,
+		children: transformed.children,
+		startBeat: transformed.startBeat,
+		endBeat: transformed.endBeat,
+		amount,
+		input: resolved,
+	});
 }

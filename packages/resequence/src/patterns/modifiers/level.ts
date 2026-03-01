@@ -1,8 +1,9 @@
+import type { OptionalProperties } from "../../utils/RequiredProperties";
 import type { ScoreNote } from "../note";
-import type { PatternNode } from "../pattern";
-import { MidiPattern, type Pattern } from "../pattern";
+import type { Pattern, PatternProperties } from "../pattern";
 import { toPattern } from "../sequence";
 import { collectNotes, mapNotes } from "../utils/tree";
+import { ModifierPattern, type ModifierProperties } from "./modifier";
 
 export interface LevelPropOptions {
 	readonly value?: number;
@@ -65,17 +66,28 @@ function needsMean(spec: LevelProp): boolean {
 	return spec.expand !== undefined || spec.compress !== undefined;
 }
 
-export class LevelPattern extends MidiPattern {
-	constructor(
-		readonly source: Pattern | ScoreNote,
-		readonly config: LevelConfig,
-		node: PatternNode,
-	) {
-		super(node);
+export interface LevelProperties extends ModifierProperties {
+	readonly config: LevelConfig;
+}
+
+export class LevelPattern extends ModifierPattern {
+	readonly properties: LevelProperties;
+
+	constructor(properties: OptionalProperties<LevelProperties, "outputs">) {
+		super(properties);
+
+		this.properties = {
+			...properties,
+			outputs: properties.outputs ?? [],
+		};
 	}
 
-	clone(overrides: Partial<PatternNode>): LevelPattern {
-		return new LevelPattern(this.source, this.config, this.overrideNode(overrides));
+	clone(overrides: Partial<PatternProperties>): LevelPattern {
+		return new LevelPattern({
+			...this.properties,
+			...overrides,
+			previousProperties: this.properties,
+		});
 	}
 }
 
@@ -84,8 +96,7 @@ export function level(pattern: Pattern | ScoreNote, config: LevelConfig): LevelP
 	let velocityMean = 0;
 	const ccMeans = new Map<number, number>();
 
-	const needsCollect = (config.velocity !== undefined && needsMean(config.velocity)) ||
-		(config.cc && Object.values(config.cc).some((spec) => spec !== undefined && needsMean(spec)));
+	const needsCollect = (config.velocity !== undefined && needsMean(config.velocity)) || (config.cc && Object.values(config.cc).some((spec) => spec !== undefined && needsMean(spec)));
 
 	if (needsCollect) {
 		const allNotes = collectNotes(resolved);
@@ -138,7 +149,14 @@ export function level(pattern: Pattern | ScoreNote, config: LevelConfig): LevelP
 		return { ...note, velocity, cc };
 	});
 
-	return new LevelPattern(pattern, config, transformed);
+	return new LevelPattern({
+		notes: transformed.notes,
+		children: transformed.children,
+		startBeat: transformed.startBeat,
+		endBeat: transformed.endBeat,
+		config,
+		input: resolved,
+	});
 }
 
 export function humanize(pattern: Pattern | ScoreNote, amount: number, seed?: number): LevelPattern {

@@ -1,22 +1,34 @@
+import type { OptionalProperties } from "../../utils/RequiredProperties";
 import { N } from "../../tunings/chromatic";
 import type { ScoreNote } from "../note";
-import type { PatternNode } from "../pattern";
-import { MidiPattern, type Pattern } from "../pattern";
+import type { Pattern, PatternProperties } from "../pattern";
 import { sequence, toPattern } from "../sequence";
 import { collectNotes, mapNotes } from "../utils/tree";
+import { ModifierPattern, type ModifierProperties } from "./modifier";
 
-export class QuantizePattern extends MidiPattern {
-	constructor(
-		readonly source: Pattern | ScoreNote,
-		readonly subdivision: number,
-		readonly grooveMap: Pattern | undefined,
-		node: PatternNode,
-	) {
-		super(node);
+export interface QuantizeProperties extends ModifierProperties {
+	readonly subdivision: number;
+	readonly grooveMap: Pattern | undefined;
+}
+
+export class QuantizePattern extends ModifierPattern {
+	readonly properties: QuantizeProperties;
+
+	constructor(properties: OptionalProperties<QuantizeProperties, "outputs">) {
+		super(properties);
+
+		this.properties = {
+			...properties,
+			outputs: properties.outputs ?? [],
+		};
 	}
 
-	clone(overrides: Partial<PatternNode>): QuantizePattern {
-		return new QuantizePattern(this.source, this.subdivision, this.grooveMap, this.overrideNode(overrides));
+	clone(overrides: Partial<PatternProperties>): QuantizePattern {
+		return new QuantizePattern({
+			...this.properties,
+			...overrides,
+			previousProperties: this.properties,
+		});
 	}
 }
 
@@ -35,7 +47,9 @@ export function quantize(pattern: Pattern | ScoreNote, subdivision: number, groo
 			return { ...note, startBeat: note.startBeat + shift, endBeat: note.endBeat + shift };
 		});
 	} else {
-		const groovePositions = collectNotes(grooveMap).map((grooveNote) => grooveNote.startBeat % grid).sort((tickA, tickB) => tickA - tickB);
+		const groovePositions = collectNotes(grooveMap)
+			.map((grooveNote) => grooveNote.startBeat % grid)
+			.sort((tickA, tickB) => tickA - tickB);
 
 		transformed = mapNotes(resolved, (note, { absoluteOffset }) => {
 			const absBeat = absoluteOffset + note.startBeat;
@@ -47,7 +61,15 @@ export function quantize(pattern: Pattern | ScoreNote, subdivision: number, groo
 		});
 	}
 
-	return new QuantizePattern(pattern, grid, grooveMap, transformed);
+	return new QuantizePattern({
+		notes: transformed.notes,
+		children: transformed.children,
+		startBeat: transformed.startBeat,
+		endBeat: transformed.endBeat,
+		subdivision: grid,
+		grooveMap,
+		input: resolved,
+	});
 }
 
 function buildSwingMap(amount: number): Pattern {

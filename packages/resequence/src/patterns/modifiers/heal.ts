@@ -1,23 +1,33 @@
-;
-;
+import type { OptionalProperties } from "../../utils/RequiredProperties";
 import { pitchKey } from "../../utils/pitch";
 import type { ScoreNote } from "../note";
-import type { PatternNode } from "../pattern";
-import { MidiPattern, type Pattern } from "../pattern";
+import type { Pattern, PatternProperties } from "../pattern";
 import { toPattern } from "../sequence";
 import { flatMapNotes, walkNotes } from "../utils/tree";
+import { ModifierPattern, type ModifierProperties } from "./modifier";
 
-export class HealPattern extends MidiPattern {
-	constructor(
-		readonly source: Pattern | ScoreNote,
-		readonly threshold: number,
-		node: PatternNode,
-	) {
-		super(node);
+export interface HealProperties extends ModifierProperties {
+	readonly threshold: number;
+}
+
+export class HealPattern extends ModifierPattern {
+	readonly properties: HealProperties;
+
+	constructor(properties: OptionalProperties<HealProperties, "outputs">) {
+		super(properties);
+
+		this.properties = {
+			...properties,
+			outputs: properties.outputs ?? [],
+		};
 	}
 
-	clone(overrides: Partial<PatternNode>): HealPattern {
-		return new HealPattern(this.source, this.threshold, this.overrideNode(overrides));
+	clone(overrides: Partial<PatternProperties>): HealPattern {
+		return new HealPattern({
+			...this.properties,
+			...overrides,
+			previousProperties: this.properties,
+		});
 	}
 }
 
@@ -33,7 +43,7 @@ export function heal(pattern: Pattern | ScoreNote, threshold?: number): HealPatt
 	const merged = new Set<string>();
 	const extensions = new Map<string, number>();
 
-	let last: typeof entries[number] | undefined;
+	let last: (typeof entries)[number] | undefined;
 
 	for (const entry of entries) {
 		if (last !== undefined) {
@@ -62,5 +72,12 @@ export function heal(pattern: Pattern | ScoreNote, threshold?: number): HealPatt
 		return [note];
 	});
 
-	return new HealPattern(pattern, resolvedThreshold, transformed);
+	return new HealPattern({
+		notes: transformed.notes,
+		children: transformed.children,
+		startBeat: transformed.startBeat,
+		endBeat: transformed.endBeat,
+		threshold: resolvedThreshold,
+		input: resolved,
+	});
 }

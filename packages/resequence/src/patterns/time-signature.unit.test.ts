@@ -10,7 +10,7 @@ describe("timeSignature alias", () => {
 		const pattern = timeSignature(sequence(N.C4(1)), [3, 4]);
 		expect(pattern).toBeInstanceOf(MetadataPattern);
 		expect(pattern.endBeat - pattern.startBeat).toBe(1);
-		expect(pattern.meta.timeSignature).toEqual([3, 4]);
+		expect(pattern.properties.meta.timeSignature).toEqual([3, 4]);
 	});
 
 	it("throws for invalid numerator", () => {

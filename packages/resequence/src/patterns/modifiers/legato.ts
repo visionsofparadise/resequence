@@ -1,20 +1,32 @@
+import type { OptionalProperties } from "../../utils/RequiredProperties";
 import type { ScoreNote } from "../note";
-import type { PatternNode } from "../pattern";
-import { MidiPattern, type Pattern } from "../pattern";
+import type { Pattern, PatternProperties } from "../pattern";
 import { toPattern } from "../sequence";
 import { mapNotes, walkNotes } from "../utils/tree";
+import { ModifierPattern, type ModifierProperties } from "./modifier";
 
-export class LegatoPattern extends MidiPattern {
-	constructor(
-		readonly source: Pattern | ScoreNote,
-		readonly extendLast: boolean,
-		node: PatternNode,
-	) {
-		super(node);
+export interface LegatoProperties extends ModifierProperties {
+	readonly extendLast: boolean;
+}
+
+export class LegatoPattern extends ModifierPattern {
+	readonly properties: LegatoProperties;
+
+	constructor(properties: OptionalProperties<LegatoProperties, "outputs">) {
+		super(properties);
+
+		this.properties = {
+			...properties,
+			outputs: properties.outputs ?? [],
+		};
 	}
 
-	clone(overrides: Partial<PatternNode>): LegatoPattern {
-		return new LegatoPattern(this.source, this.extendLast, this.overrideNode(overrides));
+	clone(overrides: Partial<PatternProperties>): LegatoPattern {
+		return new LegatoPattern({
+			...this.properties,
+			...overrides,
+			previousProperties: this.properties,
+		});
 	}
 }
 
@@ -51,5 +63,12 @@ export function legato(pattern: Pattern | ScoreNote, extendLast = true): LegatoP
 		return note;
 	});
 
-	return new LegatoPattern(pattern, extendLast, transformed);
+	return new LegatoPattern({
+		notes: transformed.notes,
+		children: transformed.children,
+		startBeat: transformed.startBeat,
+		endBeat: transformed.endBeat,
+		extendLast,
+		input: resolved,
+	});
 }

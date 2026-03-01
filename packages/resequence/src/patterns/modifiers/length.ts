@@ -1,20 +1,32 @@
+import type { OptionalProperties } from "../../utils/RequiredProperties";
 import type { ScoreNote } from "../note";
-import type { PatternNode } from "../pattern";
-import { MidiPattern, type Pattern } from "../pattern";
+import type { Pattern, PatternProperties } from "../pattern";
 import { toPattern } from "../sequence";
 import { mapNotes } from "../utils/tree";
+import { ModifierPattern, type ModifierProperties } from "./modifier";
 
-export class LengthPattern extends MidiPattern {
-	constructor(
-		readonly source: Pattern | ScoreNote,
-		readonly noteDuration: number,
-		node: PatternNode,
-	) {
-		super(node);
+export interface LengthProperties extends ModifierProperties {
+	readonly noteDuration: number;
+}
+
+export class LengthPattern extends ModifierPattern {
+	readonly properties: LengthProperties;
+
+	constructor(properties: OptionalProperties<LengthProperties, "outputs">) {
+		super(properties);
+
+		this.properties = {
+			...properties,
+			outputs: properties.outputs ?? [],
+		};
 	}
 
-	clone(overrides: Partial<PatternNode>): LengthPattern {
-		return new LengthPattern(this.source, this.noteDuration, this.overrideNode(overrides));
+	clone(overrides: Partial<PatternProperties>): LengthPattern {
+		return new LengthPattern({
+			...this.properties,
+			...overrides,
+			previousProperties: this.properties,
+		});
 	}
 }
 
@@ -29,5 +41,12 @@ export function length(pattern: Pattern | ScoreNote, duration: number): LengthPa
 		};
 	});
 
-	return new LengthPattern(pattern, duration, transformed);
+	return new LengthPattern({
+		notes: transformed.notes,
+		children: transformed.children,
+		startBeat: transformed.startBeat,
+		endBeat: transformed.endBeat,
+		noteDuration: duration,
+		input: resolved,
+	});
 }

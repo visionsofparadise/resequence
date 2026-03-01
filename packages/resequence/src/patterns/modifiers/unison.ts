@@ -1,27 +1,39 @@
 import { addSteps, NUM_OCTAVES } from "../../utils/pitch";
+import type { OptionalProperties } from "../../utils/RequiredProperties";
 import type { ScoreNote } from "../note";
-import type { PatternNode } from "../pattern";
-import { MidiPattern, type Pattern } from "../pattern";
+import type { Pattern, PatternProperties } from "../pattern";
 import { toPattern } from "../sequence";
 import { flatMapNotes } from "../utils/tree";
+import { ModifierPattern, type ModifierProperties } from "./modifier";
 
 export interface UnisonSpread {
 	readonly pitch?: number;
 	readonly cc?: Partial<Record<number, number>>;
 }
 
-export class UnisonPattern extends MidiPattern {
-	constructor(
-		readonly source: Pattern | ScoreNote,
-		readonly voices: number,
-		readonly spread: UnisonSpread,
-		node: PatternNode,
-	) {
-		super(node);
+export interface UnisonProperties extends ModifierProperties {
+	readonly voices: number;
+	readonly spread: UnisonSpread;
+}
+
+export class UnisonPattern extends ModifierPattern {
+	readonly properties: UnisonProperties;
+
+	constructor(properties: OptionalProperties<UnisonProperties, "outputs">) {
+		super(properties);
+
+		this.properties = {
+			...properties,
+			outputs: properties.outputs ?? [],
+		};
 	}
 
-	clone(overrides: Partial<PatternNode>): UnisonPattern {
-		return new UnisonPattern(this.source, this.voices, this.spread, this.overrideNode(overrides));
+	clone(overrides: Partial<PatternProperties>): UnisonPattern {
+		return new UnisonPattern({
+			...this.properties,
+			...overrides,
+			previousProperties: this.properties,
+		});
 	}
 }
 
@@ -56,5 +68,13 @@ export function unison(pattern: Pattern | ScoreNote, voices: number, spread: Uni
 		return result;
 	});
 
-	return new UnisonPattern(pattern, voices, spread, transformed);
+	return new UnisonPattern({
+		notes: transformed.notes,
+		children: transformed.children,
+		startBeat: transformed.startBeat,
+		endBeat: transformed.endBeat,
+		voices,
+		spread,
+		input: resolved,
+	});
 }

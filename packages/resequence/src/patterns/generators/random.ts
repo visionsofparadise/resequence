@@ -1,8 +1,10 @@
 ;
 ;
 import type { Pitch } from "../../utils/pitch";
-import type { PatternNode, RelativeNote } from "../pattern";
-import { MidiPattern } from "../pattern";
+import type { PatternProperties, RelativeNote } from "../pattern";
+import { MidiPattern } from "../midi";
+import type { MidiPatternProperties } from "../midi";
+import type { OptionalProperties } from "../../utils/RequiredProperties";
 
 function mulberry32(seed: number): () => number {
 	let state = seed;
@@ -30,16 +32,28 @@ export interface RandomOptions {
 	readonly seed?: number;
 }
 
+export interface RandomProperties extends MidiPatternProperties {
+	readonly options: RandomOptions;
+}
+
 export class RandomPattern extends MidiPattern {
-	constructor(
-		readonly options: RandomOptions,
-		node: PatternNode,
-	) {
-		super(node);
+	readonly properties: RandomProperties;
+
+	constructor(properties: OptionalProperties<RandomProperties, "outputs">) {
+		super(properties);
+
+		this.properties = {
+			...properties,
+			outputs: properties.outputs ?? [],
+		};
 	}
 
-	clone(overrides: Partial<PatternNode>): RandomPattern {
-		return new RandomPattern(this.options, this.overrideNode(overrides));
+	clone(overrides: Partial<PatternProperties>): RandomPattern {
+		return new RandomPattern({
+			...this.properties,
+			...overrides,
+			previousProperties: this.properties,
+		});
 	}
 }
 
@@ -51,7 +65,7 @@ export function random(options: RandomOptions): RandomPattern {
 	const firstPitch = resolvedPitches[0];
 
 	if (!firstPitch) {
-		return new RandomPattern(options, { notes: [], children: [], startBeat: 0, endBeat: durationBeats });
+		return new RandomPattern({ notes: [], children: [], startBeat: 0, endBeat: durationBeats, options });
 	}
 
 	const notes: Array<RelativeNote> = [];
@@ -68,5 +82,5 @@ export function random(options: RandomOptions): RandomPattern {
 		});
 	}
 
-	return new RandomPattern(options, { notes, children: [], startBeat: 0, endBeat: durationBeats });
+	return new RandomPattern({ notes, children: [], startBeat: 0, endBeat: durationBeats, options });
 }

@@ -60,8 +60,8 @@ describe("AutomatePattern", () => {
 				{ beat: 4, value: 1.0 },
 			]);
 			expect(auto).toBeInstanceOf(auto.constructor);
-			expect(auto.name).toBe("filter-sweep");
-			expect(auto.paths).toEqual(["bass.hp.frequency"]);
+			expect(auto.properties.name).toBe("filter-sweep");
+			expect(auto.properties.paths).toEqual(["bass.hp.frequency"]);
 		});
 	});
 
@@ -99,10 +99,10 @@ describe("AutomatePattern", () => {
 			expect(auto.endBeat - auto.startBeat).toBe(0);
 		});
 
-		it("envelope getter returns empty for Lfo source", () => {
+		it("source is Lfo for Lfo source", () => {
 			const lfo = resolveLfo({ shape: "sine", frequency: 2, value: 500 });
 			const auto = automate("filter-lfo", "bass.hp.frequency", lfo);
-			expect(auto.envelope).toEqual([]);
+			expect(Array.isArray(auto.properties.source)).toBe(false);
 		});
 	});
 

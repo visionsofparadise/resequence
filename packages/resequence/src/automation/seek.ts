@@ -51,15 +51,15 @@ export function seekAutomation(pattern: Pattern, seekBeat: number, context: Sche
 }
 
 function collectAutomationClips(pattern: Pattern, offsetBeats: number, clips: Array<AutomationClip>): void {
-	if (pattern instanceof AutomatePattern && Array.isArray(pattern.source)) {
-		const envelope = pattern.source as ReadonlyArray<Keyframe>;
+	if (pattern instanceof AutomatePattern && Array.isArray(pattern.properties.source)) {
+		const envelope = pattern.properties.source as ReadonlyArray<Keyframe>;
 		const durationBeats = pattern.endBeat - pattern.startBeat;
 
 		const keyframes: Array<Keyframe> = envelope.map((kf) => ({ ...kf, beat: offsetBeats + kf.beat }));
 
 		clips.push({
 			endBeat: offsetBeats + durationBeats,
-			paths: [...pattern.paths],
+			paths: [...pattern.properties.paths],
 			keyframes,
 			finalValue: evaluateAt(keyframes, offsetBeats + durationBeats),
 		});

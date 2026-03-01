@@ -12,61 +12,56 @@ export interface RelativeChild {
 	readonly pattern: Pattern;
 }
 
-export interface PatternNode {
+export interface PatternProperties {
 	readonly notes: ReadonlyArray<RelativeNote>;
 	readonly children: ReadonlyArray<RelativeChild>;
 	readonly startBeat: number;
 	readonly endBeat: number;
+	readonly previousProperties?: PatternProperties;
 }
 
-export abstract class Pattern implements PatternNode {
-	readonly notes: ReadonlyArray<RelativeNote>;
-	readonly children: ReadonlyArray<RelativeChild>;
-	readonly startBeat: number;
-	readonly endBeat: number;
+export abstract class Pattern {
+	constructor(readonly properties: PatternProperties) {}
 
-	constructor(node: PatternNode) {
-		this.notes = node.notes;
-		this.children = node.children;
-		this.startBeat = node.startBeat;
-		this.endBeat = node.endBeat;
+	get notes(): ReadonlyArray<RelativeNote> {
+		return this.properties.notes;
 	}
 
-	protected overrideNode(overrides: Partial<PatternNode>): PatternNode {
-		return {
-			notes: overrides.notes ?? this.notes,
-			children: overrides.children ?? this.children,
-			startBeat: overrides.startBeat ?? this.startBeat,
-			endBeat: overrides.endBeat ?? this.endBeat,
-		};
+	get children(): ReadonlyArray<RelativeChild> {
+		return this.properties.children;
+	}
+
+	get startBeat(): number {
+		return this.properties.startBeat;
+	}
+
+	get endBeat(): number {
+		return this.properties.endBeat;
 	}
 
 	async setup(context: ScheduleContext): Promise<void> {
-		if (this.children.length === 0) return;
+		if (this.properties.children.length === 0) return;
 
-		await Promise.allSettled(this.children.map(({ pattern }) => pattern.setup(context)));
+		await Promise.allSettled(this.properties.children.map(({ pattern }) => pattern.setup(context)));
 	}
 
 	schedule(offsetBeats: number, context: ScheduleContext): void {
-		if (offsetBeats + this.endBeat <= context.fromBeats || offsetBeats + this.startBeat >= context.toBeats) return;
+		if (offsetBeats + this.properties.endBeat <= context.fromBeats || offsetBeats + this.properties.startBeat >= context.toBeats) return;
 
-		for (const { offsetBeats: childOffset, pattern } of this.children) {
+		for (const { offsetBeats: childOffset, pattern } of this.properties.children) {
 			pattern.schedule(offsetBeats + childOffset, context);
 		}
 	}
 
 	validate(context: ValidateContext): void {
-		for (const { pattern } of this.children) {
+		for (const { pattern } of this.properties.children) {
 			pattern.validate(context);
 		}
 	}
 
 	teardown(context: ScheduleContext): void {
-		for (const { pattern } of this.children) pattern.teardown(context);
+		for (const { pattern } of this.properties.children) pattern.teardown(context);
 	}
 
-	abstract clone(overrides: Partial<PatternNode>): Pattern;
+	abstract clone(overrides: Partial<PatternProperties>): Pattern;
 }
-
-export { MidiPattern } from "./midi";
-export type { RoutableNode } from "./midi";

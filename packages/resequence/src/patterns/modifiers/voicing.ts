@@ -1,24 +1,36 @@
-import { addSteps, NUM_OCTAVES, pitchKey } from "../../utils/pitch";
 import type { Pitch } from "../../utils/pitch";
+import { addSteps, NUM_OCTAVES, pitchKey } from "../../utils/pitch";
 import type { ScoreNote } from "../note";
-import type { PatternNode } from "../pattern";
-import { MidiPattern, type Pattern } from "../pattern";
+import type { Pattern, PatternProperties } from "../pattern";
 import { toPattern } from "../sequence";
+import type { OptionalProperties } from "../../utils/RequiredProperties";
 import { mapNotes, walkNotes } from "../utils/tree";
+import { ModifierPattern, type ModifierProperties } from "./modifier";
 
 export type VoicingStyle = "close" | "drop2" | "drop3" | "open";
 
-export class VoicingPattern extends MidiPattern {
-	constructor(
-		readonly source: Pattern | ScoreNote,
-		readonly style: VoicingStyle,
-		node: PatternNode,
-	) {
-		super(node);
+export interface VoicingProperties extends ModifierProperties {
+	readonly style: VoicingStyle;
+}
+
+export class VoicingPattern extends ModifierPattern {
+	readonly properties: VoicingProperties;
+
+	constructor(properties: OptionalProperties<VoicingProperties, "outputs">) {
+		super(properties);
+
+		this.properties = {
+			...properties,
+			outputs: properties.outputs ?? [],
+		};
 	}
 
-	clone(overrides: Partial<PatternNode>): VoicingPattern {
-		return new VoicingPattern(this.source, this.style, this.overrideNode(overrides));
+	clone(overrides: Partial<PatternProperties>): VoicingPattern {
+		return new VoicingPattern({
+			...this.properties,
+			...overrides,
+			previousProperties: this.properties,
+		});
 	}
 }
 
@@ -117,5 +129,12 @@ export function voicing(pattern: Pattern | ScoreNote, style: VoicingStyle): Voic
 		return note;
 	});
 
-	return new VoicingPattern(pattern, style, transformed);
+	return new VoicingPattern({
+		notes: transformed.notes,
+		children: transformed.children,
+		startBeat: transformed.startBeat,
+		endBeat: transformed.endBeat,
+		style,
+		input: resolved,
+	});
 }

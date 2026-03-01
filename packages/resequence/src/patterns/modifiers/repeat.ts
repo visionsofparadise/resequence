@@ -1,20 +1,33 @@
+import type { OptionalProperties } from "../../utils/RequiredProperties";
 import { ResequenceError } from "../../error";
 import type { ScoreNote } from "../note";
-import type { PatternNode } from "../pattern";
-import { MidiPattern, type Pattern } from "../pattern";
+import type { Pattern, PatternProperties } from "../pattern";
 import { toPattern } from "../sequence";
 import { flatMapNotes } from "../utils/tree";
+import { ModifierPattern, type ModifierProperties } from "./modifier";
 
-export class RepeatPattern extends MidiPattern {
-	constructor(
-		readonly count: number,
-		node: PatternNode,
-	) {
-		super(node);
+export interface RepeatProperties extends ModifierProperties {
+	readonly count: number;
+}
+
+export class RepeatPattern extends ModifierPattern {
+	readonly properties: RepeatProperties;
+
+	constructor(properties: OptionalProperties<RepeatProperties, "outputs">) {
+		super(properties);
+
+		this.properties = {
+			...properties,
+			outputs: properties.outputs ?? [],
+		};
 	}
 
-	clone(overrides: Partial<PatternNode>): RepeatPattern {
-		return new RepeatPattern(this.count, this.overrideNode(overrides));
+	clone(overrides: Partial<PatternProperties>): RepeatPattern {
+		return new RepeatPattern({
+			...this.properties,
+			...overrides,
+			previousProperties: this.properties,
+		});
 	}
 }
 
@@ -36,5 +49,12 @@ export function repeat(pattern: Pattern | ScoreNote, count: number): RepeatPatte
 		return copies;
 	});
 
-	return new RepeatPattern(count, transformed);
+	return new RepeatPattern({
+		notes: transformed.notes,
+		children: transformed.children,
+		startBeat: transformed.startBeat,
+		endBeat: transformed.endBeat,
+		count,
+		input: resolved,
+	});
 }

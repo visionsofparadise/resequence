@@ -12,6 +12,6 @@ describe("tuning alias", () => {
 		};
 		const t = tuning(sequence(N.C4(1)), minimalConfig);
 		expect(t).toBeInstanceOf(MetadataPattern);
-		expect(t.meta.tuning).toEqual(minimalConfig);
+		expect(t.properties.meta.tuning).toEqual(minimalConfig);
 	});
 });

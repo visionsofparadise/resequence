@@ -1,21 +1,33 @@
 import { addSteps, NUM_OCTAVES, pitchKey } from "../../utils/pitch";
 import type { ScoreNote } from "../note";
-import type { PatternNode } from "../pattern";
-import { MidiPattern, type Pattern } from "../pattern";
+import type { Pattern, PatternProperties } from "../pattern";
 import { toPattern } from "../sequence";
+import type { OptionalProperties } from "../../utils/RequiredProperties";
 import { mapNotes, walkNotes } from "../utils/tree";
+import { ModifierPattern, type ModifierProperties } from "./modifier";
 
-export class InvertPattern extends MidiPattern {
-	constructor(
-		readonly source: Pattern | ScoreNote,
-		readonly inversions: number,
-		node: PatternNode,
-	) {
-		super(node);
+export interface InvertProperties extends ModifierProperties {
+	readonly inversions: number;
+}
+
+export class InvertPattern extends ModifierPattern {
+	readonly properties: InvertProperties;
+
+	constructor(properties: OptionalProperties<InvertProperties, "outputs">) {
+		super(properties);
+
+		this.properties = {
+			...properties,
+			outputs: properties.outputs ?? [],
+		};
 	}
 
-	clone(overrides: Partial<PatternNode>): InvertPattern {
-		return new InvertPattern(this.source, this.inversions, this.overrideNode(overrides));
+	clone(overrides: Partial<PatternProperties>): InvertPattern {
+		return new InvertPattern({
+			...this.properties,
+			...overrides,
+			previousProperties: this.properties,
+		});
 	}
 }
 
@@ -71,5 +83,12 @@ export function invertChord(pattern: Pattern | ScoreNote, inversions: number): I
 		return note;
 	});
 
-	return new InvertPattern(pattern, inversions, transformed);
+	return new InvertPattern({
+		notes: transformed.notes,
+		children: transformed.children,
+		startBeat: transformed.startBeat,
+		endBeat: transformed.endBeat,
+		inversions,
+		input: resolved,
+	});
 }

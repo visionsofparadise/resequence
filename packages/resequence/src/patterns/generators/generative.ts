@@ -1,26 +1,35 @@
 import type { ScoreNote } from "../note";
-import type { PatternNode, RelativeNote } from "../pattern";
-import { MidiPattern } from "../pattern";
+import type { PatternProperties, RelativeNote } from "../pattern";
+import { MidiPattern } from "../midi";
+import type { MidiPatternProperties } from "../midi";
+import type { OptionalProperties } from "../../utils/RequiredProperties";
 
 export type GenerativeCallback = (accumulator: Array<ScoreNote>, index: number, total: number) => Array<ScoreNote>;
 
+export interface GenerativeProperties extends MidiPatternProperties {
+	readonly callback: GenerativeCallback;
+	readonly count: number;
+	readonly durationBeats: number;
+}
+
 export class GenerativePattern extends MidiPattern {
-	constructor(
-		readonly callback: GenerativeCallback,
-		readonly count: number,
-		readonly durationBeats: number,
-		node: PatternNode,
-	) {
-		super(node);
+	readonly properties: GenerativeProperties;
+
+	constructor(properties: OptionalProperties<GenerativeProperties, "outputs">) {
+		super(properties);
+
+		this.properties = {
+			...properties,
+			outputs: properties.outputs ?? [],
+		};
 	}
 
-	clone(overrides: Partial<PatternNode>): GenerativePattern {
-		return new GenerativePattern(
-			this.callback,
-			this.count,
-			this.durationBeats,
-			this.overrideNode(overrides),
-		);
+	clone(overrides: Partial<PatternProperties>): GenerativePattern {
+		return new GenerativePattern({
+			...this.properties,
+			...overrides,
+			previousProperties: this.properties,
+		});
 	}
 }
 
@@ -41,5 +50,5 @@ export function generative(callback: GenerativeCallback, count: number, duration
 		notes.push({ offsetBeats: 0, note: clipped });
 	}
 
-	return new GenerativePattern(callback, count, durationBeats, { notes, children: [], startBeat: 0, endBeat: durationBeats });
+	return new GenerativePattern({ notes, children: [], startBeat: 0, endBeat: durationBeats, callback, count, durationBeats });
 }

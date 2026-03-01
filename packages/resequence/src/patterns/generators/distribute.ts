@@ -1,8 +1,10 @@
 ;
 ;
 import type { Pitch } from "../../utils/pitch";
-import type { PatternNode, RelativeNote } from "../pattern";
-import { MidiPattern } from "../pattern";
+import type { PatternProperties, RelativeNote } from "../pattern";
+import { MidiPattern } from "../midi";
+import type { MidiPatternProperties } from "../midi";
+import type { OptionalProperties } from "../../utils/RequiredProperties";
 
 function euclidean(hits: number, steps: number, rotate: number): ReadonlyArray<boolean> {
 	if (steps === 0) return [];
@@ -14,20 +16,32 @@ function euclidean(hits: number, steps: number, rotate: number): ReadonlyArray<b
 	return [...pattern.slice(rotateAmount), ...pattern.slice(0, rotateAmount)];
 }
 
+export interface DistributeProperties extends MidiPatternProperties {
+	readonly hits: number;
+	readonly steps: number;
+	readonly pitch: Pitch;
+	readonly stepDuration: number;
+	readonly rotate: number;
+}
+
 export class DistributePattern extends MidiPattern {
-	constructor(
-		readonly hits: number,
-		readonly steps: number,
-		readonly pitch: Pitch,
-		readonly stepDuration: number,
-		readonly rotate: number,
-		node: PatternNode,
-	) {
-		super(node);
+	readonly properties: DistributeProperties;
+
+	constructor(properties: OptionalProperties<DistributeProperties, "outputs">) {
+		super(properties);
+
+		this.properties = {
+			...properties,
+			outputs: properties.outputs ?? [],
+		};
 	}
 
-	clone(overrides: Partial<PatternNode>): DistributePattern {
-		return new DistributePattern(this.hits, this.steps, this.pitch, this.stepDuration, this.rotate, this.overrideNode(overrides));
+	clone(overrides: Partial<PatternProperties>): DistributePattern {
+		return new DistributePattern({
+			...this.properties,
+			...overrides,
+			previousProperties: this.properties,
+		});
 	}
 }
 
@@ -47,5 +61,5 @@ export function distribute(hits: number, steps: number, pitch: Pitch, stepDurati
 		}
 	}
 
-	return new DistributePattern(hits, steps, resolvedPitch, resolvedDuration, rotate, { notes, children: [], startBeat: 0, endBeat: durationBeats });
+	return new DistributePattern({ notes, children: [], startBeat: 0, endBeat: durationBeats, hits, steps, pitch: resolvedPitch, stepDuration: resolvedDuration, rotate });
 }

@@ -1,19 +1,28 @@
+import type { OptionalProperties } from "../../utils/RequiredProperties";
 import type { ScoreNote } from "../note";
-import type { PatternNode } from "../pattern";
-import { MidiPattern, type Pattern } from "../pattern";
+import type { Pattern, PatternProperties } from "../pattern";
 import { toPattern } from "../sequence";
 import { mapNotes } from "../utils/tree";
+import { ModifierPattern, type ModifierProperties } from "./modifier";
 
-export class ReversePattern extends MidiPattern {
-	constructor(
-		readonly source: Pattern | ScoreNote,
-		node: PatternNode,
-	) {
-		super(node);
+export class ReversePattern extends ModifierPattern {
+	readonly properties: ModifierProperties;
+
+	constructor(properties: OptionalProperties<ModifierProperties, "outputs">) {
+		super(properties);
+
+		this.properties = {
+			...properties,
+			outputs: properties.outputs ?? [],
+		};
 	}
 
-	clone(overrides: Partial<PatternNode>): ReversePattern {
-		return new ReversePattern(this.source, this.overrideNode(overrides));
+	clone(overrides: Partial<PatternProperties>): ReversePattern {
+		return new ReversePattern({
+			...this.properties,
+			...overrides,
+			previousProperties: this.properties,
+		});
 	}
 }
 
@@ -34,5 +43,11 @@ export function reverse(pattern: Pattern | ScoreNote): ReversePattern {
 		};
 	});
 
-	return new ReversePattern(pattern, transformed);
+	return new ReversePattern({
+		notes: transformed.notes,
+		children: transformed.children,
+		startBeat: transformed.startBeat,
+		endBeat: transformed.endBeat,
+		input: resolved,
+	});
 }

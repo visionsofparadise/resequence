@@ -1,20 +1,32 @@
+import type { OptionalProperties } from "../../utils/RequiredProperties";
 import type { ScoreNote } from "../note";
-import type { PatternNode } from "../pattern";
-import { MidiPattern, type Pattern } from "../pattern";
+import type { Pattern, PatternProperties } from "../pattern";
 import { toPattern } from "../sequence";
 import { mapNotes, walkNotes } from "../utils/tree";
+import { ModifierPattern, type ModifierProperties } from "./modifier";
 
-export class RotatePattern extends MidiPattern {
-	constructor(
-		readonly source: Pattern | ScoreNote,
-		readonly steps: number,
-		node: PatternNode,
-	) {
-		super(node);
+export interface RotateProperties extends ModifierProperties {
+	readonly steps: number;
+}
+
+export class RotatePattern extends ModifierPattern {
+	readonly properties: RotateProperties;
+
+	constructor(properties: OptionalProperties<RotateProperties, "outputs">) {
+		super(properties);
+
+		this.properties = {
+			...properties,
+			outputs: properties.outputs ?? [],
+		};
 	}
 
-	clone(overrides: Partial<PatternNode>): RotatePattern {
-		return new RotatePattern(this.source, this.steps, this.overrideNode(overrides));
+	clone(overrides: Partial<PatternProperties>): RotatePattern {
+		return new RotatePattern({
+			...this.properties,
+			...overrides,
+			previousProperties: this.properties,
+		});
 	}
 }
 
@@ -27,7 +39,14 @@ export function rotate(pattern: Pattern | ScoreNote, steps: number): RotatePatte
 	entries.sort((ea, eb) => ea.absoluteStart - eb.absoluteStart);
 
 	if (entries.length === 0) {
-		return new RotatePattern(pattern, steps, resolved);
+		return new RotatePattern({
+			notes: resolved.notes,
+			children: resolved.children,
+			startBeat: resolved.startBeat,
+			endBeat: resolved.endBeat,
+			steps,
+			input: resolved,
+		});
 	}
 
 	const totalDuration = pattern.endBeat - pattern.startBeat;
@@ -35,7 +54,14 @@ export function rotate(pattern: Pattern | ScoreNote, steps: number): RotatePatte
 	const firstEntry = entries[0];
 
 	if (!firstEntry) {
-		return new RotatePattern(pattern, steps, resolved);
+		return new RotatePattern({
+			notes: resolved.notes,
+			children: resolved.children,
+			startBeat: resolved.startBeat,
+			endBeat: resolved.endBeat,
+			steps,
+			input: resolved,
+		});
 	}
 
 	const gaps: Array<number> = [];
@@ -84,5 +110,12 @@ export function rotate(pattern: Pattern | ScoreNote, steps: number): RotatePatte
 		return note;
 	});
 
-	return new RotatePattern(pattern, steps, transformed);
+	return new RotatePattern({
+		notes: transformed.notes,
+		children: transformed.children,
+		startBeat: transformed.startBeat,
+		endBeat: transformed.endBeat,
+		steps,
+		input: resolved,
+	});
 }

@@ -1,31 +1,32 @@
 import { ResequenceError } from "../error";
 import type { ScheduleContext } from "../rendering/schedule-context";
 import { beatsToSeconds } from "../rendering/tempo-map";
-import type { PatternNode } from "./pattern";
+import type { PatternProperties } from "./pattern";
 import { Pattern } from "./pattern";
+
+export interface AudioProperties extends PatternProperties {
+	readonly name: string;
+	readonly path: string;
+	readonly duration: number;
+	readonly durationBeats: number;
+	readonly transposeSemitones: number;
+	readonly reversed: boolean;
+	readonly sampleKey: string;
+	readonly region: string | undefined;
+	readonly loopStartMs: number | undefined;
+	readonly loopEndMs: number | undefined;
+}
 
 export class AudioPattern extends Pattern {
 	private buffer: AudioBuffer | undefined;
 
-	constructor(
-		readonly name: string,
-		readonly path: string,
-		readonly duration: number,
-		readonly durationBeats: number,
-		readonly transposeSemitones: number,
-		readonly reversed: boolean,
-		readonly sampleKey: string,
-		readonly region: string | undefined,
-		readonly loopStartMs: number | undefined,
-		readonly loopEndMs: number | undefined,
-		node: PatternNode,
-	) {
-		super(node);
+	constructor(readonly properties: AudioProperties) {
+		super(properties);
 	}
 
 	async setup(context: ScheduleContext): Promise<void> {
 		try {
-			this.buffer = await context.getSample(this.sampleKey);
+			this.buffer = await context.getSample(this.properties.sampleKey);
 		} catch {
 			// sample not loadable — skip
 		}
@@ -35,18 +36,17 @@ export class AudioPattern extends Pattern {
 		this.buffer = undefined;
 	}
 
-	clone(overrides: Partial<PatternNode>): AudioPattern {
-		return new AudioPattern(
-			this.name, this.path, this.duration, this.durationBeats,
-			this.transposeSemitones, this.reversed, this.sampleKey,
-			this.region, this.loopStartMs, this.loopEndMs,
-			this.overrideNode(overrides),
-		);
+	clone(overrides: Partial<PatternProperties>): AudioPattern {
+		return new AudioPattern({
+			...this.properties,
+			...overrides,
+			previousProperties: this.properties,
+		});
 	}
 
 	schedule(offsetBeats: number, context: ScheduleContext): void {
-		if (context.trackFilter && !context.trackFilter.has(this.name)) return;
-		if (offsetBeats + this.endBeat <= context.fromBeats || offsetBeats + this.startBeat >= context.toBeats) return;
+		if (context.trackFilter && !context.trackFilter.has(this.properties.name)) return;
+		if (offsetBeats + this.properties.endBeat <= context.fromBeats || offsetBeats + this.properties.startBeat >= context.toBeats) return;
 
 		const buffer = this.buffer;
 		if (!buffer) return;
@@ -54,24 +54,24 @@ export class AudioPattern extends Pattern {
 		const offsetSeconds = beatsToSeconds(offsetBeats, context.tempoMap);
 		const source = context.audioContext.createBufferSource();
 
-		if (this.reversed) {
+		if (this.properties.reversed) {
 			source.buffer = copyReversed(buffer, context.audioContext);
 		} else {
 			source.buffer = buffer;
 		}
 
-		if (this.transposeSemitones !== 0) {
-			source.playbackRate.value = 2 ** (this.transposeSemitones / 12);
+		if (this.properties.transposeSemitones !== 0) {
+			source.playbackRate.value = 2 ** (this.properties.transposeSemitones / 12);
 		}
 
-		if (this.loopStartMs !== undefined && this.loopEndMs !== undefined) {
+		if (this.properties.loopStartMs !== undefined && this.properties.loopEndMs !== undefined) {
 			source.loop = true;
-			source.loopStart = this.loopStartMs / 1000;
-			source.loopEnd = this.loopEndMs / 1000;
+			source.loopStart = this.properties.loopStartMs / 1000;
+			source.loopEnd = this.properties.loopEndMs / 1000;
 		}
 
 		const destination = context.audioContext.destination;
-		const durationSeconds = beatsToSeconds(this.durationBeats, context.tempoMap);
+		const durationSeconds = beatsToSeconds(this.properties.durationBeats, context.tempoMap);
 
 		source.connect(destination);
 		source.start(offsetSeconds);
@@ -102,5 +102,9 @@ export function audio(name: string, path: string, duration: number, options?: { 
 	const region = options?.region;
 	const sampleKey = region && !path.includes("#") ? `${path}#${region}` : path;
 
-	return new AudioPattern(name, path, duration, duration, 0, false, sampleKey, region, options?.loopStartMs, options?.loopEndMs, { notes: [], children: [], startBeat: 0, endBeat: duration });
+	return new AudioPattern({
+		notes: [], children: [], startBeat: 0, endBeat: duration,
+		name, path, duration, durationBeats: duration, transposeSemitones: 0, reversed: false,
+		sampleKey, region, loopStartMs: options?.loopStartMs, loopEndMs: options?.loopEndMs,
+	});
 }

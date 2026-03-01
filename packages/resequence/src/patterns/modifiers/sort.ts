@@ -1,24 +1,36 @@
-import { NUM_OCTAVES, pitchKey } from "../../utils/pitch";
+import type { OptionalProperties } from "../../utils/RequiredProperties";
 import type { Pitch } from "../../utils/pitch";
+import { NUM_OCTAVES, pitchKey } from "../../utils/pitch";
 import type { ScoreNote } from "../note";
-import type { PatternNode } from "../pattern";
-import { MidiPattern, type Pattern } from "../pattern";
+import type { Pattern, PatternProperties } from "../pattern";
 import { toPattern } from "../sequence";
 import { mapNotes, walkNotes } from "../utils/tree";
+import { ModifierPattern, type ModifierProperties } from "./modifier";
 
 export type SortKey = "asc" | "desc" | ((noteA: ScoreNote, noteB: ScoreNote) => number);
 
-export class SortPattern extends MidiPattern {
-	constructor(
-		readonly source: Pattern | ScoreNote,
-		readonly key: SortKey,
-		node: PatternNode,
-	) {
-		super(node);
+export interface SortProperties extends ModifierProperties {
+	readonly key: SortKey;
+}
+
+export class SortPattern extends ModifierPattern {
+	readonly properties: SortProperties;
+
+	constructor(properties: OptionalProperties<SortProperties, "outputs">) {
+		super(properties);
+
+		this.properties = {
+			...properties,
+			outputs: properties.outputs ?? [],
+		};
 	}
 
-	clone(overrides: Partial<PatternNode>): SortPattern {
-		return new SortPattern(this.source, this.key, this.overrideNode(overrides));
+	clone(overrides: Partial<PatternProperties>): SortPattern {
+		return new SortPattern({
+			...this.properties,
+			...overrides,
+			previousProperties: this.properties,
+		});
 	}
 }
 
@@ -26,14 +38,22 @@ export function sort(pattern: Pattern | ScoreNote, key: SortKey = "asc"): SortPa
 	const resolved = toPattern(pattern);
 	const entries: Array<{ id: string; absoluteStart: number; pitch: Pitch; absoluteNote: ScoreNote }> = [];
 	walkNotes(resolved, (note, { id, absoluteOffset }) => {
-		entries.push({ id, absoluteStart: absoluteOffset + note.startBeat, pitch: note.pitch, absoluteNote: { ...note, startBeat: absoluteOffset + note.startBeat, endBeat: absoluteOffset + note.endBeat } });
+		entries.push({
+			id,
+			absoluteStart: absoluteOffset + note.startBeat,
+			pitch: note.pitch,
+			absoluteNote: { ...note, startBeat: absoluteOffset + note.startBeat, endBeat: absoluteOffset + note.endBeat },
+		});
 	});
 	const byTick = entries.slice().sort((ea, eb) => ea.absoluteStart - eb.absoluteStart);
 
 	let pitches: Array<Pitch>;
 
 	if (typeof key === "function") {
-		pitches = entries.slice().sort((ea, eb) => key(ea.absoluteNote, eb.absoluteNote)).map((entry) => entry.pitch);
+		pitches = entries
+			.slice()
+			.sort((ea, eb) => key(ea.absoluteNote, eb.absoluteNote))
+			.map((entry) => entry.pitch);
 	} else if (key === "desc") {
 		pitches = byTick.map((entry) => entry.pitch).sort((pitchA, pitchB) => pitchKey(pitchB) - pitchKey(pitchA));
 	} else {
@@ -64,5 +84,12 @@ export function sort(pattern: Pattern | ScoreNote, key: SortKey = "asc"): SortPa
 		return note;
 	});
 
-	return new SortPattern(pattern, key, transformed);
+	return new SortPattern({
+		notes: transformed.notes,
+		children: transformed.children,
+		startBeat: transformed.startBeat,
+		endBeat: transformed.endBeat,
+		key,
+		input: resolved,
+	});
 }

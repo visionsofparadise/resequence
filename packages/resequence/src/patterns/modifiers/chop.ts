@@ -1,23 +1,35 @@
+import type { OptionalProperties } from "../../utils/RequiredProperties";
 import type { Keyframe } from "../../automation/keyframe";
 import type { Pitch } from "../../utils/pitch";
 import { evaluateSlide } from "../../utils/slide";
 import type { ScoreNote } from "../note";
-import type { PatternNode } from "../pattern";
-import { MidiPattern, type Pattern } from "../pattern";
+import type { Pattern, PatternProperties } from "../pattern";
 import { toPattern } from "../sequence";
 import { flatMapNotes } from "../utils/tree";
+import { ModifierPattern, type ModifierProperties } from "./modifier";
 
-export class ChopPattern extends MidiPattern {
-	constructor(
-		readonly source: Pattern | ScoreNote,
-		readonly subdivision: number,
-		node: PatternNode,
-	) {
-		super(node);
+export interface ChopProperties extends ModifierProperties {
+	readonly subdivision: number;
+}
+
+export class ChopPattern extends ModifierPattern {
+	readonly properties: ChopProperties;
+
+	constructor(properties: OptionalProperties<ChopProperties, "outputs">) {
+		super(properties);
+
+		this.properties = {
+			...properties,
+			outputs: properties.outputs ?? [],
+		};
 	}
 
-	clone(overrides: Partial<PatternNode>): ChopPattern {
-		return new ChopPattern(this.source, this.subdivision, this.overrideNode(overrides));
+	clone(overrides: Partial<PatternProperties>): ChopPattern {
+		return new ChopPattern({
+			...this.properties,
+			...overrides,
+			previousProperties: this.properties,
+		});
 	}
 }
 
@@ -37,9 +49,7 @@ export function chop(pattern: Pattern | ScoreNote, subdivision: number): ChopPat
 
 			if (note.slides && note.slides.length > 0) {
 				pitch = evaluateSlide(note.pitch, note.slides, chopStart);
-				const segmentSlides = note.slides
-					.filter((sl) => sl.beat > chopStart && sl.beat <= chopEnd)
-					.map((sl) => ({ ...sl, beat: sl.beat - chopStart }));
+				const segmentSlides = note.slides.filter((sl) => sl.beat > chopStart && sl.beat <= chopEnd).map((sl) => ({ ...sl, beat: sl.beat - chopStart }));
 				slides = segmentSlides.length > 0 ? segmentSlides : undefined;
 			}
 
@@ -55,5 +65,12 @@ export function chop(pattern: Pattern | ScoreNote, subdivision: number): ChopPat
 		return result;
 	});
 
-	return new ChopPattern(pattern, subdivision, transformed);
+	return new ChopPattern({
+		notes: transformed.notes,
+		children: transformed.children,
+		startBeat: transformed.startBeat,
+		endBeat: transformed.endBeat,
+		subdivision,
+		input: resolved,
+	});
 }

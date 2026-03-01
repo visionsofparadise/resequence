@@ -1,21 +1,33 @@
 import { addSteps, NUM_OCTAVES } from "../../utils/pitch";
 import type { ScoreNote } from "../note";
-import type { PatternNode } from "../pattern";
-import { MidiPattern, type Pattern } from "../pattern";
+import type { Pattern, PatternProperties } from "../pattern";
 import { toPattern } from "../sequence";
+import type { OptionalProperties } from "../../utils/RequiredProperties";
 import { flatMapNotes } from "../utils/tree";
+import { ModifierPattern, type ModifierProperties } from "./modifier";
 
-export class HarmonizePattern extends MidiPattern {
-	constructor(
-		readonly source: Pattern | ScoreNote,
-		readonly interval: number,
-		node: PatternNode,
-	) {
-		super(node);
+export interface HarmonizeProperties extends ModifierProperties {
+	readonly interval: number;
+}
+
+export class HarmonizePattern extends ModifierPattern {
+	readonly properties: HarmonizeProperties;
+
+	constructor(properties: OptionalProperties<HarmonizeProperties, "outputs">) {
+		super(properties);
+
+		this.properties = {
+			...properties,
+			outputs: properties.outputs ?? [],
+		};
 	}
 
-	clone(overrides: Partial<PatternNode>): HarmonizePattern {
-		return new HarmonizePattern(this.source, this.interval, this.overrideNode(overrides));
+	clone(overrides: Partial<PatternProperties>): HarmonizePattern {
+		return new HarmonizePattern({
+			...this.properties,
+			...overrides,
+			previousProperties: this.properties,
+		});
 	}
 }
 
@@ -30,5 +42,12 @@ export function harmonize(pattern: Pattern | ScoreNote, interval: number): Harmo
 		},
 	]);
 
-	return new HarmonizePattern(pattern, interval, transformed);
+	return new HarmonizePattern({
+		notes: transformed.notes,
+		children: transformed.children,
+		startBeat: transformed.startBeat,
+		endBeat: transformed.endBeat,
+		interval,
+		input: resolved,
+	});
 }

@@ -1,20 +1,32 @@
+import type { OptionalProperties } from "../../utils/RequiredProperties";
 import type { ScoreNote } from "../note";
-import type { PatternNode } from "../pattern";
-import { MidiPattern, type Pattern } from "../pattern";
+import type { Pattern, PatternProperties } from "../pattern";
 import { toPattern } from "../sequence";
 import { collectNotes, flatMapNotes } from "../utils/tree";
+import { ModifierPattern, type ModifierProperties } from "./modifier";
 
-export class GatePattern extends MidiPattern {
-	constructor(
-		readonly source: Pattern | ScoreNote,
-		readonly gateSource: Pattern,
-		node: PatternNode,
-	) {
-		super(node);
+export interface GateProperties extends ModifierProperties {
+	readonly gateSource: Pattern;
+}
+
+export class GatePattern extends ModifierPattern {
+	readonly properties: GateProperties;
+
+	constructor(properties: OptionalProperties<GateProperties, "outputs">) {
+		super(properties);
+
+		this.properties = {
+			...properties,
+			outputs: properties.outputs ?? [],
+		};
 	}
 
-	clone(overrides: Partial<PatternNode>): GatePattern {
-		return new GatePattern(this.source, this.gateSource, this.overrideNode(overrides));
+	clone(overrides: Partial<PatternProperties>): GatePattern {
+		return new GatePattern({
+			...this.properties,
+			...overrides,
+			previousProperties: this.properties,
+		});
 	}
 }
 
@@ -45,5 +57,12 @@ export function gate(pattern: Pattern | ScoreNote, gatePattern: Pattern): GatePa
 		return result;
 	});
 
-	return new GatePattern(pattern, gatePattern, transformed);
+	return new GatePattern({
+		notes: transformed.notes,
+		children: transformed.children,
+		startBeat: transformed.startBeat,
+		endBeat: transformed.endBeat,
+		gateSource: gatePattern,
+		input: resolved,
+	});
 }

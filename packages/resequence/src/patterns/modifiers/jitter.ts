@@ -1,8 +1,9 @@
+import type { OptionalProperties } from "../../utils/RequiredProperties";
 import type { ScoreNote } from "../note";
-import type { PatternNode } from "../pattern";
-import { MidiPattern, type Pattern } from "../pattern";
+import type { Pattern, PatternProperties } from "../pattern";
 import { toPattern } from "../sequence";
 import { mapNotes } from "../utils/tree";
+import { ModifierPattern, type ModifierProperties } from "./modifier";
 
 function mulberry32(seed: number): () => number {
 	let state = seed;
@@ -15,18 +16,29 @@ function mulberry32(seed: number): () => number {
 	};
 }
 
-export class JitterPattern extends MidiPattern {
-	constructor(
-		readonly source: Pattern | ScoreNote,
-		readonly amount: number,
-		readonly seed: number | undefined,
-		node: PatternNode,
-	) {
-		super(node);
+export interface JitterProperties extends ModifierProperties {
+	readonly amount: number;
+	readonly seed: number | undefined;
+}
+
+export class JitterPattern extends ModifierPattern {
+	readonly properties: JitterProperties;
+
+	constructor(properties: OptionalProperties<JitterProperties, "outputs">) {
+		super(properties);
+
+		this.properties = {
+			...properties,
+			outputs: properties.outputs ?? [],
+		};
 	}
 
-	clone(overrides: Partial<PatternNode>): JitterPattern {
-		return new JitterPattern(this.source, this.amount, this.seed, this.overrideNode(overrides));
+	clone(overrides: Partial<PatternProperties>): JitterPattern {
+		return new JitterPattern({
+			...this.properties,
+			...overrides,
+			previousProperties: this.properties,
+		});
 	}
 }
 
@@ -43,5 +55,13 @@ export function jitter(pattern: Pattern | ScoreNote, amount: number, seed?: numb
 		};
 	});
 
-	return new JitterPattern(pattern, amount, seed, transformed);
+	return new JitterPattern({
+		notes: transformed.notes,
+		children: transformed.children,
+		startBeat: transformed.startBeat,
+		endBeat: transformed.endBeat,
+		amount,
+		seed,
+		input: resolved,
+	});
 }

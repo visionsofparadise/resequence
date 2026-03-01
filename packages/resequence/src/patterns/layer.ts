@@ -1,10 +1,15 @@
 import type { ScoreNote } from "./note";
-import type { PatternNode, RelativeChild, RelativeNote } from "./pattern";
-import { MidiPattern, Pattern } from "./pattern";
+import type { PatternProperties, RelativeChild, RelativeNote } from "./pattern";
+import { MidiPattern } from "./midi";
+import { Pattern } from "./pattern";
 
 export class LayerPattern extends MidiPattern {
-	clone(overrides: Partial<PatternNode>): LayerPattern {
-		return new LayerPattern(this.overrideNode(overrides));
+	clone(overrides: Partial<PatternProperties>): LayerPattern {
+		return new LayerPattern({
+			...this.properties,
+			...overrides,
+			previousProperties: this.properties,
+		});
 	}
 }
 

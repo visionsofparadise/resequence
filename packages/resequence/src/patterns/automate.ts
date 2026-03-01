@@ -5,26 +5,22 @@ import type { ScheduleContext } from "../rendering/schedule-context";
 import { beatsToSeconds } from "../rendering/tempo-map";
 import type { Lfo } from "../utils/lfo";
 import type { ValidateContext } from "../validate";
-import type { PatternNode } from "./pattern";
+import type { PatternProperties } from "./pattern";
 import { Pattern } from "./pattern";
 
-export class AutomatePattern extends Pattern {
-	constructor(
-		readonly name: string,
-		readonly paths: ReadonlyArray<string>,
-		readonly source: ReadonlyArray<Keyframe> | Lfo,
-		node: PatternNode,
-	) {
-		super(node);
-	}
+export interface AutomateProperties extends PatternProperties {
+	readonly name: string;
+	readonly paths: ReadonlyArray<string>;
+	readonly source: ReadonlyArray<Keyframe> | Lfo;
+}
 
-	get envelope(): ReadonlyArray<Keyframe> {
-		if (Array.isArray(this.source)) return this.source as ReadonlyArray<Keyframe>;
-		return [];
+export class AutomatePattern extends Pattern {
+	constructor(readonly properties: AutomateProperties) {
+		super(properties);
 	}
 
 	async setup(context: ScheduleContext): Promise<void> {
-		for (const path of this.paths) {
+		for (const path of this.properties.paths) {
 			const constant = context.audioContext.createConstantSource();
 			context.driverMap.set(path, constant);
 			constant.offset.value = 0;
@@ -35,24 +31,24 @@ export class AutomatePattern extends Pattern {
 	}
 
 	schedule(offsetBeats: number, context: ScheduleContext): void {
-		if (!Array.isArray(this.source)) {
+		if (!Array.isArray(this.properties.source)) {
 			this.scheduleLfo(offsetBeats, context);
 			return;
 		}
 
-		if (offsetBeats + this.endBeat <= context.fromBeats || offsetBeats + this.startBeat >= context.toBeats) return;
+		if (offsetBeats + this.properties.endBeat <= context.fromBeats || offsetBeats + this.properties.startBeat >= context.toBeats) return;
 
-		const envelope = this.source as ReadonlyArray<Keyframe>;
+		const envelope = this.properties.source as ReadonlyArray<Keyframe>;
 		if (envelope.length === 0) return;
 
 		const absoluteKeyframes: Array<Keyframe> = envelope.map((kf) => ({ ...kf, beat: offsetBeats + kf.beat }));
 
-		const clipEndBeat = offsetBeats + (this.endBeat - this.startBeat);
+		const clipEndBeat = offsetBeats + (this.properties.endBeat - this.properties.startBeat);
 		const evalBeat = Math.max(context.fromBeats, offsetBeats);
 		const initialValue = evaluateAt(absoluteKeyframes, evalBeat);
 		const beatToSec = (beat: number) => beatsToSeconds(beat, context.tempoMap);
 
-		for (const path of this.paths) {
+		for (const path of this.properties.paths) {
 			const driver = context.driverMap.get(path);
 			if (!driver) continue;
 
@@ -74,7 +70,7 @@ export class AutomatePattern extends Pattern {
 	}
 
 	private scheduleLfo(offsetBeats: number, context: ScheduleContext): void {
-		const lfo = this.source as Lfo;
+		const lfo = this.properties.source as Lfo;
 
 		if (offsetBeats >= context.toBeats) return;
 
@@ -94,7 +90,7 @@ export class AutomatePattern extends Pattern {
 
 		const oscStartSeconds = Math.max(effectiveStartSeconds, windowStartSeconds - phaseSeconds);
 
-		for (const path of this.paths) {
+		for (const path of this.properties.paths) {
 			const driver = context.driverMap.get(path);
 			if (!driver) continue;
 
@@ -120,7 +116,7 @@ export class AutomatePattern extends Pattern {
 	}
 
 	teardown(context: ScheduleContext): void {
-		for (const path of this.paths) {
+		for (const path of this.properties.paths) {
 			const constant = context.driverMap.get(path);
 
 			if (constant) {
@@ -137,12 +133,16 @@ export class AutomatePattern extends Pattern {
 		}
 	}
 
-	clone(overrides: Partial<PatternNode>): AutomatePattern {
-		return new AutomatePattern(this.name, this.paths, this.source, this.overrideNode(overrides));
+	clone(overrides: Partial<PatternProperties>): AutomatePattern {
+		return new AutomatePattern({
+			...this.properties,
+			...overrides,
+			previousProperties: this.properties,
+		});
 	}
 
 	validate(context: ValidateContext): void {
-		context.automationPaths.push({ name: this.name, paths: [...this.paths] });
+		context.automationPaths.push({ name: this.properties.name, paths: [...this.properties.paths] });
 	}
 }
 
@@ -170,10 +170,10 @@ export function automate(name: string, paths: string | ReadonlyArray<string>, so
 
 		const endBeat = Math.max(...keyframes.map((kf) => kf.beat));
 
-		return new AutomatePattern(name, resolvedPaths, keyframes, { notes: [], children: [], startBeat: 0, endBeat });
+		return new AutomatePattern({ notes: [], children: [], startBeat: 0, endBeat, name, paths: resolvedPaths, source: keyframes });
 	}
 
-	return new AutomatePattern(name, resolvedPaths, source as Lfo, { notes: [], children: [], startBeat: 0, endBeat: 0 });
+	return new AutomatePattern({ notes: [], children: [], startBeat: 0, endBeat: 0, name, paths: resolvedPaths, source: source as Lfo });
 }
 
 function firstAt(keyframes: ReadonlyArray<Keyframe>, beat: number): Keyframe | undefined {

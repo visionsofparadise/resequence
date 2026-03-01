@@ -3,7 +3,7 @@ import { evaluateAt } from "../automation/keyframe";
 import { AudioPattern } from "../patterns/audio";
 import { MetadataPattern } from "../patterns/metadata";
 import type { Pattern } from "../patterns/pattern";
-import { MidiPattern } from "../patterns/pattern";
+import { MidiPattern } from "../patterns/midi";
 import { TempoPattern } from "../patterns/tempo";
 import type { TempoMap, TempoPoint } from "./tempo-map";
 
@@ -64,26 +64,26 @@ function walkMetadata(
 	let tempoForChildren = ancestorHasTempo;
 
 	if (pattern instanceof TempoPattern) {
-		const shouldTakeEffect = !ancestorHasTempo || pattern.isOverride;
+		const shouldTakeEffect = !ancestorHasTempo || pattern.properties.isOverride;
 
 		if (shouldTakeEffect) {
-			collectTempoPoints(pattern.bpm, pattern.keyframes, pattern.bpmMin, pattern.bpmMax, offsetBeats, tempoEntries);
+			collectTempoPoints(pattern.properties.bpm, pattern.properties.keyframes, pattern.properties.bpmMin, pattern.properties.bpmMax, offsetBeats, tempoEntries);
 			tempoForChildren = true;
 		}
 	}
 
 	if (pattern instanceof MetadataPattern) {
-		if (pattern.meta.marker !== undefined) {
-			markers.push({ beat: offsetBeats, name: pattern.meta.marker });
+		if (pattern.properties.meta.marker !== undefined) {
+			markers.push({ beat: offsetBeats, name: pattern.properties.meta.marker });
 		}
 
-		if (pattern.meta.timeSignature !== undefined) {
-			timeSignatures.push({ beat: offsetBeats, timeSignature: pattern.meta.timeSignature });
+		if (pattern.properties.meta.timeSignature !== undefined) {
+			timeSignatures.push({ beat: offsetBeats, timeSignature: pattern.properties.meta.timeSignature });
 		}
 
-		if (pattern.meta.region !== undefined) {
+		if (pattern.properties.meta.region !== undefined) {
 			regions.push({
-				name: pattern.meta.region,
+				name: pattern.properties.meta.region,
 				startBeat: offsetBeats + pattern.startBeat,
 				endBeat: offsetBeats + pattern.endBeat,
 			});
@@ -91,7 +91,7 @@ function walkMetadata(
 	}
 
 	if (pattern instanceof AudioPattern) {
-		tracks.add(pattern.name);
+		tracks.add(pattern.properties.name);
 	}
 
 	if (pattern instanceof MidiPattern && pattern.outputs.length > 0) {

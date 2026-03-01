@@ -1,23 +1,35 @@
 import type { Pitch } from "../../utils/pitch";
 import { addSteps, NUM_OCTAVES, pitchKey } from "../../utils/pitch";
 import type { ScoreNote } from "../note";
-import type { PatternNode } from "../pattern";
-import { MidiPattern, type Pattern } from "../pattern";
+import type { Pattern, PatternProperties } from "../pattern";
 import { toPattern } from "../sequence";
+import type { OptionalProperties } from "../../utils/RequiredProperties";
 import { mapNotes } from "../utils/tree";
+import { ModifierPattern, type ModifierProperties } from "./modifier";
 
-export class FlipPattern extends MidiPattern {
-	constructor(
-		readonly source: Pattern | ScoreNote,
-		readonly center: Pitch,
-		readonly range: [Pitch, Pitch] | undefined,
-		node: PatternNode,
-	) {
-		super(node);
+export interface FlipProperties extends ModifierProperties {
+	readonly center: Pitch;
+	readonly range: [Pitch, Pitch] | undefined;
+}
+
+export class FlipPattern extends ModifierPattern {
+	readonly properties: FlipProperties;
+
+	constructor(properties: OptionalProperties<FlipProperties, "outputs">) {
+		super(properties);
+
+		this.properties = {
+			...properties,
+			outputs: properties.outputs ?? [],
+		};
 	}
 
-	clone(overrides: Partial<PatternNode>): FlipPattern {
-		return new FlipPattern(this.source, this.center, this.range, this.overrideNode(overrides));
+	clone(overrides: Partial<PatternProperties>): FlipPattern {
+		return new FlipPattern({
+			...this.properties,
+			...overrides,
+			previousProperties: this.properties,
+		});
 	}
 }
 
@@ -49,5 +61,13 @@ export function flip(pattern: Pattern | ScoreNote, center: Pitch, range?: [Pitch
 		};
 	});
 
-	return new FlipPattern(pattern, centerPitch, resolvedRange, transformed);
+	return new FlipPattern({
+		notes: transformed.notes,
+		children: transformed.children,
+		startBeat: transformed.startBeat,
+		endBeat: transformed.endBeat,
+		center: centerPitch,
+		range: resolvedRange,
+		input: resolved,
+	});
 }

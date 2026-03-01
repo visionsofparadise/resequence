@@ -1,21 +1,33 @@
+import type { OptionalProperties } from "../../utils/RequiredProperties";
 import type { ScoreNote } from "../note";
-import type { PatternNode } from "../pattern";
-import { MidiPattern, type Pattern } from "../pattern";
+import type { Pattern, PatternProperties } from "../pattern";
 import { toPattern } from "../sequence";
 import { mapNotes } from "../utils/tree";
+import { ModifierPattern, type ModifierProperties } from "./modifier";
 
-export class AccentPattern extends MidiPattern {
-	constructor(
-		readonly source: Pattern | ScoreNote,
-		readonly positions: ReadonlyArray<number>,
-		readonly amount: number,
-		node: PatternNode,
-	) {
-		super(node);
+export interface AccentProperties extends ModifierProperties {
+	readonly positions: ReadonlyArray<number>;
+	readonly amount: number;
+}
+
+export class AccentPattern extends ModifierPattern {
+	readonly properties: AccentProperties;
+
+	constructor(properties: OptionalProperties<AccentProperties, "outputs">) {
+		super(properties);
+
+		this.properties = {
+			...properties,
+			outputs: properties.outputs ?? [],
+		};
 	}
 
-	clone(overrides: Partial<PatternNode>): AccentPattern {
-		return new AccentPattern(this.source, this.positions, this.amount, this.overrideNode(overrides));
+	clone(overrides: Partial<PatternProperties>): AccentPattern {
+		return new AccentPattern({
+			...this.properties,
+			...overrides,
+			previousProperties: this.properties,
+		});
 	}
 }
 
@@ -55,5 +67,13 @@ export function accent(pattern: Pattern | ScoreNote, positions: ReadonlyArray<nu
 		return note;
 	});
 
-	return new AccentPattern(pattern, resolvedPositions, amount, transformed);
+	return new AccentPattern({
+		notes: transformed.notes,
+		children: transformed.children,
+		startBeat: transformed.startBeat,
+		endBeat: transformed.endBeat,
+		positions: resolvedPositions,
+		amount,
+		input: resolved,
+	});
 }

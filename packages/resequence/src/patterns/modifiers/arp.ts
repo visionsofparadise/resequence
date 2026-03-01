@@ -1,11 +1,12 @@
+import type { OptionalProperties } from "../../utils/RequiredProperties";
 import { I } from "../../tunings/index-tuning";
 import type { Pitch } from "../../utils/pitch";
 import { pitchKey } from "../../utils/pitch";
 import type { ScoreNote } from "../note";
-import type { PatternNode } from "../pattern";
-import { MidiPattern, type Pattern } from "../pattern";
+import type { Pattern, PatternProperties } from "../pattern";
 import { sequence, toPattern } from "../sequence";
 import { collectNotes, flatMapNotes, walkNotes } from "../utils/tree";
+import { ModifierPattern, type ModifierProperties } from "./modifier";
 
 function mulberry32(seed: number): () => number {
 	let state = seed;
@@ -27,17 +28,28 @@ interface ArpStep {
 	readonly duration: number;
 }
 
-export class ArpPattern extends MidiPattern {
-	constructor(
-		readonly source: Pattern | ScoreNote,
-		readonly mapping: Pattern,
-		node: PatternNode,
-	) {
-		super(node);
+export interface ArpProperties extends ModifierProperties {
+	readonly mapping: Pattern;
+}
+
+export class ArpPattern extends ModifierPattern {
+	readonly properties: ArpProperties;
+
+	constructor(properties: OptionalProperties<ArpProperties, "outputs">) {
+		super(properties);
+
+		this.properties = {
+			...properties,
+			outputs: properties.outputs ?? [],
+		};
 	}
 
-	clone(overrides: Partial<PatternNode>): ArpPattern {
-		return new ArpPattern(this.source, this.mapping, this.overrideNode(overrides));
+	clone(overrides: Partial<PatternProperties>): ArpPattern {
+		return new ArpPattern({
+			...this.properties,
+			...overrides,
+			previousProperties: this.properties,
+		});
 	}
 }
 
@@ -52,7 +64,14 @@ export function arp(pattern: Pattern | ScoreNote, mappingPattern: Pattern): ArpP
 	const mappingDuration = mappingPattern.endBeat - mappingPattern.startBeat;
 
 	if (sourceEntries.length === 0 || mappingNotes.length === 0 || mappingDuration === 0) {
-		return new ArpPattern(pattern, mappingPattern, { notes: [], children: [{ offsetBeats: 0, pattern: resolved }], startBeat: pattern.startBeat, endBeat: pattern.endBeat });
+		return new ArpPattern({
+			notes: [],
+			children: [{ offsetBeats: 0, pattern: resolved }],
+			startBeat: pattern.startBeat,
+			endBeat: pattern.endBeat,
+			mapping: mappingPattern,
+			input: resolved,
+		});
 	}
 
 	const mappingPitchKeys = [...new Set(mappingNotes.map((mappingNote) => pitchKey(mappingNote.pitch)))].sort((keyA, keyB) => keyA - keyB);
@@ -142,7 +161,6 @@ export function arp(pattern: Pattern | ScoreNote, mappingPattern: Pattern): ArpP
 		}
 	}
 
-	// Walk the tree in-place, replacing each note with its assigned arp steps
 	const transformed = flatMapNotes(resolved, (_scoreNote, { id, absoluteOffset }) => {
 		const steps = stepsByNote.get(id);
 
@@ -156,7 +174,14 @@ export function arp(pattern: Pattern | ScoreNote, mappingPattern: Pattern): ArpP
 		}));
 	});
 
-	return new ArpPattern(pattern, mappingPattern, transformed);
+	return new ArpPattern({
+		notes: transformed.notes,
+		children: transformed.children,
+		startBeat: transformed.startBeat,
+		endBeat: transformed.endBeat,
+		mapping: mappingPattern,
+		input: resolved,
+	});
 }
 
 export function arpUp(voices: number, rate: number): Pattern {

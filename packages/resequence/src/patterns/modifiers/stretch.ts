@@ -1,20 +1,32 @@
+import type { OptionalProperties } from "../../utils/RequiredProperties";
 import type { ScoreNote } from "../note";
-import type { PatternNode } from "../pattern";
-import { MidiPattern, type Pattern } from "../pattern";
+import type { Pattern, PatternProperties } from "../pattern";
 import { toPattern } from "../sequence";
 import { mapNotes } from "../utils/tree";
+import { ModifierPattern, type ModifierProperties } from "./modifier";
 
-export class StretchPattern extends MidiPattern {
-	constructor(
-		readonly source: Pattern | ScoreNote,
-		readonly factor: number,
-		node: PatternNode,
-	) {
-		super(node);
+export interface StretchProperties extends ModifierProperties {
+	readonly factor: number;
+}
+
+export class StretchPattern extends ModifierPattern {
+	readonly properties: StretchProperties;
+
+	constructor(properties: OptionalProperties<StretchProperties, "outputs">) {
+		super(properties);
+
+		this.properties = {
+			...properties,
+			outputs: properties.outputs ?? [],
+		};
 	}
 
-	clone(overrides: Partial<PatternNode>): StretchPattern {
-		return new StretchPattern(this.source, this.factor, this.overrideNode(overrides));
+	clone(overrides: Partial<PatternProperties>): StretchPattern {
+		return new StretchPattern({
+			...this.properties,
+			...overrides,
+			previousProperties: this.properties,
+		});
 	}
 }
 
@@ -27,5 +39,12 @@ export function stretch(pattern: Pattern | ScoreNote, factor: number): StretchPa
 		slides: note.slides?.map((sl) => ({ ...sl, beat: sl.beat * factor })),
 	}));
 
-	return new StretchPattern(pattern, factor, transformed);
+	return new StretchPattern({
+		notes: transformed.notes,
+		children: transformed.children,
+		startBeat: transformed.startBeat,
+		endBeat: transformed.endBeat,
+		factor,
+		input: resolved,
+	});
 }

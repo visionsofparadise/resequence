@@ -9,14 +9,14 @@ describe("MetadataPattern", () => {
 		it("wraps pattern with name and description", () => {
 			const m = metadata(sequence(N.C4(1)), { name: "My Song", description: "A test song" });
 			expect(m).toBeInstanceOf(m.constructor);
-			expect(m.meta.name).toBe("My Song");
-			expect(m.meta.description).toBe("A test song");
+			expect(m.properties.meta.name).toBe("My Song");
+			expect(m.properties.meta.description).toBe("A test song");
 		});
 
 		it("supports empty config", () => {
 			const m = metadata(sequence(N.C4(1)), {});
-			expect(m.meta.name).toBeUndefined();
-			expect(m.meta.description).toBeUndefined();
+			expect(m.properties.meta.name).toBeUndefined();
+			expect(m.properties.meta.description).toBeUndefined();
 		});
 	});
 

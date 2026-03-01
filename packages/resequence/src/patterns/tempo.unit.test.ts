@@ -8,7 +8,7 @@ describe("TempoPattern", () => {
 	it("creates TempoPattern with bpm", () => {
 		const t = tempo(sequence(N.C4(1)), 140);
 		expect(t).toBeInstanceOf(TempoPattern);
-		expect(t.bpm).toBe(140);
+		expect(t.properties.bpm).toBe(140);
 	});
 
 	it("throws for bpm <= 0", () => {
@@ -21,10 +21,10 @@ describe("TempoPattern", () => {
 			const pattern = tempo(sequence(N.C4(1)), 120, {
 				keyframes: [{ beat: 4, bpm: 140 }],
 			});
-			expect(pattern.bpm).toBe(120);
-			expect(pattern.bpmMin).toBe(120);
-			expect(pattern.bpmMax).toBe(140);
-			expect(pattern.keyframes).toEqual([{ beat: 4, value: 1.0 }]);
+			expect(pattern.properties.bpm).toBe(120);
+			expect(pattern.properties.bpmMin).toBe(120);
+			expect(pattern.properties.bpmMax).toBe(140);
+			expect(pattern.properties.keyframes).toEqual([{ beat: 4, value: 1.0 }]);
 		});
 
 		it("rejects keyframe with negative beat", () => {

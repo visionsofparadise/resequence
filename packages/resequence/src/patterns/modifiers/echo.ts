@@ -1,22 +1,34 @@
+import type { OptionalProperties } from "../../utils/RequiredProperties";
 import type { ScoreNote } from "../note";
-import type { PatternNode } from "../pattern";
-import { MidiPattern, type Pattern } from "../pattern";
+import type { Pattern, PatternProperties } from "../pattern";
 import { toPattern } from "../sequence";
 import { flatMapNotes } from "../utils/tree";
+import { ModifierPattern, type ModifierProperties } from "./modifier";
 
-export class EchoPattern extends MidiPattern {
-	constructor(
-		readonly source: Pattern | ScoreNote,
-		readonly interval: number,
-		readonly repeats: number,
-		readonly decay: number,
-		node: PatternNode,
-	) {
-		super(node);
+export interface EchoProperties extends ModifierProperties {
+	readonly interval: number;
+	readonly repeats: number;
+	readonly decay: number;
+}
+
+export class EchoPattern extends ModifierPattern {
+	readonly properties: EchoProperties;
+
+	constructor(properties: OptionalProperties<EchoProperties, "outputs">) {
+		super(properties);
+
+		this.properties = {
+			...properties,
+			outputs: properties.outputs ?? [],
+		};
 	}
 
-	clone(overrides: Partial<PatternNode>): EchoPattern {
-		return new EchoPattern(this.source, this.interval, this.repeats, this.decay, this.overrideNode(overrides));
+	clone(overrides: Partial<PatternProperties>): EchoPattern {
+		return new EchoPattern({
+			...this.properties,
+			...overrides,
+			previousProperties: this.properties,
+		});
 	}
 }
 
@@ -38,5 +50,14 @@ export function echo(pattern: Pattern | ScoreNote, interval: number, repeats: nu
 		return result;
 	});
 
-	return new EchoPattern(pattern, interval, repeats, decay, transformed);
+	return new EchoPattern({
+		notes: transformed.notes,
+		children: transformed.children,
+		startBeat: transformed.startBeat,
+		endBeat: transformed.endBeat,
+		interval,
+		repeats,
+		decay,
+		input: resolved,
+	});
 }

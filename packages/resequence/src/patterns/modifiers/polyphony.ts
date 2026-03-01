@@ -1,21 +1,33 @@
+import type { OptionalProperties } from "../../utils/RequiredProperties";
 import type { ScoreNote } from "../note";
-import type { PatternNode } from "../pattern";
-import { MidiPattern, type Pattern } from "../pattern";
+import type { Pattern, PatternProperties } from "../pattern";
 import { toPattern } from "../sequence";
 import { flatMapNotes, walkNotes } from "../utils/tree";
+import { ModifierPattern, type ModifierProperties } from "./modifier";
 
-export class PolyphonyPattern extends MidiPattern {
-	constructor(
-		readonly source: Pattern | ScoreNote,
-		readonly max: number,
-		readonly isGreedy: boolean,
-		node: PatternNode,
-	) {
-		super(node);
+export interface PolyphonyProperties extends ModifierProperties {
+	readonly max: number;
+	readonly isGreedy: boolean;
+}
+
+export class PolyphonyPattern extends ModifierPattern {
+	readonly properties: PolyphonyProperties;
+
+	constructor(properties: OptionalProperties<PolyphonyProperties, "outputs">) {
+		super(properties);
+
+		this.properties = {
+			...properties,
+			outputs: properties.outputs ?? [],
+		};
 	}
 
-	clone(overrides: Partial<PatternNode>): PolyphonyPattern {
-		return new PolyphonyPattern(this.source, this.max, this.isGreedy, this.overrideNode(overrides));
+	clone(overrides: Partial<PatternProperties>): PolyphonyPattern {
+		return new PolyphonyPattern({
+			...this.properties,
+			...overrides,
+			previousProperties: this.properties,
+		});
 	}
 }
 
@@ -58,5 +70,13 @@ export function polyphony(pattern: Pattern | ScoreNote, max: number, isGreedy = 
 		return [];
 	});
 
-	return new PolyphonyPattern(pattern, max, isGreedy, transformed);
+	return new PolyphonyPattern({
+		notes: transformed.notes,
+		children: transformed.children,
+		startBeat: transformed.startBeat,
+		endBeat: transformed.endBeat,
+		max,
+		isGreedy,
+		input: resolved,
+	});
 }
