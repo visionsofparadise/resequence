@@ -2,7 +2,7 @@ import type { ScoreNote } from "../note";
 import type { PatternNode } from "../pattern";
 import { MidiPattern, type Pattern } from "../pattern";
 import { toPattern } from "../sequence";
-import { collectNotes, mapNotes } from "../utils/tree";
+import { mapNotes, walkNotes } from "../utils/tree";
 
 export class LegatoPattern extends MidiPattern {
 	constructor(
@@ -20,30 +20,29 @@ export class LegatoPattern extends MidiPattern {
 
 export function legato(pattern: Pattern | ScoreNote, extendLast = true): LegatoPattern {
 	const resolved = toPattern(pattern);
-	const allNotes = collectNotes(resolved);
-	const sorted = allNotes.slice().sort((noteA, noteB) => noteA.startBeat - noteB.startBeat);
+	const entries: Array<{ id: string; absoluteStart: number }> = [];
+	walkNotes(resolved, (note, { id, absoluteOffset }) => {
+		entries.push({ id, absoluteStart: absoluteOffset + note.startBeat });
+	});
+	entries.sort((ea, eb) => ea.absoluteStart - eb.absoluteStart);
 	const totalDuration = pattern.endBeat - pattern.startBeat;
 
 	const endBeatMap = new Map<string, number>();
 
-	for (let noteIndex = 0; noteIndex < sorted.length; noteIndex++) {
-		const scoreNote = sorted[noteIndex];
-		if (!scoreNote) continue;
-		const nextNote = sorted[noteIndex + 1];
-		const key = `${scoreNote.startBeat}:${scoreNote.endBeat}:${scoreNote.velocity}`;
+	for (let noteIndex = 0; noteIndex < entries.length; noteIndex++) {
+		const entry = entries[noteIndex];
+		if (!entry) continue;
+		const nextEntry = entries[noteIndex + 1];
 
-		if (nextNote) {
-			endBeatMap.set(key, nextNote.startBeat);
+		if (nextEntry) {
+			endBeatMap.set(entry.id, nextEntry.absoluteStart);
 		} else if (extendLast) {
-			endBeatMap.set(key, totalDuration);
+			endBeatMap.set(entry.id, totalDuration);
 		}
 	}
 
-	const transformed = mapNotes(resolved, (note, absoluteOffset) => {
-		const absStart = absoluteOffset + note.startBeat;
-		const absEnd = absoluteOffset + note.endBeat;
-		const key = `${absStart}:${absEnd}:${note.velocity}`;
-		const newAbsEnd = endBeatMap.get(key);
+	const transformed = mapNotes(resolved, (note, { id, absoluteOffset }) => {
+		const newAbsEnd = endBeatMap.get(id);
 
 		if (newAbsEnd !== undefined) {
 			return { ...note, endBeat: newAbsEnd - absoluteOffset };

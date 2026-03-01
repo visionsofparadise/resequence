@@ -5,7 +5,7 @@ import type { ScoreNote } from "../note";
 import type { PatternNode } from "../pattern";
 import { MidiPattern, type Pattern } from "../pattern";
 import { toPattern } from "../sequence";
-import { collectNotes, mapNotes } from "../utils/tree";
+import { mapNotes, walkNotes } from "../utils/tree";
 
 export class SlidePattern extends MidiPattern {
 	constructor(
@@ -22,51 +22,53 @@ export class SlidePattern extends MidiPattern {
 
 export function slide(pattern: Pattern | ScoreNote): SlidePattern {
 	const resolved = toPattern(pattern);
-	const allNotes = collectNotes(resolved);
+	const entries: Array<{ id: string; absoluteStart: number; absoluteEnd: number; note: ScoreNote }> = [];
+	walkNotes(resolved, (note, { id, absoluteOffset }) => {
+		entries.push({ id, absoluteStart: absoluteOffset + note.startBeat, absoluteEnd: absoluteOffset + note.endBeat, note });
+	});
 
-	if (allNotes.length < 2) {
+	if (entries.length < 2) {
 		return new SlidePattern(pattern, resolved);
 	}
 
-	const sorted = allNotes.slice().sort((noteA, noteB) => noteA.startBeat - noteB.startBeat);
+	entries.sort((ea, eb) => ea.absoluteStart - eb.absoluteStart);
 
 	const slideMap = new Map<string, Array<Keyframe>>();
 
-	for (const noteA of sorted) {
-		const aEnd = noteA.endBeat;
-		let bestMatch: ScoreNote | undefined;
+	for (const entryA of entries) {
+		const aEnd = entryA.absoluteEnd;
+		let bestMatch: typeof entries[number] | undefined;
 		let bestDistance = Infinity;
 
-		for (const noteB of sorted) {
-			if (noteB.startBeat <= noteA.startBeat) continue;
-			if (noteB.startBeat >= aEnd) continue;
+		for (const entryB of entries) {
+			if (entryB.absoluteStart <= entryA.absoluteStart) continue;
+			if (entryB.absoluteStart >= aEnd) continue;
 
-			const dist = Math.abs(pitchKey(noteA.pitch) - pitchKey(noteB.pitch));
+			const dist = Math.abs(pitchKey(entryA.note.pitch) - pitchKey(entryB.note.pitch));
 			if (dist < bestDistance) {
 				bestDistance = dist;
-				bestMatch = noteB;
+				bestMatch = entryB;
 			}
 		}
 
 		if (!bestMatch) continue;
 
-		const slideStartBeat = bestMatch.startBeat - noteA.startBeat;
-		const slideEndBeat = noteA.endBeat - noteA.startBeat;
+		const slideStartBeat = bestMatch.absoluteStart - entryA.absoluteStart;
+		const slideEndBeat = entryA.absoluteEnd - entryA.absoluteStart;
 
-		const currentPitchAtSlideStart = noteA.slides
-			? evaluateSlide(noteA.pitch, noteA.slides, slideStartBeat)
-			: noteA.pitch;
+		const currentPitchAtSlideStart = entryA.note.slides
+			? evaluateSlide(entryA.note.pitch, entryA.note.slides, slideStartBeat)
+			: entryA.note.pitch;
 
 		const holdKeyframe: Keyframe = { beat: slideStartBeat, value: normalizePitch(currentPitchAtSlideStart) };
-		const targetKeyframe: Keyframe = { beat: slideEndBeat, value: normalizePitch(bestMatch.pitch) };
+		const targetKeyframe: Keyframe = { beat: slideEndBeat, value: normalizePitch(bestMatch.note.pitch) };
 
 		const newSlides = [holdKeyframe, targetKeyframe];
-		const key = `${noteA.startBeat}:${noteA.endBeat}:${pitchKey(noteA.pitch)}`;
 
-		if (noteA.slides) {
-			slideMap.set(key, [...mergeSlides(noteA.slides, newSlides)]);
+		if (entryA.note.slides) {
+			slideMap.set(entryA.id, [...mergeSlides(entryA.note.slides, newSlides)]);
 		} else {
-			slideMap.set(key, newSlides);
+			slideMap.set(entryA.id, newSlides);
 		}
 	}
 
@@ -74,11 +76,8 @@ export function slide(pattern: Pattern | ScoreNote): SlidePattern {
 		return new SlidePattern(pattern, resolved);
 	}
 
-	const transformed = mapNotes(resolved, (note, absoluteOffset) => {
-		const absStart = absoluteOffset + note.startBeat;
-		const absEnd = absoluteOffset + note.endBeat;
-		const key = `${absStart}:${absEnd}:${pitchKey(note.pitch)}`;
-		const newSlides = slideMap.get(key);
+	const transformed = mapNotes(resolved, (note, { id }) => {
+		const newSlides = slideMap.get(id);
 
 		if (newSlides) {
 			return { ...note, slides: newSlides };

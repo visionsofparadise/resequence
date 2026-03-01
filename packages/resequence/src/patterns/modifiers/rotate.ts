@@ -1,9 +1,8 @@
-import { pitchKey } from "../../utils/pitch";
 import type { ScoreNote } from "../note";
 import type { PatternNode } from "../pattern";
 import { MidiPattern, type Pattern } from "../pattern";
 import { toPattern } from "../sequence";
-import { collectNotes, mapNotes } from "../utils/tree";
+import { mapNotes, walkNotes } from "../utils/tree";
 
 export class RotatePattern extends MidiPattern {
 	constructor(
@@ -21,58 +20,57 @@ export class RotatePattern extends MidiPattern {
 
 export function rotate(pattern: Pattern | ScoreNote, steps: number): RotatePattern {
 	const resolved = toPattern(pattern);
-	const allNotes = collectNotes(resolved);
-	const sorted = allNotes.slice().sort((noteA, noteB) => noteA.startBeat - noteB.startBeat);
+	const entries: Array<{ id: string; absoluteStart: number }> = [];
+	walkNotes(resolved, (note, { id, absoluteOffset }) => {
+		entries.push({ id, absoluteStart: absoluteOffset + note.startBeat });
+	});
+	entries.sort((ea, eb) => ea.absoluteStart - eb.absoluteStart);
 
-	if (sorted.length === 0) {
+	if (entries.length === 0) {
 		return new RotatePattern(pattern, steps, resolved);
 	}
 
 	const totalDuration = pattern.endBeat - pattern.startBeat;
-	const noteCount = sorted.length;
-	const firstNote = sorted[0];
+	const noteCount = entries.length;
+	const firstEntry = entries[0];
 
-	if (!firstNote) {
+	if (!firstEntry) {
 		return new RotatePattern(pattern, steps, resolved);
 	}
 
 	const gaps: Array<number> = [];
 
 	for (let gapIndex = 0; gapIndex < noteCount; gapIndex++) {
-		const curr = sorted[gapIndex];
+		const curr = entries[gapIndex];
 		if (!curr) continue;
 
 		if (gapIndex < noteCount - 1) {
-			const next = sorted[gapIndex + 1];
+			const next = entries[gapIndex + 1];
 			if (!next) continue;
-			gaps.push(next.startBeat - curr.startBeat);
+			gaps.push(next.absoluteStart - curr.absoluteStart);
 		} else {
-			gaps.push(totalDuration - curr.startBeat + firstNote.startBeat);
+			gaps.push(totalDuration - curr.absoluteStart + firstEntry.absoluteStart);
 		}
 	}
 
 	const shift = ((steps % noteCount) + noteCount) % noteCount;
-	const rotatedNotes = [...sorted.slice(shift), ...sorted.slice(0, shift)];
+	const rotatedEntries = [...entries.slice(shift), ...entries.slice(0, shift)];
 	const rotatedGaps = [...gaps.slice(shift), ...gaps.slice(0, shift)];
 
 	const beatAssignment = new Map<string, number>();
 	let beat = 0;
 
 	for (let noteIndex = 0; noteIndex < noteCount; noteIndex++) {
-		const rotatedNote = rotatedNotes[noteIndex];
+		const rotatedEntry = rotatedEntries[noteIndex];
 		const rotatedGap = rotatedGaps[noteIndex];
-		if (!rotatedNote || rotatedGap === undefined) continue;
+		if (!rotatedEntry || rotatedGap === undefined) continue;
 
-		const key = `${rotatedNote.startBeat}:${rotatedNote.endBeat}:${pitchKey(rotatedNote.pitch)}`;
-		beatAssignment.set(key, beat);
+		beatAssignment.set(rotatedEntry.id, beat);
 		beat += rotatedGap;
 	}
 
-	const transformed = mapNotes(resolved, (note, absoluteOffset) => {
-		const absStart = absoluteOffset + note.startBeat;
-		const absEnd = absoluteOffset + note.endBeat;
-		const key = `${absStart}:${absEnd}:${pitchKey(note.pitch)}`;
-		const newAbsBeat = beatAssignment.get(key);
+	const transformed = mapNotes(resolved, (note, { id, absoluteOffset }) => {
+		const newAbsBeat = beatAssignment.get(id);
 
 		if (newAbsBeat !== undefined) {
 			const noteDuration = note.endBeat - note.startBeat;

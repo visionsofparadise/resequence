@@ -1,5 +1,5 @@
 import type { ScheduleContext } from "../../rendering/schedule-context";
-import { driveParam, undriveParam } from "../../utils/driver";
+import { driveParam, offsetParam, undriveParam } from "../../utils/driver";
 import { scheduleSlideRamps } from "../../utils/schedule-slides";
 import type { WaveShape } from "../lfo";
 import type { VoiceNote } from "../midi-unit";
@@ -22,7 +22,7 @@ export class OscillatorUnit extends GeneratorUnit {
 		oscillator.type = this.oscillatorType;
 
 		const frequency = noteToFrequency(voiceNote.note, voiceNote.bend);
-		driveParam(oscillator.frequency, this.id ? `${this.id}.frequency` : undefined, frequency, [20, 20000], scheduleContext);
+		offsetParam(oscillator.frequency, this.id ? `${this.id}.frequency` : undefined, frequency, [20, 20000], scheduleContext);
 		driveParam(oscillator.detune, this.id ? `${this.id}.detune` : undefined, this.detune, [-1200, 1200], scheduleContext);
 
 		if (voiceNote.slides && voiceNote.slides.length > 0) {
@@ -42,7 +42,6 @@ export class OscillatorUnit extends GeneratorUnit {
 
 		oscillator.addEventListener("ended", () => {
 			if (this.id) {
-				undriveParam(`${this.id}.frequency`, oscillator.frequency, scheduleContext);
 				undriveParam(`${this.id}.detune`, oscillator.detune, scheduleContext);
 			}
 			cleanup();

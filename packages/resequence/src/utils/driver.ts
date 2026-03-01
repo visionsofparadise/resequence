@@ -32,8 +32,28 @@ export function driveParam(param: AudioParam, path: string | undefined, value: n
 	}
 }
 
+export function offsetParam(param: AudioParam, path: string | undefined, value: number, range: readonly [number, number], context: ScheduleContext): void {
+	param.value = value;
+
+	if (path) {
+		const [min, max] = range;
+		const driver = getOrCreateDriver(path, 0, context);
+
+		const scaleGain = context.audioContext.createGain();
+
+		scaleGain.gain.value = max - min;
+
+		driver.connect(scaleGain);
+		scaleGain.connect(param);
+	}
+}
+
 export function undriveParam(path: string, param: AudioParam, context: ScheduleContext): void {
-	context.driverMap.get(path)?.disconnect(param);
+	try {
+		context.driverMap.get(path)?.disconnect(param);
+	} catch {
+		// already disconnected (e.g. teardown ran before oscillator "ended" event)
+	}
 }
 
 export function proxyDriver(id: string | undefined, key: string, childPath: string, context: ScheduleContext): void {

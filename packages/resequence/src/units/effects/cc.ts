@@ -18,6 +18,7 @@ export class CCEffectUnit extends MidiUnit {
 	public chorusUnit: MixNode | undefined;
 	public panUnit: PanEffectUnit | undefined;
 	public reverbUnit: MixNode | undefined;
+	private gateUnit: GainEffectUnit | undefined;
 
 	constructor(private readonly voiceNote: VoiceNote) {
 		super();
@@ -88,7 +89,9 @@ export class CCEffectUnit extends MidiUnit {
 		}
 
 		if (units.length === 0) {
-			units.push(linearGain({ level: 1 }));
+			const gate = linearGain({ level: 1 });
+			this.gateUnit = gate;
+			units.push(gate);
 		}
 
 		for (let index = 0; index < units.length - 1; index++) {
@@ -119,10 +122,18 @@ export class CCEffectUnit extends MidiUnit {
 		this.chorusUnit = undefined;
 		this.panUnit = undefined;
 		this.reverbUnit = undefined;
+		this.gateUnit = undefined;
 	}
 
 	protected _schedule(voiceNote: VoiceNote, scheduleContext: ScheduleContext): void {
-		this.envelopeUnit?.schedule(voiceNote, scheduleContext);
+		if (this.envelopeUnit) {
+			this.envelopeUnit.schedule(voiceNote, scheduleContext);
+		} else if (this.gateUnit?.gainNode) {
+			const gateParam = this.gateUnit.gainNode.gain;
+			const stopSec = voiceNote.stopMs / 1000;
+			gateParam.setValueAtTime(1, stopSec);
+			gateParam.linearRampToValueAtTime(0, stopSec + 0.005);
+		}
 	}
 }
 

@@ -5,7 +5,7 @@ import type { ScoreNote } from "../note";
 import type { PatternNode } from "../pattern";
 import { MidiPattern, type Pattern } from "../pattern";
 import { toPattern } from "../sequence";
-import { collectNotes, flatMapNotes } from "../utils/tree";
+import { flatMapNotes, walkNotes } from "../utils/tree";
 
 export class HealPattern extends MidiPattern {
 	constructor(
@@ -24,41 +24,37 @@ export class HealPattern extends MidiPattern {
 export function heal(pattern: Pattern | ScoreNote, threshold?: number): HealPattern {
 	const resolved = toPattern(pattern);
 	const resolvedThreshold = threshold ?? 0;
-	const allNotes = collectNotes(resolved);
-	const sorted = allNotes.slice().sort((noteA, noteB) => noteA.startBeat - noteB.startBeat || pitchKey(noteA.pitch) - pitchKey(noteB.pitch));
+	const entries: Array<{ id: string; absoluteStart: number; absoluteEnd: number; key: number }> = [];
+	walkNotes(resolved, (note, { id, absoluteOffset }) => {
+		entries.push({ id, absoluteStart: absoluteOffset + note.startBeat, absoluteEnd: absoluteOffset + note.endBeat, key: pitchKey(note.pitch) });
+	});
+	entries.sort((ea, eb) => ea.absoluteStart - eb.absoluteStart || ea.key - eb.key);
 
 	const merged = new Set<string>();
 	const extensions = new Map<string, number>();
 
-	let last: ScoreNote | undefined;
+	let last: typeof entries[number] | undefined;
 
-	for (const scoreNote of sorted) {
+	for (const entry of entries) {
 		if (last !== undefined) {
-			const prevEnd = last.endBeat;
-			const gap = scoreNote.startBeat - prevEnd;
+			const prevEnd = last.absoluteEnd;
+			const gap = entry.absoluteStart - prevEnd;
 
-			if (pitchKey(last.pitch) === pitchKey(scoreNote.pitch) && gap <= resolvedThreshold) {
-				const lastKey = `${last.startBeat}:${last.endBeat}:${pitchKey(last.pitch)}`;
-				const mergedKey = `${scoreNote.startBeat}:${scoreNote.endBeat}:${pitchKey(scoreNote.pitch)}`;
-				const newEndBeat = scoreNote.endBeat;
-				extensions.set(lastKey, newEndBeat);
-				merged.add(mergedKey);
-				last = { ...last, endBeat: newEndBeat };
+			if (last.key === entry.key && gap <= resolvedThreshold) {
+				extensions.set(last.id, entry.absoluteEnd);
+				merged.add(entry.id);
+				last = { ...last, absoluteEnd: entry.absoluteEnd };
 				continue;
 			}
 		}
 
-		last = scoreNote;
+		last = entry;
 	}
 
-	const transformed = flatMapNotes(resolved, (note, absoluteOffset) => {
-		const absStart = absoluteOffset + note.startBeat;
-		const absEnd = absoluteOffset + note.endBeat;
-		const key = `${absStart}:${absEnd}:${pitchKey(note.pitch)}`;
+	const transformed = flatMapNotes(resolved, (note, { id, absoluteOffset }) => {
+		if (merged.has(id)) return [];
 
-		if (merged.has(key)) return [];
-
-		const newEndBeat = extensions.get(key);
+		const newEndBeat = extensions.get(id);
 		if (newEndBeat !== undefined) {
 			return [{ ...note, endBeat: newEndBeat - absoluteOffset }];
 		}

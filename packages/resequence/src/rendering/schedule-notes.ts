@@ -1,7 +1,7 @@
 import type { ScoreNote } from "../patterns/note";
+import { CHROMATIC_TUNING } from "../tunings/chromatic";
 import type { MidiUnit, VoiceNote, VoiceSlide } from "../units/midi-unit";
 import { CC } from "../utils/cc";
-import { CHROMATIC_TUNING } from "../tunings/chromatic";
 import type { Pitch } from "../utils/pitch";
 import { denormalizePitch, pitchToCents } from "../utils/pitch";
 import type { ResolvedTuning } from "../utils/tuning";
@@ -88,8 +88,11 @@ function pitchToFrequency(pitch: Pitch, scheduleContext: ScheduleContext): numbe
 		return baseHz * Math.pow(tuning.octaveRatio, pitch.octave - tuning.referenceOctave);
 	}
 
-	// Fallback for pitches not in the tuning's class list — use equal-tempered math
-	return 440 * Math.pow(2, (pitch.class / pitch.stepsPerOctave + pitch.octave - 4) - 9 / 12);
+	// Pitch class not in tuning — map fractional octave position into tuning's frequency space
+	const rootName = tuning.classes[0];
+	const rootHz = rootName !== undefined ? (tuning.frequencies[rootName] ?? 0) : 0;
+	const fraction = pitch.class / pitch.stepsPerOctave;
+	return rootHz * Math.pow(tuning.octaveRatio, fraction + (pitch.octave - tuning.referenceOctave));
 }
 
 function frequencyToNoteAndBend(frequency: number): { note: number; bend: number } {

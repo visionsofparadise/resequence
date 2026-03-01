@@ -1,8 +1,8 @@
 import type { ScoreNote } from "../note";
-import type { PatternNode, RelativeNote } from "../pattern";
+import type { PatternNode } from "../pattern";
 import { MidiPattern, type Pattern } from "../pattern";
 import { toPattern } from "../sequence";
-import { collectNotes, flatMapNotes } from "../utils/tree";
+import { flatMapNotes, walkNodes } from "../utils/tree";
 
 export class SlicePattern extends MidiPattern {
 	constructor(
@@ -21,29 +21,35 @@ export class SlicePattern extends MidiPattern {
 
 export function slice(pattern: Pattern | ScoreNote, from: number, to: number): SlicePattern {
 	const resolved = toPattern(pattern);
-	const allNotes = collectNotes(resolved);
-	const sorted = allNotes.slice().sort((noteA, noteB) => noteA.startBeat - noteB.startBeat);
-	const kept = sorted.slice(from, to);
 
-	if (kept.length === 0) {
+	const entries: Array<{ note: ScoreNote; absoluteStart: number; absoluteEnd: number }> = [];
+	walkNodes(resolved, (node, absoluteOffset) => {
+		for (const { offsetBeats, note } of node.notes) {
+			const totalOffset = absoluteOffset + offsetBeats;
+			entries.push({ note, absoluteStart: totalOffset + note.startBeat, absoluteEnd: totalOffset + note.endBeat });
+		}
+	});
+
+	entries.sort((ea, eb) => ea.absoluteStart - eb.absoluteStart);
+	const keptEntries = entries.slice(from, to);
+
+	const first = keptEntries[0];
+	const last = keptEntries[keptEntries.length - 1];
+
+	if (!first || !last) {
 		return new SlicePattern(pattern, from, to, { notes: [], children: [], startBeat: 0, endBeat: 0 });
 	}
 
-	const firstEntry = kept[0];
-	const lastNote = kept[kept.length - 1];
+	const kept = new Set(keptEntries.map((entry) => entry.note));
+	const firstStart = first.absoluteStart;
+	const durationBeats = last.absoluteEnd - firstStart;
 
-	if (!firstEntry || !lastNote) {
-		return new SlicePattern(pattern, from, to, { notes: [], children: [], startBeat: 0, endBeat: 0 });
-	}
+	const transformed = flatMapNotes(resolved, (note) => {
+		if (!kept.has(note)) return [];
+		return [{ ...note, startBeat: note.startBeat - firstStart, endBeat: note.endBeat - firstStart }];
+	});
 
-	const firstTick = firstEntry.startBeat;
-	const durationBeats = lastNote.endBeat - firstTick;
-	const notes: Array<RelativeNote> = kept.map((scoreNote) => ({
-		offsetBeats: 0,
-		note: { ...scoreNote, startBeat: scoreNote.startBeat - firstTick, endBeat: scoreNote.endBeat - firstTick },
-	}));
-
-	return new SlicePattern(pattern, from, to, { notes, children: [], startBeat: 0, endBeat: durationBeats });
+	return new SlicePattern(pattern, from, to, { notes: transformed.notes, children: transformed.children, startBeat: 0, endBeat: durationBeats });
 }
 
 export class TrimPattern extends MidiPattern {
@@ -63,7 +69,7 @@ export class TrimPattern extends MidiPattern {
 
 export function trim(pattern: Pattern | ScoreNote, fromBeats: number, toBeats: number): TrimPattern {
 	const resolved = toPattern(pattern);
-	const transformed = flatMapNotes(resolved, (note, absoluteOffset) => {
+	const transformed = flatMapNotes(resolved, (note, { absoluteOffset }) => {
 		const noteStart = absoluteOffset + note.startBeat;
 		const noteEnd = absoluteOffset + note.endBeat;
 		const overlapStart = Math.max(noteStart, fromBeats);

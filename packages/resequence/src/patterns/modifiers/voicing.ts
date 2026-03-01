@@ -4,7 +4,7 @@ import type { ScoreNote } from "../note";
 import type { PatternNode } from "../pattern";
 import { MidiPattern, type Pattern } from "../pattern";
 import { toPattern } from "../sequence";
-import { collectNotes, mapNotes } from "../utils/tree";
+import { mapNotes, walkNotes } from "../utils/tree";
 
 export type VoicingStyle = "close" | "drop2" | "drop3" | "open";
 
@@ -22,20 +22,20 @@ export class VoicingPattern extends MidiPattern {
 	}
 }
 
-function applyVoicing(group: ReadonlyArray<ScoreNote>, style: VoicingStyle): Map<string, Pitch> {
+function applyVoicing(group: ReadonlyArray<{ id: string; pitch: Pitch }>, style: VoicingStyle): Map<string, Pitch> {
 	const pitchMap = new Map<string, Pitch>();
 	if (group.length < 2) return pitchMap;
 
-	const sorted = group.slice().sort((noteA, noteB) => pitchKey(noteA.pitch) - pitchKey(noteB.pitch));
+	const sorted = group.slice().sort((ea, eb) => pitchKey(ea.pitch) - pitchKey(eb.pitch));
 	const firstSorted = sorted[0];
 	if (!firstSorted) return pitchMap;
 
 	const baseKey = pitchKey(firstSorted.pitch);
 	const spo = firstSorted.pitch.stepsPerOctave;
 
-	const close = sorted.map((scoreNote, groupIndex) => {
-		if (groupIndex === 0) return scoreNote.pitch;
-		let pitch = scoreNote.pitch;
+	const close = sorted.map((entry, groupIndex) => {
+		if (groupIndex === 0) return entry.pitch;
+		let pitch = entry.pitch;
 		while (pitchKey(pitch) > baseKey + spo) pitch = addSteps(pitch, -spo);
 		while (pitchKey(pitch) <= baseKey) pitch = addSteps(pitch, spo);
 		return pitch;
@@ -67,11 +67,10 @@ function applyVoicing(group: ReadonlyArray<ScoreNote>, style: VoicingStyle): Map
 		}
 	}
 
-	for (const [groupIndex, scoreNote] of sorted.entries()) {
+	for (const [groupIndex, entry] of sorted.entries()) {
 		const newPitch = voiced[groupIndex];
-		if (newPitch && pitchKey(newPitch) !== pitchKey(scoreNote.pitch)) {
-			const key = `${scoreNote.startBeat}:${scoreNote.endBeat}:${pitchKey(scoreNote.pitch)}`;
-			pitchMap.set(key, newPitch);
+		if (newPitch && pitchKey(newPitch) !== pitchKey(entry.pitch)) {
+			pitchMap.set(entry.id, newPitch);
 		}
 	}
 
@@ -80,31 +79,31 @@ function applyVoicing(group: ReadonlyArray<ScoreNote>, style: VoicingStyle): Map
 
 export function voicing(pattern: Pattern | ScoreNote, style: VoicingStyle): VoicingPattern {
 	const resolved = toPattern(pattern);
-	const allNotes = collectNotes(resolved);
+	const entries: Array<{ id: string; absoluteStart: number; pitch: Pitch }> = [];
+	walkNotes(resolved, (note, { id, absoluteOffset }) => {
+		entries.push({ id, absoluteStart: absoluteOffset + note.startBeat, pitch: note.pitch });
+	});
 
-	const byBeat = new Map<number, Array<ScoreNote>>();
-	for (const scoreNote of allNotes) {
-		let group = byBeat.get(scoreNote.startBeat);
+	const byBeat = new Map<number, typeof entries>();
+	for (const entry of entries) {
+		let group = byBeat.get(entry.absoluteStart);
 		if (!group) {
 			group = [];
-			byBeat.set(scoreNote.startBeat, group);
+			byBeat.set(entry.absoluteStart, group);
 		}
-		group.push(scoreNote);
+		group.push(entry);
 	}
 
 	const pitchChanges = new Map<string, Pitch>();
 	for (const group of byBeat.values()) {
 		const changes = applyVoicing(group, style);
-		for (const [key, pitch] of changes) {
-			pitchChanges.set(key, pitch);
+		for (const [id, pitch] of changes) {
+			pitchChanges.set(id, pitch);
 		}
 	}
 
-	const transformed = mapNotes(resolved, (note, absoluteOffset) => {
-		const absStart = absoluteOffset + note.startBeat;
-		const absEnd = absoluteOffset + note.endBeat;
-		const key = `${absStart}:${absEnd}:${pitchKey(note.pitch)}`;
-		const newPitch = pitchChanges.get(key);
+	const transformed = mapNotes(resolved, (note, { id }) => {
+		const newPitch = pitchChanges.get(id);
 
 		if (newPitch) {
 			const shift = pitchKey(newPitch) - pitchKey(note.pitch);

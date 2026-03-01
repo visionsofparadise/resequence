@@ -47,7 +47,7 @@ export function accent(pattern: Pattern | ScoreNote, positions: ReadonlyArray<nu
 		}
 	}
 
-	const transformed = mapNotes(resolved, (note, absoluteOffset) => {
+	const transformed = mapNotes(resolved, (note, { absoluteOffset }) => {
 		if (accentedTicks.has(absoluteOffset + note.startBeat)) {
 			return { ...note, velocity: Math.min(127, note.velocity + amount) };
 		}

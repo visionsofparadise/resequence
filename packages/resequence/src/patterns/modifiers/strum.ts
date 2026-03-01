@@ -3,7 +3,7 @@ import type { ScoreNote } from "../note";
 import type { PatternNode } from "../pattern";
 import { MidiPattern, type Pattern } from "../pattern";
 import { toPattern } from "../sequence";
-import { collectNotes, mapNotes } from "../utils/tree";
+import { mapNotes, walkNotes } from "../utils/tree";
 
 export interface StrumOptions {
 	readonly strumOffset?: number;
@@ -28,36 +28,35 @@ export function strum(pattern: Pattern | ScoreNote, options: StrumOptions = {}):
 	const resolved = toPattern(pattern);
 	const strumOffset = options.strumOffset ?? 15;
 	const direction = options.direction ?? "up";
-	const allNotes = collectNotes(resolved);
+	const entries: Array<{ id: string; absoluteStart: number; key: number }> = [];
+	walkNotes(resolved, (note, { id, absoluteOffset }) => {
+		entries.push({ id, absoluteStart: absoluteOffset + note.startBeat, key: pitchKey(note.pitch) });
+	});
 
-	const byBeat = new Map<number, Array<ScoreNote>>();
-	for (const scoreNote of allNotes) {
-		let group = byBeat.get(scoreNote.startBeat);
+	const byBeat = new Map<number, typeof entries>();
+	for (const entry of entries) {
+		let group = byBeat.get(entry.absoluteStart);
 		if (!group) {
 			group = [];
-			byBeat.set(scoreNote.startBeat, group);
+			byBeat.set(entry.absoluteStart, group);
 		}
-		group.push(scoreNote);
+		group.push(entry);
 	}
 
 	const shiftMap = new Map<string, number>();
 
 	for (const group of byBeat.values()) {
 		const sorted = direction === "up"
-			? group.slice().sort((noteA, noteB) => pitchKey(noteA.pitch) - pitchKey(noteB.pitch))
-			: group.slice().sort((noteA, noteB) => pitchKey(noteB.pitch) - pitchKey(noteA.pitch));
+			? group.slice().sort((ea, eb) => ea.key - eb.key)
+			: group.slice().sort((ea, eb) => eb.key - ea.key);
 
-		for (const [voiceIndex, scoreNote] of sorted.entries()) {
-			const key = `${scoreNote.startBeat}:${scoreNote.endBeat}:${pitchKey(scoreNote.pitch)}`;
-			shiftMap.set(key, voiceIndex * strumOffset);
+		for (const [voiceIndex, entry] of sorted.entries()) {
+			shiftMap.set(entry.id, voiceIndex * strumOffset);
 		}
 	}
 
-	const transformed = mapNotes(resolved, (note, absoluteOffset) => {
-		const absStart = absoluteOffset + note.startBeat;
-		const absEnd = absoluteOffset + note.endBeat;
-		const key = `${absStart}:${absEnd}:${pitchKey(note.pitch)}`;
-		const shift = shiftMap.get(key);
+	const transformed = mapNotes(resolved, (note, { id }) => {
+		const shift = shiftMap.get(id);
 
 		if (shift) {
 			return { ...note, startBeat: note.startBeat + shift, endBeat: note.endBeat + shift };

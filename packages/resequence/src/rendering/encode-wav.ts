@@ -14,7 +14,11 @@ export function encodeWav(buffer: AudioBuffer, markers?: ReadonlyArray<MarkerPoi
 	}
 
 	const wav = new WaveFile();
-	wav.fromScratch(buffer.numberOfChannels, buffer.sampleRate, bitDepth ?? "24", channels);
+	const targetBitDepth = bitDepth ?? "24";
+	wav.fromScratch(buffer.numberOfChannels, buffer.sampleRate, "32f", channels);
+	if (targetBitDepth !== "32f") {
+		wav.toBitDepth(targetBitDepth);
+	}
 
 	if (markers && markers.length > 0 && tempoMap) {
 		for (const markerPoint of markers) {

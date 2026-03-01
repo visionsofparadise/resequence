@@ -76,8 +76,8 @@ describe("mapNotes", () => {
 	it("provides absolute offset to callback", () => {
 		const seq = sequence(N.C4(2), N.D4(2));
 		const offsets: number[] = [];
-		mapNotes(seq, (n, offset) => {
-			offsets.push(offset);
+		mapNotes(seq, (n, { absoluteOffset }) => {
+			offsets.push(absoluteOffset);
 			return n;
 		});
 		expect(offsets).toEqual([0, 2]);

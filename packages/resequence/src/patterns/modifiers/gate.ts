@@ -22,7 +22,7 @@ export function gate(pattern: Pattern | ScoreNote, gatePattern: Pattern): GatePa
 	const resolved = toPattern(pattern);
 	const gateNotes = collectNotes(gatePattern);
 
-	const transformed = flatMapNotes(resolved, (note, absoluteOffset) => {
+	const transformed = flatMapNotes(resolved, (note, { absoluteOffset }) => {
 		const noteStart = absoluteOffset + note.startBeat;
 		const noteEnd = absoluteOffset + note.endBeat;
 		const result = [];

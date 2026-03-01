@@ -21,7 +21,7 @@ export function reverse(pattern: Pattern | ScoreNote): ReversePattern {
 	const resolved = toPattern(pattern);
 	const totalDuration = pattern.endBeat - pattern.startBeat;
 
-	const transformed = mapNotes(resolved, (note, absoluteOffset) => {
+	const transformed = mapNotes(resolved, (note, { absoluteOffset }) => {
 		const noteDuration = note.endBeat - note.startBeat;
 		const absEnd = absoluteOffset + note.endBeat;
 		const newAbsStart = totalDuration - absEnd;

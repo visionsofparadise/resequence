@@ -5,7 +5,7 @@ import type { ScoreNote } from "../note";
 import type { PatternNode } from "../pattern";
 import { MidiPattern, type Pattern } from "../pattern";
 import { sequence, toPattern } from "../sequence";
-import { collectNotes, flatMapNotes } from "../utils/tree";
+import { collectNotes, flatMapNotes, walkNotes } from "../utils/tree";
 
 function mulberry32(seed: number): () => number {
 	let state = seed;
@@ -43,12 +43,15 @@ export class ArpPattern extends MidiPattern {
 
 export function arp(pattern: Pattern | ScoreNote, mappingPattern: Pattern): ArpPattern {
 	const resolved = toPattern(pattern);
-	const sourceNotes = collectNotes(resolved);
+	const sourceEntries: Array<{ id: string; absoluteStart: number; absoluteEnd: number; pitch: Pitch }> = [];
+	walkNotes(resolved, (note, { id, absoluteOffset }) => {
+		sourceEntries.push({ id, absoluteStart: absoluteOffset + note.startBeat, absoluteEnd: absoluteOffset + note.endBeat, pitch: note.pitch });
+	});
 	const mappingNotes = collectNotes(mappingPattern).sort((noteA, noteB) => noteA.startBeat - noteB.startBeat);
 
 	const mappingDuration = mappingPattern.endBeat - mappingPattern.startBeat;
 
-	if (sourceNotes.length === 0 || mappingNotes.length === 0 || mappingDuration === 0) {
+	if (sourceEntries.length === 0 || mappingNotes.length === 0 || mappingDuration === 0) {
 		return new ArpPattern(pattern, mappingPattern, { notes: [], children: [{ offsetBeats: 0, pattern: resolved }], startBeat: pattern.startBeat, endBeat: pattern.endBeat });
 	}
 
@@ -57,9 +60,9 @@ export function arp(pattern: Pattern | ScoreNote, mappingPattern: Pattern): ArpP
 
 	const events: Array<{ beat: number; delta: number }> = [];
 
-	for (const source of sourceNotes) {
-		events.push({ beat: source.startBeat, delta: 1 });
-		events.push({ beat: source.endBeat, delta: -1 });
+	for (const source of sourceEntries) {
+		events.push({ beat: source.absoluteStart, delta: 1 });
+		events.push({ beat: source.absoluteEnd, delta: -1 });
 	}
 
 	events.sort((eventA, eventB) => eventA.beat - eventB.beat || eventB.delta - eventA.delta);
@@ -91,8 +94,8 @@ export function arp(pattern: Pattern | ScoreNote, mappingPattern: Pattern): ArpP
 
 			const heldPitches = new Map<number, Pitch>();
 
-			for (const source of sourceNotes) {
-				if (source.startBeat <= absoluteBeat && source.endBeat > absoluteBeat) {
+			for (const source of sourceEntries) {
+				if (source.absoluteStart <= absoluteBeat && source.absoluteEnd > absoluteBeat) {
 					const key = pitchKey(source.pitch);
 
 					if (!heldPitches.has(key)) heldPitches.set(key, source.pitch);
@@ -117,14 +120,13 @@ export function arp(pattern: Pattern | ScoreNote, mappingPattern: Pattern): ArpP
 				const selectedKey = pitchKey(selectedPitch);
 				const stepDuration = mappingNote.endBeat - mappingNote.startBeat;
 
-				for (const source of sourceNotes) {
-					if (pitchKey(source.pitch) === selectedKey && source.startBeat <= absoluteBeat && source.endBeat > absoluteBeat) {
-						const noteId = `${source.startBeat}:${source.endBeat}:${selectedKey}`;
-						let steps = stepsByNote.get(noteId);
+				for (const source of sourceEntries) {
+					if (pitchKey(source.pitch) === selectedKey && source.absoluteStart <= absoluteBeat && source.absoluteEnd > absoluteBeat) {
+						let steps = stepsByNote.get(source.id);
 
 						if (!steps) {
 							steps = [];
-							stepsByNote.set(noteId, steps);
+							stepsByNote.set(source.id, steps);
 						}
 
 						steps.push({ absoluteBeat, pitch: selectedPitch, velocity: mappingNote.velocity, duration: stepDuration });
@@ -141,11 +143,8 @@ export function arp(pattern: Pattern | ScoreNote, mappingPattern: Pattern): ArpP
 	}
 
 	// Walk the tree in-place, replacing each note with its assigned arp steps
-	const transformed = flatMapNotes(resolved, (scoreNote, absoluteOffset) => {
-		const absStart = absoluteOffset + scoreNote.startBeat;
-		const absEnd = absoluteOffset + scoreNote.endBeat;
-		const noteId = `${absStart}:${absEnd}:${pitchKey(scoreNote.pitch)}`;
-		const steps = stepsByNote.get(noteId);
+	const transformed = flatMapNotes(resolved, (_scoreNote, { id, absoluteOffset }) => {
+		const steps = stepsByNote.get(id);
 
 		if (!steps || steps.length === 0) return [];
 

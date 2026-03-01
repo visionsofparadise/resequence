@@ -4,7 +4,7 @@ import type { ScoreNote } from "../note";
 import type { PatternNode } from "../pattern";
 import { MidiPattern, type Pattern } from "../pattern";
 import { toPattern } from "../sequence";
-import { collectNotes, mapNotes } from "../utils/tree";
+import { mapNotes, walkNotes } from "../utils/tree";
 
 export type SortKey = "asc" | "desc" | ((noteA: ScoreNote, noteB: ScoreNote) => number);
 
@@ -24,34 +24,33 @@ export class SortPattern extends MidiPattern {
 
 export function sort(pattern: Pattern | ScoreNote, key: SortKey = "asc"): SortPattern {
 	const resolved = toPattern(pattern);
-	const allNotes = collectNotes(resolved);
-	const byTick = allNotes.slice().sort((noteA, noteB) => noteA.startBeat - noteB.startBeat);
+	const entries: Array<{ id: string; absoluteStart: number; pitch: Pitch; absoluteNote: ScoreNote }> = [];
+	walkNotes(resolved, (note, { id, absoluteOffset }) => {
+		entries.push({ id, absoluteStart: absoluteOffset + note.startBeat, pitch: note.pitch, absoluteNote: { ...note, startBeat: absoluteOffset + note.startBeat, endBeat: absoluteOffset + note.endBeat } });
+	});
+	const byTick = entries.slice().sort((ea, eb) => ea.absoluteStart - eb.absoluteStart);
 
 	let pitches: Array<Pitch>;
 
 	if (typeof key === "function") {
-		pitches = allNotes.slice().sort(key).map((scoreNote) => scoreNote.pitch);
+		pitches = entries.slice().sort((ea, eb) => key(ea.absoluteNote, eb.absoluteNote)).map((entry) => entry.pitch);
 	} else if (key === "desc") {
-		pitches = byTick.map((scoreNote) => scoreNote.pitch).sort((pitchA, pitchB) => pitchKey(pitchB) - pitchKey(pitchA));
+		pitches = byTick.map((entry) => entry.pitch).sort((pitchA, pitchB) => pitchKey(pitchB) - pitchKey(pitchA));
 	} else {
-		pitches = byTick.map((scoreNote) => scoreNote.pitch).sort((pitchA, pitchB) => pitchKey(pitchA) - pitchKey(pitchB));
+		pitches = byTick.map((entry) => entry.pitch).sort((pitchA, pitchB) => pitchKey(pitchA) - pitchKey(pitchB));
 	}
 
 	const pitchAssignment = new Map<string, Pitch>();
 
-	for (const [noteIndex, scoreNote] of byTick.entries()) {
-		const newPitch = pitches[noteIndex] ?? scoreNote.pitch;
-		if (pitchKey(newPitch) !== pitchKey(scoreNote.pitch)) {
-			const noteKey = `${scoreNote.startBeat}:${scoreNote.endBeat}:${pitchKey(scoreNote.pitch)}`;
-			pitchAssignment.set(noteKey, newPitch);
+	for (const [noteIndex, entry] of byTick.entries()) {
+		const newPitch = pitches[noteIndex] ?? entry.pitch;
+		if (pitchKey(newPitch) !== pitchKey(entry.pitch)) {
+			pitchAssignment.set(entry.id, newPitch);
 		}
 	}
 
-	const transformed = mapNotes(resolved, (note, absoluteOffset) => {
-		const absStart = absoluteOffset + note.startBeat;
-		const absEnd = absoluteOffset + note.endBeat;
-		const noteKey = `${absStart}:${absEnd}:${pitchKey(note.pitch)}`;
-		const newPitch = pitchAssignment.get(noteKey);
+	const transformed = mapNotes(resolved, (note, { id }) => {
+		const newPitch = pitchAssignment.get(id);
 
 		if (newPitch) {
 			const shift = pitchKey(newPitch) - pitchKey(note.pitch);

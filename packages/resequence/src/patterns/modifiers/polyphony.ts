@@ -1,9 +1,8 @@
-import { pitchKey } from "../../utils/pitch";
 import type { ScoreNote } from "../note";
 import type { PatternNode } from "../pattern";
 import { MidiPattern, type Pattern } from "../pattern";
 import { toPattern } from "../sequence";
-import { collectNotes, flatMapNotes } from "../utils/tree";
+import { flatMapNotes, walkNotes } from "../utils/tree";
 
 export class PolyphonyPattern extends MidiPattern {
 	constructor(
@@ -22,44 +21,40 @@ export class PolyphonyPattern extends MidiPattern {
 
 export function polyphony(pattern: Pattern | ScoreNote, max: number, isGreedy = false): PolyphonyPattern {
 	const resolved = toPattern(pattern);
-	const allNotes = collectNotes(resolved);
-	const sorted = allNotes.slice().sort((noteA, noteB) => noteA.startBeat - noteB.startBeat);
+	const entries: Array<{ id: string; absoluteStart: number; absoluteEnd: number }> = [];
+	walkNotes(resolved, (note, { id, absoluteOffset }) => {
+		entries.push({ id, absoluteStart: absoluteOffset + note.startBeat, absoluteEnd: absoluteOffset + note.endBeat });
+	});
+	entries.sort((ea, eb) => ea.absoluteStart - eb.absoluteStart);
 
 	const kept = new Set<string>();
-	const active: Array<ScoreNote> = [];
+	const active: typeof entries = [];
 
-	for (const scoreNote of sorted) {
-		const stillActive = active.filter((keptNote) => keptNote.startBeat <= scoreNote.startBeat && scoreNote.startBeat < keptNote.endBeat);
+	for (const entry of entries) {
+		const stillActive = active.filter((keptEntry) => keptEntry.absoluteStart <= entry.absoluteStart && entry.absoluteStart < keptEntry.absoluteEnd);
 
 		if (stillActive.length < max) {
-			const key = `${scoreNote.startBeat}:${scoreNote.endBeat}:${pitchKey(scoreNote.pitch)}`;
-			kept.add(key);
-			active.push(scoreNote);
+			kept.add(entry.id);
+			active.push(entry);
 		} else if (isGreedy) {
 			let oldest = stillActive[0];
 			if (!oldest) continue;
 
-			for (const activeNote of stillActive) {
-				if (activeNote.startBeat < oldest.startBeat) oldest = activeNote;
+			for (const activeEntry of stillActive) {
+				if (activeEntry.absoluteStart < oldest.absoluteStart) oldest = activeEntry;
 			}
 
-			const oldestKey = `${oldest.startBeat}:${oldest.endBeat}:${pitchKey(oldest.pitch)}`;
-			kept.delete(oldestKey);
+			kept.delete(oldest.id);
 			const oldestIndex = active.indexOf(oldest);
 			if (oldestIndex >= 0) active.splice(oldestIndex, 1);
 
-			const key = `${scoreNote.startBeat}:${scoreNote.endBeat}:${pitchKey(scoreNote.pitch)}`;
-			kept.add(key);
-			active.push(scoreNote);
+			kept.add(entry.id);
+			active.push(entry);
 		}
 	}
 
-	const transformed = flatMapNotes(resolved, (note, absoluteOffset) => {
-		const absStart = absoluteOffset + note.startBeat;
-		const absEnd = absoluteOffset + note.endBeat;
-		const key = `${absStart}:${absEnd}:${pitchKey(note.pitch)}`;
-
-		if (kept.has(key)) return [note];
+	const transformed = flatMapNotes(resolved, (note, { id }) => {
+		if (kept.has(id)) return [note];
 		return [];
 	});
 

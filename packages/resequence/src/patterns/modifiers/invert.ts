@@ -3,7 +3,7 @@ import type { ScoreNote } from "../note";
 import type { PatternNode } from "../pattern";
 import { MidiPattern, type Pattern } from "../pattern";
 import { toPattern } from "../sequence";
-import { collectNotes, mapNotes } from "../utils/tree";
+import { mapNotes, walkNotes } from "../utils/tree";
 
 export class InvertPattern extends MidiPattern {
 	constructor(
@@ -21,46 +21,44 @@ export class InvertPattern extends MidiPattern {
 
 export function invertChord(pattern: Pattern | ScoreNote, inversions: number): InvertPattern {
 	const resolved = toPattern(pattern);
-	const allNotes = collectNotes(resolved);
+	const entries: Array<{ id: string; absoluteStart: number; key: number; stepsPerOctave: number }> = [];
+	walkNotes(resolved, (note, { id, absoluteOffset }) => {
+		entries.push({ id, absoluteStart: absoluteOffset + note.startBeat, key: pitchKey(note.pitch), stepsPerOctave: note.pitch.stepsPerOctave });
+	});
 
-	const byBeat = new Map<number, Array<ScoreNote>>();
-	for (const scoreNote of allNotes) {
-		let group = byBeat.get(scoreNote.startBeat);
+	const byBeat = new Map<number, typeof entries>();
+	for (const entry of entries) {
+		let group = byBeat.get(entry.absoluteStart);
 		if (!group) {
 			group = [];
-			byBeat.set(scoreNote.startBeat, group);
+			byBeat.set(entry.absoluteStart, group);
 		}
-		group.push(scoreNote);
+		group.push(entry);
 	}
 
 	const shiftMap = new Map<string, number>();
 
 	for (const group of byBeat.values()) {
-		const sorted = group.slice().sort((noteA, noteB) => pitchKey(noteA.pitch) - pitchKey(noteB.pitch));
+		const sorted = group.slice().sort((ea, eb) => ea.key - eb.key);
 
 		if (inversions > 0) {
-			for (const [noteIndex, scoreNote] of sorted.entries()) {
+			for (const [noteIndex, entry] of sorted.entries()) {
 				if (noteIndex < inversions) {
-					const key = `${scoreNote.startBeat}:${scoreNote.endBeat}:${pitchKey(scoreNote.pitch)}`;
-					shiftMap.set(key, scoreNote.pitch.stepsPerOctave);
+					shiftMap.set(entry.id, entry.stepsPerOctave);
 				}
 			}
 		} else if (inversions < 0) {
 			const count = -inversions;
-			for (const [noteIndex, scoreNote] of sorted.entries()) {
+			for (const [noteIndex, entry] of sorted.entries()) {
 				if (noteIndex >= sorted.length - count) {
-					const key = `${scoreNote.startBeat}:${scoreNote.endBeat}:${pitchKey(scoreNote.pitch)}`;
-					shiftMap.set(key, -scoreNote.pitch.stepsPerOctave);
+					shiftMap.set(entry.id, -entry.stepsPerOctave);
 				}
 			}
 		}
 	}
 
-	const transformed = mapNotes(resolved, (note, absoluteOffset) => {
-		const absStart = absoluteOffset + note.startBeat;
-		const absEnd = absoluteOffset + note.endBeat;
-		const key = `${absStart}:${absEnd}:${pitchKey(note.pitch)}`;
-		const shift = shiftMap.get(key);
+	const transformed = mapNotes(resolved, (note, { id }) => {
+		const shift = shiftMap.get(id);
 
 		if (shift) {
 			return {

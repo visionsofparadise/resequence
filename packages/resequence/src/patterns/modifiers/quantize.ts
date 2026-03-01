@@ -27,7 +27,7 @@ export function quantize(pattern: Pattern | ScoreNote, subdivision: number, groo
 	let transformed: Pattern;
 
 	if (!grooveMap) {
-		transformed = mapNotes(resolved, (note, absoluteOffset) => {
+		transformed = mapNotes(resolved, (note, { absoluteOffset }) => {
 			const absBeat = absoluteOffset + note.startBeat;
 			const remainder = absBeat % grid;
 			const snapped = absBeat - remainder + (remainder <= grid / 2 ? 0 : grid);
@@ -37,7 +37,7 @@ export function quantize(pattern: Pattern | ScoreNote, subdivision: number, groo
 	} else {
 		const groovePositions = collectNotes(grooveMap).map((grooveNote) => grooveNote.startBeat % grid).sort((tickA, tickB) => tickA - tickB);
 
-		transformed = mapNotes(resolved, (note, absoluteOffset) => {
+		transformed = mapNotes(resolved, (note, { absoluteOffset }) => {
 			const absBeat = absoluteOffset + note.startBeat;
 			const cycle = Math.floor(absBeat / grid);
 			const remainder = absBeat % grid;

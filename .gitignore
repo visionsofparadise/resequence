@@ -5,3 +5,4 @@ dist/
 .vite/
 out/
 .turbo/
+test-output/
