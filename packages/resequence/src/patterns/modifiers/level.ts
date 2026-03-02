@@ -71,7 +71,12 @@ export interface LevelProperties extends ModifierProperties {
 }
 
 export class LevelPattern extends ModifierPattern {
+	readonly type = ["pattern", "midi", "modifier", "level"] as const;
 	readonly properties: LevelProperties;
+
+	static is(value: unknown): value is LevelPattern {
+		return ModifierPattern.is(value) && value.type[3] === "level";
+	}
 
 	constructor(properties: OptionalProperties<LevelProperties, "outputs">) {
 		super(properties);

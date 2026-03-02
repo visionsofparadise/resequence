@@ -5,6 +5,12 @@ import { Unit, type SetupResult } from "../unit";
 import { allpass, type FilterEffectUnit } from "./filter";
 
 export class PhaserEffectUnit extends Unit {
+	readonly type = ["unit", "phaser"] as const;
+
+	static is(value: unknown): value is PhaserEffectUnit {
+		return Unit.is(value) && value.type[1] === "phaser";
+	}
+
 	private readonly stages: number;
 	private readonly rate: number;
 	private readonly depth: number;

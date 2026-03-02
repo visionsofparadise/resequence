@@ -11,7 +11,12 @@ export interface AccentProperties extends ModifierProperties {
 }
 
 export class AccentPattern extends ModifierPattern {
+	readonly type = ["pattern", "midi", "modifier", "accent"] as const;
 	readonly properties: AccentProperties;
+
+	static is(value: unknown): value is AccentPattern {
+		return ModifierPattern.is(value) && value.type[3] === "accent";
+	}
 
 	constructor(properties: OptionalProperties<AccentProperties, "outputs">) {
 		super(properties);

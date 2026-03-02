@@ -10,7 +10,12 @@ export interface RevertProperties extends ModifierProperties {
 }
 
 export class RevertPattern extends ModifierPattern {
+	readonly type = ["pattern", "midi", "modifier", "revert"] as const;
 	readonly properties: RevertProperties;
+
+	static is(value: unknown): value is RevertPattern {
+		return ModifierPattern.is(value) && value.type[3] === "revert";
+	}
 
 	constructor(properties: OptionalProperties<RevertProperties, "outputs">) {
 		super(properties);

@@ -37,6 +37,12 @@ interface NormalizedZone {
 }
 
 export class SamplerUnit extends GeneratorUnit {
+	readonly type = ["unit", "midi", "generator", "sampler"] as const;
+
+	static is(value: unknown): value is SamplerUnit {
+		return GeneratorUnit.is(value) && value.type[3] === "sampler";
+	}
+
 	private readonly config: SamplerConfig;
 	private readonly buffers = new Map<string, AudioBuffer>();
 

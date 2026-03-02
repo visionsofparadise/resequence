@@ -33,8 +33,12 @@ function parseBands(options: CrossoverOptions): Array<ParsedBand> {
 }
 
 export class CrossoverEffectUnit extends Unit {
-	readonly type = "crossover" as const;
+	readonly type = ["unit", "crossover"] as const;
 	readonly id = undefined;
+
+	static is(value: unknown): value is CrossoverEffectUnit {
+		return Unit.is(value) && value.type[1] === "crossover";
+	}
 
 	public readonly parsedBands: Array<ParsedBand>;
 	public bandUnits: Array<Array<Unit>> = [];

@@ -5,8 +5,12 @@ import { channelSplitter } from "./channel-splitter";
 import { linearGain } from "./gain";
 
 export class ChannelEffectUnit extends Unit {
-	readonly type = "channel" as const;
+	readonly type = ["unit", "channel"] as const;
 	readonly id = undefined;
+
+	static is(value: unknown): value is ChannelEffectUnit {
+		return Unit.is(value) && value.type[1] === "channel";
+	}
 
 	public readonly channelIndex: number;
 	public readonly inner: Unit;
@@ -50,8 +54,12 @@ export function right(inner: Unit): ChannelEffectUnit {
 }
 
 export class MidEffectUnit extends Unit {
-	readonly type = "mid" as const;
+	readonly type = ["unit", "mid"] as const;
 	readonly id = undefined;
+
+	static is(value: unknown): value is MidEffectUnit {
+		return Unit.is(value) && value.type[1] === "mid";
+	}
 
 	public readonly inner: Unit;
 
@@ -89,8 +97,12 @@ export function mid(inner: Unit): MidEffectUnit {
 }
 
 export class SideEffectUnit extends Unit {
-	readonly type = "side" as const;
+	readonly type = ["unit", "side"] as const;
 	readonly id = undefined;
+
+	static is(value: unknown): value is SideEffectUnit {
+		return Unit.is(value) && value.type[1] === "side";
+	}
 
 	public readonly inner: Unit;
 

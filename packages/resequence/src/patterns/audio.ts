@@ -18,7 +18,12 @@ export interface AudioProperties extends PatternProperties {
 }
 
 export class AudioPattern extends Pattern {
+	readonly type = ["pattern", "audio"] as const;
 	private buffer: AudioBuffer | undefined;
+
+	static is(value: unknown): value is AudioPattern {
+		return Pattern.is(value) && value.type[1] === "audio";
+	}
 
 	constructor(readonly properties: AudioProperties) {
 		super(properties);

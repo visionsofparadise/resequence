@@ -14,7 +14,12 @@ export interface VoicingProperties extends ModifierProperties {
 }
 
 export class VoicingPattern extends ModifierPattern {
+	readonly type = ["pattern", "midi", "modifier", "voicing"] as const;
 	readonly properties: VoicingProperties;
+
+	static is(value: unknown): value is VoicingPattern {
+		return ModifierPattern.is(value) && value.type[3] === "voicing";
+	}
 
 	constructor(properties: OptionalProperties<VoicingProperties, "outputs">) {
 		super(properties);

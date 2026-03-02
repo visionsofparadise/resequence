@@ -5,6 +5,12 @@ import { Unit, type SetupResult } from "../unit";
 import { delay, type DelayEffectUnit } from "./delay";
 
 export class ChorusEffectUnit extends Unit {
+	readonly type = ["unit", "chorus"] as const;
+
+	static is(value: unknown): value is ChorusEffectUnit {
+		return Unit.is(value) && value.type[1] === "chorus";
+	}
+
 	private readonly delay: number;
 	private readonly rate: number;
 	private readonly depth: number;

@@ -16,6 +16,11 @@ export const WaveShaperCurve = {
 export type Oversample = "none" | "2x" | "4x";
 
 export class WaveShaperEffectUnit extends Unit {
+	readonly type = ["unit", "waveshaper"] as const;
+
+	static is(value: unknown): value is WaveShaperEffectUnit {
+		return Unit.is(value) && value.type[1] === "waveshaper";
+	}
 
 	private readonly curve: Float32Array<ArrayBuffer>;
 	private readonly oversample: Oversample | undefined;

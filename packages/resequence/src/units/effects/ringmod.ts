@@ -2,8 +2,12 @@ import type { ScheduleContext } from "../../rendering/schedule-context";
 import { Unit, type SetupResult } from "../unit";
 
 export class RingModEffectUnit extends Unit {
-	readonly type = "ringmod" as const;
+	readonly type = ["unit", "ringmod"] as const;
 	readonly id = undefined;
+
+	static is(value: unknown): value is RingModEffectUnit {
+		return Unit.is(value) && value.type[1] === "ringmod";
+	}
 
 	public readonly carrier: Unit;
 

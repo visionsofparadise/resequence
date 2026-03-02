@@ -3,7 +3,12 @@ import { Unit, type SetupResult } from "../unit";
 import { gain } from "./gain";
 
 export class MixNode extends Unit {
+	readonly type = ["unit", "mix"] as const;
 	readonly id: string | undefined;
+
+	static is(value: unknown): value is MixNode {
+		return Unit.is(value) && value.type[1] === "mix";
+	}
 	private dryChain: Unit | undefined;
 
 	constructor(

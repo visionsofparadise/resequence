@@ -8,7 +8,12 @@ export interface ModifierProperties extends MidiPatternProperties {
 }
 
 export abstract class ModifierPattern extends MidiPattern {
+	abstract readonly type: readonly ["pattern", "midi", "modifier", ...Array<string>];
 	readonly properties: ModifierProperties;
+
+	static is(value: unknown): value is ModifierPattern {
+		return MidiPattern.is(value) && value.type[2] === "modifier";
+	}
 
 	constructor(properties: OptionalProperties<ModifierProperties, "outputs">) {
 		super(properties);

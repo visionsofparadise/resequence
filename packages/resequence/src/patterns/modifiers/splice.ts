@@ -22,7 +22,12 @@ export interface SpliceProperties extends ModifierProperties {
 }
 
 export class SplicePattern extends ModifierPattern {
+	readonly type = ["pattern", "midi", "modifier", "splice"] as const;
 	readonly properties: SpliceProperties;
+
+	static is(value: unknown): value is SplicePattern {
+		return ModifierPattern.is(value) && value.type[3] === "splice";
+	}
 
 	constructor(properties: OptionalProperties<SpliceProperties, "outputs">) {
 		super(properties);
@@ -47,7 +52,12 @@ export interface InsertProperties extends ModifierProperties {
 }
 
 export class InsertPattern extends ModifierPattern {
+	readonly type = ["pattern", "midi", "modifier", "insert"] as const;
 	readonly properties: InsertProperties;
+
+	static is(value: unknown): value is InsertPattern {
+		return ModifierPattern.is(value) && value.type[3] === "insert";
+	}
 
 	constructor(properties: OptionalProperties<InsertProperties, "outputs">) {
 		super(properties);

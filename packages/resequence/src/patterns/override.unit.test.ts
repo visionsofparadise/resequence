@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { pitchKey } from "../utils/pitch";
 import { N } from "../tunings/chromatic";
 import { layer } from "./layer";
-import { override } from "./override";
+import { override } from "./modifiers/override";
 import { sequence } from "./sequence";
 import { collectNotes } from "./utils/tree";
 

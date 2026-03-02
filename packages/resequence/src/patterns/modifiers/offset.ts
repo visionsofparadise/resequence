@@ -10,7 +10,12 @@ export interface OffsetProperties extends ModifierProperties {
 }
 
 export class OffsetPattern extends ModifierPattern {
+	readonly type = ["pattern", "midi", "modifier", "offset"] as const;
 	readonly properties: OffsetProperties;
+
+	static is(value: unknown): value is OffsetPattern {
+		return ModifierPattern.is(value) && value.type[3] === "offset";
+	}
 
 	constructor(properties: OptionalProperties<OffsetProperties, "outputs">) {
 		super(properties);

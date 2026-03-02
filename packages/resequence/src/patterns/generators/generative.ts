@@ -13,7 +13,12 @@ export interface GenerativeProperties extends MidiPatternProperties {
 }
 
 export class GenerativePattern extends MidiPattern {
+	readonly type = ["pattern", "midi", "generative"] as const;
 	readonly properties: GenerativeProperties;
+
+	static is(value: unknown): value is GenerativePattern {
+		return MidiPattern.is(value) && value.type[2] === "generative";
+	}
 
 	constructor(properties: OptionalProperties<GenerativeProperties, "outputs">) {
 		super(properties);

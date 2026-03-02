@@ -4,6 +4,12 @@ import type { SetupResult, Unit } from "../unit";
 import { Composite, flattenUnits } from "./composite";
 
 export class Fan extends Composite {
+	readonly type = ["unit", "composite", "fan"] as const;
+
+	static is(value: unknown): value is Fan {
+		return Composite.is(value) && value.type[2] === "fan";
+	}
+
 	readonly head: Unit;
 	readonly tails: ReadonlyArray<Unit>;
 	readonly units: ReadonlyArray<Unit>;

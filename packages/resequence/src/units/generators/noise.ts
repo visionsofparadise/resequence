@@ -4,6 +4,12 @@ import type { SetupResult } from "../unit";
 import { GeneratorUnit } from "./generator";
 
 export class NoiseUnit extends GeneratorUnit {
+	readonly type = ["unit", "midi", "generator", "noise"] as const;
+
+	static is(value: unknown): value is NoiseUnit {
+		return GeneratorUnit.is(value) && value.type[3] === "noise";
+	}
+
 	public readonly id?: string;
 
 	private readonly color: "white" | "pink" | "brown";

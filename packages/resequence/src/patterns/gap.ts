@@ -6,6 +6,12 @@ export interface GapProperties extends PatternProperties {
 }
 
 export class GapPattern extends Pattern {
+	readonly type = ["pattern", "gap"] as const;
+
+	static is(value: unknown): value is GapPattern {
+		return Pattern.is(value) && value.type[1] === "gap";
+	}
+
 	constructor(readonly properties: GapProperties) {
 		super(properties);
 	}

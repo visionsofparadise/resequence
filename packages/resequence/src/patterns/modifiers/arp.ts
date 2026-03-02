@@ -33,7 +33,12 @@ export interface ArpProperties extends ModifierProperties {
 }
 
 export class ArpPattern extends ModifierPattern {
+	readonly type = ["pattern", "midi", "modifier", "arp"] as const;
 	readonly properties: ArpProperties;
+
+	static is(value: unknown): value is ArpPattern {
+		return ModifierPattern.is(value) && value.type[3] === "arp";
+	}
 
 	constructor(properties: OptionalProperties<ArpProperties, "outputs">) {
 		super(properties);

@@ -25,7 +25,12 @@ export interface DistributeProperties extends MidiPatternProperties {
 }
 
 export class DistributePattern extends MidiPattern {
+	readonly type = ["pattern", "midi", "distribute"] as const;
 	readonly properties: DistributeProperties;
+
+	static is(value: unknown): value is DistributePattern {
+		return MidiPattern.is(value) && value.type[2] === "distribute";
+	}
 
 	constructor(properties: OptionalProperties<DistributeProperties, "outputs">) {
 		super(properties);

@@ -21,7 +21,13 @@ export interface PatternProperties {
 }
 
 export abstract class Pattern {
+	abstract readonly type: ReadonlyArray<string>;
+
 	constructor(readonly properties: PatternProperties) {}
+
+	static is(value: unknown): value is Pattern {
+		return typeof value === "object" && value !== null && "type" in value && Array.isArray(value.type) && value.type[0] === "pattern";
+	}
 
 	get notes(): ReadonlyArray<RelativeNote> {
 		return this.properties.notes;

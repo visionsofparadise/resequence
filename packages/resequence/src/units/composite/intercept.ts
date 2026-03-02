@@ -11,6 +11,12 @@ export interface InterceptOptions {
 }
 
 export class InterceptUnit extends MidiUnit {
+	readonly type = ["unit", "midi", "intercept"] as const;
+
+	static is(value: unknown): value is InterceptUnit {
+		return MidiUnit.is(value) && value.type[2] === "intercept";
+	}
+
 	readonly inner: Unit;
 	private readonly options: InterceptOptions;
 

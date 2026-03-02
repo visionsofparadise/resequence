@@ -4,6 +4,12 @@ import { Unit } from "../unit";
 import { type FilterEffectUnit, filter } from "./filter";
 
 export class LinkwitzRileyUnit extends Unit {
+	readonly type = ["unit", "linkwitz-riley"] as const;
+
+	static is(value: unknown): value is LinkwitzRileyUnit {
+		return Unit.is(value) && value.type[1] === "linkwitz-riley";
+	}
+
 	private filters: Array<FilterEffectUnit> = [];
 
 	constructor(

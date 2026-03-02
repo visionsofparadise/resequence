@@ -12,7 +12,12 @@ export interface EchoProperties extends ModifierProperties {
 }
 
 export class EchoPattern extends ModifierPattern {
+	readonly type = ["pattern", "midi", "modifier", "echo"] as const;
 	readonly properties: EchoProperties;
+
+	static is(value: unknown): value is EchoPattern {
+		return ModifierPattern.is(value) && value.type[3] === "echo";
+	}
 
 	constructor(properties: OptionalProperties<EchoProperties, "outputs">) {
 		super(properties);

@@ -22,7 +22,12 @@ export interface JitterProperties extends ModifierProperties {
 }
 
 export class JitterPattern extends ModifierPattern {
+	readonly type = ["pattern", "midi", "modifier", "jitter"] as const;
 	readonly properties: JitterProperties;
+
+	static is(value: unknown): value is JitterPattern {
+		return ModifierPattern.is(value) && value.type[3] === "jitter";
+	}
 
 	constructor(properties: OptionalProperties<JitterProperties, "outputs">) {
 		super(properties);

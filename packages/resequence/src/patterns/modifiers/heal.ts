@@ -11,7 +11,12 @@ export interface HealProperties extends ModifierProperties {
 }
 
 export class HealPattern extends ModifierPattern {
+	readonly type = ["pattern", "midi", "modifier", "heal"] as const;
 	readonly properties: HealProperties;
+
+	static is(value: unknown): value is HealPattern {
+		return ModifierPattern.is(value) && value.type[3] === "heal";
+	}
 
 	constructor(properties: OptionalProperties<HealProperties, "outputs">) {
 		super(properties);

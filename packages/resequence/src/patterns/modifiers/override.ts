@@ -1,7 +1,7 @@
-import type { OptionalProperties } from "../utils/RequiredProperties";
-import type { Pattern, PatternProperties } from "./pattern";
-import { ModifierPattern, type ModifierProperties } from "./modifiers/modifier";
-import { descendAndClone } from "./utils/tree";
+import type { OptionalProperties } from "../../utils/RequiredProperties";
+import type { Pattern, PatternProperties } from "../pattern";
+import { descendAndClone } from "../utils/tree";
+import { ModifierPattern, type ModifierProperties } from "./modifier";
 
 export type OverrideCallback = (properties: PatternProperties) => Partial<PatternProperties>;
 
@@ -11,7 +11,12 @@ export interface OverrideProperties extends ModifierProperties {
 }
 
 export class OverridePattern extends ModifierPattern {
+	readonly type = ["pattern", "midi", "modifier", "override"] as const;
 	readonly properties: OverrideProperties;
+
+	static is(value: unknown): value is OverridePattern {
+		return ModifierPattern.is(value) && value.type[3] === "override";
+	}
 
 	constructor(properties: OptionalProperties<OverrideProperties, "outputs">) {
 		super(properties);

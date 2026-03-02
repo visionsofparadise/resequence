@@ -10,7 +10,12 @@ export interface RotateProperties extends ModifierProperties {
 }
 
 export class RotatePattern extends ModifierPattern {
+	readonly type = ["pattern", "midi", "modifier", "rotate"] as const;
 	readonly properties: RotateProperties;
+
+	static is(value: unknown): value is RotatePattern {
+		return ModifierPattern.is(value) && value.type[3] === "rotate";
+	}
 
 	constructor(properties: OptionalProperties<RotateProperties, "outputs">) {
 		super(properties);

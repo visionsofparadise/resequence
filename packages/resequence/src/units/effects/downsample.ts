@@ -4,7 +4,11 @@ import type { SetupResult } from "../unit";
 import { Unit } from "../unit";
 
 export class DownsampleEffectUnit extends Unit {
-	readonly type = "downsample" as const;
+	readonly type = ["unit", "downsample"] as const;
+
+	static is(value: unknown): value is DownsampleEffectUnit {
+		return Unit.is(value) && value.type[1] === "downsample";
+	}
 
 	public downsampleNode: AudioWorkletNode | undefined;
 

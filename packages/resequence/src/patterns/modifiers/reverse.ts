@@ -6,7 +6,12 @@ import { mapNotes } from "../utils/tree";
 import { ModifierPattern, type ModifierProperties } from "./modifier";
 
 export class ReversePattern extends ModifierPattern {
+	readonly type = ["pattern", "midi", "modifier", "reverse"] as const;
 	readonly properties: ModifierProperties;
+
+	static is(value: unknown): value is ReversePattern {
+		return ModifierPattern.is(value) && value.type[3] === "reverse";
+	}
 
 	constructor(properties: OptionalProperties<ModifierProperties, "outputs">) {
 		super(properties);

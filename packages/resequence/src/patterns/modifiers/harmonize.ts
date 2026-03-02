@@ -11,7 +11,12 @@ export interface HarmonizeProperties extends ModifierProperties {
 }
 
 export class HarmonizePattern extends ModifierPattern {
+	readonly type = ["pattern", "midi", "modifier", "harmonize"] as const;
 	readonly properties: HarmonizeProperties;
+
+	static is(value: unknown): value is HarmonizePattern {
+		return ModifierPattern.is(value) && value.type[3] === "harmonize";
+	}
 
 	constructor(properties: OptionalProperties<HarmonizeProperties, "outputs">) {
 		super(properties);

@@ -3,6 +3,12 @@ import type { SetupResult } from "../unit";
 import { Unit } from "../unit";
 
 export class ConvolutionEffectUnit extends Unit {
+	readonly type = ["unit", "convolution"] as const;
+
+	static is(value: unknown): value is ConvolutionEffectUnit {
+		return Unit.is(value) && value.type[1] === "convolution";
+	}
+
 	private readonly impulse: string;
 	private readonly normalize: boolean | undefined;
 	convolverNode: ConvolverNode | undefined;

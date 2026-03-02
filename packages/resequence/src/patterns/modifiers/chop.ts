@@ -13,7 +13,12 @@ export interface ChopProperties extends ModifierProperties {
 }
 
 export class ChopPattern extends ModifierPattern {
+	readonly type = ["pattern", "midi", "modifier", "chop"] as const;
 	readonly properties: ChopProperties;
+
+	static is(value: unknown): value is ChopPattern {
+		return ModifierPattern.is(value) && value.type[3] === "chop";
+	}
 
 	constructor(properties: OptionalProperties<ChopProperties, "outputs">) {
 		super(properties);

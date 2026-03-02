@@ -10,7 +10,12 @@ export interface LegatoProperties extends ModifierProperties {
 }
 
 export class LegatoPattern extends ModifierPattern {
+	readonly type = ["pattern", "midi", "modifier", "legato"] as const;
 	readonly properties: LegatoProperties;
+
+	static is(value: unknown): value is LegatoPattern {
+		return ModifierPattern.is(value) && value.type[3] === "legato";
+	}
 
 	constructor(properties: OptionalProperties<LegatoProperties, "outputs">) {
 		super(properties);

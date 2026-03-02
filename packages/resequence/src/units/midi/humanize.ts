@@ -9,7 +9,11 @@ export interface HumanizeMidiOptions {
 }
 
 export class HumanizeMidiUnit extends MidiUnit {
-	readonly type = "humanize-midi" as const;
+	readonly type = ["unit", "midi", "humanize"] as const;
+
+	static is(value: unknown): value is HumanizeMidiUnit {
+		return MidiUnit.is(value) && value.type[2] === "humanize";
+	}
 
 	public readonly timing: number;
 	public readonly velocity: number;

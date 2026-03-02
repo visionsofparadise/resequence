@@ -5,7 +5,7 @@ import { MidiUnit } from "../midi-unit";
 import { humanize } from "./humanize";
 
 class CaptureMidiUnit extends MidiUnit {
-	readonly type = "capture" as const;
+	readonly type = ["unit", "midi", "capture"] as const;
 	readonly id = "capture";
 	readonly captured: Array<VoiceNote> = [];
 

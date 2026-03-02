@@ -11,7 +11,12 @@ export interface SliceProperties extends ModifierProperties {
 }
 
 export class SlicePattern extends ModifierPattern {
+	readonly type = ["pattern", "midi", "modifier", "slice"] as const;
 	readonly properties: SliceProperties;
+
+	static is(value: unknown): value is SlicePattern {
+		return ModifierPattern.is(value) && value.type[3] === "slice";
+	}
 
 	constructor(properties: OptionalProperties<SliceProperties, "outputs">) {
 		super(properties);
@@ -70,7 +75,12 @@ export interface TrimProperties extends ModifierProperties {
 }
 
 export class TrimPattern extends ModifierPattern {
+	readonly type = ["pattern", "midi", "modifier", "trim"] as const;
 	readonly properties: TrimProperties;
+
+	static is(value: unknown): value is TrimPattern {
+		return ModifierPattern.is(value) && value.type[3] === "trim";
+	}
 
 	constructor(properties: OptionalProperties<TrimProperties, "outputs">) {
 		super(properties);

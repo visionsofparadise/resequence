@@ -4,6 +4,12 @@ import { MidiPattern } from "./midi";
 import { Pattern } from "./pattern";
 
 export class LayerPattern extends MidiPattern {
+	readonly type = ["pattern", "midi", "layer"] as const;
+
+	static is(value: unknown): value is LayerPattern {
+		return MidiPattern.is(value) && value.type[2] === "layer";
+	}
+
 	clone(overrides: Partial<PatternProperties>): LayerPattern {
 		return new LayerPattern({
 			...this.properties,

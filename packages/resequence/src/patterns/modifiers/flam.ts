@@ -11,7 +11,12 @@ export interface FlamProperties extends ModifierProperties {
 }
 
 export class FlamPattern extends ModifierPattern {
+	readonly type = ["pattern", "midi", "modifier", "flam"] as const;
 	readonly properties: FlamProperties;
+
+	static is(value: unknown): value is FlamPattern {
+		return ModifierPattern.is(value) && value.type[3] === "flam";
+	}
 
 	constructor(properties: OptionalProperties<FlamProperties, "outputs">) {
 		super(properties);

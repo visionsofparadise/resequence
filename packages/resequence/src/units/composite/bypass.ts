@@ -5,6 +5,12 @@ import type { SetupResult, Unit } from "../unit";
 import { Composite } from "./composite";
 
 export class BypassUnit extends MidiUnit {
+	readonly type = ["unit", "midi", "bypass"] as const;
+
+	static is(value: unknown): value is BypassUnit {
+		return MidiUnit.is(value) && value.type[2] === "bypass";
+	}
+
 	readonly inner: Unit;
 	private passthrough: GainEffectUnit | undefined;
 

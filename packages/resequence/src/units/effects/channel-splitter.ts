@@ -4,7 +4,12 @@ import { Unit } from "../unit";
 import { type GainEffectUnit, linearGain } from "./gain";
 
 export class ChannelSplitterUnit extends Unit {
+	readonly type = ["unit", "channel-splitter"] as const;
 	readonly channels: Array<GainEffectUnit> = [];
+
+	static is(value: unknown): value is ChannelSplitterUnit {
+		return Unit.is(value) && value.type[1] === "channel-splitter";
+	}
 
 	constructor(private readonly channelCount = 2) {
 		super();

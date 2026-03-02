@@ -4,6 +4,12 @@ import { MidiPattern } from "./midi";
 import { Pattern } from "./pattern";
 
 export class SequencePattern extends MidiPattern {
+	readonly type = ["pattern", "midi", "sequence"] as const;
+
+	static is(value: unknown): value is SequencePattern {
+		return MidiPattern.is(value) && value.type[2] === "sequence";
+	}
+
 	clone(overrides: Partial<PatternProperties>): SequencePattern {
 		return new SequencePattern({
 			...this.properties,

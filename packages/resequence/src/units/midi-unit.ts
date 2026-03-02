@@ -40,6 +40,12 @@ interface NoteModDeclaration {
 }
 
 export abstract class MidiUnit extends Unit {
+	abstract readonly type: readonly ["unit", "midi", ...Array<string>];
+
+	static is(value: unknown): value is MidiUnit {
+		return Unit.is(value) && value.type[1] === "midi";
+	}
+
 	private readonly noteModDeclarations: Array<NoteModDeclaration> = [];
 
 	noteMod(property: NoteProperty, paths: Array<string>, transform?: (value: number) => number): void {

@@ -15,6 +15,12 @@ export interface AutomateProperties extends PatternProperties {
 }
 
 export class AutomatePattern extends Pattern {
+	readonly type = ["pattern", "automate"] as const;
+
+	static is(value: unknown): value is AutomatePattern {
+		return Pattern.is(value) && value.type[1] === "automate";
+	}
+
 	constructor(readonly properties: AutomateProperties) {
 		super(properties);
 	}

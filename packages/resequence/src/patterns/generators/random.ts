@@ -37,7 +37,12 @@ export interface RandomProperties extends MidiPatternProperties {
 }
 
 export class RandomPattern extends MidiPattern {
+	readonly type = ["pattern", "midi", "random"] as const;
 	readonly properties: RandomProperties;
+
+	static is(value: unknown): value is RandomPattern {
+		return MidiPattern.is(value) && value.type[2] === "random";
+	}
 
 	constructor(properties: OptionalProperties<RandomProperties, "outputs">) {
 		super(properties);

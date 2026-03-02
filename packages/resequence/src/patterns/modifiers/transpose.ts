@@ -11,7 +11,12 @@ export interface TransposeProperties extends ModifierProperties {
 }
 
 export class TransposePattern extends ModifierPattern {
+	readonly type = ["pattern", "midi", "modifier", "transpose"] as const;
 	readonly properties: TransposeProperties;
+
+	static is(value: unknown): value is TransposePattern {
+		return ModifierPattern.is(value) && value.type[3] === "transpose";
+	}
 
 	constructor(properties: OptionalProperties<TransposeProperties, "outputs">) {
 		super(properties);

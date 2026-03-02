@@ -11,7 +11,12 @@ export interface RepeatProperties extends ModifierProperties {
 }
 
 export class RepeatPattern extends ModifierPattern {
+	readonly type = ["pattern", "midi", "modifier", "repeat"] as const;
 	readonly properties: RepeatProperties;
+
+	static is(value: unknown): value is RepeatPattern {
+		return ModifierPattern.is(value) && value.type[3] === "repeat";
+	}
 
 	constructor(properties: OptionalProperties<RepeatProperties, "outputs">) {
 		super(properties);

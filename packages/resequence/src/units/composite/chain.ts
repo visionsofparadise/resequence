@@ -3,6 +3,12 @@ import type { SetupResult, Unit } from "../unit";
 import { Composite, flattenUnits } from "./composite";
 
 export class Chain extends Composite {
+	readonly type = ["unit", "composite", "chain"] as const;
+
+	static is(value: unknown): value is Chain {
+		return Composite.is(value) && value.type[2] === "chain";
+	}
+
 	readonly head: Unit;
 	readonly tail: Unit;
 	readonly units: ReadonlyArray<Unit>;

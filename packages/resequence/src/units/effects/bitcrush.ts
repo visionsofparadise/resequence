@@ -4,7 +4,11 @@ import type { SetupResult } from "../unit";
 import { Unit } from "../unit";
 
 export class BitcrushEffectUnit extends Unit {
-	readonly type = "bitcrush" as const;
+	readonly type = ["unit", "bitcrush"] as const;
+
+	static is(value: unknown): value is BitcrushEffectUnit {
+		return Unit.is(value) && value.type[1] === "bitcrush";
+	}
 
 	public bitcrushNode: AudioWorkletNode | undefined;
 

@@ -6,6 +6,12 @@ import type { VoiceNote } from "../midi-unit";
 import { GeneratorUnit } from "./generator";
 
 export class OscillatorUnit extends GeneratorUnit {
+	readonly type = ["unit", "midi", "generator", "oscillator"] as const;
+
+	static is(value: unknown): value is OscillatorUnit {
+		return GeneratorUnit.is(value) && value.type[3] === "oscillator";
+	}
+
 	private readonly oscillatorType: WaveShape;
 	private readonly detune: number;
 	public readonly id?: string;

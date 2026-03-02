@@ -16,7 +16,12 @@ export interface StrumProperties extends ModifierProperties {
 }
 
 export class StrumPattern extends ModifierPattern {
+	readonly type = ["pattern", "midi", "modifier", "strum"] as const;
 	readonly properties: StrumProperties;
+
+	static is(value: unknown): value is StrumPattern {
+		return ModifierPattern.is(value) && value.type[3] === "strum";
+	}
 
 	constructor(properties: OptionalProperties<StrumProperties, "outputs">) {
 		super(properties);

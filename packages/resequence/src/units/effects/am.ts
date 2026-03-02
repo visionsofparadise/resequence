@@ -2,8 +2,12 @@ import type { ScheduleContext } from "../../rendering/schedule-context";
 import { Unit, type SetupResult } from "../unit";
 
 export class AmEffectUnit extends Unit {
-	readonly type = "am" as const;
+	readonly type = ["unit", "am"] as const;
 	readonly id = undefined;
+
+	static is(value: unknown): value is AmEffectUnit {
+		return Unit.is(value) && value.type[1] === "am";
+	}
 
 	public readonly carrier: Unit;
 

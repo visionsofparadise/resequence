@@ -10,7 +10,12 @@ export interface GateProperties extends ModifierProperties {
 }
 
 export class GatePattern extends ModifierPattern {
+	readonly type = ["pattern", "midi", "modifier", "gate"] as const;
 	readonly properties: GateProperties;
+
+	static is(value: unknown): value is GatePattern {
+		return ModifierPattern.is(value) && value.type[3] === "gate";
+	}
 
 	constructor(properties: OptionalProperties<GateProperties, "outputs">) {
 		super(properties);

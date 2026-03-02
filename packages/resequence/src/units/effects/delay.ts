@@ -5,7 +5,11 @@ import { Unit } from "../unit";
 import { linearGain, type GainEffectUnit } from "./gain";
 
 export class DelayEffectUnit extends Unit {
-	readonly type = "delay" as const;
+	readonly type = ["unit", "delay"] as const;
+
+	static is(value: unknown): value is DelayEffectUnit {
+		return Unit.is(value) && value.type[1] === "delay";
+	}
 
 	private readonly time: number;
 	private readonly feedback: number | undefined;

@@ -17,7 +17,12 @@ export interface UnisonProperties extends ModifierProperties {
 }
 
 export class UnisonPattern extends ModifierPattern {
+	readonly type = ["pattern", "midi", "modifier", "unison"] as const;
 	readonly properties: UnisonProperties;
+
+	static is(value: unknown): value is UnisonPattern {
+		return ModifierPattern.is(value) && value.type[3] === "unison";
+	}
 
 	constructor(properties: OptionalProperties<UnisonProperties, "outputs">) {
 		super(properties);

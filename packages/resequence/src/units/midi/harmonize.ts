@@ -7,7 +7,11 @@ export interface HarmonizeMidiOptions {
 }
 
 export class HarmonizeMidiUnit extends MidiUnit {
-	readonly type = "harmonize-midi" as const;
+	readonly type = ["unit", "midi", "harmonize"] as const;
+
+	static is(value: unknown): value is HarmonizeMidiUnit {
+		return MidiUnit.is(value) && value.type[2] === "harmonize";
+	}
 
 	public readonly intervals: ReadonlyArray<number>;
 

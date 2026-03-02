@@ -13,6 +13,12 @@ export interface EnvelopeAdsr {
 }
 
 export class EnvelopeUnit extends MidiUnit {
+	readonly type = ["unit", "midi", "envelope"] as const;
+
+	static is(value: unknown): value is EnvelopeUnit {
+		return MidiUnit.is(value) && value.type[2] === "envelope";
+	}
+
 	private readonly adsr: EnvelopeAdsr;
 	public readonly id?: string;
 

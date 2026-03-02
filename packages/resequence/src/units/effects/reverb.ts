@@ -9,6 +9,12 @@ const COMB_DELAYS = [1116, 1188, 1277, 1356].map((samples) => (samples / 44100) 
 const ALLPASS_DELAYS = [556, 441].map((samples) => (samples / 44100) * 1000);
 
 export class ReverbEffectUnit extends Unit {
+	readonly type = ["unit", "reverb"] as const;
+
+	static is(value: unknown): value is ReverbEffectUnit {
+		return Unit.is(value) && value.type[1] === "reverb";
+	}
+
 	private readonly roomSize: number;
 	private readonly damping: number;
 	public readonly id?: string;

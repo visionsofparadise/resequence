@@ -1,10 +1,14 @@
-import type { OptionalProperties } from "../utils/RequiredProperties";
-import type { PatternProperties } from "./pattern";
-import { ModifierPattern, type ModifierProperties } from "./modifiers/modifier";
-import type { Pattern } from "./pattern";
+import type { OptionalProperties } from "../../utils/RequiredProperties";
+import type { Pattern, PatternProperties } from "../pattern";
+import { ModifierPattern, type ModifierProperties } from "./modifier";
 
 export class MutePattern extends ModifierPattern {
+	readonly type = ["pattern", "midi", "modifier", "mute"] as const;
 	readonly properties: ModifierProperties;
+
+	static is(value: unknown): value is MutePattern {
+		return ModifierPattern.is(value) && value.type[3] === "mute";
+	}
 
 	constructor(properties: OptionalProperties<ModifierProperties, "outputs">) {
 		super(properties);

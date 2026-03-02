@@ -5,7 +5,7 @@ import type { VoiceNote } from "../midi-unit";
 import { velocityCurve } from "./velocity-curve";
 
 class CaptureMidiUnit extends MidiUnit {
-	readonly type = "capture" as const;
+	readonly type = ["unit", "midi", "capture"] as const;
 	readonly id = "capture";
 	readonly captured: Array<VoiceNote> = [];
 

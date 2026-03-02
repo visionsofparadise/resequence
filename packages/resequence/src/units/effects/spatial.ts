@@ -15,7 +15,11 @@ export interface SpatialOptions {
 }
 
 export class SpatialEffectUnit extends Unit {
-	readonly type = "spatial" as const;
+	readonly type = ["unit", "spatial"] as const;
+
+	static is(value: unknown): value is SpatialEffectUnit {
+		return Unit.is(value) && value.type[1] === "spatial";
+	}
 
 	private readonly x: number;
 	private readonly y: number;

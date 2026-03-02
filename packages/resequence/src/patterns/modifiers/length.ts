@@ -10,7 +10,12 @@ export interface LengthProperties extends ModifierProperties {
 }
 
 export class LengthPattern extends ModifierPattern {
+	readonly type = ["pattern", "midi", "modifier", "length"] as const;
 	readonly properties: LengthProperties;
+
+	static is(value: unknown): value is LengthPattern {
+		return ModifierPattern.is(value) && value.type[3] === "length";
+	}
 
 	constructor(properties: OptionalProperties<LengthProperties, "outputs">) {
 		super(properties);

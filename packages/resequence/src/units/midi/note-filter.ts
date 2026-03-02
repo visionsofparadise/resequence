@@ -3,7 +3,11 @@ import { MidiUnit } from "../midi-unit";
 import type { VoiceNote } from "../midi-unit";
 
 export class NoteFilterMidiUnit extends MidiUnit {
-	readonly type = "note-filter-midi" as const;
+	readonly type = ["unit", "midi", "note-filter"] as const;
+
+	static is(value: unknown): value is NoteFilterMidiUnit {
+		return MidiUnit.is(value) && value.type[2] === "note-filter";
+	}
 
 	public readonly predicate: (voiceNote: VoiceNote) => boolean;
 

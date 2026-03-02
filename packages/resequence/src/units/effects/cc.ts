@@ -11,6 +11,12 @@ import { pan, type PanEffectUnit } from "./pan";
 import { reverb } from "./reverb";
 
 export class CCEffectUnit extends MidiUnit {
+	readonly type = ["unit", "midi", "cc"] as const;
+
+	static is(value: unknown): value is CCEffectUnit {
+		return MidiUnit.is(value) && value.type[2] === "cc";
+	}
+
 	public chain: Array<Unit> = [];
 	public envelopeUnit: EnvelopeUnit | undefined;
 	public filterUnit: FilterEffectUnit | undefined;

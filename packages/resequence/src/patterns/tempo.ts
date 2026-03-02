@@ -24,6 +24,12 @@ export interface TempoProperties extends PatternProperties {
 }
 
 export class TempoPattern extends Pattern {
+	readonly type = ["pattern", "tempo"] as const;
+
+	static is(value: unknown): value is TempoPattern {
+		return Pattern.is(value) && value.type[1] === "tempo";
+	}
+
 	constructor(readonly properties: TempoProperties) {
 		super(properties);
 	}

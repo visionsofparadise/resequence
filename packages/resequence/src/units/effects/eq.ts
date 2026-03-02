@@ -11,6 +11,12 @@ export interface EqBand {
 }
 
 export class EqEffectUnit extends Unit {
+	readonly type = ["unit", "eq"] as const;
+
+	static is(value: unknown): value is EqEffectUnit {
+		return Unit.is(value) && value.type[1] === "eq";
+	}
+
 	private readonly bands: ReadonlyArray<EqBand>;
 	public readonly id?: string;
 

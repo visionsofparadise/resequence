@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { pitchKey } from "../utils/pitch";
 import { N } from "../tunings/chromatic";
+import { pitchKey } from "../utils/pitch";
 import { transpose } from "./modifiers/transpose";
+import { unwrap } from "./modifiers/unwrap";
 import { sequence } from "./sequence";
-import { unwrap } from "./unwrap";
 import { collectNotes } from "./utils/tree";
 
 describe("unwrap", () => {

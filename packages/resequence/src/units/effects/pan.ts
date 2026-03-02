@@ -4,7 +4,11 @@ import type { SetupResult } from "../unit";
 import { Unit } from "../unit";
 
 export class PanEffectUnit extends Unit {
-	readonly type = "pan" as const;
+	readonly type = ["unit", "pan"] as const;
+
+	static is(value: unknown): value is PanEffectUnit {
+		return Unit.is(value) && value.type[1] === "pan";
+	}
 
 	public panNode: StereoPannerNode | undefined;
 

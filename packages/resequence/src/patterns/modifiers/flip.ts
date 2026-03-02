@@ -13,7 +13,12 @@ export interface FlipProperties extends ModifierProperties {
 }
 
 export class FlipPattern extends ModifierPattern {
+	readonly type = ["pattern", "midi", "modifier", "flip"] as const;
 	readonly properties: FlipProperties;
+
+	static is(value: unknown): value is FlipPattern {
+		return ModifierPattern.is(value) && value.type[3] === "flip";
+	}
 
 	constructor(properties: OptionalProperties<FlipProperties, "outputs">) {
 		super(properties);

@@ -13,9 +13,14 @@ export interface SetupResult {
 }
 
 export abstract class Unit {
+	abstract readonly type: ReadonlyArray<string>;
 	readonly id?: string;
 
 	readonly targets: Array<Unit> = [];
+
+	static is(value: unknown): value is Unit {
+		return typeof value === "object" && value !== null && "type" in value && Array.isArray(value.type) && value.type[0] === "unit";
+	}
 
 	readonly entryNodes: Array<AudioNode> = [];
 	readonly exitNodes: Array<AudioNode> = [];

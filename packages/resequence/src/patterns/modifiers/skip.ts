@@ -1,10 +1,14 @@
-import type { OptionalProperties } from "../utils/RequiredProperties";
-import type { PatternProperties } from "./pattern";
-import { ModifierPattern, type ModifierProperties } from "./modifiers/modifier";
-import type { Pattern } from "./pattern";
+import type { OptionalProperties } from "../../utils/RequiredProperties";
+import type { Pattern, PatternProperties } from "../pattern";
+import { ModifierPattern, type ModifierProperties } from "./modifier";
 
 export class SkipPattern extends ModifierPattern {
+	readonly type = ["pattern", "midi", "modifier", "skip"] as const;
 	readonly properties: ModifierProperties;
+
+	static is(value: unknown): value is SkipPattern {
+		return ModifierPattern.is(value) && value.type[3] === "skip";
+	}
 
 	constructor(properties: OptionalProperties<ModifierProperties, "outputs">) {
 		super(properties);

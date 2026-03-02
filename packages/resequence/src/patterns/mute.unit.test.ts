@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { N } from "../tunings/chromatic";
-import { mute } from "./mute";
+import { mute } from "./modifiers/mute";
 import { sequence } from "./sequence";
 import { collectNotes } from "./utils/tree";
 

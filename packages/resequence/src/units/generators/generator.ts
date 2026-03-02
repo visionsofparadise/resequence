@@ -6,7 +6,12 @@ import { MidiUnit } from "../midi-unit";
 import type { ModDeclaration, SetupResult, Unit } from "../unit";
 
 export abstract class GeneratorUnit extends MidiUnit {
+	abstract readonly type: readonly ["unit", "midi", "generator", ...Array<string>];
 	public mergeUnit: GainEffectUnit | undefined;
+
+	static is(value: unknown): value is GeneratorUnit {
+		return MidiUnit.is(value) && value.type[2] === "generator";
+	}
 
 	private readonly voiceToCallbacks: Array<(voiceNote: VoiceNote) => Unit> = [];
 	private readonly voiceModDeclarations: Array<ModDeclaration> = [];

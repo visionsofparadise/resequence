@@ -10,7 +10,12 @@ export interface StretchProperties extends ModifierProperties {
 }
 
 export class StretchPattern extends ModifierPattern {
+	readonly type = ["pattern", "midi", "modifier", "stretch"] as const;
 	readonly properties: StretchProperties;
+
+	static is(value: unknown): value is StretchPattern {
+		return ModifierPattern.is(value) && value.type[3] === "stretch";
+	}
 
 	constructor(properties: OptionalProperties<StretchProperties, "outputs">) {
 		super(properties);

@@ -3,7 +3,11 @@ import { driveParam } from "../utils/driver";
 import { Unit, type SetupResult } from "./unit";
 
 export class MacroUnit extends Unit {
-	readonly type = "macro" as const;
+	readonly type = ["unit", "macro"] as const;
+
+	static is(value: unknown): value is MacroUnit {
+		return Unit.is(value) && value.type[1] === "macro";
+	}
 
 	private readonly value: number;
 	public readonly id: string;

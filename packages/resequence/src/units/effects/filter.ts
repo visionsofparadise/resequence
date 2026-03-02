@@ -6,7 +6,11 @@ import { Unit } from "../unit";
 export type FilterMode = "lowpass" | "highpass" | "bandpass" | "peaking" | "notch" | "lowshelf" | "highshelf" | "allpass";
 
 export class FilterEffectUnit extends Unit {
-	readonly type = "filter" as const;
+	readonly type = ["unit", "filter"] as const;
+
+	static is(value: unknown): value is FilterEffectUnit {
+		return Unit.is(value) && value.type[1] === "filter";
+	}
 
 	private readonly mode: FilterMode;
 	private readonly frequency: number;

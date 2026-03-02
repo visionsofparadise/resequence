@@ -12,7 +12,12 @@ export interface QuantizeProperties extends ModifierProperties {
 }
 
 export class QuantizePattern extends ModifierPattern {
+	readonly type = ["pattern", "midi", "modifier", "quantize"] as const;
 	readonly properties: QuantizeProperties;
+
+	static is(value: unknown): value is QuantizePattern {
+		return ModifierPattern.is(value) && value.type[3] === "quantize";
+	}
 
 	constructor(properties: OptionalProperties<QuantizeProperties, "outputs">) {
 		super(properties);

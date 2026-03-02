@@ -10,7 +10,12 @@ import { ModifierPattern } from "./modifier";
 import type { ModifierProperties } from "./modifier";
 
 export class SlidePattern extends ModifierPattern {
+	readonly type = ["pattern", "midi", "modifier", "slide"] as const;
 	readonly properties: ModifierProperties;
+
+	static is(value: unknown): value is SlidePattern {
+		return ModifierPattern.is(value) && value.type[3] === "slide";
+	}
 
 	constructor(properties: OptionalProperties<ModifierProperties, "outputs">) {
 		super(properties);

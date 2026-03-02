@@ -14,7 +14,12 @@ export interface SortProperties extends ModifierProperties {
 }
 
 export class SortPattern extends ModifierPattern {
+	readonly type = ["pattern", "midi", "modifier", "sort"] as const;
 	readonly properties: SortProperties;
+
+	static is(value: unknown): value is SortPattern {
+		return ModifierPattern.is(value) && value.type[3] === "sort";
+	}
 
 	constructor(properties: OptionalProperties<SortProperties, "outputs">) {
 		super(properties);

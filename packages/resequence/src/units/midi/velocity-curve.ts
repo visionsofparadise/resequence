@@ -3,7 +3,11 @@ import type { VoiceNote } from "../midi-unit";
 import { MidiUnit } from "../midi-unit";
 
 export class VelocityCurveMidiUnit extends MidiUnit {
-	readonly type = "velocity-curve-midi" as const;
+	readonly type = ["unit", "midi", "velocity-curve"] as const;
+
+	static is(value: unknown): value is VelocityCurveMidiUnit {
+		return MidiUnit.is(value) && value.type[2] === "velocity-curve";
+	}
 
 	public readonly curve: (velocity: number) => number;
 

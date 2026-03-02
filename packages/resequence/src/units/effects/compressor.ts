@@ -4,7 +4,11 @@ import type { SetupResult } from "../unit";
 import { Unit } from "../unit";
 
 export class CompressorEffectUnit extends Unit {
-	readonly type = "compressor" as const;
+	readonly type = ["unit", "compressor"] as const;
+
+	static is(value: unknown): value is CompressorEffectUnit {
+		return Unit.is(value) && value.type[1] === "compressor";
+	}
 
 	private readonly threshold: number;
 	private readonly knee: number | undefined;

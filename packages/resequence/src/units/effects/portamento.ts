@@ -11,6 +11,12 @@ interface LastPitch {
 }
 
 export class PortamentoUnit extends MidiUnit {
+	readonly type = ["unit", "midi", "portamento"] as const;
+
+	static is(value: unknown): value is PortamentoUnit {
+		return MidiUnit.is(value) && value.type[2] === "portamento";
+	}
+
 	private lastPitch: LastPitch | undefined;
 	private readonly timeBeats: number;
 

@@ -12,6 +12,12 @@ export interface LfoOptions {
 }
 
 export class LfoUnit extends Unit {
+	readonly type = ["unit", "lfo"] as const;
+
+	static is(value: unknown): value is LfoUnit {
+		return Unit.is(value) && value.type[1] === "lfo";
+	}
+
 	private readonly shape: WaveShape;
 	private readonly rate: number;
 	private readonly depth: number;
