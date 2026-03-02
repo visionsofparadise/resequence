@@ -4,7 +4,7 @@ import { gap } from "../gap";
 import { layer } from "../layer";
 import { repeat } from "../modifiers/repeat";
 import { sequence } from "../sequence";
-import { collectNotes, mapNotes, flatMapNotes, mapGroups } from "./tree";
+import { collectNotes, descendAndClone, mapNotes, flatMapNotes, mapGroups } from "./tree";
 
 describe("collectNotes", () => {
 	it("returns empty for gap", () => {
@@ -97,6 +97,44 @@ describe("flatMapNotes", () => {
 		const mapped = flatMapNotes(seq, (n) => (n.pitch.class === N.C4.class ? [n] : []));
 		const notes = collectNotes(mapped);
 		expect(notes).toHaveLength(1);
+	});
+});
+
+describe("descendAndClone", () => {
+	it("applies operation at root when indexes empty", () => {
+		const seq = sequence(N.C4(1));
+		const result = descendAndClone(seq, [], (node) =>
+			node.clone({ notes: node.notes.map((n) => ({ ...n, note: { ...n.note, velocity: 42 } })) }),
+		);
+		const notes = collectNotes(result);
+		expect(notes[0]?.velocity).toBe(42);
+	});
+
+	it("navigates to nested child and applies operation", () => {
+		const inner = sequence(N.C4(1));
+		const mid = sequence(inner, gap(1));
+		const outer = sequence(mid, gap(1));
+		const result = descendAndClone(outer, [0, 0], (node) =>
+			node.clone({ notes: node.notes.map((n) => ({ ...n, note: { ...n.note, velocity: 77 } })) }),
+		);
+		const notes = collectNotes(result);
+		expect(notes[0]?.velocity).toBe(77);
+	});
+
+	it("preserves structural sharing for unmodified branches", () => {
+		const a = sequence(N.C4(1));
+		const b = sequence(N.D4(1));
+		const root = layer(a, b);
+		const result = descendAndClone(root, [0], (node) =>
+			node.clone({ notes: node.notes.map((n) => ({ ...n, note: { ...n.note, velocity: 50 } })) }),
+		);
+		expect(result.children[1]?.pattern).toBe(b);
+		expect(result.children[0]?.pattern).not.toBe(a);
+	});
+
+	it("throws on out-of-bounds index", () => {
+		const seq = sequence(N.C4(1));
+		expect(() => descendAndClone(seq, [5], (n) => n)).toThrow("out of bounds");
 	});
 });
 

@@ -141,6 +141,24 @@ export function walkNodes(pattern: Pattern, callback: (node: Pattern, absoluteOf
 	}
 }
 
+export function descendAndClone(pattern: Pattern, indexes: ReadonlyArray<number>, operation: (node: Pattern) => Pattern): Pattern {
+	if (indexes.length === 0) return operation(pattern);
+
+	const targetIndex = indexes[0];
+	if (targetIndex === undefined) return pattern;
+	const rest = indexes.slice(1);
+	const child = pattern.children[targetIndex];
+
+	if (!child) throw new Error(`Child index ${targetIndex} out of bounds (pattern has ${pattern.children.length} children)`);
+
+	const modifiedChild = descendAndClone(child.pattern, rest, operation);
+	const newChildren: Array<RelativeChild> = pattern.children.map((entry, position) =>
+		position === targetIndex ? { offsetBeats: entry.offsetBeats, pattern: modifiedChild } : entry,
+	);
+
+	return pattern.clone({ notes: pattern.notes, children: newChildren, ...extentOf(pattern.notes, newChildren) });
+}
+
 export function collectNotes(pattern: Pattern, offsetBeats = 0): Array<ScoreNote> {
 	const results: Array<ScoreNote> = [];
 
