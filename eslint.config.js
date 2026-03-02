@@ -233,5 +233,37 @@ export default tseslint.config(
       "prefer-const": "error",
       "no-var": "error",
     },
+  },
+
+  // Main process rules (Node.js / Electron)
+  {
+    files: ["**/main/**/*.ts"],
+    rules: {
+      "no-console": "off",
+    },
+  },
+
+  // Icon.tsx uses PascalCase for icon component factories
+  {
+    files: ["**/Icon.tsx"],
+    rules: {
+      "@typescript-eslint/naming-convention": [
+        "error",
+        {
+          selector: "objectLiteralMethod",
+          format: ["camelCase", "PascalCase"],
+        },
+      ],
+    },
+  },
+
+  // UI component overrides (shadcn generated code)
+  {
+    files: ["**/components/ui/**/*.tsx"],
+    rules: {
+      "arrow-body-style": "off",
+      "barrel-files/avoid-namespace-import": "off",
+      "barrel-files/avoid-re-export-all": "off",
+    },
   }
 );
