@@ -3,30 +3,45 @@ import { useCreateState } from "../ProxyStore/hooks/useCreateState";
 import type { ProxyStore } from "../ProxyStore/ProxyStore";
 import { Transient } from "../Transient";
 
+export interface OutputGraphViewport {
+	x: number;
+	y: number;
+	zoom: number;
+}
+
 export interface ProjectState extends State {
-	canvasX: Transient<number>;
-	canvasY: Transient<number>;
-	zoom: Transient<number>;
-	sidebarWidthPercent: Transient<number>;
-	sidebarTab: "builds" | "nodes" | "overrides";
+	activePianoRoll: string | null;
+	activeOutput: string | null;
+
+	timelineScrollX: Transient<number>;
+	timelineZoom: Transient<number>;
+
+	outputGraphViewports: Record<string, OutputGraphViewport>;
+
+	topHeightPercent: Transient<number>;
+	overridesWidthPercent: Transient<number>;
 }
 
 export interface ProjectStateInitial {
-	canvasX?: number;
-	canvasY?: number;
-	zoom?: number;
-	sidebarWidthPercent?: number;
-	sidebarTab?: "builds" | "nodes" | "overrides";
+	activePianoRoll?: string | null;
+	activeOutput?: string | null;
+	timelineScrollX?: number;
+	timelineZoom?: number;
+	outputGraphViewports?: Record<string, OutputGraphViewport>;
+	topHeightPercent?: number;
+	overridesWidthPercent?: number;
 }
 
 export function useProjectState(initial: ProjectStateInitial = {}, store: ProxyStore) {
 	return useCreateState<ProjectState>(
 		{
-			canvasX: new Transient(initial.canvasX ?? 0),
-			canvasY: new Transient(initial.canvasY ?? 0),
-			zoom: new Transient(initial.zoom ?? 1),
-			sidebarWidthPercent: new Transient(initial.sidebarWidthPercent ?? 20, { minimum: 5 }),
-			sidebarTab: initial.sidebarTab ?? "overrides",
+			activePianoRoll: initial.activePianoRoll ?? null,
+			activeOutput: initial.activeOutput ?? null,
+			timelineScrollX: new Transient(initial.timelineScrollX ?? 0),
+			timelineZoom: new Transient(initial.timelineZoom ?? 1),
+			outputGraphViewports: initial.outputGraphViewports ?? {},
+			topHeightPercent: new Transient(initial.topHeightPercent ?? 35, { minimum: 10, maximum: 90 }),
+			overridesWidthPercent: new Transient(initial.overridesWidthPercent ?? 40, { minimum: 10, maximum: 90 }),
 		},
 		store,
 	);
@@ -34,24 +49,38 @@ export function useProjectState(initial: ProjectStateInitial = {}, store: ProxyS
 
 export function serializeProjectState(state: ProjectState): ProjectStateInitial {
 	return {
-		canvasX: state.canvasX.toJson(),
-		canvasY: state.canvasY.toJson(),
-		zoom: state.zoom.toJson(),
-		sidebarWidthPercent: state.sidebarWidthPercent.toJson(),
-		sidebarTab: state.sidebarTab,
+		activePianoRoll: state.activePianoRoll,
+		activeOutput: state.activeOutput,
+		timelineScrollX: state.timelineScrollX.toJson(),
+		timelineZoom: state.timelineZoom.toJson(),
+		outputGraphViewports: state.outputGraphViewports,
+		topHeightPercent: state.topHeightPercent.toJson(),
+		overridesWidthPercent: state.overridesWidthPercent.toJson(),
 	};
 }
 
 export function deserializeProjectState(json: Record<string, unknown>): ProjectStateInitial {
 	return {
-		canvasX: typeof json.canvasX === "number" ? json.canvasX : undefined,
-		canvasY: typeof json.canvasY === "number" ? json.canvasY : undefined,
-		zoom: typeof json.zoom === "number" ? json.zoom : undefined,
-		sidebarWidthPercent: typeof json.sidebarWidthPercent === "number" ? json.sidebarWidthPercent : undefined,
-		sidebarTab: isValidSidebarTab(json.sidebarTab) ? json.sidebarTab : undefined,
+		activePianoRoll: typeof json.activePianoRoll === "string" ? json.activePianoRoll : undefined,
+		activeOutput: typeof json.activeOutput === "string" ? json.activeOutput : undefined,
+		timelineScrollX: typeof json.timelineScrollX === "number" ? json.timelineScrollX : undefined,
+		timelineZoom: typeof json.timelineZoom === "number" ? json.timelineZoom : undefined,
+		outputGraphViewports: isOutputGraphViewports(json.outputGraphViewports) ? json.outputGraphViewports : undefined,
+		topHeightPercent: typeof json.topHeightPercent === "number" ? json.topHeightPercent : undefined,
+		overridesWidthPercent: typeof json.overridesWidthPercent === "number" ? json.overridesWidthPercent : undefined,
 	};
 }
 
-function isValidSidebarTab(value: unknown): value is ProjectState["sidebarTab"] {
-	return value === "builds" || value === "nodes" || value === "overrides";
+function isOutputGraphViewports(value: unknown): value is Record<string, OutputGraphViewport> {
+	if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
+
+	for (const entry of Object.values(value)) {
+		if (typeof entry !== "object" || entry === null) return false;
+
+		const viewport = entry as Record<string, unknown>;
+
+		if (typeof viewport.x !== "number" || typeof viewport.y !== "number" || typeof viewport.zoom !== "number") return false;
+	}
+
+	return true;
 }

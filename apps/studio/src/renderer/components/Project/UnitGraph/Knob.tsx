@@ -33,11 +33,17 @@ export const Knob: React.FC<KnobProps> = ({ label, driver, range, step = 1, unit
 	return (
 		<div className="flex flex-col items-center gap-1 select-none opacity-60">
 			<div className="relative w-10 h-10 rounded-full bg-zinc-800 border-2 border-zinc-600 cursor-default">
-				<div ref={indicatorRef} className="absolute inset-2 flex items-start justify-center">
+				<div
+					ref={indicatorRef}
+					className="absolute inset-2 flex items-start justify-center"
+				>
 					<div className="w-0.5 h-2 bg-white rounded-full" />
 				</div>
 			</div>
-			<span ref={displayRef} className="text-xs text-zinc-400 font-medium">
+			<span
+				ref={displayRef}
+				className="text-xs text-zinc-400 font-medium"
+			>
 				0
 			</span>
 			<span className="text-[10px] text-zinc-500 uppercase tracking-wide">{label}</span>
