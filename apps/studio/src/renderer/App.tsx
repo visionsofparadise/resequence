@@ -3,7 +3,7 @@ import React, { useMemo, useState } from "react";
 import { Logger } from "../shared/models/Logger/Logger";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { Home } from "./components/Home";
-import { Project } from "./components/Project";
+import { ProjectLoader } from "./components/Project/Loader";
 import { ThemeProvider } from "./components/ThemeProvider";
 import { Toaster } from "./components/ui/sonner";
 import { useWindowState } from "./hooks/useWindowState";
@@ -95,7 +95,7 @@ export const App: React.FC = () => {
 			<ThemeProvider context={context}>
 				<ErrorBoundary>
 					{currentProjectPath ? (
-						<Project
+						<ProjectLoader
 							currentProjectPath={currentProjectPath}
 							context={context}
 						/>
