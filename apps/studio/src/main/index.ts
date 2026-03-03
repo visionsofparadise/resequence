@@ -20,7 +20,9 @@ app.on("ready", () => {
 
 	logger.info("Application starting", { namespace: "app", transactionId, action: "appReady" });
 
-	createWindow({ logger, winston });
+	createWindow({ logger, winston }).catch((error: unknown) => {
+		logger.error("Failed to create window", error as Error, { namespace: "app", transactionId });
+	});
 });
 
 app.on("window-all-closed", () => {
@@ -31,6 +33,8 @@ app.on("window-all-closed", () => {
 
 app.on("activate", () => {
 	if (BrowserWindow.getAllWindows().length === 0) {
-		createWindow({ logger, winston });
+		createWindow({ logger, winston }).catch((error: unknown) => {
+			logger.error("Failed to create window", error as Error, { namespace: "app" });
+		});
 	}
 });

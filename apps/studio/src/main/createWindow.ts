@@ -1,11 +1,13 @@
-import { BrowserWindow } from "electron";
+import { app, BrowserWindow } from "electron";
 import path from "path";
 import type winston from "winston";
 import { ASYNC_MAIN_IPCS } from "../shared/ipc/asyncMainIpcs";
 import type { IpcHandlerDependencies } from "../shared/models/AsyncMainIpc";
 import { interceptRendererLogs } from "../shared/models/Logger/interceptRendererLogs";
 import { Logger } from "../shared/models/Logger/Logger";
+import { emitToRenderer } from "../shared/utilities/emitToRenderer";
 import { getContentSecurityPolicy } from "./getContentSecurityPolicy";
+import { readSettings, restoreWindowState } from "./windowState";
 
 export interface WindowFactoryDependencies {
 	readonly logger: Logger;
@@ -25,12 +27,15 @@ const WINDOW_CONFIG = {
 	},
 };
 
-export const createWindow = (dependencies: WindowFactoryDependencies): BrowserWindow => {
+export const createWindow = async (dependencies: WindowFactoryDependencies): Promise<BrowserWindow> => {
 	const { logger, winston } = dependencies;
 
 	const transactionId = Logger.generateTransactionId();
 
 	logger.info("Creating main window", { namespace: "window", transactionId, action: "createWindow" });
+
+	const userData = app.getPath("userData");
+	const settings = await readSettings(userData);
 
 	const browserWindow = new BrowserWindow({
 		...WINDOW_CONFIG,
@@ -71,6 +76,29 @@ export const createWindow = (dependencies: WindowFactoryDependencies): BrowserWi
 	interceptRendererLogs(transactionId, { browserWindow, winston });
 	logger.info("Renderer log interception initialized", { namespace: "window", transactionId });
 
+	restoreWindowState(browserWindow, settings);
+
+	// Emit window bounds to renderer on move/resize (debounced) and close (immediate).
+	// The renderer owns persistence — it reads the event and writes settings via IPC.
+	let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+	const emitBounds = (): void => {
+		const { x, y, width, height } = browserWindow.getBounds();
+		emitToRenderer(browserWindow, "windowBoundsChanged", { x, y, width, height, maximized: browserWindow.isMaximized() });
+	};
+
+	const debouncedEmit = (): void => {
+		if (debounceTimer) clearTimeout(debounceTimer);
+		debounceTimer = setTimeout(emitBounds, 500);
+	};
+
+	browserWindow.on("move", debouncedEmit);
+	browserWindow.on("resize", debouncedEmit);
+	browserWindow.on("close", () => {
+		if (debounceTimer) clearTimeout(debounceTimer);
+		emitBounds();
+	});
+
 	if (process.env.MAIN_WINDOW_VITE_DEV_SERVER_URL) {
 		browserWindow.loadURL(process.env.MAIN_WINDOW_VITE_DEV_SERVER_URL).catch((error: unknown) => {
 			logger.error("Failed to load dev server URL", error as Error, {
@@ -95,6 +123,10 @@ export const createWindow = (dependencies: WindowFactoryDependencies): BrowserWi
 		logger.info("Main window ready to show", { namespace: "window", transactionId });
 
 		browserWindow.show();
+
+		if (settings.windowState?.maximized) {
+			browserWindow.maximize();
+		}
 	});
 
 	return browserWindow;

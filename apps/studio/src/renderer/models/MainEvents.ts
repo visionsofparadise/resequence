@@ -10,5 +10,9 @@ export class MainEvents extends EventEmitter<MainEventMap> {
 		main.events.on("error", (_: IpcRendererEvent, ...args) => {
 			this.emit("error", ...args);
 		});
+
+		main.events.on("windowBoundsChanged", (_: IpcRendererEvent, ...args) => {
+			this.emit("windowBoundsChanged", ...args);
+		});
 	}
 }

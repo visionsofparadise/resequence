@@ -6,8 +6,11 @@ import { Home } from "./components/Home";
 import { Project } from "./components/Project";
 import { ThemeProvider } from "./components/ThemeProvider";
 import { Toaster } from "./components/ui/sonner";
+import { useWindowState } from "./hooks/useWindowState";
 import type { AppContext } from "./models/Context";
 import { MainEvents } from "./models/MainEvents";
+import { ProxyStore } from "./models/ProxyStore/ProxyStore";
+import { useAppState } from "./models/State/App";
 import { APP_SETTINGS_QUERY_KEY, getAppSettings } from "./utils/appSettings";
 
 const logger = new Logger("renderer");
@@ -42,6 +45,8 @@ const queryClient = new QueryClient({
 export const App: React.FC = () => {
 	const [currentProjectPath, setCurrentProjectPath] = useState<string | undefined>();
 
+	const appStore = useMemo(() => new ProxyStore(), []);
+
 	const main = useMemo(
 		() => ({
 			...window.main,
@@ -49,6 +54,8 @@ export const App: React.FC = () => {
 		}),
 		[],
 	);
+
+	const app = useAppState(appStore);
 
 	const { data: appSettings } = useQuery(
 		{
@@ -58,6 +65,8 @@ export const App: React.FC = () => {
 		},
 		queryClient,
 	);
+
+	useWindowState(app, appStore, appSettings, main, queryClient);
 
 	const { data: windowId } = useQuery(
 		{
@@ -69,8 +78,8 @@ export const App: React.FC = () => {
 	);
 
 	const context = useMemo(
-		(): AppContext | undefined => (appSettings && windowId ? { appSettings, currentProjectPath, setCurrentProjectPath, logger, main, queryClient, windowId } : undefined),
-		[appSettings, currentProjectPath, main, windowId],
+		(): AppContext | undefined => (appSettings && windowId ? { appSettings, app, appStore, currentProjectPath, setCurrentProjectPath, logger, main, queryClient, windowId } : undefined),
+		[appSettings, app, appStore, currentProjectPath, main, windowId],
 	);
 
 	if (!context) {
@@ -85,7 +94,14 @@ export const App: React.FC = () => {
 		<QueryClientProvider client={queryClient}>
 			<ThemeProvider context={context}>
 				<ErrorBoundary>
-					{currentProjectPath ? <Project context={context} /> : <Home context={context} />}
+					{currentProjectPath ? (
+						<Project
+							currentProjectPath={currentProjectPath}
+							context={context}
+						/>
+					) : (
+						<Home context={context} />
+					)}
 					<Toaster />
 				</ErrorBoundary>
 			</ThemeProvider>
