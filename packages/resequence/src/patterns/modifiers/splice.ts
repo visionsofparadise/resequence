@@ -82,7 +82,7 @@ export function splice(pattern: Pattern | ScoreNote, options: SpliceOptions): Sp
 	const removeCount = options.remove ?? 0;
 
 	const entries: Array<{ note: ScoreNote; absoluteStart: number; absoluteEnd: number }> = [];
-	walkNodes(resolved, (node, absoluteOffset) => {
+	walkNodes(resolved, (node, { absoluteOffset }) => {
 		for (const { offsetBeats, note } of node.notes) {
 			const totalOffset = absoluteOffset + offsetBeats;
 			entries.push({ note, absoluteStart: totalOffset + note.startBeat, absoluteEnd: totalOffset + note.endBeat });

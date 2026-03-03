@@ -1,10 +1,15 @@
 import type { ScheduleContext } from "../../rendering/schedule-context";
 import { driveParam } from "../../utils/driver";
-import type { SetupResult } from "../unit";
+import type { SetupResult, UnitInput, UnitProperties } from "../unit";
 import { Unit } from "../unit";
+
+export interface BitcrushProperties extends UnitProperties {
+	readonly bits: number;
+}
 
 export class BitcrushEffectUnit extends Unit {
 	readonly type = ["unit", "bitcrush"] as const;
+	readonly properties: BitcrushProperties;
 
 	static is(value: unknown): value is BitcrushEffectUnit {
 		return Unit.is(value) && value.type[1] === "bitcrush";
@@ -12,11 +17,15 @@ export class BitcrushEffectUnit extends Unit {
 
 	public bitcrushNode: AudioWorkletNode | undefined;
 
-	constructor(
-		private readonly bits: number,
-		public readonly id?: string,
-	) {
-		super();
+	constructor(properties: UnitInput<BitcrushProperties>) {
+		super(properties);
+		this.properties = { ...properties, targets: properties.targets ?? [], modDeclarations: properties.modDeclarations ?? [] };
+	}
+
+	get bits(): number { return this.properties.bits; }
+
+	clone(overrides?: Partial<BitcrushProperties>): BitcrushEffectUnit {
+		return new BitcrushEffectUnit({ ...this.properties, ...overrides });
 	}
 
 	protected async _setup(context: ScheduleContext): Promise<SetupResult> {
@@ -38,5 +47,5 @@ export class BitcrushEffectUnit extends Unit {
 }
 
 export function bitcrush({ bits, id }: { bits: number; id?: string }): BitcrushEffectUnit {
-	return new BitcrushEffectUnit(bits, id);
+	return new BitcrushEffectUnit({ bits, id });
 }

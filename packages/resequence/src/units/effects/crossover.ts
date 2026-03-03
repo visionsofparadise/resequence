@@ -1,6 +1,6 @@
 import type { ScheduleContext } from "../../rendering/schedule-context";
-import type { SetupResult } from "../unit";
-import { Unit } from "../unit";
+import type { SetupResult, UnitInput } from "../unit";
+import { Unit, type UnitProperties } from "../unit";
 import { linearGain } from "./gain";
 import { linkwitzRiley } from "./linkwitz-riley";
 
@@ -32,20 +32,31 @@ function parseBands(options: CrossoverOptions): Array<ParsedBand> {
 	return bands;
 }
 
+export interface CrossoverProperties extends UnitProperties {
+	readonly options: CrossoverOptions;
+}
+
 export class CrossoverEffectUnit extends Unit {
 	readonly type = ["unit", "crossover"] as const;
-	readonly id = undefined;
 
 	static is(value: unknown): value is CrossoverEffectUnit {
 		return Unit.is(value) && value.type[1] === "crossover";
 	}
 
+	readonly properties: CrossoverProperties;
 	public readonly parsedBands: Array<ParsedBand>;
 	public bandUnits: Array<Array<Unit>> = [];
 
-	constructor(options: CrossoverOptions) {
-		super();
-		this.parsedBands = parseBands(options);
+	constructor(properties: UnitInput<CrossoverProperties>) {
+		super(properties);
+		this.properties = { ...properties, targets: properties.targets ?? [], modDeclarations: properties.modDeclarations ?? [] };
+		this.parsedBands = parseBands(properties.options);
+	}
+
+	get options(): CrossoverOptions { return this.properties.options; }
+
+	clone(overrides?: Partial<CrossoverProperties>): CrossoverEffectUnit {
+		return new CrossoverEffectUnit({ ...this.properties, ...overrides });
 	}
 
 	protected async _setup(context: ScheduleContext): Promise<SetupResult> {
@@ -123,7 +134,7 @@ export class CrossoverEffectUnit extends Unit {
 }
 
 export function crossover(options: CrossoverOptions): CrossoverEffectUnit {
-	return new CrossoverEffectUnit(options);
+	return new CrossoverEffectUnit({ options });
 }
 
 export const multiband = crossover;

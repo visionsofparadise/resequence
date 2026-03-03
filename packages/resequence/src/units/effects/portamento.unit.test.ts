@@ -6,8 +6,16 @@ import { portamento } from "./portamento";
 
 // Minimal mock MidiUnit that captures scheduled VoiceNotes
 class CaptureMidiUnit extends MidiUnit {
-	readonly id = "capture";
+	readonly type = ["unit", "midi", "capture"] as const;
 	readonly captured: Array<VoiceNote> = [];
+
+	constructor() {
+		super({ id: "capture" });
+	}
+
+	clone(): CaptureMidiUnit {
+		return new CaptureMidiUnit();
+	}
 
 	protected _setup(): void {}
 	protected _teardown(): void {}

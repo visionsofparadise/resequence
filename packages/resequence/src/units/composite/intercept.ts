@@ -1,8 +1,9 @@
 import type { ScheduleContext } from "../../rendering/schedule-context";
 import { getOrCreateDriver } from "../../utils/driver";
-import type { VoiceNote } from "../midi-unit";
+import type { MidiUnitInput, MidiUnitProperties, VoiceNote } from "../midi-unit";
 import { MidiUnit } from "../midi-unit";
-import type { SetupResult, Unit } from "../unit";
+import type { SetupResult } from "../unit";
+import type { Unit } from "../unit";
 import { Composite } from "./composite";
 
 export interface InterceptOptions {
@@ -10,8 +11,14 @@ export interface InterceptOptions {
 	readonly insert?: ReadonlyArray<Unit>;
 }
 
+export interface InterceptProperties extends MidiUnitProperties {
+	readonly inner: Unit;
+	readonly options: InterceptOptions;
+}
+
 export class InterceptUnit extends MidiUnit {
 	readonly type = ["unit", "midi", "intercept"] as const;
+	readonly properties: InterceptProperties;
 
 	static is(value: unknown): value is InterceptUnit {
 		return MidiUnit.is(value) && value.type[2] === "intercept";
@@ -20,26 +27,20 @@ export class InterceptUnit extends MidiUnit {
 	readonly inner: Unit;
 	private readonly options: InterceptOptions;
 
-	constructor(inner: Unit, options: InterceptOptions) {
-		super();
+	constructor(properties: MidiUnitInput<InterceptProperties>) {
+		super(properties);
+		this.properties = {
+			...properties,
+			targets: properties.targets ?? [],
+			modDeclarations: properties.modDeclarations ?? [],
+			noteModDeclarations: properties.noteModDeclarations ?? [],
+		};
+		this.inner = properties.inner;
+		this.options = properties.options;
+	}
 
-		this.inner = inner;
-		this.options = options;
-
-		for (const target of inner.targets) {
-			this.targets.push(target);
-		}
-		inner.targets.length = 0;
-
-		if (inner instanceof Composite) {
-			const tail = "tail" in inner ? (inner as { tail: Unit }).tail : undefined;
-			if (tail) {
-				for (const target of tail.targets) {
-					if (!this.targets.includes(target)) this.targets.push(target);
-				}
-				tail.targets.length = 0;
-			}
-		}
+	clone(overrides?: Partial<InterceptProperties>): InterceptUnit {
+		return new InterceptUnit({ ...this.properties, ...overrides });
 	}
 
 	protected _setup(context: ScheduleContext): SetupResult | Promise<SetupResult> {
@@ -64,8 +65,8 @@ export class InterceptUnit extends MidiUnit {
 			if (overrides && inner.id) {
 				for (const [paramName, value] of Object.entries(overrides)) {
 					const path = `${inner.id}.${paramName}`;
-					const driver = getOrCreateDriver(path, value, context);
-					driver.offset.value = value;
+					const entry = getOrCreateDriver(path, value, context);
+					entry.node.offset.value = value;
 				}
 			}
 
@@ -98,5 +99,18 @@ export class InterceptUnit extends MidiUnit {
 }
 
 export function intercept(unit: Unit, options: InterceptOptions): InterceptUnit {
-	return new InterceptUnit(unit, options);
+	const targets: Array<Unit> = [...unit.targets];
+	unit.targets.length = 0;
+
+	if (unit instanceof Composite) {
+		const tail = "tail" in unit ? (unit as { tail: Unit }).tail : undefined;
+		if (tail) {
+			for (const target of tail.targets) {
+				if (!targets.includes(target)) targets.push(target);
+			}
+			tail.targets.length = 0;
+		}
+	}
+
+	return new InterceptUnit({ inner: unit, options, targets });
 }

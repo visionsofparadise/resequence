@@ -1,7 +1,7 @@
 import type { ScheduleContext } from "../rendering/schedule-context";
 import { driveParam, proxyDriver } from "../utils/driver";
 import { linearGain, type GainEffectUnit } from "./effects/gain";
-import { Unit, type SetupResult } from "./unit";
+import { Unit, type SetupResult, type UnitInput, type UnitProperties } from "./unit";
 
 export type WaveShape = "sine" | "square" | "sawtooth" | "triangle";
 
@@ -11,30 +11,51 @@ export interface LfoOptions {
 	readonly depth: number;
 }
 
+export interface LfoProperties extends UnitProperties {
+	readonly path: string;
+	readonly shape: WaveShape;
+	readonly rate: number;
+	readonly depth: number;
+}
+
 export class LfoUnit extends Unit {
 	readonly type = ["unit", "lfo"] as const;
+	readonly properties: LfoProperties;
 
 	static is(value: unknown): value is LfoUnit {
 		return Unit.is(value) && value.type[1] === "lfo";
 	}
 
-	private readonly shape: WaveShape;
-	private readonly rate: number;
-	private readonly depth: number;
-	public readonly id?: string;
+	get path(): string {
+		return this.properties.path;
+	}
+
+	get shape(): WaveShape {
+		return this.properties.shape;
+	}
+
+	get rate(): number {
+		return this.properties.rate;
+	}
+
+	get depth(): number {
+		return this.properties.depth;
+	}
 
 	private oscillatorNode: OscillatorNode | undefined;
 	private depthUnit: GainEffectUnit | undefined;
 
-	constructor({ path, shape, rate, depth, id }: { path: string; shape: WaveShape; rate: number; depth: number; id?: string }) {
-		super();
+	constructor(properties: UnitInput<LfoProperties>) {
+		super(properties);
+		this.properties = {
+			...properties,
+			targets: properties.targets ?? [],
+			modDeclarations: [{ paths: [properties.path] }],
+		};
+	}
 
-		this.shape = shape;
-		this.rate = rate;
-		this.depth = depth;
-		this.id = id;
-
-		this.mod([path]);
+	clone(overrides?: Partial<LfoProperties>): LfoUnit {
+		return new LfoUnit({ ...this.properties, ...overrides });
 	}
 
 	protected async _setup(context: ScheduleContext): Promise<SetupResult> {

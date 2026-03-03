@@ -1,11 +1,12 @@
 import { ResequenceError } from "../../error";
 import type { ScheduleContext } from "../../rendering/schedule-context";
+import { getOrCreateDriver } from "../../utils/driver";
 import type { Pitch } from "../../utils/pitch";
 import { pitchToMidi } from "../../utils/pitch";
 import { scheduleSlideRamps } from "../../utils/schedule-slides";
 import type { VoiceNote } from "../midi-unit";
 import type { SetupResult } from "../unit";
-import { GeneratorUnit } from "./generator";
+import { GeneratorUnit, type GeneratorUnitInput, type GeneratorUnitProperties } from "./generator";
 
 export interface SamplerZone {
 	readonly sample: string;
@@ -36,22 +37,36 @@ interface NormalizedZone {
 	readonly loopEndMs?: number;
 }
 
+export interface SamplerProperties extends GeneratorUnitProperties {
+	readonly config: SamplerConfig;
+}
+
 export class SamplerUnit extends GeneratorUnit {
 	readonly type = ["unit", "midi", "generator", "sampler"] as const;
+	readonly properties: SamplerProperties;
 
 	static is(value: unknown): value is SamplerUnit {
 		return GeneratorUnit.is(value) && value.type[3] === "sampler";
 	}
 
-	private readonly config: SamplerConfig;
 	private readonly buffers = new Map<string, AudioBuffer>();
 
-	constructor(
-		public readonly id: string | undefined,
-		config: SamplerConfig,
-	) {
-		super();
-		this.config = config;
+	constructor(properties: GeneratorUnitInput<SamplerProperties>) {
+		super(properties);
+		this.properties = {
+			...properties,
+			targets: properties.targets ?? [],
+			modDeclarations: properties.modDeclarations ?? [],
+			noteModDeclarations: properties.noteModDeclarations ?? [],
+			voiceToCallbacks: properties.voiceToCallbacks ?? [],
+			voiceModDeclarations: properties.voiceModDeclarations ?? [],
+		};
+	}
+
+	get config(): SamplerConfig { return this.properties.config; }
+
+	clone(overrides?: Partial<SamplerProperties>): SamplerUnit {
+		return new SamplerUnit({ ...this.properties, ...overrides });
 	}
 
 	protected async _setup(context: ScheduleContext): Promise<SetupResult> {
@@ -70,10 +85,15 @@ export class SamplerUnit extends GeneratorUnit {
 			}),
 		);
 
-		for (const result of results) {
-			if (result.status === "fulfilled") {
-				this.buffers.set(result.value.path, result.value.buffer);
+		for (const settledResult of results) {
+			if (settledResult.status === "fulfilled") {
+				this.buffers.set(settledResult.value.path, settledResult.value.buffer);
 			}
+		}
+
+		if (this.id) {
+			getOrCreateDriver(`${this.id}.frequency`, 0, context, [20, 20000]);
+			getOrCreateDriver(`${this.id}.detune`, 0.5, context, [-1200, 1200]);
 		}
 
 		return result;
@@ -111,6 +131,17 @@ export class SamplerUnit extends GeneratorUnit {
 			source.loop = true;
 			source.loopStart = result.loopStartMs / 1000;
 			source.loopEnd = result.loopEndMs / 1000;
+		}
+
+		if (this.id) {
+			const detuneEntry = scheduleContext.driverMap.get(`${this.id}.detune`);
+			if (detuneEntry) {
+				const scaleGain = scheduleContext.audioContext.createGain();
+				scaleGain.gain.value = 2400;
+				source.detune.value = -1200;
+				detuneEntry.node.connect(scaleGain);
+				scaleGain.connect(source.detune);
+			}
 		}
 
 		source.start(voiceNote.startMs / 1000);
@@ -213,12 +244,12 @@ export function sampler(source: string | ReadonlyArray<SamplerZone>, options?: {
 	if (typeof source === "string") {
 		const rootMidi = options?.root !== undefined ? pitchToMidi(options.root).note : undefined;
 
-		return new SamplerUnit(id, { kind: "single", path: source, rootMidi, loopStartMs: options?.loopStartMs, loopEndMs: options?.loopEndMs });
+		return new SamplerUnit({ id, config: { kind: "single", path: source, rootMidi, loopStartMs: options?.loopStartMs, loopEndMs: options?.loopEndMs } });
 	}
 
 	if (source.length === 0) throw new ResequenceError("EMPTY_SAMPLER_ZONES", "sampler(): zones array must not be empty");
 
 	const zones = source.map(normalizeZone);
 
-	return new SamplerUnit(id, { kind: "zones", zones });
+	return new SamplerUnit({ id, config: { kind: "zones", zones } });
 }

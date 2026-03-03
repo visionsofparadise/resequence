@@ -1,56 +1,70 @@
-import type { ScheduleContext } from "../rendering/schedule-context";
+import type { DriverEntry, ScheduleContext } from "../rendering/schedule-context";
 
-export function getOrCreateDriver(path: string, defaultValue: number, context: ScheduleContext): ConstantSourceNode {
+export function getOrCreateDriver(
+	path: string,
+	defaultValue: number,
+	context: ScheduleContext,
+	range?: readonly [number, number],
+): DriverEntry {
 	const existing = context.driverMap.get(path);
-
 	if (existing) return existing;
 
-	const driver = context.audioContext.createConstantSource();
+	const node = context.audioContext.createConstantSource();
+	node.offset.value = defaultValue;
+	node.start(0);
 
-	driver.offset.value = defaultValue;
-	driver.start(0);
-	context.driverMap.set(path, driver);
-
-	return driver;
+	const entry: DriverEntry = { node, range };
+	context.driverMap.set(path, entry);
+	return entry;
 }
 
-export function driveParam(param: AudioParam, path: string | undefined, value: number, range: readonly [number, number], context: ScheduleContext): void {
+export function driveParam(
+	param: AudioParam,
+	path: string | undefined,
+	value: number,
+	range: readonly [number, number],
+	context: ScheduleContext,
+): void {
 	if (path) {
 		const [min, max] = range;
 		const normalized = (value - min) / (max - min);
-		const driver = getOrCreateDriver(path, normalized, context);
+		const entry = getOrCreateDriver(path, normalized, context, range);
 
 		const scaleGain = context.audioContext.createGain();
-
 		scaleGain.gain.value = max - min;
 		param.value = min;
 
-		driver.connect(scaleGain);
+		entry.node.connect(scaleGain);
 		scaleGain.connect(param);
 	} else {
 		param.value = value;
 	}
 }
 
-export function offsetParam(param: AudioParam, path: string | undefined, value: number, range: readonly [number, number], context: ScheduleContext): void {
+export function offsetParam(
+	param: AudioParam,
+	path: string | undefined,
+	value: number,
+	range: readonly [number, number],
+	context: ScheduleContext,
+): void {
 	param.value = value;
 
 	if (path) {
 		const [min, max] = range;
-		const driver = getOrCreateDriver(path, 0, context);
+		const entry = getOrCreateDriver(path, 0, context, range);
 
 		const scaleGain = context.audioContext.createGain();
-
 		scaleGain.gain.value = max - min;
 
-		driver.connect(scaleGain);
+		entry.node.connect(scaleGain);
 		scaleGain.connect(param);
 	}
 }
 
 export function undriveParam(path: string, param: AudioParam, context: ScheduleContext): void {
 	try {
-		context.driverMap.get(path)?.disconnect(param);
+		context.driverMap.get(path)?.node.disconnect(param);
 	} catch {
 		// already disconnected (e.g. teardown ran before oscillator "ended" event)
 	}
@@ -59,14 +73,11 @@ export function undriveParam(path: string, param: AudioParam, context: ScheduleC
 export function proxyDriver(id: string | undefined, key: string, childPath: string, context: ScheduleContext): void {
 	if (!id) return;
 
-	const childDriver = context.driverMap.get(childPath);
+	const childEntry = context.driverMap.get(childPath);
+	if (!childEntry) return;
 
-	if (!childDriver) return;
+	const parentEntry = getOrCreateDriver(`${id}.${key}`, childEntry.node.offset.value, context, childEntry.range);
 
-	const parentDriver = getOrCreateDriver(`${id}.${key}`, childDriver.offset.value, context);
-
-	childDriver.offset.value = 0;
-
-	parentDriver.connect(childDriver.offset);
+	childEntry.node.offset.value = 0;
+	parentEntry.node.connect(childEntry.node.offset);
 }
-

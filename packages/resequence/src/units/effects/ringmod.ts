@@ -1,19 +1,27 @@
 import type { ScheduleContext } from "../../rendering/schedule-context";
-import { Unit, type SetupResult } from "../unit";
+import { Unit, type SetupResult, type UnitInput, type UnitProperties } from "../unit";
+
+export interface RingModProperties extends UnitProperties {
+	readonly carrier: Unit;
+}
 
 export class RingModEffectUnit extends Unit {
 	readonly type = ["unit", "ringmod"] as const;
-	readonly id = undefined;
+	readonly properties: RingModProperties;
 
 	static is(value: unknown): value is RingModEffectUnit {
 		return Unit.is(value) && value.type[1] === "ringmod";
 	}
 
-	public readonly carrier: Unit;
+	constructor(properties: UnitInput<RingModProperties>) {
+		super(properties);
+		this.properties = { ...properties, targets: properties.targets ?? [], modDeclarations: properties.modDeclarations ?? [] };
+	}
 
-	constructor(carrier: Unit) {
-		super();
-		this.carrier = carrier;
+	get carrier(): Unit { return this.properties.carrier; }
+
+	clone(overrides?: Partial<RingModProperties>): RingModEffectUnit {
+		return new RingModEffectUnit({ ...this.properties, ...overrides });
 	}
 
 	protected async _setup(context: ScheduleContext): Promise<SetupResult> {
@@ -35,5 +43,5 @@ export class RingModEffectUnit extends Unit {
 }
 
 export function ringmod(carrier: Unit): RingModEffectUnit {
-	return new RingModEffectUnit(carrier);
+	return new RingModEffectUnit({ carrier });
 }

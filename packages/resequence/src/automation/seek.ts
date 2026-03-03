@@ -41,10 +41,10 @@ export function seekAutomation(pattern: Pattern, seekBeat: number, context: Sche
 		const lastCompleted = lastBefore(sortedClips, seekBeat, (clip) => clip.endBeat);
 
 		if (lastCompleted) {
-			const driver = context.driverMap.get(path);
+			const entry = context.driverMap.get(path);
 
-			if (driver) {
-				driver.offset.setValueAtTime(lastCompleted.finalValue, seekSeconds);
+			if (entry) {
+				entry.node.offset.setValueAtTime(lastCompleted.finalValue, seekSeconds);
 			}
 		}
 	}

@@ -1,7 +1,11 @@
 import type { ScheduleContext } from "../../rendering/schedule-context";
-import type { SetupResult } from "../unit";
-import { Unit } from "../unit";
+import type { SetupResult, UnitInput } from "../unit";
+import { Unit, type UnitProperties } from "../unit";
 import { type GainEffectUnit, linearGain } from "./gain";
+
+export interface ChannelMergerProperties extends UnitProperties {
+	readonly channelCount?: number;
+}
 
 export class ChannelMergerUnit extends Unit {
 	readonly type = ["unit", "channel-merger"] as const;
@@ -11,12 +15,21 @@ export class ChannelMergerUnit extends Unit {
 		return Unit.is(value) && value.type[1] === "channel-merger";
 	}
 
-	constructor(private readonly channelCount = 2) {
-		super();
+	readonly properties: ChannelMergerProperties;
+
+	constructor(properties?: UnitInput<ChannelMergerProperties>) {
+		super(properties);
+		this.properties = { ...properties, targets: properties?.targets ?? [], modDeclarations: properties?.modDeclarations ?? [], channelCount: properties?.channelCount ?? 2 };
 
 		for (let ch = 0; ch < this.channelCount; ch++) {
 			this.channels.push(linearGain({ level: 1 }));
 		}
+	}
+
+	get channelCount(): number { return this.properties.channelCount ?? 2; }
+
+	clone(overrides?: Partial<ChannelMergerProperties>): ChannelMergerUnit {
+		return new ChannelMergerUnit({ ...this.properties, ...overrides });
 	}
 
 	protected async _setup(context: ScheduleContext): Promise<SetupResult> {
@@ -42,9 +55,9 @@ export class ChannelMergerUnit extends Unit {
 }
 
 export function channelMerger(channels?: number): ChannelMergerUnit {
-	return new ChannelMergerUnit(channels);
+	return new ChannelMergerUnit({ channelCount: channels });
 }
 
 export function merge(channels?: number): ChannelMergerUnit {
-	return new ChannelMergerUnit(channels);
+	return new ChannelMergerUnit({ channelCount: channels });
 }

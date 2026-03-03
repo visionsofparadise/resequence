@@ -1,8 +1,13 @@
 import type { ScheduleContext } from "../../rendering/schedule-context";
 import { driveParam } from "../../utils/driver";
-import type { SetupResult } from "../unit";
+import type { SetupResult, UnitInput, UnitProperties } from "../unit";
 import { Unit } from "../unit";
 import { linearGain, type GainEffectUnit } from "./gain";
+
+export interface DelayProperties extends UnitProperties {
+	readonly time: number;
+	readonly feedback?: number;
+}
 
 export class DelayEffectUnit extends Unit {
 	readonly type = ["unit", "delay"] as const;
@@ -11,17 +16,20 @@ export class DelayEffectUnit extends Unit {
 		return Unit.is(value) && value.type[1] === "delay";
 	}
 
-	private readonly time: number;
-	private readonly feedback: number | undefined;
-	public readonly id?: string;
+	readonly properties: DelayProperties;
 	delayNode: DelayNode | undefined;
 	private feedbackUnit: GainEffectUnit | undefined;
 
-	constructor({ time, feedback, id }: { time: number; feedback?: number; id?: string }) {
-		super();
-		this.time = time;
-		this.feedback = feedback;
-		this.id = id;
+	constructor(properties: UnitInput<DelayProperties>) {
+		super(properties);
+		this.properties = { ...properties, targets: properties.targets ?? [], modDeclarations: properties.modDeclarations ?? [] };
+	}
+
+	get time(): number { return this.properties.time; }
+	get feedback(): number | undefined { return this.properties.feedback; }
+
+	clone(overrides?: Partial<DelayProperties>): DelayEffectUnit {
+		return new DelayEffectUnit({ ...this.properties, ...overrides });
 	}
 
 	protected _setup(context: ScheduleContext): SetupResult {

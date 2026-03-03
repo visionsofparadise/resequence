@@ -1,23 +1,39 @@
 import type { ScheduleContext } from "../../rendering/schedule-context";
-import type { VoiceNote } from "../midi-unit";
-import { MidiUnit } from "../midi-unit";
+import type { MidiUnitProperties, VoiceNote } from "../midi-unit";
+import { MidiUnit, type MidiUnitInput } from "../midi-unit";
 
 export interface HarmonizeMidiOptions {
 	readonly intervals: ReadonlyArray<number>;
 }
 
+export interface HarmonizeProperties extends MidiUnitProperties {
+	readonly intervals: ReadonlyArray<number>;
+}
+
 export class HarmonizeMidiUnit extends MidiUnit {
 	readonly type = ["unit", "midi", "harmonize"] as const;
+	readonly properties: HarmonizeProperties;
 
 	static is(value: unknown): value is HarmonizeMidiUnit {
 		return MidiUnit.is(value) && value.type[2] === "harmonize";
 	}
 
-	public readonly intervals: ReadonlyArray<number>;
+	get intervals(): ReadonlyArray<number> {
+		return this.properties.intervals;
+	}
 
-	constructor(intervals: ReadonlyArray<number>) {
-		super();
-		this.intervals = intervals;
+	constructor(properties: MidiUnitInput<HarmonizeProperties>) {
+		super(properties);
+		this.properties = {
+			...properties,
+			targets: properties.targets ?? [],
+			modDeclarations: properties.modDeclarations ?? [],
+			noteModDeclarations: properties.noteModDeclarations ?? [],
+		};
+	}
+
+	clone(overrides?: Partial<HarmonizeProperties>): HarmonizeMidiUnit {
+		return new HarmonizeMidiUnit({ ...this.properties, ...overrides });
 	}
 
 	override schedule(voiceNote: VoiceNote, scheduleContext: ScheduleContext): void {
@@ -31,5 +47,5 @@ export class HarmonizeMidiUnit extends MidiUnit {
 }
 
 export function harmonize(intervals: ReadonlyArray<number>): HarmonizeMidiUnit {
-	return new HarmonizeMidiUnit(intervals);
+	return new HarmonizeMidiUnit({ intervals });
 }

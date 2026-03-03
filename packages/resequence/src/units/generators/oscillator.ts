@@ -1,26 +1,54 @@
 import type { ScheduleContext } from "../../rendering/schedule-context";
-import { driveParam, offsetParam, undriveParam } from "../../utils/driver";
+import { driveParam, getOrCreateDriver, offsetParam } from "../../utils/driver";
+import type { SetupResult } from "../unit";
 import { scheduleSlideRamps } from "../../utils/schedule-slides";
 import type { WaveShape } from "../lfo";
 import type { VoiceNote } from "../midi-unit";
-import { GeneratorUnit } from "./generator";
+import { GeneratorUnit, type GeneratorUnitInput, type GeneratorUnitProperties } from "./generator";
+
+export interface OscillatorProperties extends GeneratorUnitProperties {
+	readonly oscillatorType: WaveShape;
+	readonly detune?: number;
+}
 
 export class OscillatorUnit extends GeneratorUnit {
 	readonly type = ["unit", "midi", "generator", "oscillator"] as const;
+	readonly properties: OscillatorProperties;
 
 	static is(value: unknown): value is OscillatorUnit {
 		return GeneratorUnit.is(value) && value.type[3] === "oscillator";
 	}
 
-	private readonly oscillatorType: WaveShape;
-	private readonly detune: number;
-	public readonly id?: string;
+	constructor(properties: GeneratorUnitInput<OscillatorProperties>) {
+		super(properties);
+		this.properties = {
+			...properties,
+			targets: properties.targets ?? [],
+			modDeclarations: properties.modDeclarations ?? [],
+			noteModDeclarations: properties.noteModDeclarations ?? [],
+			voiceToCallbacks: properties.voiceToCallbacks ?? [],
+			voiceModDeclarations: properties.voiceModDeclarations ?? [],
+			detune: properties.detune ?? 0,
+		};
+	}
 
-	constructor({ type, detune, id }: { type: WaveShape; detune?: number; id?: string }) {
-		super();
-		this.oscillatorType = type;
-		this.detune = detune ?? 0;
-		this.id = id;
+	get oscillatorType(): WaveShape { return this.properties.oscillatorType; }
+	get detune(): number { return this.properties.detune ?? 0; }
+
+	clone(overrides?: Partial<OscillatorProperties>): OscillatorUnit {
+		return new OscillatorUnit({ ...this.properties, ...overrides });
+	}
+
+	protected async _setup(context: ScheduleContext): Promise<SetupResult> {
+		const result = await super._setup(context);
+
+		if (this.id) {
+			getOrCreateDriver(`${this.id}.frequency`, 0, context, [20, 20000]);
+			const normalized = (this.detune - -1200) / (1200 - -1200);
+			getOrCreateDriver(`${this.id}.detune`, normalized, context, [-1200, 1200]);
+		}
+
+		return result;
 	}
 
 	protected _schedule(voiceNote: VoiceNote, scheduleContext: ScheduleContext): void {
@@ -46,12 +74,7 @@ export class OscillatorUnit extends GeneratorUnit {
 
 		const cleanup = this.scheduleVoice([oscillator], voiceNote, scheduleContext);
 
-		oscillator.addEventListener("ended", () => {
-			if (this.id) {
-				undriveParam(`${this.id}.detune`, oscillator.detune, scheduleContext);
-			}
-			cleanup();
-		});
+		oscillator.addEventListener("ended", cleanup);
 	}
 }
 
@@ -60,7 +83,7 @@ function noteToFrequency(note: number, bend: number): number {
 }
 
 export function oscillator({ type, detune, id }: { type: WaveShape; detune?: number; id?: string }): OscillatorUnit {
-	return new OscillatorUnit({ type, detune, id });
+	return new OscillatorUnit({ oscillatorType: type, detune, id });
 }
 
 export const osc = oscillator;

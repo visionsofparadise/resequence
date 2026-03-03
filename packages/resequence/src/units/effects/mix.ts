@@ -1,24 +1,32 @@
 import type { ScheduleContext } from "../../rendering/schedule-context";
-import { Unit, type SetupResult } from "../unit";
+import { Unit, type SetupResult, type UnitInput, type UnitProperties } from "../unit";
 import { gain } from "./gain";
+
+export interface MixProperties extends UnitProperties {
+	readonly inner: Unit;
+	readonly amount: number;
+}
 
 export class MixNode extends Unit {
 	readonly type = ["unit", "mix"] as const;
-	readonly id: string | undefined;
 
 	static is(value: unknown): value is MixNode {
 		return Unit.is(value) && value.type[1] === "mix";
 	}
+
+	readonly properties: MixProperties;
 	private dryChain: Unit | undefined;
 
-	constructor(
-		private readonly inner: Unit,
-		private readonly amount: number,
-		id?: string,
-	) {
-		super();
+	constructor(properties: UnitInput<MixProperties>) {
+		super(properties);
+		this.properties = { ...properties, targets: properties.targets ?? [], modDeclarations: properties.modDeclarations ?? [] };
+	}
 
-		this.id = id;
+	get inner(): Unit { return this.properties.inner; }
+	get amount(): number { return this.properties.amount; }
+
+	clone(overrides?: Partial<MixProperties>): MixNode {
+		return new MixNode({ ...this.properties, ...overrides });
 	}
 
 	protected _setup(_context: ScheduleContext): SetupResult {
@@ -46,7 +54,7 @@ export class MixNode extends Unit {
 }
 
 export function mix(inner: Unit, amount: number, id?: string): MixNode {
-	return new MixNode(inner, amount, id);
+	return new MixNode({ inner, amount, id });
 }
 
 function linearToDb(linear: number): number {

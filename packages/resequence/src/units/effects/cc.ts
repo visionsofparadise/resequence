@@ -1,6 +1,6 @@
 import type { ScheduleContext } from "../../rendering/schedule-context";
-import type { VoiceNote } from "../midi-unit";
-import { MidiUnit } from "../midi-unit";
+import type { MidiUnitProperties, VoiceNote } from "../midi-unit";
+import { MidiUnit, type MidiUnitInput } from "../midi-unit";
 import { envelope, type EnvelopeUnit } from "../midi/envelope";
 import type { SetupResult, Unit } from "../unit";
 import { chorus } from "./chorus";
@@ -10,8 +10,13 @@ import { mix, type MixNode } from "./mix";
 import { pan, type PanEffectUnit } from "./pan";
 import { reverb } from "./reverb";
 
+export interface CCProperties extends MidiUnitProperties {
+	readonly voiceNote: VoiceNote;
+}
+
 export class CCEffectUnit extends MidiUnit {
 	readonly type = ["unit", "midi", "cc"] as const;
+	readonly properties: CCProperties;
 
 	static is(value: unknown): value is CCEffectUnit {
 		return MidiUnit.is(value) && value.type[2] === "cc";
@@ -26,8 +31,23 @@ export class CCEffectUnit extends MidiUnit {
 	public reverbUnit: MixNode | undefined;
 	private gateUnit: GainEffectUnit | undefined;
 
-	constructor(private readonly voiceNote: VoiceNote) {
-		super();
+	get voiceNote(): VoiceNote {
+		return this.properties.voiceNote;
+	}
+
+	constructor(properties: MidiUnitInput<CCProperties>) {
+		super(properties);
+
+		this.properties = {
+			...properties,
+			targets: properties.targets ?? [],
+			modDeclarations: properties.modDeclarations ?? [],
+			noteModDeclarations: properties.noteModDeclarations ?? [],
+		};
+	}
+
+	clone(overrides?: Partial<CCProperties>): CCEffectUnit {
+		return new CCEffectUnit({ ...this.properties, ...overrides });
 	}
 
 	protected _setup(_context: ScheduleContext): SetupResult {

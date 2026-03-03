@@ -1,0 +1,43 @@
+import type { DriverEntry } from "resequence";
+import { StudioDriver } from "./StudioDriver";
+import type { ValueScheduler } from "./ValueScheduler";
+
+export interface DerivedDriverMap {
+	readonly byUnit: Map<string, Map<string, StudioDriver>>;
+	readonly all: Map<string, StudioDriver>;
+}
+
+export function hijackDrivers(driverMap: Map<string, DriverEntry>, scheduler: ValueScheduler): DerivedDriverMap {
+	const all = new Map<string, StudioDriver>();
+	const byUnit = new Map<string, Map<string, StudioDriver>>();
+
+	for (const [path, entry] of driverMap) {
+		const studioDriver = new StudioDriver(entry.node, entry.range, scheduler);
+
+		// Replace the entry in the driverMap — package reads .node from the entry,
+		// so we replace the entire entry with one whose node is the StudioDriver
+		// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
+		driverMap.set(path, { node: studioDriver as any, range: entry.range });
+
+		all.set(path, studioDriver);
+
+		// Group by unit ID: path format is "unitId.paramName"
+		const dotIndex = path.indexOf(".");
+
+		if (dotIndex !== -1) {
+			const unitId = path.slice(0, dotIndex);
+			const paramName = path.slice(dotIndex + 1);
+
+			let unitMap = byUnit.get(unitId);
+
+			if (!unitMap) {
+				unitMap = new Map();
+				byUnit.set(unitId, unitMap);
+			}
+
+			unitMap.set(paramName, studioDriver);
+		}
+	}
+
+	return { byUnit, all };
+}

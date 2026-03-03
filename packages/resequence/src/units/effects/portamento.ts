@@ -1,7 +1,7 @@
 import type { ScheduleContext } from "../../rendering/schedule-context";
 import { beatsToSeconds } from "../../rendering/tempo-map";
-import type { VoiceNote, VoiceSlide } from "../midi-unit";
-import { MidiUnit } from "../midi-unit";
+import type { MidiUnitProperties, VoiceNote, VoiceSlide } from "../midi-unit";
+import { MidiUnit, type MidiUnitInput } from "../midi-unit";
 import type { SetupResult } from "../unit";
 
 interface LastPitch {
@@ -10,19 +10,36 @@ interface LastPitch {
 	readonly slides?: ReadonlyArray<VoiceSlide>;
 }
 
+export interface PortamentoProperties extends MidiUnitProperties {
+	readonly timeBeats: number;
+}
+
 export class PortamentoUnit extends MidiUnit {
 	readonly type = ["unit", "midi", "portamento"] as const;
+	readonly properties: PortamentoProperties;
 
 	static is(value: unknown): value is PortamentoUnit {
 		return MidiUnit.is(value) && value.type[2] === "portamento";
 	}
 
 	private lastPitch: LastPitch | undefined;
-	private readonly timeBeats: number;
 
-	constructor(timeBeats: number) {
-		super();
-		this.timeBeats = timeBeats;
+	get timeBeats(): number {
+		return this.properties.timeBeats;
+	}
+
+	constructor(properties: MidiUnitInput<PortamentoProperties>) {
+		super(properties);
+		this.properties = {
+			...properties,
+			targets: properties.targets ?? [],
+			modDeclarations: properties.modDeclarations ?? [],
+			noteModDeclarations: properties.noteModDeclarations ?? [],
+		};
+	}
+
+	clone(overrides?: Partial<PortamentoProperties>): PortamentoUnit {
+		return new PortamentoUnit({ ...this.properties, ...overrides });
 	}
 
 	schedule(voiceNote: VoiceNote, scheduleContext: ScheduleContext): void {
@@ -97,7 +114,7 @@ export class PortamentoUnit extends MidiUnit {
 }
 
 export function portamento(options: { timeBeats: number }): PortamentoUnit {
-	return new PortamentoUnit(options.timeBeats);
+	return new PortamentoUnit({ timeBeats: options.timeBeats });
 }
 
 export const porta = portamento;

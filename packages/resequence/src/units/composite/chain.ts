@@ -1,9 +1,15 @@
 import type { ScheduleContext } from "../../rendering/schedule-context";
-import type { SetupResult, Unit } from "../unit";
+import type { SetupResult, UnitInput, UnitProperties } from "../unit";
+import type { Unit } from "../unit";
 import { Composite, flattenUnits } from "./composite";
+
+export interface ChainProperties extends UnitProperties {
+	readonly units: ReadonlyArray<Unit>;
+}
 
 export class Chain extends Composite {
 	readonly type = ["unit", "composite", "chain"] as const;
+	readonly properties: ChainProperties;
 
 	static is(value: unknown): value is Chain {
 		return Composite.is(value) && value.type[2] === "chain";
@@ -11,27 +17,22 @@ export class Chain extends Composite {
 
 	readonly head: Unit;
 	readonly tail: Unit;
-	readonly units: ReadonlyArray<Unit>;
 
-	constructor(...inputUnits: Array<Unit>) {
-		super();
+	get units(): ReadonlyArray<Unit> { return this.properties.units; }
 
-		for (let index = 0; index < inputUnits.length - 1; index++) {
-			const current = inputUnits[index];
-			const next = inputUnits[index + 1];
-
-			if (current && next) current.to(next);
-		}
-
-		this.units = flattenUnits(inputUnits);
-
-		const first = this.units[0];
-		const last = this.units[this.units.length - 1];
-
-		if (!first || !last) throw new Error("chain() requires at least one unit");
-
-		this.head = first;
+	constructor(properties: UnitInput<ChainProperties>) {
+		super(properties);
+		const units = [...properties.units];
+		this.properties = { ...properties, targets: properties.targets ?? [], modDeclarations: properties.modDeclarations ?? [], units };
+		const firstUnit = units[0];
+		const last = units[units.length - 1];
+		if (!firstUnit || !last) throw new Error("chain() requires at least one unit");
+		this.head = firstUnit;
 		this.tail = last;
+	}
+
+	clone(overrides?: Partial<ChainProperties>): Chain {
+		return new Chain({ ...this.properties, ...overrides });
 	}
 
 	to(unit: Unit): void {
@@ -47,6 +48,11 @@ export class Chain extends Composite {
 	}
 }
 
-export function chain(...units: Array<Unit>): Chain {
-	return new Chain(...units);
+export function chain(...inputUnits: Array<Unit>): Chain {
+	for (let index = 0; index < inputUnits.length - 1; index++) {
+		const current = inputUnits[index];
+		const next = inputUnits[index + 1];
+		if (current && next) current.to(next);
+	}
+	return new Chain({ units: flattenUnits(inputUnits) });
 }

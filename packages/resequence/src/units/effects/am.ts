@@ -1,22 +1,29 @@
 import type { ScheduleContext } from "../../rendering/schedule-context";
-import { Unit, type SetupResult } from "../unit";
+import { Unit, type SetupResult, type UnitInput, type UnitProperties } from "../unit";
+
+export interface AmProperties extends UnitProperties {
+	readonly carrier: Unit;
+}
 
 export class AmEffectUnit extends Unit {
 	readonly type = ["unit", "am"] as const;
-	readonly id = undefined;
+	readonly properties: AmProperties;
 
 	static is(value: unknown): value is AmEffectUnit {
 		return Unit.is(value) && value.type[1] === "am";
 	}
 
-	public readonly carrier: Unit;
-
 	private dcOffsetNode: ConstantSourceNode | undefined;
 
-	constructor(carrier: Unit) {
-		super();
+	constructor(properties: UnitInput<AmProperties>) {
+		super(properties);
+		this.properties = { ...properties, targets: properties.targets ?? [], modDeclarations: properties.modDeclarations ?? [] };
+	}
 
-		this.carrier = carrier;
+	get carrier(): Unit { return this.properties.carrier; }
+
+	clone(overrides?: Partial<AmProperties>): AmEffectUnit {
+		return new AmEffectUnit({ ...this.properties, ...overrides });
 	}
 
 	protected async _setup(context: ScheduleContext): Promise<SetupResult> {
@@ -53,5 +60,5 @@ export class AmEffectUnit extends Unit {
 }
 
 export function am(carrier: Unit): AmEffectUnit {
-	return new AmEffectUnit(carrier);
+	return new AmEffectUnit({ carrier });
 }

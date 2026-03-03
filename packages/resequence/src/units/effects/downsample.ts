@@ -1,10 +1,15 @@
 import type { ScheduleContext } from "../../rendering/schedule-context";
 import { driveParam } from "../../utils/driver";
-import type { SetupResult } from "../unit";
+import type { SetupResult, UnitInput, UnitProperties } from "../unit";
 import { Unit } from "../unit";
+
+export interface DownsampleProperties extends UnitProperties {
+	readonly rate: number;
+}
 
 export class DownsampleEffectUnit extends Unit {
 	readonly type = ["unit", "downsample"] as const;
+	readonly properties: DownsampleProperties;
 
 	static is(value: unknown): value is DownsampleEffectUnit {
 		return Unit.is(value) && value.type[1] === "downsample";
@@ -12,11 +17,15 @@ export class DownsampleEffectUnit extends Unit {
 
 	public downsampleNode: AudioWorkletNode | undefined;
 
-	constructor(
-		private readonly rate: number,
-		public readonly id?: string,
-	) {
-		super();
+	constructor(properties: UnitInput<DownsampleProperties>) {
+		super(properties);
+		this.properties = { ...properties, targets: properties.targets ?? [], modDeclarations: properties.modDeclarations ?? [] };
+	}
+
+	get rate(): number { return this.properties.rate; }
+
+	clone(overrides?: Partial<DownsampleProperties>): DownsampleEffectUnit {
+		return new DownsampleEffectUnit({ ...this.properties, ...overrides });
 	}
 
 	protected async _setup(context: ScheduleContext): Promise<SetupResult> {
@@ -38,7 +47,7 @@ export class DownsampleEffectUnit extends Unit {
 }
 
 export function downsample({ rate, id }: { rate: number; id?: string }): DownsampleEffectUnit {
-	return new DownsampleEffectUnit(rate, id);
+	return new DownsampleEffectUnit({ rate, id });
 }
 
 export const sampleRate = downsample;

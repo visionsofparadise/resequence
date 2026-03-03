@@ -38,6 +38,8 @@ export function useProjectBuild(entrypoint: string | undefined, context: Project
 			projectStore.mutate(build, (proxy) => Object.assign(proxy, { buildPath: newBuildPath }));
 		}
 
+		void context.queryClient.invalidateQueries({ queryKey: ["builds", currentProjectPath] });
+
 		toast("Build ready");
 	}, [entrypoint]);
 

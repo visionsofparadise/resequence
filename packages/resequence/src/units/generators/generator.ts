@@ -1,28 +1,49 @@
 import type { ScheduleContext } from "../../rendering/schedule-context";
+import type { OptionalProperties } from "../../utils/RequiredProperties";
 import { CCEffectUnit } from "../effects/cc";
 import { linearGain, type GainEffectUnit } from "../effects/gain";
-import type { VoiceNote } from "../midi-unit";
+import type { MidiUnitProperties, VoiceNote } from "../midi-unit";
 import { MidiUnit } from "../midi-unit";
 import type { ModDeclaration, SetupResult, Unit } from "../unit";
 
+export interface GeneratorUnitProperties extends MidiUnitProperties {
+	readonly voiceToCallbacks: Array<(voiceNote: VoiceNote) => Unit>;
+	readonly voiceModDeclarations: Array<ModDeclaration>;
+}
+
+export type GeneratorUnitInput<P extends GeneratorUnitProperties = GeneratorUnitProperties> = OptionalProperties<
+	P,
+	"targets" | "modDeclarations" | "noteModDeclarations" | "voiceToCallbacks" | "voiceModDeclarations"
+>;
+
 export abstract class GeneratorUnit extends MidiUnit {
 	abstract readonly type: readonly ["unit", "midi", "generator", ...Array<string>];
+	readonly properties: GeneratorUnitProperties;
 	public mergeUnit: GainEffectUnit | undefined;
 
 	static is(value: unknown): value is GeneratorUnit {
 		return MidiUnit.is(value) && value.type[2] === "generator";
 	}
 
-	private readonly voiceToCallbacks: Array<(voiceNote: VoiceNote) => Unit> = [];
-	private readonly voiceModDeclarations: Array<ModDeclaration> = [];
+	constructor(properties?: GeneratorUnitInput) {
+		super(properties);
+		this.properties = {
+			...properties,
+			targets: properties?.targets ?? [],
+			modDeclarations: properties?.modDeclarations ?? [],
+			noteModDeclarations: properties?.noteModDeclarations ?? [],
+			voiceToCallbacks: properties?.voiceToCallbacks ?? [],
+			voiceModDeclarations: properties?.voiceModDeclarations ?? [],
+		};
+	}
 
 	voiceTo(callback: (voiceNote: VoiceNote) => Unit): this {
-		this.voiceToCallbacks.push(callback);
+		this.properties.voiceToCallbacks.push(callback);
 		return this;
 	}
 
 	voiceMod(paths: Array<string>, transform?: (value: number) => number): void {
-		this.voiceModDeclarations.push({ paths, transform });
+		this.properties.voiceModDeclarations.push({ paths, transform });
 	}
 
 	protected async _setup(context: ScheduleContext): Promise<SetupResult> {
@@ -43,11 +64,11 @@ export abstract class GeneratorUnit extends MidiUnit {
 	protected scheduleVoice(exits: Array<AudioNode>, voiceNote: VoiceNote, context: ScheduleContext): () => void {
 		if (!this.mergeUnit) return () => {};
 
-		const ccEffect = new CCEffectUnit(voiceNote);
+		const ccEffect = new CCEffectUnit({ voiceNote });
 		let modTarget: Unit = ccEffect;
 
-		if (this.voiceToCallbacks.length > 0) {
-			for (const callback of this.voiceToCallbacks) {
+		if (this.properties.voiceToCallbacks.length > 0) {
+			for (const callback of this.properties.voiceToCallbacks) {
 				const voiceUnit = callback(voiceNote);
 				ccEffect.to(voiceUnit);
 				voiceUnit.to(this.mergeUnit);
@@ -57,7 +78,7 @@ export abstract class GeneratorUnit extends MidiUnit {
 			ccEffect.to(this.mergeUnit);
 		}
 
-		for (const decl of this.voiceModDeclarations) {
+		for (const decl of this.properties.voiceModDeclarations) {
 			modTarget.mod(decl.paths, decl.transform);
 		}
 

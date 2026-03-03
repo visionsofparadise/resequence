@@ -1,7 +1,11 @@
 import type { ScheduleContext } from "../../rendering/schedule-context";
 import { driveParam } from "../../utils/driver";
-import type { SetupResult } from "../unit";
+import type { SetupResult, UnitInput, UnitProperties } from "../unit";
 import { Unit } from "../unit";
+
+export interface PanProperties extends UnitProperties {
+	readonly position: number;
+}
 
 export class PanEffectUnit extends Unit {
 	readonly type = ["unit", "pan"] as const;
@@ -10,13 +14,18 @@ export class PanEffectUnit extends Unit {
 		return Unit.is(value) && value.type[1] === "pan";
 	}
 
+	readonly properties: PanProperties;
 	public panNode: StereoPannerNode | undefined;
 
-	constructor(
-		private readonly position: number,
-		public readonly id?: string,
-	) {
-		super();
+	constructor(properties: UnitInput<PanProperties>) {
+		super(properties);
+		this.properties = { ...properties, targets: properties.targets ?? [], modDeclarations: properties.modDeclarations ?? [] };
+	}
+
+	get position(): number { return this.properties.position; }
+
+	clone(overrides?: Partial<PanProperties>): PanEffectUnit {
+		return new PanEffectUnit({ ...this.properties, ...overrides });
 	}
 
 	protected _setup(context: ScheduleContext): SetupResult {
@@ -33,5 +42,5 @@ export class PanEffectUnit extends Unit {
 }
 
 export function pan({ position, id }: { position: number; id?: string }): PanEffectUnit {
-	return new PanEffectUnit(position, id);
+	return new PanEffectUnit({ position, id });
 }

@@ -1,9 +1,9 @@
 import type { ScheduleContext } from "../../rendering/schedule-context";
 import { driveParam } from "../../utils/driver";
-import type { SetupResult } from "../unit";
+import type { SetupResult, UnitInput, UnitProperties } from "../unit";
 import { Unit } from "../unit";
 
-export interface SpatialOptions {
+export interface SpatialProperties extends UnitProperties {
 	readonly x: number;
 	readonly y?: number;
 	readonly z?: number;
@@ -11,37 +11,39 @@ export interface SpatialOptions {
 	readonly refDistance?: number;
 	readonly maxDistance?: number;
 	readonly rolloffFactor?: number;
-	readonly id?: string;
 }
+
+export type SpatialOptions = SpatialProperties;
 
 export class SpatialEffectUnit extends Unit {
 	readonly type = ["unit", "spatial"] as const;
+	readonly properties: SpatialProperties;
 
 	static is(value: unknown): value is SpatialEffectUnit {
 		return Unit.is(value) && value.type[1] === "spatial";
 	}
 
-	private readonly x: number;
-	private readonly y: number;
-	private readonly z: number;
-	private readonly distanceModel: DistanceModelType | undefined;
-	private readonly refDistance: number | undefined;
-	private readonly maxDistance: number | undefined;
-	private readonly rolloffFactor: number | undefined;
-	public readonly id?: string;
-
 	public pannerNode: PannerNode | undefined;
 
-	constructor({ x, y, z, distanceModel, refDistance, maxDistance, rolloffFactor, id }: SpatialOptions) {
-		super();
-		this.x = x;
-		this.y = y ?? 0;
-		this.z = z ?? 0;
-		this.distanceModel = distanceModel;
-		this.refDistance = refDistance;
-		this.maxDistance = maxDistance;
-		this.rolloffFactor = rolloffFactor;
-		this.id = id;
+	constructor(properties: UnitInput<SpatialProperties>) {
+		super(properties);
+		this.properties = {
+			...properties,
+			targets: properties.targets ?? [],
+			modDeclarations: properties.modDeclarations ?? [],
+		};
+	}
+
+	get x(): number { return this.properties.x; }
+	get y(): number { return this.properties.y ?? 0; }
+	get z(): number { return this.properties.z ?? 0; }
+	get distanceModel(): DistanceModelType | undefined { return this.properties.distanceModel; }
+	get refDistance(): number | undefined { return this.properties.refDistance; }
+	get maxDistance(): number | undefined { return this.properties.maxDistance; }
+	get rolloffFactor(): number | undefined { return this.properties.rolloffFactor; }
+
+	clone(overrides?: Partial<SpatialProperties>): SpatialEffectUnit {
+		return new SpatialEffectUnit({ ...this.properties, ...overrides });
 	}
 
 	protected _setup(context: ScheduleContext): SetupResult {

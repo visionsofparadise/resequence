@@ -1,4 +1,5 @@
 import type { ScheduleContext } from "../rendering/schedule-context";
+import type { OptionalProperties } from "../utils/RequiredProperties";
 import { getOrCreateDriver } from "../utils/driver";
 import { buildCurve } from "./utils/build-curve";
 
@@ -7,6 +8,14 @@ export interface ModDeclaration {
 	readonly transform?: (value: number) => number;
 }
 
+export interface UnitProperties {
+	readonly id?: string;
+	readonly targets: Array<Unit>;
+	readonly modDeclarations: Array<ModDeclaration>;
+}
+
+export type UnitInput<P extends UnitProperties = UnitProperties> = OptionalProperties<P, "targets" | "modDeclarations">;
+
 export interface SetupResult {
 	entries?: Array<AudioNode | Unit>;
 	exits?: Array<AudioNode | Unit>;
@@ -14,9 +23,7 @@ export interface SetupResult {
 
 export abstract class Unit {
 	abstract readonly type: ReadonlyArray<string>;
-	readonly id?: string;
-
-	readonly targets: Array<Unit> = [];
+	readonly properties: UnitProperties;
 
 	static is(value: unknown): value is Unit {
 		return typeof value === "object" && value !== null && "type" in value && Array.isArray(value.type) && value.type[0] === "unit";
@@ -27,15 +34,32 @@ export abstract class Unit {
 
 	protected isSetUp = false;
 
-	private readonly modDeclarations: Array<ModDeclaration> = [];
 	private readonly modConnections: Array<{ exit: AudioNode; shaper?: AudioNode; param: AudioParam }> = [];
 
+	constructor(properties?: UnitInput) {
+		this.properties = {
+			...properties,
+			targets: properties?.targets ?? [],
+			modDeclarations: properties?.modDeclarations ?? [],
+		};
+	}
+
+	get id(): string | undefined {
+		return this.properties.id;
+	}
+
+	get targets(): Array<Unit> {
+		return this.properties.targets;
+	}
+
+	abstract clone(overrides?: Partial<UnitProperties>): Unit;
+
 	to(unit: Unit): void {
-		this.targets.push(unit);
+		this.properties.targets.push(unit);
 	}
 
 	mod(paths: ReadonlyArray<string>, transform?: (value: number) => number): void {
-		this.modDeclarations.push({ paths, transform });
+		this.properties.modDeclarations.push({ paths, transform });
 	}
 
 	setup(context: ScheduleContext): void | Promise<void> {
@@ -135,23 +159,23 @@ export abstract class Unit {
 	}
 
 	private linkMods(context: ScheduleContext): void {
-		for (const decl of this.modDeclarations) {
+		for (const decl of this.properties.modDeclarations) {
 			for (const path of decl.paths) {
-				const driver = getOrCreateDriver(path, 0, context);
+				const entry = getOrCreateDriver(path, 0, context);
 
 				if (decl.transform) {
 					const shaper = context.audioContext.createWaveShaper();
 					shaper.curve = buildCurve(decl.transform);
-					shaper.connect(driver.offset);
+					shaper.connect(entry.node.offset);
 
 					for (const exit of this.exitNodes) {
 						exit.connect(shaper);
-						this.modConnections.push({ exit, shaper, param: driver.offset });
+						this.modConnections.push({ exit, shaper, param: entry.node.offset });
 					}
 				} else {
 					for (const exit of this.exitNodes) {
-						exit.connect(driver.offset);
-						this.modConnections.push({ exit, param: driver.offset });
+						exit.connect(entry.node.offset);
+						this.modConnections.push({ exit, param: entry.node.offset });
 					}
 				}
 			}

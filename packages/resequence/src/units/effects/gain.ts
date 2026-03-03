@@ -1,7 +1,11 @@
 import type { ScheduleContext } from "../../rendering/schedule-context";
 import { driveParam } from "../../utils/driver";
-import type { SetupResult } from "../unit";
+import type { SetupResult, UnitInput, UnitProperties } from "../unit";
 import { Unit } from "../unit";
+
+export interface GainProperties extends UnitProperties {
+	readonly level: number;
+}
 
 export class GainEffectUnit extends Unit {
 	readonly type = ["unit", "gain"] as const;
@@ -10,13 +14,18 @@ export class GainEffectUnit extends Unit {
 		return Unit.is(value) && value.type[1] === "gain";
 	}
 
+	readonly properties: GainProperties;
 	public gainNode: GainNode | undefined;
 
-	constructor(
-		private readonly level: number,
-		public readonly id?: string,
-	) {
-		super();
+	constructor(properties: UnitInput<GainProperties>) {
+		super(properties);
+		this.properties = { ...properties, targets: properties.targets ?? [], modDeclarations: properties.modDeclarations ?? [] };
+	}
+
+	get level(): number { return this.properties.level; }
+
+	clone(overrides?: Partial<GainProperties>): GainEffectUnit {
+		return new GainEffectUnit({ ...this.properties, ...overrides });
 	}
 
 	protected _setup(context: ScheduleContext): SetupResult {
@@ -33,13 +42,13 @@ export class GainEffectUnit extends Unit {
 }
 
 export function gain({ level, id }: { level: number; id?: string }): GainEffectUnit {
-	return new GainEffectUnit(dbToLinear(level), id);
+	return new GainEffectUnit({ level: dbToLinear(level), id });
 }
 
 export const fader = gain;
 
 export function linearGain({ level, id }: { level: number; id?: string }): GainEffectUnit {
-	return new GainEffectUnit(level, id);
+	return new GainEffectUnit({ level, id });
 }
 
 function dbToLinear(db: number): number {

@@ -1,6 +1,6 @@
 import type { ScheduleContext } from "../../rendering/schedule-context";
 import { buildCurve } from "../utils/build-curve";
-import type { SetupResult } from "../unit";
+import type { SetupResult, UnitInput, UnitProperties } from "../unit";
 import { Unit } from "../unit";
 
 export const WaveShaperCurve = {
@@ -15,21 +15,31 @@ export const WaveShaperCurve = {
 
 export type Oversample = "none" | "2x" | "4x";
 
+export interface WaveShaperProperties extends UnitProperties {
+	readonly curve: Float32Array<ArrayBuffer>;
+	readonly oversample?: Oversample;
+}
+
 export class WaveShaperEffectUnit extends Unit {
 	readonly type = ["unit", "waveshaper"] as const;
+	readonly properties: WaveShaperProperties;
 
 	static is(value: unknown): value is WaveShaperEffectUnit {
 		return Unit.is(value) && value.type[1] === "waveshaper";
 	}
 
-	private readonly curve: Float32Array<ArrayBuffer>;
-	private readonly oversample: Oversample | undefined;
 	waveShaperNode: WaveShaperNode | undefined;
 
-	constructor({ curve, oversample }: { curve: Float32Array<ArrayBuffer>; oversample?: Oversample }) {
-		super();
-		this.curve = curve;
-		this.oversample = oversample;
+	constructor(properties: UnitInput<WaveShaperProperties>) {
+		super(properties);
+		this.properties = { ...properties, targets: properties.targets ?? [], modDeclarations: properties.modDeclarations ?? [] };
+	}
+
+	get curve(): Float32Array<ArrayBuffer> { return this.properties.curve; }
+	get oversample(): Oversample | undefined { return this.properties.oversample; }
+
+	clone(overrides?: Partial<WaveShaperProperties>): WaveShaperEffectUnit {
+		return new WaveShaperEffectUnit({ ...this.properties, ...overrides });
 	}
 
 	protected _setup(context: ScheduleContext): SetupResult {

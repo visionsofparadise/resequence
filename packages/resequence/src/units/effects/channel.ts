@@ -1,24 +1,33 @@
 import type { ScheduleContext } from "../../rendering/schedule-context";
-import { Unit, type SetupResult } from "../unit";
+import { Unit, type SetupResult, type UnitInput, type UnitProperties } from "../unit";
 import { channelMerger } from "./channel-merger";
 import { channelSplitter } from "./channel-splitter";
 import { linearGain } from "./gain";
 
+export interface ChannelProperties extends UnitProperties {
+	readonly channelIndex: number;
+	readonly inner: Unit;
+}
+
 export class ChannelEffectUnit extends Unit {
 	readonly type = ["unit", "channel"] as const;
-	readonly id = undefined;
 
 	static is(value: unknown): value is ChannelEffectUnit {
 		return Unit.is(value) && value.type[1] === "channel";
 	}
 
-	public readonly channelIndex: number;
-	public readonly inner: Unit;
+	readonly properties: ChannelProperties;
 
-	constructor(channelIndex: number, inner: Unit) {
-		super();
-		this.channelIndex = channelIndex;
-		this.inner = inner;
+	constructor(properties: UnitInput<ChannelProperties>) {
+		super(properties);
+		this.properties = { ...properties, targets: properties.targets ?? [], modDeclarations: properties.modDeclarations ?? [] };
+	}
+
+	get channelIndex(): number { return this.properties.channelIndex; }
+	get inner(): Unit { return this.properties.inner; }
+
+	clone(overrides?: Partial<ChannelProperties>): ChannelEffectUnit {
+		return new ChannelEffectUnit({ ...this.properties, ...overrides });
 	}
 
 	protected async _setup(context: ScheduleContext): Promise<SetupResult> {
@@ -46,26 +55,35 @@ export class ChannelEffectUnit extends Unit {
 }
 
 export function left(inner: Unit): ChannelEffectUnit {
-	return new ChannelEffectUnit(0, inner);
+	return new ChannelEffectUnit({ channelIndex: 0, inner });
 }
 
 export function right(inner: Unit): ChannelEffectUnit {
-	return new ChannelEffectUnit(1, inner);
+	return new ChannelEffectUnit({ channelIndex: 1, inner });
+}
+
+export interface MidProperties extends UnitProperties {
+	readonly inner: Unit;
 }
 
 export class MidEffectUnit extends Unit {
 	readonly type = ["unit", "mid"] as const;
-	readonly id = undefined;
 
 	static is(value: unknown): value is MidEffectUnit {
 		return Unit.is(value) && value.type[1] === "mid";
 	}
 
-	public readonly inner: Unit;
+	readonly properties: MidProperties;
 
-	constructor(inner: Unit) {
-		super();
-		this.inner = inner;
+	constructor(properties: UnitInput<MidProperties>) {
+		super(properties);
+		this.properties = { ...properties, targets: properties.targets ?? [], modDeclarations: properties.modDeclarations ?? [] };
+	}
+
+	get inner(): Unit { return this.properties.inner; }
+
+	clone(overrides?: Partial<MidProperties>): MidEffectUnit {
+		return new MidEffectUnit({ ...this.properties, ...overrides });
 	}
 
 	protected async _setup(context: ScheduleContext): Promise<SetupResult> {
@@ -93,22 +111,31 @@ export class MidEffectUnit extends Unit {
 }
 
 export function mid(inner: Unit): MidEffectUnit {
-	return new MidEffectUnit(inner);
+	return new MidEffectUnit({ inner });
+}
+
+export interface SideProperties extends UnitProperties {
+	readonly inner: Unit;
 }
 
 export class SideEffectUnit extends Unit {
 	readonly type = ["unit", "side"] as const;
-	readonly id = undefined;
 
 	static is(value: unknown): value is SideEffectUnit {
 		return Unit.is(value) && value.type[1] === "side";
 	}
 
-	public readonly inner: Unit;
+	readonly properties: SideProperties;
 
-	constructor(inner: Unit) {
-		super();
-		this.inner = inner;
+	constructor(properties: UnitInput<SideProperties>) {
+		super(properties);
+		this.properties = { ...properties, targets: properties.targets ?? [], modDeclarations: properties.modDeclarations ?? [] };
+	}
+
+	get inner(): Unit { return this.properties.inner; }
+
+	clone(overrides?: Partial<SideProperties>): SideEffectUnit {
+		return new SideEffectUnit({ ...this.properties, ...overrides });
 	}
 
 	protected async _setup(context: ScheduleContext): Promise<SetupResult> {
@@ -140,5 +167,5 @@ export class SideEffectUnit extends Unit {
 }
 
 export function side(inner: Unit): SideEffectUnit {
-	return new SideEffectUnit(inner);
+	return new SideEffectUnit({ inner });
 }

@@ -1,7 +1,11 @@
 import type { ScheduleContext } from "../../rendering/schedule-context";
-import type { SetupResult } from "../unit";
-import { Unit } from "../unit";
+import type { SetupResult, UnitInput } from "../unit";
+import { Unit, type UnitProperties } from "../unit";
 import { type GainEffectUnit, linearGain } from "./gain";
+
+export interface ChannelSplitterProperties extends UnitProperties {
+	readonly channelCount?: number;
+}
 
 export class ChannelSplitterUnit extends Unit {
 	readonly type = ["unit", "channel-splitter"] as const;
@@ -11,12 +15,21 @@ export class ChannelSplitterUnit extends Unit {
 		return Unit.is(value) && value.type[1] === "channel-splitter";
 	}
 
-	constructor(private readonly channelCount = 2) {
-		super();
+	readonly properties: ChannelSplitterProperties;
+
+	constructor(properties?: UnitInput<ChannelSplitterProperties>) {
+		super(properties);
+		this.properties = { ...properties, targets: properties?.targets ?? [], modDeclarations: properties?.modDeclarations ?? [], channelCount: properties?.channelCount ?? 2 };
 
 		for (let ch = 0; ch < this.channelCount; ch++) {
 			this.channels.push(linearGain({ level: 1 }));
 		}
+	}
+
+	get channelCount(): number { return this.properties.channelCount ?? 2; }
+
+	clone(overrides?: Partial<ChannelSplitterProperties>): ChannelSplitterUnit {
+		return new ChannelSplitterUnit({ ...this.properties, ...overrides });
 	}
 
 	protected async _setup(context: ScheduleContext): Promise<SetupResult> {
@@ -41,9 +54,9 @@ export class ChannelSplitterUnit extends Unit {
 }
 
 export function channelSplitter(channels?: number): ChannelSplitterUnit {
-	return new ChannelSplitterUnit(channels);
+	return new ChannelSplitterUnit({ channelCount: channels });
 }
 
 export function split(channels?: number): ChannelSplitterUnit {
-	return new ChannelSplitterUnit(channels);
+	return new ChannelSplitterUnit({ channelCount: channels });
 }

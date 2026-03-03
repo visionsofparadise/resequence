@@ -1,12 +1,17 @@
 import type { ScheduleContext } from "../../rendering/schedule-context";
 import { proxyDriver } from "../../utils/driver";
-import { Unit, type SetupResult } from "../unit";
+import { Unit, type SetupResult, type UnitInput, type UnitProperties } from "../unit";
 import { delay, type DelayEffectUnit } from "./delay";
 import { allpass, lowpass, type FilterEffectUnit } from "./filter";
 import { linearGain, type GainEffectUnit } from "./gain";
 
 const COMB_DELAYS = [1116, 1188, 1277, 1356].map((samples) => (samples / 44100) * 1000);
 const ALLPASS_DELAYS = [556, 441].map((samples) => (samples / 44100) * 1000);
+
+export interface ReverbProperties extends UnitProperties {
+	readonly roomSize: number;
+	readonly damping: number;
+}
 
 export class ReverbEffectUnit extends Unit {
 	readonly type = ["unit", "reverb"] as const;
@@ -15,9 +20,7 @@ export class ReverbEffectUnit extends Unit {
 		return Unit.is(value) && value.type[1] === "reverb";
 	}
 
-	private readonly roomSize: number;
-	private readonly damping: number;
-	public readonly id?: string;
+	readonly properties: ReverbProperties;
 
 	public inputUnit: GainEffectUnit | undefined;
 	public combSumUnit: GainEffectUnit | undefined;
@@ -26,11 +29,16 @@ export class ReverbEffectUnit extends Unit {
 	public combFeedback: Array<GainEffectUnit> = [];
 	public allpassFilters: Array<FilterEffectUnit> = [];
 
-	constructor({ roomSize, damping, id }: { roomSize: number; damping: number; id?: string }) {
-		super();
-		this.roomSize = roomSize;
-		this.damping = damping;
-		this.id = id;
+	constructor(properties: UnitInput<ReverbProperties>) {
+		super(properties);
+		this.properties = { ...properties, targets: properties.targets ?? [], modDeclarations: properties.modDeclarations ?? [] };
+	}
+
+	get roomSize(): number { return this.properties.roomSize; }
+	get damping(): number { return this.properties.damping; }
+
+	clone(overrides?: Partial<ReverbProperties>): ReverbEffectUnit {
+		return new ReverbEffectUnit({ ...this.properties, ...overrides });
 	}
 
 	protected async _setup(context: ScheduleContext): Promise<SetupResult> {

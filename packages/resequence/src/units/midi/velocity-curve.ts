@@ -1,20 +1,35 @@
 import type { ScheduleContext } from "../../rendering/schedule-context";
-import type { VoiceNote } from "../midi-unit";
-import { MidiUnit } from "../midi-unit";
+import type { MidiUnitProperties, VoiceNote } from "../midi-unit";
+import { MidiUnit, type MidiUnitInput } from "../midi-unit";
+
+export interface VelocityCurveProperties extends MidiUnitProperties {
+	readonly curve: (velocity: number) => number;
+}
 
 export class VelocityCurveMidiUnit extends MidiUnit {
 	readonly type = ["unit", "midi", "velocity-curve"] as const;
+	readonly properties: VelocityCurveProperties;
 
 	static is(value: unknown): value is VelocityCurveMidiUnit {
 		return MidiUnit.is(value) && value.type[2] === "velocity-curve";
 	}
 
-	public readonly curve: (velocity: number) => number;
+	get curve(): (velocity: number) => number {
+		return this.properties.curve;
+	}
 
-	constructor(curve: (velocity: number) => number) {
-		super();
+	constructor(properties: MidiUnitInput<VelocityCurveProperties>) {
+		super(properties);
+		this.properties = {
+			...properties,
+			targets: properties.targets ?? [],
+			modDeclarations: properties.modDeclarations ?? [],
+			noteModDeclarations: properties.noteModDeclarations ?? [],
+		};
+	}
 
-		this.curve = curve;
+	clone(overrides?: Partial<VelocityCurveProperties>): VelocityCurveMidiUnit {
+		return new VelocityCurveMidiUnit({ ...this.properties, ...overrides });
 	}
 
 	override schedule(voiceNote: VoiceNote, scheduleContext: ScheduleContext): void {
@@ -26,5 +41,5 @@ export class VelocityCurveMidiUnit extends MidiUnit {
 }
 
 export function velocityCurve(curve: (velocity: number) => number): VelocityCurveMidiUnit {
-	return new VelocityCurveMidiUnit(curve);
+	return new VelocityCurveMidiUnit({ curve });
 }

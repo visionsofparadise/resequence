@@ -1,25 +1,39 @@
 import type { ScheduleContext } from "../../rendering/schedule-context";
 import type { VoiceNote } from "../midi-unit";
 import type { SetupResult } from "../unit";
-import { GeneratorUnit } from "./generator";
+import { GeneratorUnit, type GeneratorUnitInput, type GeneratorUnitProperties } from "./generator";
+
+export interface NoiseProperties extends GeneratorUnitProperties {
+	readonly color?: "white" | "pink" | "brown";
+	readonly seed?: number;
+}
 
 export class NoiseUnit extends GeneratorUnit {
 	readonly type = ["unit", "midi", "generator", "noise"] as const;
+	readonly properties: NoiseProperties;
 
 	static is(value: unknown): value is NoiseUnit {
 		return GeneratorUnit.is(value) && value.type[3] === "noise";
 	}
 
-	public readonly id?: string;
+	constructor(properties?: GeneratorUnitInput<NoiseProperties>) {
+		super(properties);
+		this.properties = {
+			...properties,
+			targets: properties?.targets ?? [],
+			modDeclarations: properties?.modDeclarations ?? [],
+			noteModDeclarations: properties?.noteModDeclarations ?? [],
+			voiceToCallbacks: properties?.voiceToCallbacks ?? [],
+			voiceModDeclarations: properties?.voiceModDeclarations ?? [],
+			color: properties?.color ?? "white",
+		};
+	}
 
-	private readonly color: "white" | "pink" | "brown";
-	private readonly seed: number | undefined;
+	get color(): "white" | "pink" | "brown" { return this.properties.color ?? "white"; }
+	get seed(): number | undefined { return this.properties.seed; }
 
-	constructor({ color = "white", seed, id }: { color?: "white" | "pink" | "brown"; seed?: number; id?: string } = {}) {
-		super();
-		this.color = color;
-		this.seed = seed;
-		this.id = id;
+	clone(overrides?: Partial<NoiseProperties>): NoiseUnit {
+		return new NoiseUnit({ ...this.properties, ...overrides });
 	}
 
 	protected async _setup(context: ScheduleContext): Promise<SetupResult> {

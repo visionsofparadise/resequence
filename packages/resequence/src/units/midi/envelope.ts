@@ -1,7 +1,7 @@
 import type { ScheduleContext } from "../../rendering/schedule-context";
 import { driveParam } from "../../utils/driver";
-import type { VoiceNote } from "../midi-unit";
-import { MidiUnit } from "../midi-unit";
+import type { MidiUnitProperties, VoiceNote } from "../midi-unit";
+import { MidiUnit, type MidiUnitInput } from "../midi-unit";
 import type { SetupResult } from "../unit";
 
 export interface EnvelopeAdsr {
@@ -12,24 +12,37 @@ export interface EnvelopeAdsr {
 	readonly release?: number;
 }
 
+export interface EnvelopeProperties extends MidiUnitProperties {
+	readonly adsr: EnvelopeAdsr;
+}
+
 export class EnvelopeUnit extends MidiUnit {
 	readonly type = ["unit", "midi", "envelope"] as const;
+	readonly properties: EnvelopeProperties;
 
 	static is(value: unknown): value is EnvelopeUnit {
 		return MidiUnit.is(value) && value.type[2] === "envelope";
 	}
 
-	private readonly adsr: EnvelopeAdsr;
-	public readonly id?: string;
-
 	public envelopeNode: AudioWorkletNode | undefined;
 	private gateParam: AudioParam | undefined;
 
-	constructor(adsr: EnvelopeAdsr, id?: string) {
-		super();
+	get adsr(): EnvelopeAdsr {
+		return this.properties.adsr;
+	}
 
-		this.adsr = adsr;
-		this.id = id;
+	constructor(properties: MidiUnitInput<EnvelopeProperties>) {
+		super(properties);
+		this.properties = {
+			...properties,
+			targets: properties.targets ?? [],
+			modDeclarations: properties.modDeclarations ?? [],
+			noteModDeclarations: properties.noteModDeclarations ?? [],
+		};
+	}
+
+	clone(overrides?: Partial<EnvelopeProperties>): EnvelopeUnit {
+		return new EnvelopeUnit({ ...this.properties, ...overrides });
 	}
 
 	protected async _setup(context: ScheduleContext): Promise<SetupResult> {
@@ -79,7 +92,7 @@ export class EnvelopeUnit extends MidiUnit {
 }
 
 export function envelope({ attack, hold, decay, sustain, release, id }: EnvelopeAdsr & { id?: string } = {}): EnvelopeUnit {
-	return new EnvelopeUnit({ attack, hold, decay, sustain, release }, id);
+	return new EnvelopeUnit({ adsr: { attack, hold, decay, sustain, release }, id });
 }
 
 export const env = envelope;

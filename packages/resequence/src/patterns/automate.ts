@@ -25,20 +25,10 @@ export class AutomatePattern extends Pattern {
 		super(properties);
 	}
 
-	async setup(context: ScheduleContext): Promise<void> {
-		for (const path of this.properties.paths) {
-			const constant = context.audioContext.createConstantSource();
-			context.driverMap.set(path, constant);
-			constant.offset.value = 0;
-			constant.start(0);
-		}
-
-		await super.setup(context);
-	}
-
 	schedule(offsetBeats: number, context: ScheduleContext): void {
 		if (!Array.isArray(this.properties.source)) {
 			this.scheduleLfo(offsetBeats, context);
+
 			return;
 		}
 
@@ -55,10 +45,11 @@ export class AutomatePattern extends Pattern {
 		const beatToSec = (beat: number) => beatsToSeconds(beat, context.tempoMap);
 
 		for (const path of this.properties.paths) {
-			const driver = context.driverMap.get(path);
-			if (!driver) continue;
+			const entry = context.driverMap.get(path);
 
-			scheduleKeyframes(driver.offset, absoluteKeyframes, beatToSec, {
+			if (!entry) continue;
+
+			scheduleKeyframes(entry.node.offset, absoluteKeyframes, beatToSec, {
 				fromBeat: context.fromBeats,
 				toBeat: context.toBeats,
 				initialValue,
@@ -66,10 +57,12 @@ export class AutomatePattern extends Pattern {
 
 			if (clipEndBeat > context.toBeats) {
 				const nextKf = firstAt(absoluteKeyframes, context.toBeats);
+
 				if (nextKf && !nextKf.step) {
 					const value = evaluateAt(absoluteKeyframes, context.toBeats);
 					const toSeconds = beatToSec(context.toBeats);
-					driver.offset.linearRampToValueAtTime(value, toSeconds);
+
+					entry.node.offset.linearRampToValueAtTime(value, toSeconds);
 				}
 			}
 		}
@@ -88,6 +81,7 @@ export class AutomatePattern extends Pattern {
 		if (windowEndSeconds <= effectiveStartSeconds) return;
 
 		const freqHz = lfoFrequencyHz(lfo);
+
 		if (freqHz <= 0) return;
 
 		const elapsedSeconds = Math.max(0, windowStartSeconds - effectiveStartSeconds);
@@ -97,8 +91,8 @@ export class AutomatePattern extends Pattern {
 		const oscStartSeconds = Math.max(effectiveStartSeconds, windowStartSeconds - phaseSeconds);
 
 		for (const path of this.properties.paths) {
-			const driver = context.driverMap.get(path);
-			if (!driver) continue;
+			const entry = context.driverMap.get(path);
+			if (!entry) continue;
 
 			const osc = context.audioContext.createOscillator();
 			osc.type = lfo.shape;
@@ -115,27 +109,9 @@ export class AutomatePattern extends Pattern {
 			}
 
 			osc.connect(depthGain);
-			depthGain.connect(driver.offset);
+			depthGain.connect(entry.node.offset);
 			osc.start(oscStartSeconds);
 			osc.stop(windowEndSeconds);
-		}
-	}
-
-	teardown(context: ScheduleContext): void {
-		for (const path of this.properties.paths) {
-			const constant = context.driverMap.get(path);
-
-			if (constant) {
-				try {
-					constant.stop();
-				} catch {
-					/* already stopped */
-				}
-
-				constant.disconnect();
-			}
-
-			context.driverMap.delete(path);
 		}
 	}
 

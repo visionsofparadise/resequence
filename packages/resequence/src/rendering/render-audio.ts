@@ -20,7 +20,7 @@ export async function renderAudio(pattern: Pattern, audioContext: OfflineAudioCo
 	const tempoMap = metadata.tempoMap;
 	const sampleCache = new Map<string, AudioBuffer>();
 	const loadedModules = new Set<string>();
-	const driverMap = new Map<string, ConstantSourceNode>();
+	const driverMap: ScheduleContext["driverMap"] = new Map();
 
 	const context: ScheduleContext = {
 		audioContext,

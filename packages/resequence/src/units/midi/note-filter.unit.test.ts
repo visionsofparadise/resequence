@@ -6,8 +6,15 @@ import { noteFilter } from "./note-filter";
 
 class CaptureMidiUnit extends MidiUnit {
 	readonly type = ["unit", "midi", "capture"] as const;
-	readonly id = "capture";
 	readonly captured: Array<VoiceNote> = [];
+
+	constructor() {
+		super({ id: "capture" });
+	}
+
+	clone(): CaptureMidiUnit {
+		return new CaptureMidiUnit();
+	}
 
 	protected _setup(): void {}
 	protected _teardown(): void {}

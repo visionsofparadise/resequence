@@ -77,7 +77,7 @@ export class Playback {
 	}
 
 	async setup(fetchBuffer: (path: string) => Promise<ArrayBuffer>): Promise<void> {
-		const driverMap = new Map<string, ConstantSourceNode>();
+		const driverMap: ScheduleContext["driverMap"] = new Map();
 		const loadedModules = new Set<string>();
 		const sampleCache = new Map<string, AudioBuffer>();
 		const metadata = this.options.metadata ?? collectMetadata(this.pattern);

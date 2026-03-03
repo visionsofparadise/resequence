@@ -1,30 +1,37 @@
 import type { ScheduleContext } from "../../rendering/schedule-context";
 import { proxyDriver } from "../../utils/driver";
 import { lfo, type LfoUnit } from "../lfo";
-import { Unit, type SetupResult } from "../unit";
+import { Unit, type SetupResult, type UnitInput, type UnitProperties } from "../unit";
 import { allpass, type FilterEffectUnit } from "./filter";
+
+export interface PhaserProperties extends UnitProperties {
+	readonly stages: number;
+	readonly rate: number;
+	readonly depth: number;
+}
 
 export class PhaserEffectUnit extends Unit {
 	readonly type = ["unit", "phaser"] as const;
+	readonly properties: PhaserProperties;
 
 	static is(value: unknown): value is PhaserEffectUnit {
 		return Unit.is(value) && value.type[1] === "phaser";
 	}
 
-	private readonly stages: number;
-	private readonly rate: number;
-	private readonly depth: number;
-	public readonly id?: string;
-
 	private stageChain: Array<FilterEffectUnit> = [];
 	private lfoUnit: LfoUnit | undefined;
 
-	constructor({ stages, rate, depth, id }: { stages: number; rate: number; depth: number; id?: string }) {
-		super();
-		this.stages = stages;
-		this.rate = rate;
-		this.depth = depth;
-		this.id = id;
+	constructor(properties: UnitInput<PhaserProperties>) {
+		super(properties);
+		this.properties = { ...properties, targets: properties.targets ?? [], modDeclarations: properties.modDeclarations ?? [] };
+	}
+
+	get stages(): number { return this.properties.stages; }
+	get rate(): number { return this.properties.rate; }
+	get depth(): number { return this.properties.depth; }
+
+	clone(overrides?: Partial<PhaserProperties>): PhaserEffectUnit {
+		return new PhaserEffectUnit({ ...this.properties, ...overrides });
 	}
 
 	protected async _setup(context: ScheduleContext): Promise<SetupResult> {
@@ -57,11 +64,11 @@ export class PhaserEffectUnit extends Unit {
 		const lfoUnit = lfo({ path: lfoPath, shape: "sine", rate: this.rate, depth: this.depth, id: lfoId });
 		await lfoUnit.setup(context);
 
-		const lfoDriver = context.driverMap.get(lfoPath);
-		if (lfoDriver) {
+		const lfoEntry = context.driverMap.get(lfoPath);
+		if (lfoEntry) {
 			for (const stageId of stageIds) {
-				const stageDriver = context.driverMap.get(`${stageId}.frequency`);
-				if (stageDriver) lfoDriver.connect(stageDriver.offset);
+				const stageEntry = context.driverMap.get(`${stageId}.frequency`);
+				if (stageEntry) lfoEntry.node.connect(stageEntry.node.offset);
 			}
 		}
 

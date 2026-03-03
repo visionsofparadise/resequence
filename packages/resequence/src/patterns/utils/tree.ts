@@ -12,6 +12,21 @@ export interface NoteContext {
 	readonly absoluteOffset: number;
 }
 
+export interface NodePath {
+	readonly indexes: ReadonlyArray<number>;
+}
+
+export interface NodeContext {
+	readonly id: string;
+	readonly path: NodePath;
+	readonly absoluteOffset: number;
+}
+
+function buildNodeId(indexes: ReadonlyArray<number>): string {
+	if (indexes.length === 0) return "root";
+	return indexes.join("-");
+}
+
 function buildNoteId(indexes: ReadonlyArray<number>, noteIndex: number): string {
 	if (indexes.length === 0) return `n${noteIndex}`;
 	return `${indexes.join("-")}-n${noteIndex}`;
@@ -133,11 +148,18 @@ export function walkNotes(pattern: Pattern, callback: (note: ScoreNote, context:
 	}
 }
 
-export function walkNodes(pattern: Pattern, callback: (node: Pattern, absoluteOffset: number) => void, parentOffset = 0): void {
-	callback(pattern, parentOffset);
+export function walkNodes(
+	pattern: Pattern,
+	callback: (node: Pattern, context: NodeContext) => void,
+	parentOffset = 0,
+	parentIndexes: ReadonlyArray<number> = [],
+): void {
+	const path: NodePath = { indexes: parentIndexes };
+	const id = buildNodeId(parentIndexes);
+	callback(pattern, { id, path, absoluteOffset: parentOffset });
 
-	for (const { offsetBeats, pattern: child } of pattern.children) {
-		walkNodes(child, callback, parentOffset + offsetBeats);
+	for (const [childIndex, { offsetBeats, pattern: child }] of pattern.children.entries()) {
+		walkNodes(child, callback, parentOffset + offsetBeats, [...parentIndexes, childIndex]);
 	}
 }
 
@@ -162,7 +184,7 @@ export function descendAndClone(pattern: Pattern, indexes: ReadonlyArray<number>
 export function collectNotes(pattern: Pattern, offsetBeats = 0): Array<ScoreNote> {
 	const results: Array<ScoreNote> = [];
 
-	walkNodes(pattern, (node, absoluteOffset) => {
+	walkNodes(pattern, (node, { absoluteOffset }) => {
 		for (const { offsetBeats: noteOffset, note } of node.notes) {
 			const totalOffset = absoluteOffset + noteOffset;
 

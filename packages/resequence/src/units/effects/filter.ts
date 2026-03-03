@@ -1,9 +1,16 @@
 import type { ScheduleContext } from "../../rendering/schedule-context";
 import { driveParam } from "../../utils/driver";
-import type { SetupResult } from "../unit";
+import type { SetupResult, UnitInput, UnitProperties } from "../unit";
 import { Unit } from "../unit";
 
 export type FilterMode = "lowpass" | "highpass" | "bandpass" | "peaking" | "notch" | "lowshelf" | "highshelf" | "allpass";
+
+export interface FilterProperties extends UnitProperties {
+	readonly mode: FilterMode;
+	readonly frequency: number;
+	readonly resonance?: number;
+	readonly gain?: number;
+}
 
 export class FilterEffectUnit extends Unit {
 	readonly type = ["unit", "filter"] as const;
@@ -12,20 +19,21 @@ export class FilterEffectUnit extends Unit {
 		return Unit.is(value) && value.type[1] === "filter";
 	}
 
-	private readonly mode: FilterMode;
-	private readonly frequency: number;
-	private readonly resonance: number | undefined;
-	private readonly gain: number | undefined;
-	public readonly id?: string;
+	readonly properties: FilterProperties;
 	filterNode: BiquadFilterNode | undefined;
 
-	constructor({ mode, frequency, resonance, gain, id }: { mode: FilterMode; frequency: number; resonance?: number; gain?: number; id?: string }) {
-		super();
-		this.mode = mode;
-		this.frequency = frequency;
-		this.resonance = resonance;
-		this.gain = gain;
-		this.id = id;
+	constructor(properties: UnitInput<FilterProperties>) {
+		super(properties);
+		this.properties = { ...properties, targets: properties.targets ?? [], modDeclarations: properties.modDeclarations ?? [] };
+	}
+
+	get mode(): FilterMode { return this.properties.mode; }
+	get frequency(): number { return this.properties.frequency; }
+	get resonance(): number | undefined { return this.properties.resonance; }
+	get gain(): number | undefined { return this.properties.gain; }
+
+	clone(overrides?: Partial<FilterProperties>): FilterEffectUnit {
+		return new FilterEffectUnit({ ...this.properties, ...overrides });
 	}
 
 	protected _setup(context: ScheduleContext): SetupResult {

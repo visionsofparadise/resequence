@@ -40,7 +40,7 @@ export function slice(pattern: Pattern | ScoreNote, from: number, to: number): S
 	const resolved = toPattern(pattern);
 
 	const entries: Array<{ note: ScoreNote; absoluteStart: number; absoluteEnd: number }> = [];
-	walkNodes(resolved, (node, absoluteOffset) => {
+	walkNodes(resolved, (node, { absoluteOffset }) => {
 		for (const { offsetBeats, note } of node.notes) {
 			const totalOffset = absoluteOffset + offsetBeats;
 			entries.push({ note, absoluteStart: totalOffset + note.startBeat, absoluteEnd: totalOffset + note.endBeat });

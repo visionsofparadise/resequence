@@ -1,10 +1,16 @@
 import type { ScheduleContext } from "../../rendering/schedule-context";
-import type { SetupResult } from "../unit";
+import type { SetupResult, UnitInput, UnitProperties } from "../unit";
 import { Unit } from "../unit";
 import { type FilterEffectUnit, filter } from "./filter";
 
+export interface LinkwitzRileyProperties extends UnitProperties {
+	readonly frequency: number;
+	readonly filterType: "lowpass" | "highpass";
+}
+
 export class LinkwitzRileyUnit extends Unit {
 	readonly type = ["unit", "linkwitz-riley"] as const;
+	readonly properties: LinkwitzRileyProperties;
 
 	static is(value: unknown): value is LinkwitzRileyUnit {
 		return Unit.is(value) && value.type[1] === "linkwitz-riley";
@@ -12,11 +18,16 @@ export class LinkwitzRileyUnit extends Unit {
 
 	private filters: Array<FilterEffectUnit> = [];
 
-	constructor(
-		private readonly frequency: number,
-		private readonly filterType: "lowpass" | "highpass",
-	) {
-		super();
+	constructor(properties: UnitInput<LinkwitzRileyProperties>) {
+		super(properties);
+		this.properties = { ...properties, targets: properties.targets ?? [], modDeclarations: properties.modDeclarations ?? [] };
+	}
+
+	get frequency(): number { return this.properties.frequency; }
+	get filterType(): "lowpass" | "highpass" { return this.properties.filterType; }
+
+	clone(overrides?: Partial<LinkwitzRileyProperties>): LinkwitzRileyUnit {
+		return new LinkwitzRileyUnit({ ...this.properties, ...overrides });
 	}
 
 	protected _setup(): SetupResult {
@@ -34,5 +45,5 @@ export class LinkwitzRileyUnit extends Unit {
 }
 
 export function linkwitzRiley(frequency: number, type: "lowpass" | "highpass"): LinkwitzRileyUnit {
-	return new LinkwitzRileyUnit(frequency, type);
+	return new LinkwitzRileyUnit({ frequency, filterType: type });
 }

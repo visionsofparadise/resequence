@@ -1,23 +1,32 @@
 import type { ScheduleContext } from "../../rendering/schedule-context";
-import type { SetupResult } from "../unit";
+import type { SetupResult, UnitInput, UnitProperties } from "../unit";
 import { Unit } from "../unit";
+
+export interface ConvolutionProperties extends UnitProperties {
+	readonly impulse: string;
+	readonly normalize?: boolean;
+}
 
 export class ConvolutionEffectUnit extends Unit {
 	readonly type = ["unit", "convolution"] as const;
+	readonly properties: ConvolutionProperties;
 
 	static is(value: unknown): value is ConvolutionEffectUnit {
 		return Unit.is(value) && value.type[1] === "convolution";
 	}
 
-	private readonly impulse: string;
-	private readonly normalize: boolean | undefined;
 	convolverNode: ConvolverNode | undefined;
 
-	constructor({ impulse, normalize }: { impulse: string; normalize?: boolean }) {
-		super();
+	constructor(properties: UnitInput<ConvolutionProperties>) {
+		super(properties);
+		this.properties = { ...properties, targets: properties.targets ?? [], modDeclarations: properties.modDeclarations ?? [] };
+	}
 
-		this.impulse = impulse;
-		this.normalize = normalize;
+	get impulse(): string { return this.properties.impulse; }
+	get normalize(): boolean | undefined { return this.properties.normalize; }
+
+	clone(overrides?: Partial<ConvolutionProperties>): ConvolutionEffectUnit {
+		return new ConvolutionEffectUnit({ ...this.properties, ...overrides });
 	}
 
 	protected async _setup(context: ScheduleContext): Promise<SetupResult> {

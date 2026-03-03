@@ -1,6 +1,6 @@
 import type { ScheduleContext } from "../../rendering/schedule-context";
-import type { VoiceNote } from "../midi-unit";
-import { MidiUnit } from "../midi-unit";
+import type { MidiUnitProperties, VoiceNote } from "../midi-unit";
+import { MidiUnit, type MidiUnitInput } from "../midi-unit";
 import type { SetupResult } from "../unit";
 
 export interface HumanizeMidiOptions {
@@ -8,22 +8,41 @@ export interface HumanizeMidiOptions {
 	readonly velocity?: number;
 }
 
+export interface HumanizeProperties extends MidiUnitProperties {
+	readonly timing?: number;
+	readonly velocity?: number;
+}
+
 export class HumanizeMidiUnit extends MidiUnit {
 	readonly type = ["unit", "midi", "humanize"] as const;
+	readonly properties: HumanizeProperties;
 
 	static is(value: unknown): value is HumanizeMidiUnit {
 		return MidiUnit.is(value) && value.type[2] === "humanize";
 	}
 
-	public readonly timing: number;
-	public readonly velocity: number;
+	get timing(): number {
+		return this.properties.timing ?? 0;
+	}
+
+	get velocity(): number {
+		return this.properties.velocity ?? 0;
+	}
 
 	private seed = 0;
 
-	constructor({ timing = 0, velocity = 0 }: HumanizeMidiOptions) {
-		super();
-		this.timing = timing;
-		this.velocity = velocity;
+	constructor(properties: MidiUnitInput<HumanizeProperties>) {
+		super(properties);
+		this.properties = {
+			...properties,
+			targets: properties.targets ?? [],
+			modDeclarations: properties.modDeclarations ?? [],
+			noteModDeclarations: properties.noteModDeclarations ?? [],
+		};
+	}
+
+	clone(overrides?: Partial<HumanizeProperties>): HumanizeMidiUnit {
+		return new HumanizeMidiUnit({ ...this.properties, ...overrides });
 	}
 
 	override schedule(voiceNote: VoiceNote, scheduleContext: ScheduleContext): void {

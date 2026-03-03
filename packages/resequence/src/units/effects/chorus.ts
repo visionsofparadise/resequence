@@ -1,8 +1,15 @@
 import type { ScheduleContext } from "../../rendering/schedule-context";
 import { proxyDriver } from "../../utils/driver";
 import { lfo, type LfoUnit } from "../lfo";
-import { Unit, type SetupResult } from "../unit";
+import { Unit, type SetupResult, type UnitInput, type UnitProperties } from "../unit";
 import { delay, type DelayEffectUnit } from "./delay";
+
+export interface ChorusProperties extends UnitProperties {
+	readonly delay: number;
+	readonly rate: number;
+	readonly depth: number;
+	readonly feedback?: number;
+}
 
 export class ChorusEffectUnit extends Unit {
 	readonly type = ["unit", "chorus"] as const;
@@ -11,22 +18,23 @@ export class ChorusEffectUnit extends Unit {
 		return Unit.is(value) && value.type[1] === "chorus";
 	}
 
-	private readonly delay: number;
-	private readonly rate: number;
-	private readonly depth: number;
-	private readonly feedback: number | undefined;
-	public readonly id?: string;
+	readonly properties: ChorusProperties;
 
 	private delayUnit: DelayEffectUnit | undefined;
 	private lfoUnit: LfoUnit | undefined;
 
-	constructor({ delay, rate, depth, feedback, id }: { delay: number; rate: number; depth: number; feedback?: number; id?: string }) {
-		super();
-		this.delay = delay;
-		this.rate = rate;
-		this.depth = depth;
-		this.feedback = feedback;
-		this.id = id;
+	constructor(properties: UnitInput<ChorusProperties>) {
+		super(properties);
+		this.properties = { ...properties, targets: properties.targets ?? [], modDeclarations: properties.modDeclarations ?? [] };
+	}
+
+	get delay(): number { return this.properties.delay; }
+	get rate(): number { return this.properties.rate; }
+	get depth(): number { return this.properties.depth; }
+	get feedback(): number | undefined { return this.properties.feedback; }
+
+	clone(overrides?: Partial<ChorusProperties>): ChorusEffectUnit {
+		return new ChorusEffectUnit({ ...this.properties, ...overrides });
 	}
 
 	protected async _setup(context: ScheduleContext): Promise<SetupResult> {

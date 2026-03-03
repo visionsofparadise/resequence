@@ -1,5 +1,5 @@
 import type { ScheduleContext } from "../../rendering/schedule-context";
-import { Unit, type SetupResult } from "../unit";
+import { Unit, type SetupResult, type UnitInput, type UnitProperties } from "../unit";
 import { filter, type FilterEffectUnit, type FilterMode } from "./filter";
 
 export interface EqBand {
@@ -10,22 +10,29 @@ export interface EqBand {
 	readonly id?: string;
 }
 
+export interface EqProperties extends UnitProperties {
+	readonly bands: ReadonlyArray<EqBand>;
+}
+
 export class EqEffectUnit extends Unit {
 	readonly type = ["unit", "eq"] as const;
+	readonly properties: EqProperties;
 
 	static is(value: unknown): value is EqEffectUnit {
 		return Unit.is(value) && value.type[1] === "eq";
 	}
 
-	private readonly bands: ReadonlyArray<EqBand>;
-	public readonly id?: string;
-
 	private filterChain: Array<FilterEffectUnit> = [];
 
-	constructor({ bands, id }: { bands: ReadonlyArray<EqBand>; id?: string }) {
-		super();
-		this.bands = bands;
-		this.id = id;
+	constructor(properties: UnitInput<EqProperties>) {
+		super(properties);
+		this.properties = { ...properties, targets: properties.targets ?? [], modDeclarations: properties.modDeclarations ?? [] };
+	}
+
+	get bands(): ReadonlyArray<EqBand> { return this.properties.bands; }
+
+	clone(overrides?: Partial<EqProperties>): EqEffectUnit {
+		return new EqEffectUnit({ ...this.properties, ...overrides });
 	}
 
 	protected _setup(_context: ScheduleContext): SetupResult {

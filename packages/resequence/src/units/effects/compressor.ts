@@ -1,7 +1,15 @@
 import type { ScheduleContext } from "../../rendering/schedule-context";
 import { driveParam } from "../../utils/driver";
-import type { SetupResult } from "../unit";
+import type { SetupResult, UnitInput, UnitProperties } from "../unit";
 import { Unit } from "../unit";
+
+export interface CompressorProperties extends UnitProperties {
+	readonly threshold: number;
+	readonly knee?: number;
+	readonly ratio: number;
+	readonly attack?: number;
+	readonly release?: number;
+}
 
 export class CompressorEffectUnit extends Unit {
 	readonly type = ["unit", "compressor"] as const;
@@ -10,24 +18,22 @@ export class CompressorEffectUnit extends Unit {
 		return Unit.is(value) && value.type[1] === "compressor";
 	}
 
-	private readonly threshold: number;
-	private readonly knee: number | undefined;
-	private readonly ratio: number;
-	private readonly attack: number | undefined;
-	private readonly release: number | undefined;
-	public readonly id?: string;
-
+	readonly properties: CompressorProperties;
 	compressorNode: DynamicsCompressorNode | undefined;
 
-	constructor({ threshold, knee, ratio, attack, release, id }: { threshold: number; knee?: number; ratio: number; attack?: number; release?: number; id?: string }) {
-		super();
+	constructor(properties: UnitInput<CompressorProperties>) {
+		super(properties);
+		this.properties = { ...properties, targets: properties.targets ?? [], modDeclarations: properties.modDeclarations ?? [] };
+	}
 
-		this.threshold = threshold;
-		this.knee = knee;
-		this.ratio = ratio;
-		this.attack = attack;
-		this.release = release;
-		this.id = id;
+	get threshold(): number { return this.properties.threshold; }
+	get knee(): number | undefined { return this.properties.knee; }
+	get ratio(): number { return this.properties.ratio; }
+	get attack(): number | undefined { return this.properties.attack; }
+	get release(): number | undefined { return this.properties.release; }
+
+	clone(overrides?: Partial<CompressorProperties>): CompressorEffectUnit {
+		return new CompressorEffectUnit({ ...this.properties, ...overrides });
 	}
 
 	protected _setup(context: ScheduleContext): SetupResult {

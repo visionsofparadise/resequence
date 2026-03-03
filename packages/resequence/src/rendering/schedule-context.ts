@@ -5,9 +5,14 @@ import type { TempoMap } from "./tempo-map";
 
 export type NoteDispatch = (note: ScoreNote, offsetBeats: number, outputs: ReadonlyArray<MidiUnit>, context: ScheduleContext) => void;
 
+export interface DriverEntry {
+	readonly node: ConstantSourceNode;
+	readonly range?: readonly [number, number];
+}
+
 export interface ScheduleContext {
 	readonly audioContext: BaseAudioContext;
-	readonly driverMap: Map<string, ConstantSourceNode>;
+	readonly driverMap: Map<string, DriverEntry>;
 	readonly tempoMap: TempoMap;
 	readonly fromBeats: number;
 	readonly toBeats: number;

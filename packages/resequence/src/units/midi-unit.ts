@@ -1,5 +1,7 @@
 import type { ScheduleContext } from "../rendering/schedule-context";
+import type { OptionalProperties } from "../utils/RequiredProperties";
 import type { Pitch } from "../utils/pitch";
+import type { UnitProperties } from "./unit";
 import { Unit } from "./unit";
 
 export type NoteProperty = "velocity" | "pitch" | "gate";
@@ -33,23 +35,41 @@ export interface VoiceNote {
 	readonly cc?: Partial<Record<number, number>>;
 }
 
-interface NoteModDeclaration {
+export interface NoteModDeclaration {
 	readonly property: NoteProperty;
 	readonly paths: ReadonlyArray<string>;
 	readonly transform?: (value: number) => number;
 }
 
+export interface MidiUnitProperties extends UnitProperties {
+	readonly noteModDeclarations: Array<NoteModDeclaration>;
+}
+
+export type MidiUnitInput<P extends MidiUnitProperties = MidiUnitProperties> = OptionalProperties<
+	P,
+	"targets" | "modDeclarations" | "noteModDeclarations"
+>;
+
 export abstract class MidiUnit extends Unit {
 	abstract readonly type: readonly ["unit", "midi", ...Array<string>];
+	readonly properties: MidiUnitProperties;
 
 	static is(value: unknown): value is MidiUnit {
 		return Unit.is(value) && value.type[1] === "midi";
 	}
 
-	private readonly noteModDeclarations: Array<NoteModDeclaration> = [];
+	constructor(properties?: MidiUnitInput) {
+		super(properties);
+		this.properties = {
+			...properties,
+			targets: properties?.targets ?? [],
+			modDeclarations: properties?.modDeclarations ?? [],
+			noteModDeclarations: properties?.noteModDeclarations ?? [],
+		};
+	}
 
 	noteMod(property: NoteProperty, paths: Array<string>, transform?: (value: number) => number): void {
-		this.noteModDeclarations.push({ property, paths, transform });
+		this.properties.noteModDeclarations.push({ property, paths, transform });
 	}
 
 	schedule(voiceNote: VoiceNote, scheduleContext: ScheduleContext): void {
@@ -67,7 +87,7 @@ export abstract class MidiUnit extends Unit {
 	}
 
 	private applyNoteMods(voiceNote: VoiceNote, context: ScheduleContext): void {
-		for (const decl of this.noteModDeclarations) {
+		for (const decl of this.properties.noteModDeclarations) {
 			let value: number;
 
 			switch (decl.property) {
@@ -89,14 +109,14 @@ export abstract class MidiUnit extends Unit {
 			const startSeconds = voiceNote.startMs / 1000;
 
 			for (const path of decl.paths) {
-				const driver = context.driverMap.get(path);
-				if (!driver) continue;
+				const entry = context.driverMap.get(path);
+				if (!entry) continue;
 
-				driver.offset.setValueAtTime(value, startSeconds);
+				entry.node.offset.setValueAtTime(value, startSeconds);
 
 				if (decl.property === "gate") {
 					const stopSeconds = voiceNote.stopMs / 1000;
-					driver.offset.setValueAtTime(0, stopSeconds);
+					entry.node.offset.setValueAtTime(0, stopSeconds);
 				}
 			}
 		}

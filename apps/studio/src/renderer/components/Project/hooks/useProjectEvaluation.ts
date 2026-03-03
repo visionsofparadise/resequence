@@ -1,8 +1,43 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
-import { Pattern } from "resequence";
+import type { Unit } from "resequence";
+import { mapUnits, MidiPattern, Pattern, walkNodes } from "resequence";
 import type { ProjectContext } from "../../../models/Context";
+import type { UnitRoot } from "../../../models/State/Build";
 import type { OverrideEntry } from "../../../models/State/Override";
+
+function buildUnitRoot(tree: Pattern): UnitRoot {
+	const seen = new Set<Unit>();
+	const children: Array<Unit> = [];
+
+	walkNodes(tree, (node) => {
+		if (MidiPattern.is(node)) {
+			for (const unit of node.outputs) {
+				if (!seen.has(unit)) {
+					seen.add(unit);
+					children.push(unit);
+				}
+			}
+		}
+	});
+
+	return assignUnitIds({ children });
+}
+
+function assignUnitIds(unitRoot: UnitRoot): UnitRoot {
+	const children = unitRoot.children.map((unit, rootIndex) =>
+		mapUnits(
+			unit,
+			(current, location) => {
+				if (current.id) return undefined;
+
+				return current.clone({ id: `_${rootIndex}-${location.indexes.join("-")}` });
+			},
+			[rootIndex],
+		),
+	);
+	return { children };
+}
 
 export function useProjectEvaluation(context: ProjectContext): void {
 	const { main, queryClient } = context;
@@ -70,7 +105,7 @@ export function useProjectEvaluation(context: ProjectContext): void {
 		if (treeError) {
 			projectStore.mutate(build, (proxy) => Object.assign(proxy, { error: String(treeError) }));
 		} else if (tree !== undefined) {
-			projectStore.mutate(build, (proxy) => Object.assign(proxy, { tree, error: null, buildPath }));
+			projectStore.mutate(build, (proxy) => Object.assign(proxy, { tree, unitRoot: buildUnitRoot(tree), error: null, buildPath }));
 		}
 	}, [tree, treeError, buildPath]);
 }
