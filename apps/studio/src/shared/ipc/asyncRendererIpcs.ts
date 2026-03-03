@@ -1,23 +1,31 @@
 import type { IpcHandlerAction, IpcHandlerParameters, IpcHandlerReturn } from "../models/AsyncRendererIpc";
 import { ShowOpenDialogRendererIpc } from "./Dialog/showOpenDialog/Renderer";
 import { EnsureDirectoryRendererIpc } from "./FileSystem/ensureDirectory/Renderer";
+import { ReadDirectoryRendererIpc } from "./FileSystem/readDirectory/Renderer";
 import { ReadFileRendererIpc } from "./FileSystem/readFile/Renderer";
 import { ReadFileBufferRendererIpc } from "./FileSystem/readFileBuffer/Renderer";
 import { ReadFileChunkRendererIpc } from "./FileSystem/readFileChunk/Renderer";
 import { StatRendererIpc } from "./FileSystem/stat/Renderer";
 import { WriteFileRendererIpc } from "./FileSystem/writeFile/Renderer";
+import { BundleProjectRendererIpc } from "./Project/bundleProject/Renderer";
+import { CloseWatcherRendererIpc } from "./Project/closeWatcher/Renderer";
+import { OpenWatcherRendererIpc } from "./Project/openWatcher/Renderer";
 import { GetAppVersionRendererIpc } from "./System/getAppVersion/Renderer";
 import { GetUserDataPathRendererIpc } from "./System/getUserDataPath/Renderer";
 import { GetWindowIdRendererIpc } from "./System/getWindowId/Renderer";
 
 export const ASYNC_RENDERER_IPCS = [
 	EnsureDirectoryRendererIpc,
+	ReadDirectoryRendererIpc,
 	ReadFileRendererIpc,
 	ReadFileBufferRendererIpc,
 	ReadFileChunkRendererIpc,
 	StatRendererIpc,
 	WriteFileRendererIpc,
 	ShowOpenDialogRendererIpc,
+	BundleProjectRendererIpc,
+	CloseWatcherRendererIpc,
+	OpenWatcherRendererIpc,
 	GetUserDataPathRendererIpc,
 	GetWindowIdRendererIpc,
 	GetAppVersionRendererIpc,

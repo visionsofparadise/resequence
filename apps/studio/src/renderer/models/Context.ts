@@ -5,7 +5,7 @@ import type { Logger } from "../../shared/models/Logger/Logger";
 import type { MainWithEvents } from "./Main";
 import type { ProxyStore } from "./ProxyStore/ProxyStore";
 import type { AppState } from "./State/App";
-import type { EvalState } from "./State/Eval";
+import type { BuildState } from "./State/Build";
 import type { HistoryState } from "./State/History";
 import type { OverrideState } from "./State/Override";
 import type { PlaybackState } from "./State/Playback";
@@ -25,7 +25,7 @@ export interface AppContext {
 
 export interface ProjectContext extends AppContext {
 	readonly currentProjectPath: string;
-	readonly eval: Snapshot<EvalState>;
+	readonly build: Snapshot<BuildState>;
 	readonly history: HistoryState;
 	readonly override: Snapshot<OverrideState>;
 	readonly playback: Snapshot<PlaybackState>;

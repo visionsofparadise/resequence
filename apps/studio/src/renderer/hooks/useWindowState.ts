@@ -6,16 +6,10 @@ import type { ProxyStore } from "../models/ProxyStore/ProxyStore";
 import type { AppState } from "../models/State/App";
 import { APP_SETTINGS_QUERY_KEY } from "../utils/appSettings";
 
-export function useWindowState(
-	appState: AppState & { readonly _key: symbol },
-	appStore: ProxyStore,
-	appSettings: AppSettings | undefined,
-	main: MainWithEvents,
-	queryClient: QueryClient,
-): void {
+export function useWindowState(appState: AppState & { readonly _key: symbol }, appStore: ProxyStore, appSettings: AppSettings | undefined, main: MainWithEvents, queryClient: QueryClient): void {
 	useEffect(() => {
 		if (appSettings?.windowState) {
-			appStore.mutate(appState, (st) => Object.assign(st, appSettings.windowState));
+			appStore.mutate(appState, (proxy) => Object.assign(proxy, appSettings.windowState));
 		}
 	}, [appSettings?.windowState]);
 

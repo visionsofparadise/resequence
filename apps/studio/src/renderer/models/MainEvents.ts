@@ -7,6 +7,10 @@ export class MainEvents extends EventEmitter<MainEventMap> {
 	constructor(main: Main) {
 		super();
 
+		main.events.on("change", (_: IpcRendererEvent) => {
+			this.emit("change");
+		});
+
 		main.events.on("error", (_: IpcRendererEvent, ...args) => {
 			this.emit("error", ...args);
 		});

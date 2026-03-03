@@ -168,4 +168,4 @@ export { evaluateSlide, evaluateSlideCents, mergeSlides } from "./utils/slide";
 export { addAliases, createTuning } from "./utils/tuning";
 export type { EqualTuningInput, FrequencyTuningInput, ResolvedTuning, Tuning, TuningNote } from "./utils/tuning";
 export { validate } from "./validate";
-export type { ValidationWarning } from "./validate";
+export type { ValidateContext, ValidationWarning } from "./validate";

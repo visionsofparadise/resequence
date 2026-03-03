@@ -12,8 +12,8 @@ const makeState = <T extends object>(store: ProxyStore, initial: T) => {
 
 describe("history", () => {
 	it("undo reverts a mutation", () => {
-		const history = useCreateHistoryState();
 		const store = new ProxyStore();
+		const history = useCreateHistoryState(store);
 		const state = makeState(store, { value: 0 });
 
 		store.mutate(
@@ -29,8 +29,8 @@ describe("history", () => {
 	});
 
 	it("redo re-applies after undo", () => {
-		const history = useCreateHistoryState();
 		const store = new ProxyStore();
+		const history = useCreateHistoryState(store);
 		const state = makeState(store, { value: 0 });
 
 		store.mutate(
@@ -46,8 +46,8 @@ describe("history", () => {
 	});
 
 	it("transaction grouping merges ops into single undo step", () => {
-		const history = useCreateHistoryState();
 		const store = new ProxyStore();
+		const history = useCreateHistoryState(store);
 		const state = makeState(store, { aa: 0, bb: 0 });
 
 		const txKey = "tx-group";
@@ -71,8 +71,8 @@ describe("history", () => {
 	});
 
 	it("new action after undo truncates future stack", () => {
-		const history = useCreateHistoryState();
 		const store = new ProxyStore();
+		const history = useCreateHistoryState(store);
 		const state = makeState(store, { value: 0 });
 
 		store.mutate(
@@ -102,8 +102,8 @@ describe("history", () => {
 	});
 
 	it("history.canUndo reflects undo availability", () => {
-		const history = useCreateHistoryState();
 		const store = new ProxyStore();
+		const history = useCreateHistoryState(store);
 		const state = makeState(store, { xx: 0 });
 
 		store.mutate(
@@ -119,12 +119,14 @@ describe("history", () => {
 	});
 
 	it("undo on empty stack is a no-op", () => {
-		const history = useCreateHistoryState();
+		const store = new ProxyStore();
+		const history = useCreateHistoryState(store);
 		expect(() => history.undo()).not.toThrow();
 	});
 
 	it("redo on exhausted stack is a no-op", () => {
-		const history = useCreateHistoryState();
+		const store = new ProxyStore();
+		const history = useCreateHistoryState(store);
 		expect(() => history.redo()).not.toThrow();
 	});
 });
