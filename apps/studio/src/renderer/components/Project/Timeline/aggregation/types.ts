@@ -1,4 +1,4 @@
-import type { Pitch } from "resequence";
+import type { Keyframe, Lfo, Pitch, ResolvedTuning } from "resequence";
 
 export interface AggregatedNote {
 	readonly pitch: Pitch;
@@ -6,6 +6,7 @@ export interface AggregatedNote {
 	readonly endBeat: number;
 	readonly velocity: number;
 	readonly lyric?: string;
+	readonly slides?: ReadonlyArray<Keyframe>;
 	readonly patternPath: string;
 }
 
@@ -24,6 +25,8 @@ export interface NoteLane {
 	readonly spans: ReadonlyArray<PatternSpan>;
 	readonly minPitch: number;
 	readonly maxPitch: number;
+	readonly tuning: ResolvedTuning | null;
+	readonly timeSignature: readonly [number, number];
 }
 
 export interface AudioLane {
@@ -39,6 +42,7 @@ export interface AutomationLane {
 	readonly name: string;
 	readonly patternPath: string;
 	readonly paths: ReadonlyArray<string>;
+	readonly source: ReadonlyArray<Keyframe> | Lfo;
 	readonly startBeat: number;
 	readonly endBeat: number;
 }

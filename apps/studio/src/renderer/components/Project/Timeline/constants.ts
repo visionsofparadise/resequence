@@ -1,5 +1,5 @@
 export const RULER_HEIGHT = 24;
-export const PX_PER_SEMITONE = 3;
+export const DEFAULT_PITCH_ZOOM = 10;
 export const MIN_LANE_HEIGHT = 36;
 export const MIN_PITCH_RANGE = 12;
 export const AUDIO_LANE_HEIGHT = 48;
@@ -8,3 +8,6 @@ export const DEFAULT_PX_PER_BEAT = 40;
 export const MIN_PX_PER_BEAT = 5;
 export const MAX_PX_PER_BEAT = 200;
 export const ZOOM_SENSITIVITY = 0.002;
+export const CHROMATIC_BLACK_KEYS = new Set([1, 3, 6, 8, 10]);
+export const AUTOMATION_COLOR = "hsl(45, 80%, 55%)";
+export const NUM_OCTAVES = 11;

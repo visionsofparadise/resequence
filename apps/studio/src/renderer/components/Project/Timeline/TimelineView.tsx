@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ProjectContext } from "../../../models/Context";
+import type { PianoRollTarget, ProjectState } from "../../../models/State/Project";
 import { Playhead } from "./Playhead";
 import { Ruler } from "./Ruler";
 import { SegmentComponent } from "./Segment";
@@ -26,6 +27,12 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ context }) => {
 
 	const bindWheel = useTimelineWheel({ context, containerRef, totalBeats });
 	const { bindPan, isPanning } = useTimelinePan({ context });
+
+	const onOpenPianoRoll = useCallback((target: PianoRollTarget) => {
+		context.projectStore.mutate<ProjectState>(project, (proxy) => {
+			proxy.activePianoRoll = target;
+		});
+	}, [context.projectStore, project]);
 
 	useEffect(() => {
 		const container = containerRef.current;
@@ -86,9 +93,12 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ context }) => {
 						<SegmentComponent
 							key={`seg-${segment.startBeat}-${segIndex}`}
 							segment={segment}
+							segmentPath={[segIndex]}
 							pxPerBeat={project.timelineZoom.value}
+							pitchZoom={project.pitchZoom.value}
 							hoveredPattern={hoveredPattern}
 							onHoverPattern={setHoveredPattern}
+							onOpenPianoRoll={onOpenPianoRoll}
 						/>
 					))
 				)}

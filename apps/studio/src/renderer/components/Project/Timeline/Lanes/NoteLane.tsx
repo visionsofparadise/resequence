@@ -1,31 +1,91 @@
-import { memo } from "react";
+import { memo, useRef } from "react";
+import { NoteElement } from "../../PianoRoll/NoteElement";
+import { PianoRollGrid } from "../../PianoRoll/PianoRollGrid";
+import { PitchSlide } from "../../PianoRoll/PitchSlide";
 import { outputSetColor } from "../aggregation/outputColor";
 import type { NoteLane as NoteLaneData, PatternSpan } from "../aggregation/types";
-import { MIN_LANE_HEIGHT, MIN_PITCH_RANGE, PX_PER_SEMITONE } from "../constants";
+import { MIN_LANE_HEIGHT, MIN_PITCH_RANGE } from "../constants";
 
 interface NoteLaneProps {
 	readonly lane: NoteLaneData;
 	readonly pxPerBeat: number;
+	readonly pitchZoom: number;
 	readonly segmentStartBeat: number;
+	readonly segmentEndBeat: number;
 	readonly hoveredPattern: string | null;
 	readonly onHoverPattern: (path: string | null) => void;
+	readonly onClickLane?: () => void;
 }
 
-export const NoteLanePlaceholder = memo<NoteLaneProps>(({ lane, pxPerBeat, segmentStartBeat, hoveredPattern, onHoverPattern }) => {
-	const pitchRange = lane.maxPitch - lane.minPitch;
-	const displayRange = Math.max(pitchRange, MIN_PITCH_RANGE);
-	const height = Math.max(displayRange * PX_PER_SEMITONE, MIN_LANE_HEIGHT);
+const CLICK_THRESHOLD = 4;
 
+export const NoteLane = memo<NoteLaneProps>(({ lane, pxPerBeat, pitchZoom, segmentStartBeat, segmentEndBeat, hoveredPattern, onHoverPattern, onClickLane }) => {
+	const mouseDownPos = useRef<{ x: number; y: number } | null>(null);
+	const pitchRange = lane.maxPitch - lane.minPitch;
+	const padded = Math.max(pitchRange, MIN_PITCH_RANGE);
+	const padAmount = Math.floor((padded - pitchRange) / 2);
+	const displayMin = lane.minPitch - padAmount;
+	const displayMax = displayMin + padded;
+
+	const height = Math.max((displayMax - displayMin + 1) * pitchZoom, MIN_LANE_HEIGHT);
 	const color = outputSetColor(lane.outputIds);
+	const stepsPerOctave = lane.tuning ? lane.tuning.classes.length : 12;
+	const octaveRatio = lane.tuning ? lane.tuning.octaveRatio : 2;
 
 	return (
 		<div
 			className="relative overflow-hidden border-b border-border"
 			style={{ height, backgroundColor: `color-mix(in srgb, ${color} 10%, transparent)` }}
+			onMouseDown={(ev) => { mouseDownPos.current = { x: ev.clientX, y: ev.clientY }; }}
+			onMouseUp={(ev) => {
+				const pos = mouseDownPos.current;
+				mouseDownPos.current = null;
+				if (!pos || !onClickLane) return;
+				const dx = ev.clientX - pos.x;
+				const dy = ev.clientY - pos.y;
+				if (Math.sqrt(dx * dx + dy * dy) < CLICK_THRESHOLD) onClickLane();
+			}}
 		>
-			<span className="absolute left-1 top-0.5 text-[10px] text-muted-foreground">
-				{lane.outputKey === "unrouted" ? "unrouted" : lane.outputIds.join(", ")}
-			</span>
+			<PianoRollGrid
+				minPitchKey={displayMin}
+				maxPitchKey={displayMax}
+				stepsPerOctave={stepsPerOctave}
+				timeSignature={lane.timeSignature}
+				startBeat={segmentStartBeat}
+				endBeat={segmentEndBeat}
+				pxPerBeat={pxPerBeat}
+				pitchZoom={pitchZoom}
+			/>
+
+			{lane.notes.map((noteData, ni) => (
+				<NoteElement
+					key={`n-${ni}`}
+					note={noteData}
+					startBeat={segmentStartBeat}
+					maxPitchKey={displayMax}
+					pxPerBeat={pxPerBeat}
+					pitchZoom={pitchZoom}
+					color={color}
+					hoveredPattern={hoveredPattern}
+				/>
+			))}
+
+			{lane.notes.map((noteData, ni) =>
+				noteData.slides && noteData.slides.length > 0 ? (
+					<PitchSlide
+						key={`s-${ni}`}
+						note={noteData}
+						slides={noteData.slides}
+						startBeat={segmentStartBeat}
+						maxPitchKey={displayMax}
+						pxPerBeat={pxPerBeat}
+						pitchZoom={pitchZoom}
+						stepsPerOctave={stepsPerOctave}
+						octaveRatio={octaveRatio}
+						color={color}
+					/>
+				) : null,
+			)}
 
 			{lane.spans.map((span) => (
 				<SpanOverlay
@@ -39,6 +99,10 @@ export const NoteLanePlaceholder = memo<NoteLaneProps>(({ lane, pxPerBeat, segme
 					onHoverPattern={onHoverPattern}
 				/>
 			))}
+
+			<span className="absolute left-1 top-0.5 z-10 text-[10px] text-muted-foreground">
+				{lane.outputKey === "unrouted" ? "unrouted" : lane.outputIds.join(", ")}
+			</span>
 		</div>
 	);
 });

@@ -1,4 +1,4 @@
-import { AudioPattern, AutomatePattern, MidiPattern, type MidiUnit, type Pattern, type Pitch, SequencePattern } from "resequence";
+import { AudioPattern, AutomatePattern, MetadataPattern, MidiPattern, type MidiUnit, type Pattern, type Pitch, type ResolvedTuning, SequencePattern } from "resequence";
 import type { AggregatedNote, AudioLane, AutomationLane, Lane, PatternSpan, TimelineData, TimelineSegment } from "./types";
 
 const unitIdMap = new WeakMap<MidiUnit, string>();
@@ -21,6 +21,13 @@ function computeOutputKey(outputs: ReadonlyArray<MidiUnit>): string {
 	return outputs.map(getUnitId).sort().join("|");
 }
 
+function computeLaneKey(outputs: ReadonlyArray<MidiUnit>, tuning: ResolvedTuning | null, timeSignature: readonly [number, number]): string {
+	const outputPart = computeOutputKey(outputs);
+	const tuningPart = tuning ? tuning.classes.join(",") : "null";
+	const tsPart = `${timeSignature[0]}/${timeSignature[1]}`;
+	return `${outputPart}::${tuningPart}::${tsPart}`;
+}
+
 function patternTypeLabel(pattern: Pattern): string {
 	return pattern.type[pattern.type.length - 1] ?? "unknown";
 }
@@ -31,9 +38,17 @@ function buildNodeId(indexes: ReadonlyArray<number>): string {
 	return indexes.join("-");
 }
 
+interface MetadataContext {
+	readonly activeTuning: ResolvedTuning | null;
+	readonly activeTimeSignature: readonly [number, number];
+}
+
 interface NoteCollector {
 	notes: Array<AggregatedNote>;
 	spans: Array<PatternSpan>;
+	outputKey: string;
+	tuning: ResolvedTuning | null;
+	timeSignature: readonly [number, number];
 }
 
 interface SubtreeState {
@@ -54,11 +69,22 @@ function createSubtreeState(): SubtreeState {
 	};
 }
 
-function aggregateSubtree(pattern: Pattern, offset: number, accumulatedOutputs: ReadonlyArray<MidiUnit>, state: SubtreeState, indexes: ReadonlyArray<number>): void {
+function aggregateSubtree(pattern: Pattern, offset: number, accumulatedOutputs: ReadonlyArray<MidiUnit>, state: SubtreeState, indexes: ReadonlyArray<number>, meta: MetadataContext): void {
 	const nodeId = buildNodeId(indexes);
 	const isMidi = MidiPattern.is(pattern);
 
 	const currentOutputs = isMidi && pattern.outputs.length > 0 ? [...accumulatedOutputs, ...pattern.outputs] : accumulatedOutputs;
+
+	if (MetadataPattern.is(pattern)) {
+		const updatedMeta: MetadataContext = {
+			activeTuning: pattern.properties.meta.tuning ?? meta.activeTuning,
+			activeTimeSignature: pattern.properties.meta.timeSignature ?? meta.activeTimeSignature,
+		};
+		for (const [childIndex, { offsetBeats, pattern: child }] of pattern.children.entries()) {
+			aggregateSubtree(child, offset + offsetBeats, currentOutputs, state, [...indexes, childIndex], updatedMeta);
+		}
+		return;
+	}
 
 	if (AudioPattern.is(pattern)) {
 		const lane: AudioLane = {
@@ -80,6 +106,7 @@ function aggregateSubtree(pattern: Pattern, offset: number, accumulatedOutputs: 
 			name: pattern.properties.name,
 			patternPath: nodeId,
 			paths: pattern.properties.paths,
+			source: pattern.properties.source,
 			startBeat: offset + pattern.startBeat,
 			endBeat: offset + pattern.endBeat,
 		};
@@ -90,20 +117,21 @@ function aggregateSubtree(pattern: Pattern, offset: number, accumulatedOutputs: 
 	}
 
 	if (SequencePattern.is(pattern) && indexes.length > 0) {
-		const childSegs = aggregateSequence(pattern, offset, indexes);
+		const childSegs = aggregateSequence(pattern, offset, indexes, meta);
 		state.childSegments.push(...childSegs);
 		return;
 	}
 
 	if (pattern.notes.length > 0) {
 		const outputKey = computeOutputKey(currentOutputs);
+		const laneKey = computeLaneKey(currentOutputs, meta.activeTuning, meta.activeTimeSignature);
 		const outputIds = currentOutputs.map(getUnitId);
 
-		let collector = state.noteLanes.get(outputKey);
+		let collector = state.noteLanes.get(laneKey);
 		if (!collector) {
-			collector = { notes: [], spans: [] };
-			state.noteLanes.set(outputKey, collector);
-			state.encounterOrder.push(outputKey);
+			collector = { notes: [], spans: [], outputKey, tuning: meta.activeTuning, timeSignature: meta.activeTimeSignature };
+			state.noteLanes.set(laneKey, collector);
+			state.encounterOrder.push(laneKey);
 		}
 
 		const span: PatternSpan = {
@@ -121,6 +149,7 @@ function aggregateSubtree(pattern: Pattern, offset: number, accumulatedOutputs: 
 				endBeat: offset + offsetBeats + note.endBeat,
 				velocity: note.velocity,
 				lyric: note.lyric,
+				slides: note.slides,
 				patternPath: nodeId,
 			});
 		}
@@ -132,11 +161,11 @@ function aggregateSubtree(pattern: Pattern, offset: number, accumulatedOutputs: 
 	}
 
 	for (const [childIndex, { offsetBeats, pattern: child }] of pattern.children.entries()) {
-		aggregateSubtree(child, offset + offsetBeats, currentOutputs, state, [...indexes, childIndex]);
+		aggregateSubtree(child, offset + offsetBeats, currentOutputs, state, [...indexes, childIndex], meta);
 	}
 }
 
-function aggregateSequence(pattern: SequencePattern, offset: number, indexes: ReadonlyArray<number>): Array<TimelineSegment> {
+function aggregateSequence(pattern: SequencePattern, offset: number, indexes: ReadonlyArray<number>, meta: MetadataContext): Array<TimelineSegment> {
 	const segments: Array<TimelineSegment> = [];
 
 	const isMidi = MidiPattern.is(pattern);
@@ -145,15 +174,19 @@ function aggregateSequence(pattern: SequencePattern, offset: number, indexes: Re
 	if (pattern.notes.length > 0) {
 		const state = createSubtreeState();
 		const outputKey = computeOutputKey(currentOutputs);
+		const laneKey = computeLaneKey(currentOutputs, meta.activeTuning, meta.activeTimeSignature);
 		const nodeId = buildNodeId(indexes);
 
 		const collector: NoteCollector & { outputIds?: ReadonlyArray<string> } = {
 			notes: [],
 			spans: [],
+			outputKey,
+			tuning: meta.activeTuning,
+			timeSignature: meta.activeTimeSignature,
 			outputIds: currentOutputs.map(getUnitId),
 		};
-		state.noteLanes.set(outputKey, collector);
-		state.encounterOrder.push(outputKey);
+		state.noteLanes.set(laneKey, collector);
+		state.encounterOrder.push(laneKey);
 
 		collector.spans.push({
 			patternPath: nodeId,
@@ -169,15 +202,17 @@ function aggregateSequence(pattern: SequencePattern, offset: number, indexes: Re
 				endBeat: offset + offsetBeats + note.endBeat,
 				velocity: note.velocity,
 				lyric: note.lyric,
+				slides: note.slides,
 				patternPath: nodeId,
 			});
 		}
 
-		const lanes = buildLanes(state);
+		const segEnd = offset + pattern.endBeat;
+		const lanes = buildLanes(state, segEnd);
 		if (lanes.length > 0) {
 			segments.push({
 				startBeat: offset + pattern.startBeat,
-				endBeat: offset + pattern.endBeat,
+				endBeat: segEnd,
 				lanes,
 				children: [],
 			});
@@ -188,11 +223,12 @@ function aggregateSequence(pattern: SequencePattern, offset: number, indexes: Re
 		const childIndexes = [...indexes, childIndex];
 
 		if (SequencePattern.is(child)) {
-			segments.push(...aggregateSequence(child, offset + offsetBeats, childIndexes));
+			segments.push(...aggregateSequence(child, offset + offsetBeats, childIndexes, meta));
 		} else {
 			const state = createSubtreeState();
-			aggregateSubtree(child, offset + offsetBeats, currentOutputs, state, childIndexes);
-			const lanes = buildLanes(state);
+			aggregateSubtree(child, offset + offsetBeats, currentOutputs, state, childIndexes, meta);
+			const childEnd = offset + offsetBeats + child.endBeat;
+			const lanes = buildLanes(state, childEnd);
 
 			if (lanes.length > 0 || state.childSegments.length > 0) {
 				segments.push({
@@ -208,7 +244,7 @@ function aggregateSequence(pattern: SequencePattern, offset: number, indexes: Re
 	return segments;
 }
 
-function buildLanes(state: SubtreeState): Array<Lane> {
+function buildLanes(state: SubtreeState, segmentEndBeat?: number): Array<Lane> {
 	const lanes: Array<Lane> = [];
 
 	for (const entry of state.encounterOrder) {
@@ -228,19 +264,28 @@ function buildLanes(state: SubtreeState): Array<Lane> {
 
 			lanes.push({
 				kind: "notes",
-				outputKey: entry,
+				outputKey: collector.outputKey,
 				outputIds,
 				notes: collector.notes,
 				spans: collector.spans,
 				minPitch,
 				maxPitch,
+				tuning: collector.tuning,
+				timeSignature: collector.timeSignature,
 			});
 		} else if (entry.kind === "audio") {
 			const lane = state.audioLanes[entry.index];
 			if (lane) lanes.push(lane);
 		} else {
 			const lane = state.automationLanes[entry.index];
-			if (lane) lanes.push(lane);
+			if (lane) {
+				// LFO patterns have zero endBeat — extend to containing segment's endBeat
+				if (lane.startBeat === lane.endBeat && segmentEndBeat !== undefined) {
+					lanes.push({ ...lane, endBeat: segmentEndBeat });
+				} else {
+					lanes.push(lane);
+				}
+			}
 		}
 	}
 
@@ -251,11 +296,13 @@ function pitchToSemitone(pitch: Pitch): number {
 	return pitch.octave * pitch.stepsPerOctave + pitch.class;
 }
 
+const DEFAULT_META: MetadataContext = { activeTuning: null, activeTimeSignature: [4, 4] };
+
 export function aggregateTree(tree: Pattern): TimelineData {
 	nextUnitId = 0;
 
 	if (SequencePattern.is(tree)) {
-		const segments = aggregateSequence(tree, 0, []);
+		const segments = aggregateSequence(tree, 0, [], DEFAULT_META);
 		return {
 			segments,
 			totalStartBeat: tree.startBeat,
@@ -264,8 +311,8 @@ export function aggregateTree(tree: Pattern): TimelineData {
 	}
 
 	const state = createSubtreeState();
-	aggregateSubtree(tree, 0, [], state, []);
-	const lanes = buildLanes(state);
+	aggregateSubtree(tree, 0, [], state, [], DEFAULT_META);
+	const lanes = buildLanes(state, tree.endBeat);
 
 	const segments: Array<TimelineSegment> = [];
 	if (lanes.length > 0 || state.childSegments.length > 0) {

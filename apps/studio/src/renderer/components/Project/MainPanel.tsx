@@ -2,6 +2,7 @@ import { ReactFlowProvider } from "@xyflow/react";
 import { useCallback, useEffect } from "react";
 import type { ProjectContext } from "../../models/Context";
 import type { ProjectState } from "../../models/State/Project";
+import { PianoRollView } from "./PianoRoll/PianoRollView";
 import { TimelineView } from "./Timeline/TimelineView";
 import { TransportRibbon } from "./Timeline/TransportRibbon";
 import { UnitGraphView } from "./UnitGraph/UnitGraphView";
@@ -51,16 +52,8 @@ export const MainPanel: React.FC<MainPanelProps> = ({ context }) => {
 	if (project.activePianoRoll) {
 		return (
 			<div className="flex h-full flex-col">
-				<div className="shrink-0 px-3 py-2">
-					<button
-						type="button"
-						className="text-xs text-muted-foreground hover:text-foreground"
-						onClick={goBack}
-					>
-						&larr; Back
-					</button>
-				</div>
-				<div className="flex flex-1 items-center justify-center text-sm text-muted-foreground">Piano Roll &mdash; not yet implemented</div>
+				<PianoRollView context={context} target={project.activePianoRoll} onBack={goBack} />
+				<TransportRibbon context={context} />
 			</div>
 		);
 	}

@@ -9,13 +9,19 @@ export interface OutputGraphViewport {
 	zoom: number;
 }
 
+export interface PianoRollTarget {
+	segmentPath: Array<number>;
+	laneIndex: number;
+}
+
 export interface ProjectState extends State {
-	activePianoRoll: string | null;
+	activePianoRoll: PianoRollTarget | null;
 	activeOutput: string | null;
 
 	timelineScrollX: Transient<number>;
 	timelineScrollY: Transient<number>;
 	timelineZoom: Transient<number>;
+	pitchZoom: Transient<number>;
 
 	outputGraphViewports: Record<string, OutputGraphViewport>;
 
@@ -24,11 +30,12 @@ export interface ProjectState extends State {
 }
 
 export interface ProjectStateInitial {
-	activePianoRoll?: string | null;
+	activePianoRoll?: PianoRollTarget | null;
 	activeOutput?: string | null;
 	timelineScrollX?: number;
 	timelineScrollY?: number;
 	timelineZoom?: number;
+	pitchZoom?: number;
 	outputGraphViewports?: Record<string, OutputGraphViewport>;
 	topHeightPercent?: number;
 	overridesWidthPercent?: number;
@@ -42,6 +49,7 @@ export function useProjectState(initial: ProjectStateInitial = {}, store: ProxyS
 			timelineScrollX: new Transient(initial.timelineScrollX ?? 0),
 			timelineScrollY: new Transient(initial.timelineScrollY ?? 0),
 			timelineZoom: new Transient(initial.timelineZoom ?? 1),
+			pitchZoom: new Transient(initial.pitchZoom ?? 10, { minimum: 2, maximum: 30 }),
 			outputGraphViewports: initial.outputGraphViewports ?? {},
 			topHeightPercent: new Transient(initial.topHeightPercent ?? 35, { minimum: 10, maximum: 90 }),
 			overridesWidthPercent: new Transient(initial.overridesWidthPercent ?? 40, { minimum: 10, maximum: 90 }),
@@ -57,6 +65,7 @@ export function serializeProjectState(state: ProjectState): ProjectStateInitial 
 		timelineScrollX: state.timelineScrollX.toJson(),
 		timelineScrollY: state.timelineScrollY.toJson(),
 		timelineZoom: state.timelineZoom.toJson(),
+		pitchZoom: state.pitchZoom.toJson(),
 		outputGraphViewports: state.outputGraphViewports,
 		topHeightPercent: state.topHeightPercent.toJson(),
 		overridesWidthPercent: state.overridesWidthPercent.toJson(),
@@ -65,15 +74,24 @@ export function serializeProjectState(state: ProjectState): ProjectStateInitial 
 
 export function deserializeProjectState(json: Record<string, unknown>): ProjectStateInitial {
 	return {
-		activePianoRoll: typeof json.activePianoRoll === "string" ? json.activePianoRoll : undefined,
+		activePianoRoll: isPianoRollTarget(json.activePianoRoll) ? json.activePianoRoll : undefined,
 		activeOutput: typeof json.activeOutput === "string" ? json.activeOutput : undefined,
 		timelineScrollX: typeof json.timelineScrollX === "number" ? json.timelineScrollX : undefined,
 		timelineScrollY: typeof json.timelineScrollY === "number" ? json.timelineScrollY : undefined,
 		timelineZoom: typeof json.timelineZoom === "number" ? json.timelineZoom : undefined,
+		pitchZoom: typeof json.pitchZoom === "number" ? json.pitchZoom : undefined,
 		outputGraphViewports: isOutputGraphViewports(json.outputGraphViewports) ? json.outputGraphViewports : undefined,
 		topHeightPercent: typeof json.topHeightPercent === "number" ? json.topHeightPercent : undefined,
 		overridesWidthPercent: typeof json.overridesWidthPercent === "number" ? json.overridesWidthPercent : undefined,
 	};
+}
+
+function isPianoRollTarget(value: unknown): value is PianoRollTarget {
+	if (typeof value !== "object" || value === null) return false;
+	const record = value as Record<string, unknown>;
+	if (!Array.isArray(record.segmentPath) || !record.segmentPath.every((item: unknown) => typeof item === "number")) return false;
+	if (typeof record.laneIndex !== "number") return false;
+	return true;
 }
 
 function isOutputGraphViewports(value: unknown): value is Record<string, OutputGraphViewport> {

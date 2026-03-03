@@ -1,17 +1,21 @@
 import { memo } from "react";
+import type { PianoRollTarget } from "../../../models/State/Project";
 import type { TimelineSegment } from "./aggregation/types";
 import { AudioLanePlaceholder } from "./Lanes/AudioLane";
-import { AutomationLanePlaceholder } from "./Lanes/AutomationLane";
-import { NoteLanePlaceholder } from "./Lanes/NoteLane";
+import { AutomationLane } from "./Lanes/AutomationLane";
+import { NoteLane } from "./Lanes/NoteLane";
 
 interface SegmentProps {
 	readonly segment: TimelineSegment;
+	readonly segmentPath: Array<number>;
 	readonly pxPerBeat: number;
+	readonly pitchZoom: number;
 	readonly hoveredPattern: string | null;
 	readonly onHoverPattern: (path: string | null) => void;
+	readonly onOpenPianoRoll: (target: PianoRollTarget) => void;
 }
 
-export const SegmentComponent = memo<SegmentProps>(({ segment, pxPerBeat, hoveredPattern, onHoverPattern }) => {
+export const SegmentComponent = memo<SegmentProps>(({ segment, segmentPath, pxPerBeat, pitchZoom, hoveredPattern, onHoverPattern, onOpenPianoRoll }) => {
 	const left = segment.startBeat * pxPerBeat;
 	const width = (segment.endBeat - segment.startBeat) * pxPerBeat;
 
@@ -25,13 +29,16 @@ export const SegmentComponent = memo<SegmentProps>(({ segment, pxPerBeat, hovere
 					switch (lane.kind) {
 						case "notes":
 							return (
-								<NoteLanePlaceholder
+								<NoteLane
 									key={`note-${lane.outputKey}-${laneIndex}`}
 									lane={lane}
 									pxPerBeat={pxPerBeat}
+									pitchZoom={pitchZoom}
 									segmentStartBeat={segment.startBeat}
+									segmentEndBeat={segment.endBeat}
 									hoveredPattern={hoveredPattern}
 									onHoverPattern={onHoverPattern}
+									onClickLane={() => onOpenPianoRoll({ segmentPath, laneIndex })}
 								/>
 							);
 						case "audio":
@@ -45,7 +52,7 @@ export const SegmentComponent = memo<SegmentProps>(({ segment, pxPerBeat, hovere
 							);
 						case "automation":
 							return (
-								<AutomationLanePlaceholder
+								<AutomationLane
 									key={`auto-${lane.patternPath}-${laneIndex}`}
 									lane={lane}
 									pxPerBeat={pxPerBeat}
@@ -60,9 +67,12 @@ export const SegmentComponent = memo<SegmentProps>(({ segment, pxPerBeat, hovere
 				<SegmentComponent
 					key={`child-${child.startBeat}-${childIndex}`}
 					segment={child}
+					segmentPath={[...segmentPath, childIndex]}
 					pxPerBeat={pxPerBeat}
+					pitchZoom={pitchZoom}
 					hoveredPattern={hoveredPattern}
 					onHoverPattern={onHoverPattern}
+					onOpenPianoRoll={onOpenPianoRoll}
 				/>
 			))}
 		</div>
