@@ -2,6 +2,8 @@ import { ReactFlowProvider } from "@xyflow/react";
 import { useCallback, useEffect } from "react";
 import type { ProjectContext } from "../../models/Context";
 import type { ProjectState } from "../../models/State/Project";
+import { TimelineView } from "./Timeline/TimelineView";
+import { TransportRibbon } from "./Timeline/TransportRibbon";
 import { UnitGraphView } from "./UnitGraph/UnitGraphView";
 
 interface MainPanelProps {
@@ -63,5 +65,10 @@ export const MainPanel: React.FC<MainPanelProps> = ({ context }) => {
 		);
 	}
 
-	return <div className="flex h-full items-center justify-center text-sm text-muted-foreground">Timeline &mdash; not yet implemented</div>;
+	return (
+		<div className="flex h-full flex-col">
+			<TimelineView context={context} />
+			<TransportRibbon context={context} />
+		</div>
+	);
 };

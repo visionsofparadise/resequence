@@ -1,0 +1,10 @@
+export const RULER_HEIGHT = 24;
+export const PX_PER_SEMITONE = 3;
+export const MIN_LANE_HEIGHT = 36;
+export const MIN_PITCH_RANGE = 12;
+export const AUDIO_LANE_HEIGHT = 48;
+export const AUTOMATION_LANE_HEIGHT = 32;
+export const DEFAULT_PX_PER_BEAT = 40;
+export const MIN_PX_PER_BEAT = 5;
+export const MAX_PX_PER_BEAT = 200;
+export const ZOOM_SENSITIVITY = 0.002;

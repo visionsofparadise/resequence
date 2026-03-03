@@ -2,6 +2,14 @@ import { basename } from "pathe";
 import type { ProjectContext } from "../../models/Context";
 import { useProjectLoader } from "../../utils/projectLoader";
 import { Button } from "../ui/button";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuSeparator,
+	DropdownMenuShortcut,
+	DropdownMenuTrigger,
+} from "../ui/dropdown-menu";
 import { Icon } from "../ui/Icon";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { useBuilds } from "./hooks/useBuilds";
@@ -11,7 +19,7 @@ interface TitlebarProps {
 }
 
 export const Titlebar: React.FC<TitlebarProps> = ({ context }) => {
-	const { projectStore, build } = context;
+	const { projectStore, build, history } = context;
 
 	const { closeProject } = useProjectLoader(context);
 	const entries = useBuilds(context);
@@ -32,16 +40,43 @@ export const Titlebar: React.FC<TitlebarProps> = ({ context }) => {
 			className="flex h-[44px] shrink-0 items-center gap-2 px-4"
 			style={{ appRegion: "drag" } as React.CSSProperties}
 		>
-			<Button
-				variant="ghost"
-				size="sm"
-				className="gap-1"
-				onClick={closeProject}
-				style={{ appRegion: "no-drag" } as React.CSSProperties}
-			>
-				<Icon.ArrowLeft className="h-4 w-4" />
-				Home
-			</Button>
+			<div style={{ appRegion: "no-drag" } as React.CSSProperties}>
+				<DropdownMenu>
+					<DropdownMenuTrigger asChild>
+						<Button variant="ghost" size="icon" className="h-7 w-7">
+							<Icon.Menu className="h-4 w-4" />
+						</Button>
+					</DropdownMenuTrigger>
+					<DropdownMenuContent align="start">
+						<DropdownMenuItem
+							disabled={!history.canUndo}
+							onSelect={() => history.undo()}
+						>
+							<Icon.Undo className="h-4 w-4" />
+							Undo
+							<DropdownMenuShortcut>Ctrl+Z</DropdownMenuShortcut>
+						</DropdownMenuItem>
+						<DropdownMenuItem
+							disabled={!history.canRedo}
+							onSelect={() => history.redo()}
+						>
+							<Icon.Redo className="h-4 w-4" />
+							Redo
+							<DropdownMenuShortcut>Ctrl+Shift+Z</DropdownMenuShortcut>
+						</DropdownMenuItem>
+						<DropdownMenuSeparator />
+						<DropdownMenuItem onSelect={() => { /* TODO: navigate to settings */ }}>
+							<Icon.Settings className="h-4 w-4" />
+							Settings
+						</DropdownMenuItem>
+						<DropdownMenuSeparator />
+						<DropdownMenuItem onSelect={closeProject}>
+							<Icon.Home className="h-4 w-4" />
+							Close Project
+						</DropdownMenuItem>
+					</DropdownMenuContent>
+				</DropdownMenu>
+			</div>
 			<span className="text-sm font-medium">{projectName}</span>
 			{entries.length > 0 && (
 				<div style={{ appRegion: "no-drag" } as React.CSSProperties}>

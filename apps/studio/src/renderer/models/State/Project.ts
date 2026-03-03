@@ -14,6 +14,7 @@ export interface ProjectState extends State {
 	activeOutput: string | null;
 
 	timelineScrollX: Transient<number>;
+	timelineScrollY: Transient<number>;
 	timelineZoom: Transient<number>;
 
 	outputGraphViewports: Record<string, OutputGraphViewport>;
@@ -26,6 +27,7 @@ export interface ProjectStateInitial {
 	activePianoRoll?: string | null;
 	activeOutput?: string | null;
 	timelineScrollX?: number;
+	timelineScrollY?: number;
 	timelineZoom?: number;
 	outputGraphViewports?: Record<string, OutputGraphViewport>;
 	topHeightPercent?: number;
@@ -38,6 +40,7 @@ export function useProjectState(initial: ProjectStateInitial = {}, store: ProxyS
 			activePianoRoll: initial.activePianoRoll ?? null,
 			activeOutput: initial.activeOutput ?? null,
 			timelineScrollX: new Transient(initial.timelineScrollX ?? 0),
+			timelineScrollY: new Transient(initial.timelineScrollY ?? 0),
 			timelineZoom: new Transient(initial.timelineZoom ?? 1),
 			outputGraphViewports: initial.outputGraphViewports ?? {},
 			topHeightPercent: new Transient(initial.topHeightPercent ?? 35, { minimum: 10, maximum: 90 }),
@@ -52,6 +55,7 @@ export function serializeProjectState(state: ProjectState): ProjectStateInitial 
 		activePianoRoll: state.activePianoRoll,
 		activeOutput: state.activeOutput,
 		timelineScrollX: state.timelineScrollX.toJson(),
+		timelineScrollY: state.timelineScrollY.toJson(),
 		timelineZoom: state.timelineZoom.toJson(),
 		outputGraphViewports: state.outputGraphViewports,
 		topHeightPercent: state.topHeightPercent.toJson(),
@@ -64,6 +68,7 @@ export function deserializeProjectState(json: Record<string, unknown>): ProjectS
 		activePianoRoll: typeof json.activePianoRoll === "string" ? json.activePianoRoll : undefined,
 		activeOutput: typeof json.activeOutput === "string" ? json.activeOutput : undefined,
 		timelineScrollX: typeof json.timelineScrollX === "number" ? json.timelineScrollX : undefined,
+		timelineScrollY: typeof json.timelineScrollY === "number" ? json.timelineScrollY : undefined,
 		timelineZoom: typeof json.timelineZoom === "number" ? json.timelineZoom : undefined,
 		outputGraphViewports: isOutputGraphViewports(json.outputGraphViewports) ? json.outputGraphViewports : undefined,
 		topHeightPercent: typeof json.topHeightPercent === "number" ? json.topHeightPercent : undefined,
