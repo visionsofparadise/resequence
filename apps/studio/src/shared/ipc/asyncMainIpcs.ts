@@ -12,6 +12,7 @@ import { OpenWatcherMainIpc } from "./Project/openWatcher/Main";
 import { GetAppVersionMainIpc } from "./System/getAppVersion/Main";
 import { GetUserDataPathMainIpc } from "./System/getUserDataPath/Main";
 import { GetWindowIdMainIpc } from "./System/getWindowId/Main";
+import { GenerateWaveformMainIpc } from "./Waveform/generateWaveform/Main";
 
 export const ASYNC_MAIN_IPCS = [
 	EnsureDirectoryMainIpc,
@@ -28,4 +29,5 @@ export const ASYNC_MAIN_IPCS = [
 	GetUserDataPathMainIpc,
 	GetWindowIdMainIpc,
 	GetAppVersionMainIpc,
+	GenerateWaveformMainIpc,
 ];

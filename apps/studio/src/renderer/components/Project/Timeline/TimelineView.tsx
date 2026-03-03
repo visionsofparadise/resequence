@@ -99,6 +99,8 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ context }) => {
 							hoveredPattern={hoveredPattern}
 							onHoverPattern={setHoveredPattern}
 							onOpenPianoRoll={onOpenPianoRoll}
+							context={context}
+							tempoMap={timelineData.tempoMap}
 						/>
 					))
 				)}

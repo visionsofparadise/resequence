@@ -21,9 +21,17 @@ describe("AudioPattern", () => {
 		expect(pattern.endBeat - pattern.startBeat).toBe(0);
 	});
 
-	it("stores loop points from factory", () => {
-		const pattern = audio("pad", "./pad.wav", 4, { loopStartMs: 500, loopEndMs: 2000 });
-		expect(pattern.properties.loopStartMs).toBe(500);
-		expect(pattern.properties.loopEndMs).toBe(2000);
+	it("defaults playFromBeats to 0 with full extent", () => {
+		const pattern = audio("break", "./break.wav", 4);
+		expect(pattern.properties.playFromBeats).toBe(0);
+		expect(pattern.properties.durationBeats).toBe(4);
+		expect(pattern.endBeat - pattern.startBeat).toBe(4);
+	});
+
+	it("trims pattern extent by playFromBeats", () => {
+		const pattern = audio("break", "./break.wav", 4, { playFromBeats: 1 });
+		expect(pattern.properties.playFromBeats).toBe(1);
+		expect(pattern.properties.durationBeats).toBe(4);
+		expect(pattern.endBeat - pattern.startBeat).toBe(3);
 	});
 });

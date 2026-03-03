@@ -9,12 +9,11 @@ export interface AudioProperties extends PatternProperties {
 	readonly path: string;
 	readonly duration: number;
 	readonly durationBeats: number;
+	readonly playFromBeats: number;
 	readonly transposeSemitones: number;
 	readonly reversed: boolean;
 	readonly sampleKey: string;
 	readonly region: string | undefined;
-	readonly loopStartMs: number | undefined;
-	readonly loopEndMs: number | undefined;
 }
 
 export class AudioPattern extends Pattern {
@@ -69,17 +68,12 @@ export class AudioPattern extends Pattern {
 			source.playbackRate.value = 2 ** (this.properties.transposeSemitones / 12);
 		}
 
-		if (this.properties.loopStartMs !== undefined && this.properties.loopEndMs !== undefined) {
-			source.loop = true;
-			source.loopStart = this.properties.loopStartMs / 1000;
-			source.loopEnd = this.properties.loopEndMs / 1000;
-		}
-
+		const playFromSeconds = this.properties.playFromBeats * (buffer.duration / this.properties.durationBeats);
 		const destination = context.audioContext.destination;
 		const durationSeconds = beatsToSeconds(this.properties.durationBeats, context.tempoMap);
 
 		source.connect(destination);
-		source.start(offsetSeconds);
+		source.start(offsetSeconds, playFromSeconds);
 		source.stop(offsetSeconds + durationSeconds);
 	}
 }
@@ -99,17 +93,18 @@ function copyReversed(buffer: AudioBuffer, audioCtx: BaseAudioContext): AudioBuf
 	return reversed;
 }
 
-export function audio(name: string, path: string, duration: number, options?: { region?: string; loopStartMs?: number; loopEndMs?: number }): AudioPattern {
+export function audio(name: string, path: string, duration: number, options?: { region?: string; playFromBeats?: number }): AudioPattern {
 	if (!path) {
 		throw new ResequenceError("EMPTY_AUDIO_PATH", "audio(): path must not be empty");
 	}
 
 	const region = options?.region;
 	const sampleKey = region && !path.includes("#") ? `${path}#${region}` : path;
+	const playFromBeats = options?.playFromBeats ?? 0;
 
 	return new AudioPattern({
-		notes: [], children: [], startBeat: 0, endBeat: duration,
-		name, path, duration, durationBeats: duration, transposeSemitones: 0, reversed: false,
-		sampleKey, region, loopStartMs: options?.loopStartMs, loopEndMs: options?.loopEndMs,
+		notes: [], children: [], startBeat: 0, endBeat: duration - playFromBeats,
+		name, path, duration, durationBeats: duration, playFromBeats, transposeSemitones: 0, reversed: false,
+		sampleKey, region,
 	});
 }

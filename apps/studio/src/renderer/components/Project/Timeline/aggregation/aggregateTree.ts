@@ -1,4 +1,4 @@
-import { AudioPattern, AutomatePattern, MetadataPattern, MidiPattern, type MidiUnit, type Pattern, type Pitch, type ResolvedTuning, SequencePattern } from "resequence";
+import { AudioPattern, AutomatePattern, MetadataPattern, MidiPattern, type MidiUnit, type Pattern, type Pitch, type ResolvedTuning, SequencePattern, TempoPattern, type TempoMap, type TempoPoint } from "resequence";
 import type { AggregatedNote, AudioLane, AutomationLane, Lane, PatternSpan, TimelineData, TimelineSegment } from "./types";
 
 const unitIdMap = new WeakMap<MidiUnit, string>();
@@ -69,11 +69,23 @@ function createSubtreeState(): SubtreeState {
 	};
 }
 
-function aggregateSubtree(pattern: Pattern, offset: number, accumulatedOutputs: ReadonlyArray<MidiUnit>, state: SubtreeState, indexes: ReadonlyArray<number>, meta: MetadataContext): void {
+function aggregateSubtree(pattern: Pattern, offset: number, accumulatedOutputs: ReadonlyArray<MidiUnit>, state: SubtreeState, indexes: ReadonlyArray<number>, meta: MetadataContext, tempoPoints: Array<TempoPoint>): void {
 	const nodeId = buildNodeId(indexes);
 	const isMidi = MidiPattern.is(pattern);
 
 	const currentOutputs = isMidi && pattern.outputs.length > 0 ? [...accumulatedOutputs, ...pattern.outputs] : accumulatedOutputs;
+
+	if (TempoPattern.is(pattern)) {
+		tempoPoints.push({ beat: offset, bpm: pattern.properties.bpm });
+		const { bpmMin, bpmMax } = pattern.properties;
+		for (const keyframe of pattern.properties.keyframes) {
+			tempoPoints.push({ beat: offset + keyframe.beat, bpm: bpmMin + keyframe.value * (bpmMax - bpmMin) });
+		}
+		for (const [childIndex, { offsetBeats, pattern: child }] of pattern.children.entries()) {
+			aggregateSubtree(child, offset + offsetBeats, currentOutputs, state, [...indexes, childIndex], meta, tempoPoints);
+		}
+		return;
+	}
 
 	if (MetadataPattern.is(pattern)) {
 		const updatedMeta: MetadataContext = {
@@ -81,7 +93,7 @@ function aggregateSubtree(pattern: Pattern, offset: number, accumulatedOutputs: 
 			activeTimeSignature: pattern.properties.meta.timeSignature ?? meta.activeTimeSignature,
 		};
 		for (const [childIndex, { offsetBeats, pattern: child }] of pattern.children.entries()) {
-			aggregateSubtree(child, offset + offsetBeats, currentOutputs, state, [...indexes, childIndex], updatedMeta);
+			aggregateSubtree(child, offset + offsetBeats, currentOutputs, state, [...indexes, childIndex], updatedMeta, tempoPoints);
 		}
 		return;
 	}
@@ -93,6 +105,10 @@ function aggregateSubtree(pattern: Pattern, offset: number, accumulatedOutputs: 
 			patternPath: nodeId,
 			startBeat: offset + pattern.startBeat,
 			endBeat: offset + pattern.endBeat,
+			filePath: pattern.properties.path,
+			durationBeats: pattern.properties.durationBeats,
+			playFromBeats: pattern.properties.playFromBeats,
+			reversed: pattern.properties.reversed,
 		};
 		const audioIndex = state.audioLanes.length;
 		state.audioLanes.push(lane);
@@ -117,7 +133,7 @@ function aggregateSubtree(pattern: Pattern, offset: number, accumulatedOutputs: 
 	}
 
 	if (SequencePattern.is(pattern) && indexes.length > 0) {
-		const childSegs = aggregateSequence(pattern, offset, indexes, meta);
+		const childSegs = aggregateSequence(pattern, offset, indexes, meta, tempoPoints);
 		state.childSegments.push(...childSegs);
 		return;
 	}
@@ -161,11 +177,11 @@ function aggregateSubtree(pattern: Pattern, offset: number, accumulatedOutputs: 
 	}
 
 	for (const [childIndex, { offsetBeats, pattern: child }] of pattern.children.entries()) {
-		aggregateSubtree(child, offset + offsetBeats, currentOutputs, state, [...indexes, childIndex], meta);
+		aggregateSubtree(child, offset + offsetBeats, currentOutputs, state, [...indexes, childIndex], meta, tempoPoints);
 	}
 }
 
-function aggregateSequence(pattern: SequencePattern, offset: number, indexes: ReadonlyArray<number>, meta: MetadataContext): Array<TimelineSegment> {
+function aggregateSequence(pattern: SequencePattern, offset: number, indexes: ReadonlyArray<number>, meta: MetadataContext, tempoPoints: Array<TempoPoint>): Array<TimelineSegment> {
 	const segments: Array<TimelineSegment> = [];
 
 	const isMidi = MidiPattern.is(pattern);
@@ -223,10 +239,10 @@ function aggregateSequence(pattern: SequencePattern, offset: number, indexes: Re
 		const childIndexes = [...indexes, childIndex];
 
 		if (SequencePattern.is(child)) {
-			segments.push(...aggregateSequence(child, offset + offsetBeats, childIndexes, meta));
+			segments.push(...aggregateSequence(child, offset + offsetBeats, childIndexes, meta, tempoPoints));
 		} else {
 			const state = createSubtreeState();
-			aggregateSubtree(child, offset + offsetBeats, currentOutputs, state, childIndexes, meta);
+			aggregateSubtree(child, offset + offsetBeats, currentOutputs, state, childIndexes, meta, tempoPoints);
 			const childEnd = offset + offsetBeats + child.endBeat;
 			const lanes = buildLanes(state, childEnd);
 
@@ -298,20 +314,44 @@ function pitchToSemitone(pitch: Pitch): number {
 
 const DEFAULT_META: MetadataContext = { activeTuning: null, activeTimeSignature: [4, 4] };
 
+const DEFAULT_TEMPO_MAP: TempoMap = [{ beat: 0, bpm: 120 }];
+
+function buildTempoMap(tempoPoints: Array<TempoPoint>): TempoMap {
+	if (tempoPoints.length === 0) return DEFAULT_TEMPO_MAP;
+
+	tempoPoints.sort((left, right) => left.beat - right.beat);
+
+	const first = tempoPoints[0];
+	if (!first) return DEFAULT_TEMPO_MAP;
+
+	const deduped: Array<TempoPoint> = [first];
+	for (let offset = 1; offset < tempoPoints.length; offset++) {
+		const point = tempoPoints[offset];
+		const prev = deduped[deduped.length - 1];
+		if (point && prev && point.beat !== prev.beat) {
+			deduped.push(point);
+		}
+	}
+
+	return deduped;
+}
+
 export function aggregateTree(tree: Pattern): TimelineData {
 	nextUnitId = 0;
+	const tempoPoints: Array<TempoPoint> = [];
 
 	if (SequencePattern.is(tree)) {
-		const segments = aggregateSequence(tree, 0, [], DEFAULT_META);
+		const segments = aggregateSequence(tree, 0, [], DEFAULT_META, tempoPoints);
 		return {
 			segments,
 			totalStartBeat: tree.startBeat,
 			totalEndBeat: tree.endBeat,
+			tempoMap: buildTempoMap(tempoPoints),
 		};
 	}
 
 	const state = createSubtreeState();
-	aggregateSubtree(tree, 0, [], state, [], DEFAULT_META);
+	aggregateSubtree(tree, 0, [], state, [], DEFAULT_META, tempoPoints);
 	const lanes = buildLanes(state, tree.endBeat);
 
 	const segments: Array<TimelineSegment> = [];
@@ -328,5 +368,6 @@ export function aggregateTree(tree: Pattern): TimelineData {
 		segments,
 		totalStartBeat: tree.startBeat,
 		totalEndBeat: tree.endBeat,
+		tempoMap: buildTempoMap(tempoPoints),
 	};
 }

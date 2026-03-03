@@ -6,3 +6,4 @@ dist/
 out/
 .turbo/
 test-output/
+binaries/

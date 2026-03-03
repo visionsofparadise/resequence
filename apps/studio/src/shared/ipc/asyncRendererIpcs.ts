@@ -13,6 +13,7 @@ import { OpenWatcherRendererIpc } from "./Project/openWatcher/Renderer";
 import { GetAppVersionRendererIpc } from "./System/getAppVersion/Renderer";
 import { GetUserDataPathRendererIpc } from "./System/getUserDataPath/Renderer";
 import { GetWindowIdRendererIpc } from "./System/getWindowId/Renderer";
+import { GenerateWaveformRendererIpc } from "./Waveform/generateWaveform/Renderer";
 
 export const ASYNC_RENDERER_IPCS = [
 	EnsureDirectoryRendererIpc,
@@ -29,6 +30,7 @@ export const ASYNC_RENDERER_IPCS = [
 	GetUserDataPathRendererIpc,
 	GetWindowIdRendererIpc,
 	GetAppVersionRendererIpc,
+	GenerateWaveformRendererIpc,
 ];
 
 export type AsyncIpcAction = IpcHandlerAction<InstanceType<(typeof ASYNC_RENDERER_IPCS)[number]>>;

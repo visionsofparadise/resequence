@@ -1,7 +1,9 @@
 import { memo } from "react";
+import type { TempoMap } from "resequence";
+import type { ProjectContext } from "../../../models/Context";
 import type { PianoRollTarget } from "../../../models/State/Project";
 import type { TimelineSegment } from "./aggregation/types";
-import { AudioLanePlaceholder } from "./Lanes/AudioLane";
+import { AudioLaneComponent } from "./Lanes/AudioLane";
 import { AutomationLane } from "./Lanes/AutomationLane";
 import { NoteLane } from "./Lanes/NoteLane";
 
@@ -13,9 +15,11 @@ interface SegmentProps {
 	readonly hoveredPattern: string | null;
 	readonly onHoverPattern: (path: string | null) => void;
 	readonly onOpenPianoRoll: (target: PianoRollTarget) => void;
+	readonly context: ProjectContext;
+	readonly tempoMap: TempoMap;
 }
 
-export const SegmentComponent = memo<SegmentProps>(({ segment, segmentPath, pxPerBeat, pitchZoom, hoveredPattern, onHoverPattern, onOpenPianoRoll }) => {
+export const SegmentComponent = memo<SegmentProps>(({ segment, segmentPath, pxPerBeat, pitchZoom, hoveredPattern, onHoverPattern, onOpenPianoRoll, context, tempoMap }) => {
 	const left = segment.startBeat * pxPerBeat;
 	const width = (segment.endBeat - segment.startBeat) * pxPerBeat;
 
@@ -43,11 +47,13 @@ export const SegmentComponent = memo<SegmentProps>(({ segment, segmentPath, pxPe
 							);
 						case "audio":
 							return (
-								<AudioLanePlaceholder
+								<AudioLaneComponent
 									key={`audio-${lane.patternPath}-${laneIndex}`}
 									lane={lane}
 									pxPerBeat={pxPerBeat}
 									segmentStartBeat={segment.startBeat}
+									context={context}
+									tempoMap={tempoMap}
 								/>
 							);
 						case "automation":
@@ -73,6 +79,8 @@ export const SegmentComponent = memo<SegmentProps>(({ segment, segmentPath, pxPe
 					hoveredPattern={hoveredPattern}
 					onHoverPattern={onHoverPattern}
 					onOpenPianoRoll={onOpenPianoRoll}
+					context={context}
+					tempoMap={tempoMap}
 				/>
 			))}
 		</div>

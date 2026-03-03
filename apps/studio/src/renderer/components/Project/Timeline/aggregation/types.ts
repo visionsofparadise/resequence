@@ -1,4 +1,4 @@
-import type { Keyframe, Lfo, Pitch, ResolvedTuning } from "resequence";
+import type { Keyframe, Lfo, Pitch, ResolvedTuning, TempoMap } from "resequence";
 
 export interface AggregatedNote {
 	readonly pitch: Pitch;
@@ -35,6 +35,10 @@ export interface AudioLane {
 	readonly patternPath: string;
 	readonly startBeat: number;
 	readonly endBeat: number;
+	readonly filePath: string;
+	readonly durationBeats: number;
+	readonly playFromBeats: number;
+	readonly reversed: boolean;
 }
 
 export interface AutomationLane {
@@ -60,4 +64,5 @@ export interface TimelineData {
 	readonly segments: ReadonlyArray<TimelineSegment>;
 	readonly totalStartBeat: number;
 	readonly totalEndBeat: number;
+	readonly tempoMap: TempoMap;
 }
