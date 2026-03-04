@@ -1,6 +1,6 @@
 import { proxy } from "valtio/vanilla";
 import { describe, expect, it } from "vitest";
-import { useCreateHistoryState } from "../State/History";
+import { useHistoryState } from "../State/History";
 import { ProxyStore } from "./ProxyStore";
 
 const makeState = <T extends object>(store: ProxyStore, initial: T) => {
@@ -23,7 +23,7 @@ describe("ProxyStore", () => {
 
 	it("mutate without history does not record to undo stack", () => {
 		const store = new ProxyStore();
-		const history = useCreateHistoryState(store);
+		const history = useHistoryState(store);
 		const state = makeState(store, { value: 0 });
 
 		store.mutate(state, (st) => {
@@ -34,7 +34,7 @@ describe("ProxyStore", () => {
 
 	it("mutate with history allows undo", () => {
 		const store = new ProxyStore();
-		const history = useCreateHistoryState(store);
+		const history = useHistoryState(store);
 		const state = makeState(store, { value: 0 });
 
 		store.mutate(
@@ -51,7 +51,7 @@ describe("ProxyStore", () => {
 
 	it("mutate with transactionKey merges into single undo step", () => {
 		const store = new ProxyStore();
-		const history = useCreateHistoryState(store);
+		const history = useHistoryState(store);
 		const state = makeState(store, { aa: 0, bb: 0 });
 
 		const txKey = "tx";

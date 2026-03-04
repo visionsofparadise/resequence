@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { ResequenceError } from "../error";
 import { N } from "../tunings/chromatic";
 import { sequence } from "./sequence";
-import { TempoPattern, tempo } from "./tempo";
+import { TempoPattern, normalizeBpm, tempo } from "./tempo";
 
 describe("TempoPattern", () => {
 	it("creates TempoPattern with bpm", () => {
@@ -17,28 +17,26 @@ describe("TempoPattern", () => {
 	});
 
 	describe("keyframes", () => {
-		it("constructs with keyframes and normalizes BPM to 0-1", () => {
+		it("stores normalized keyframe values", () => {
 			const pattern = tempo(sequence(N.C4(1)), 120, {
-				keyframes: [{ beat: 4, bpm: 140 }],
+				keyframes: [{ beat: 4, value: normalizeBpm(140) }],
 			});
 			expect(pattern.properties.bpm).toBe(120);
-			expect(pattern.properties.bpmMin).toBe(120);
-			expect(pattern.properties.bpmMax).toBe(140);
-			expect(pattern.properties.keyframes).toEqual([{ beat: 4, value: 1.0 }]);
+			expect(pattern.properties.keyframes).toEqual([{ beat: 4, value: 0.14 }]);
 		});
 
 		it("rejects keyframe with negative beat", () => {
 			expect(() =>
 				tempo(sequence(N.C4(1)), 120, {
-					keyframes: [{ beat: -1, bpm: 140 }],
+					keyframes: [{ beat: -1, value: normalizeBpm(140) }],
 				}),
 			).toThrow(ResequenceError);
 		});
 
-		it("rejects keyframe with zero bpm", () => {
+		it("rejects keyframe with negative value", () => {
 			expect(() =>
 				tempo(sequence(N.C4(1)), 120, {
-					keyframes: [{ beat: 0, bpm: 0 }],
+					keyframes: [{ beat: 0, value: -0.1 }],
 				}),
 			).toThrow(ResequenceError);
 		});

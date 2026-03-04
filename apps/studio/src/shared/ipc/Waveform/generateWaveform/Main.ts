@@ -4,7 +4,7 @@ import path from "node:path";
 import { promisify } from "node:util";
 import { app } from "electron";
 import { getAudiowaveformPath } from "../../../../main/getBinaryPath";
-import { hashAudioFile } from "../../../../main/hashAudioFile";
+import { hashFile } from "../../../../main/hashFile";
 import { AsyncMainIpc, type IpcHandlerDependencies } from "../../../models/AsyncMainIpc";
 import { GENERATE_WAVEFORM_ACTION, type GenerateWaveformIpcParameters, type GenerateWaveformIpcReturn } from "./Renderer";
 
@@ -16,7 +16,7 @@ export class GenerateWaveformMainIpc extends AsyncMainIpc<GenerateWaveformIpcPar
 	async handler(absolutePath: string, dependencies: IpcHandlerDependencies): Promise<GenerateWaveformIpcReturn> {
 		const { logger } = dependencies;
 
-		const hash = await hashAudioFile(absolutePath);
+		const hash = await hashFile(absolutePath);
 		const waveformsDir = path.join(app.getPath("userData"), "waveforms");
 		const cachePath = path.join(waveformsDir, `${hash}.dat`);
 

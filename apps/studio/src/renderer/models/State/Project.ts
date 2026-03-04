@@ -10,13 +10,17 @@ export interface OutputGraphViewport {
 }
 
 export interface PianoRollTarget {
-	segmentPath: Array<number>;
-	laneIndex: number;
+	sequencePath: Array<number>;
+	index: number;
+}
+
+export interface OutputTarget {
+	index: number;
 }
 
 export interface ProjectState extends State {
 	activePianoRoll: PianoRollTarget | null;
-	activeOutput: string | null;
+	activeOutput: OutputTarget | null;
 
 	timelineScrollX: Transient<number>;
 	timelineScrollY: Transient<number>;
@@ -31,7 +35,7 @@ export interface ProjectState extends State {
 
 export interface ProjectStateInitial {
 	activePianoRoll?: PianoRollTarget | null;
-	activeOutput?: string | null;
+	activeOutput?: OutputTarget | null;
 	timelineScrollX?: number;
 	timelineScrollY?: number;
 	timelineZoom?: number;
@@ -75,7 +79,7 @@ export function serializeProjectState(state: ProjectState): ProjectStateInitial 
 export function deserializeProjectState(json: Record<string, unknown>): ProjectStateInitial {
 	return {
 		activePianoRoll: isPianoRollTarget(json.activePianoRoll) ? json.activePianoRoll : undefined,
-		activeOutput: typeof json.activeOutput === "string" ? json.activeOutput : undefined,
+		activeOutput: isOutputTarget(json.activeOutput) ? json.activeOutput : undefined,
 		timelineScrollX: typeof json.timelineScrollX === "number" ? json.timelineScrollX : undefined,
 		timelineScrollY: typeof json.timelineScrollY === "number" ? json.timelineScrollY : undefined,
 		timelineZoom: typeof json.timelineZoom === "number" ? json.timelineZoom : undefined,
@@ -88,10 +92,20 @@ export function deserializeProjectState(json: Record<string, unknown>): ProjectS
 
 function isPianoRollTarget(value: unknown): value is PianoRollTarget {
 	if (typeof value !== "object" || value === null) return false;
+
 	const record = value as Record<string, unknown>;
-	if (!Array.isArray(record.segmentPath) || !record.segmentPath.every((item: unknown) => typeof item === "number")) return false;
-	if (typeof record.laneIndex !== "number") return false;
+
+	if (!Array.isArray(record.sequencePath) || !record.sequencePath.every((item: unknown) => typeof item === "number")) return false;
+
+	if (typeof record.index !== "number") return false;
+
 	return true;
+}
+
+function isOutputTarget(value: unknown): value is OutputTarget {
+	if (typeof value !== "object" || value === null) return false;
+
+	return typeof (value as Record<string, unknown>).index === "number";
 }
 
 function isOutputGraphViewports(value: unknown): value is Record<string, OutputGraphViewport> {

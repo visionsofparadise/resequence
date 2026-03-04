@@ -3,7 +3,7 @@ import { audio } from "../patterns/audio";
 import { layer } from "../patterns/layer";
 import { marker, region, timeSignature } from "../patterns/metadata";
 import { sequence } from "../patterns/sequence";
-import { tempo } from "../patterns/tempo";
+import { normalizeBpm, tempo } from "../patterns/tempo";
 import { N } from "../tunings/chromatic";
 import { sampler } from "../units/generators/sampler";
 import { collectMetadata } from "./pattern-metadata";
@@ -37,7 +37,7 @@ describe("collectMetadata", () => {
 
 		it("collects step keyframes", () => {
 			const pattern = tempo(sequence(N.C4(4)), 120, {
-				keyframes: [{ beat: 2, bpm: 140 }],
+				keyframes: [{ beat: 2, value: normalizeBpm(140) }],
 			});
 			const metadata = collectMetadata(pattern);
 
@@ -49,7 +49,7 @@ describe("collectMetadata", () => {
 
 		it("collects linear ramp keyframes", () => {
 			const pattern = tempo(sequence(N.C4(4)), 120, {
-				keyframes: [{ beat: 1, bpm: 140 }],
+				keyframes: [{ beat: 1, value: normalizeBpm(140) }],
 			});
 			const metadata = collectMetadata(pattern);
 
@@ -61,7 +61,7 @@ describe("collectMetadata", () => {
 
 		it("samples curved ramp keyframes", () => {
 			const pattern = tempo(sequence(N.C4(4)), 120, {
-				keyframes: [{ beat: 1, bpm: 240, curve: 1 }],
+				keyframes: [{ beat: 1, value: normalizeBpm(240), curve: 1 }],
 			});
 			const metadata = collectMetadata(pattern);
 

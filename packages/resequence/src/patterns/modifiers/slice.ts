@@ -2,7 +2,7 @@ import type { OptionalProperties } from "../../utils/RequiredProperties";
 import type { ScoreNote } from "../note";
 import type { Pattern, PatternProperties } from "../pattern";
 import { toPattern } from "../sequence";
-import { flatMapNotes, walkNodes } from "../utils/tree";
+import { flatMapNotes, walkPatterns } from "../utils/tree";
 import { ModifierPattern, type ModifierProperties } from "./modifier";
 
 export interface SliceProperties extends ModifierProperties {
@@ -40,7 +40,7 @@ export function slice(pattern: Pattern | ScoreNote, from: number, to: number): S
 	const resolved = toPattern(pattern);
 
 	const entries: Array<{ note: ScoreNote; absoluteStart: number; absoluteEnd: number }> = [];
-	walkNodes(resolved, (node, { absoluteOffset }) => {
+	walkPatterns(resolved, (node, { absoluteOffset }) => {
 		for (const { offsetBeats, note } of node.notes) {
 			const totalOffset = absoluteOffset + offsetBeats;
 			entries.push({ note, absoluteStart: totalOffset + note.startBeat, absoluteEnd: totalOffset + note.endBeat });

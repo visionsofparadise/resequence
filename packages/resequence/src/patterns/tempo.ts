@@ -3,23 +3,24 @@ import { ResequenceError } from "../error";
 import type { PatternProperties } from "./pattern";
 import { Pattern } from "./pattern";
 
-export interface TempoKeyframe {
-	readonly beat: number;
-	readonly bpm: number;
-	readonly curve?: number;
-	readonly step?: true;
+const BPM_RANGE = 1000;
+
+export function normalizeBpm(bpm: number): number {
+	return bpm / BPM_RANGE;
+}
+
+export function denormalizeBpm(value: number): number {
+	return value * BPM_RANGE;
 }
 
 export interface TempoOptions {
-	readonly keyframes?: ReadonlyArray<TempoKeyframe>;
+	readonly keyframes?: ReadonlyArray<Keyframe>;
 	readonly override?: boolean;
 }
 
 export interface TempoProperties extends PatternProperties {
 	readonly bpm: number;
 	readonly keyframes: ReadonlyArray<Keyframe>;
-	readonly bpmMin: number;
-	readonly bpmMax: number;
 	readonly isOverride: boolean;
 }
 
@@ -48,34 +49,22 @@ export function tempo(pattern: Pattern, bpm: number, options?: TempoOptions): Te
 		throw new ResequenceError("INVALID_TEMPO", `tempo(): bpm must be greater than 0, got ${bpm}`);
 	}
 
-	const inputKeyframes = options?.keyframes ?? [];
+	const keyframes = options?.keyframes ?? [];
 
-	for (const keyframe of inputKeyframes) {
+	for (const keyframe of keyframes) {
 		if (keyframe.beat < 0) {
 			throw new ResequenceError("INVALID_TEMPO", `tempo(): keyframe beat must be >= 0, got ${keyframe.beat}`);
 		}
-		if (keyframe.bpm <= 0) {
-			throw new ResequenceError("INVALID_TEMPO", `tempo(): keyframe bpm must be greater than 0, got ${keyframe.bpm}`);
+		if (keyframe.value < 0) {
+			throw new ResequenceError("INVALID_TEMPO", `tempo(): keyframe value must be >= 0, got ${keyframe.value}`);
 		}
 	}
-
-	const allBpms = [bpm, ...inputKeyframes.map((kf) => kf.bpm)];
-	const bpmMin = Math.min(...allBpms);
-	const bpmMax = Math.max(...allBpms);
-	const bpmRange = bpmMax - bpmMin;
-
-	const keyframes: ReadonlyArray<Keyframe> = inputKeyframes.map((kf) => ({
-		beat: kf.beat,
-		value: bpmRange === 0 ? 0.5 : (kf.bpm - bpmMin) / bpmRange,
-		curve: kf.curve,
-		step: kf.step,
-	}));
 
 	return new TempoPattern({
 		notes: [],
 		children: [{ offsetBeats: 0, pattern }],
 		startBeat: pattern.startBeat,
 		endBeat: pattern.endBeat,
-		bpm, keyframes, bpmMin, bpmMax, isOverride: options?.override ?? false,
+		bpm, keyframes, isOverride: options?.override ?? false,
 	});
 }

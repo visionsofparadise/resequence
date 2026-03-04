@@ -2,7 +2,7 @@ import type { OptionalProperties } from "../../utils/RequiredProperties";
 import type { ScoreNote } from "../note";
 import type { Pattern, PatternProperties, RelativeChild, RelativeNote } from "../pattern";
 import { toPattern } from "../sequence";
-import { collectNotes, flatMapNotes, walkNodes } from "../utils/tree";
+import { collectNotes, flatMapNotes, walkPatterns } from "../utils/tree";
 import { ModifierPattern, type ModifierProperties } from "./modifier";
 
 export interface SpliceOptions {
@@ -82,7 +82,7 @@ export function splice(pattern: Pattern | ScoreNote, options: SpliceOptions): Sp
 	const removeCount = options.remove ?? 0;
 
 	const entries: Array<{ note: ScoreNote; absoluteStart: number; absoluteEnd: number }> = [];
-	walkNodes(resolved, (node, { absoluteOffset }) => {
+	walkPatterns(resolved, (node, { absoluteOffset }) => {
 		for (const { offsetBeats, note } of node.notes) {
 			const totalOffset = absoluteOffset + offsetBeats;
 			entries.push({ note, absoluteStart: totalOffset + note.startBeat, absoluteEnd: totalOffset + note.endBeat });

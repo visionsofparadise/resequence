@@ -4,7 +4,7 @@ import { gap } from "../gap";
 import { layer } from "../layer";
 import { repeat } from "../modifiers/repeat";
 import { sequence } from "../sequence";
-import { collectNotes, descendAndClone, mapNotes, flatMapNotes, mapGroups } from "./tree";
+import { collectNotes, descendAndClone, mapNotes, flatMapNotes, mapNoteGroups } from "./tree";
 
 describe("collectNotes", () => {
 	it("returns empty for gap", () => {
@@ -138,11 +138,11 @@ describe("descendAndClone", () => {
 	});
 });
 
-describe("mapGroups", () => {
+describe("mapNoteGroups", () => {
 	it("receives all notes at a tree node", () => {
 		const seq = sequence(N.C4(1), N.D4(1));
 		const groupSizes: number[] = [];
-		mapGroups(seq, (notes, _offset) => {
+		mapNoteGroups(seq, (notes, _offset) => {
 			groupSizes.push(notes.length);
 			return notes;
 		});

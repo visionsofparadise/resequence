@@ -1,7 +1,7 @@
 import { proxy } from "valtio/vanilla";
 import { describe, expect, it } from "vitest";
 import { ProxyStore } from "../ProxyStore/ProxyStore";
-import { useCreateHistoryState } from "./History";
+import { useHistoryState } from "./History";
 
 const makeState = <T extends object>(store: ProxyStore, initial: T) => {
 	const _key = Symbol();
@@ -13,7 +13,7 @@ const makeState = <T extends object>(store: ProxyStore, initial: T) => {
 describe("history", () => {
 	it("undo reverts a mutation", () => {
 		const store = new ProxyStore();
-		const history = useCreateHistoryState(store);
+		const history = useHistoryState(store);
 		const state = makeState(store, { value: 0 });
 
 		store.mutate(
@@ -30,7 +30,7 @@ describe("history", () => {
 
 	it("redo re-applies after undo", () => {
 		const store = new ProxyStore();
-		const history = useCreateHistoryState(store);
+		const history = useHistoryState(store);
 		const state = makeState(store, { value: 0 });
 
 		store.mutate(
@@ -47,7 +47,7 @@ describe("history", () => {
 
 	it("transaction grouping merges ops into single undo step", () => {
 		const store = new ProxyStore();
-		const history = useCreateHistoryState(store);
+		const history = useHistoryState(store);
 		const state = makeState(store, { aa: 0, bb: 0 });
 
 		const txKey = "tx-group";
@@ -72,7 +72,7 @@ describe("history", () => {
 
 	it("new action after undo truncates future stack", () => {
 		const store = new ProxyStore();
-		const history = useCreateHistoryState(store);
+		const history = useHistoryState(store);
 		const state = makeState(store, { value: 0 });
 
 		store.mutate(
@@ -103,7 +103,7 @@ describe("history", () => {
 
 	it("history.canUndo reflects undo availability", () => {
 		const store = new ProxyStore();
-		const history = useCreateHistoryState(store);
+		const history = useHistoryState(store);
 		const state = makeState(store, { xx: 0 });
 
 		store.mutate(
@@ -120,13 +120,13 @@ describe("history", () => {
 
 	it("undo on empty stack is a no-op", () => {
 		const store = new ProxyStore();
-		const history = useCreateHistoryState(store);
+		const history = useHistoryState(store);
 		expect(() => history.undo()).not.toThrow();
 	});
 
 	it("redo on exhausted stack is a no-op", () => {
 		const store = new ProxyStore();
-		const history = useCreateHistoryState(store);
+		const history = useHistoryState(store);
 		expect(() => history.redo()).not.toThrow();
 	});
 });

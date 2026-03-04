@@ -1,13 +1,16 @@
 import type { QueryClient } from "@tanstack/react-query";
+import type { Pattern, Playback, TempoMap, Unit } from "resequence";
 import type { Snapshot } from "valtio";
 import type { AppSettings } from "../../shared/models/AppSettings";
 import type { Logger } from "../../shared/models/Logger/Logger";
+import type { DerivedDriverMap } from "../components/Project/Build/utils/hijackDrivers";
+import type { Arrangement } from "../components/Project/Build/utils/buildArrangement";
 import type { MainWithEvents } from "./Main";
 import type { ProxyStore } from "./ProxyStore/ProxyStore";
 import type { AppState } from "./State/App";
 import type { BuildState } from "./State/Build";
 import type { HistoryState } from "./State/History";
-import type { OverrideState } from "./State/Override";
+import type { OverrideEntry, OverrideState } from "./State/Override";
 import type { PlaybackState } from "./State/Playback";
 import type { ProjectState } from "./State/Project";
 
@@ -31,4 +34,15 @@ export interface ProjectContext extends AppContext {
 	readonly playback: Snapshot<PlaybackState>;
 	readonly project: Snapshot<ProjectState>;
 	readonly projectStore: ProxyStore;
+}
+
+export interface BuildContext extends ProjectContext {
+	readonly arrangement: Arrangement;
+	readonly audioContext: AudioContext;
+	readonly overrides: Array<OverrideEntry>;
+	readonly playbackEngine: Playback;
+	readonly rootPattern: Pattern;
+	readonly rootUnit: Unit;
+	readonly tempoMap: TempoMap;
+	readonly unitDriverMap: DerivedDriverMap;
 }

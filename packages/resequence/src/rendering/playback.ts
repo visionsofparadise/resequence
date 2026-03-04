@@ -37,7 +37,7 @@ export class Playback {
 		statechange: [],
 	};
 
-	private context: ScheduleContext | undefined;
+	context: ScheduleContext | undefined;
 	private markers: ReadonlyArray<MarkerPoint> = [];
 	private markerCursor = 0;
 	private scheduledToBeats = 0;

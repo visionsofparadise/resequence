@@ -47,7 +47,7 @@ export interface HistoryState extends State {
 	redo(): void;
 }
 
-export function useCreateHistoryState(store: ProxyStore): HistoryState {
+export function useHistoryState(store: ProxyStore): HistoryState {
 	const history = proxy({
 		_index: -1,
 		_stack: ref<Array<string>>([]),

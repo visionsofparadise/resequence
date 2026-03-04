@@ -4,7 +4,7 @@ import { AudioPattern } from "../patterns/audio";
 import { MetadataPattern } from "../patterns/metadata";
 import type { Pattern } from "../patterns/pattern";
 import { MidiPattern } from "../patterns/midi";
-import { TempoPattern } from "../patterns/tempo";
+import { TempoPattern, denormalizeBpm, normalizeBpm } from "../patterns/tempo";
 import type { TempoMap, TempoPoint } from "./tempo-map";
 
 export interface MarkerPoint {
@@ -67,7 +67,7 @@ function walkMetadata(
 		const shouldTakeEffect = !ancestorHasTempo || pattern.properties.isOverride;
 
 		if (shouldTakeEffect) {
-			collectTempoPoints(pattern.properties.bpm, pattern.properties.keyframes, pattern.properties.bpmMin, pattern.properties.bpmMax, offsetBeats, tempoEntries);
+			collectTempoPoints(pattern.properties.bpm, pattern.properties.keyframes, offsetBeats, tempoEntries);
 			tempoForChildren = true;
 		}
 	}
@@ -107,15 +107,9 @@ function walkMetadata(
 	}
 }
 
-function denormalizeBpm(value: number, bpmMin: number, bpmMax: number): number {
-	return bpmMin + value * (bpmMax - bpmMin);
-}
-
-function collectTempoPoints(
+export function collectTempoPoints(
 	baseBpm: number,
 	keyframes: ReadonlyArray<Keyframe>,
-	bpmMin: number,
-	bpmMax: number,
 	offsetBeats: number,
 	entries: Array<TempoPoint>,
 ): void {
@@ -128,9 +122,10 @@ function collectTempoPoints(
 	const first = sorted[0];
 
 	if (first?.beat === 0) {
-		entries.push({ beat: offsetBeats, bpm: denormalizeBpm(first.value, bpmMin, bpmMax) });
+		entries.push({ beat: offsetBeats, bpm: denormalizeBpm(first.value) });
 	} else {
 		entries.push({ beat: offsetBeats, bpm: baseBpm });
+		sorted.unshift({ beat: 0, value: normalizeBpm(baseBpm) });
 	}
 
 	let prevBeat = 0;
@@ -144,12 +139,11 @@ function collectTempoPoints(
 		const curve = kf.curve ?? 0;
 
 		if (kf.step || curve === 0) {
-			entries.push({ beat: offsetBeats + kf.beat, bpm: denormalizeBpm(kf.value, bpmMin, bpmMax) });
+			entries.push({ beat: offsetBeats + kf.beat, bpm: denormalizeBpm(kf.value) });
 		} else {
 			let sampleBeat = prevBeat + SAMPLE_RESOLUTION;
 			while (sampleBeat <= kf.beat) {
-				const normalizedValue = evaluateAt(sorted, sampleBeat);
-				const bpm = denormalizeBpm(normalizedValue, bpmMin, bpmMax);
+				const bpm = denormalizeBpm(evaluateAt(sorted, sampleBeat));
 				entries.push({ beat: offsetBeats + Math.round(sampleBeat * 100) / 100, bpm });
 				sampleBeat = Math.round((sampleBeat + SAMPLE_RESOLUTION) * 100) / 100;
 			}

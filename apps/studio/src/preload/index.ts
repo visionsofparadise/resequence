@@ -1,10 +1,6 @@
 import { contextBridge, ipcRenderer, webUtils, type IpcRendererEvent } from "electron";
 import { ASYNC_RENDERER_IPCS } from "../shared/ipc/asyncRendererIpcs";
-import type { MainEventMap } from "../shared/utilities/emitToRenderer";
-
-export interface RendererEventMap {
-	error: [string];
-}
+import type { MainEventMap, RendererEventMap } from "../shared/utilities/emitToRenderer";
 
 const ipcHandlers = ASYNC_RENDERER_IPCS.map((AsyncRendererIpc) => new AsyncRendererIpc().register(ipcRenderer));
 
@@ -20,6 +16,7 @@ const mainApi = {
 		ipcRenderer.send(eventName, ...args);
 	},
 
+	// Must stay in preload — File objects aren't serializable over IPC
 	getPathForFile: (file: File) => webUtils.getPathForFile(file),
 };
 
