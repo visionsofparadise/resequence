@@ -1,6 +1,12 @@
 import type { Note } from "../note";
 import type { Pattern, RelativeChild, RelativeNote } from "../patterns/pattern";
 import { extentOf } from "./extent";
+import type { NoteContext } from "./walk";
+
+function buildNoteId(indexes: ReadonlyArray<number>, noteIndex: number): string {
+	if (indexes.length === 0) return `n${noteIndex}`;
+	return `${indexes.join("-")}-n${noteIndex}`;
+}
 
 export function mapPatterns(pattern: Pattern, callback: (pattern: Pattern, absoluteBeat: number) => Pattern, parentOffset = 0): Pattern {
 	let childrenChanged = false;
@@ -23,52 +29,76 @@ export function mapPatterns(pattern: Pattern, callback: (pattern: Pattern, absol
 	return callback(current, parentOffset);
 }
 
-export function mapNotes(pattern: Pattern, callback: (note: Note, absoluteBeat: number) => Note, parentOffset = 0): Pattern {
-	return mapPatterns(
-		pattern,
-		(node, absoluteOffset) => {
-			let changed = false;
+function mapNotesInternal(pattern: Pattern, callback: (note: Note, context: NoteContext) => Note, parentOffset: number, parentIndexes: ReadonlyArray<number>): Pattern {
+	let childrenChanged = false;
+	const newChildren: Array<RelativeChild> = [];
 
-			const newNotes: Array<RelativeNote> = [];
+	for (const [childIndex, { offsetBeats, pattern: child }] of pattern.children.entries()) {
+		const mapped = mapNotesInternal(child, callback, parentOffset + offsetBeats, [...parentIndexes, childIndex]);
 
-			for (const { offsetBeats, note } of node.notes) {
-				const mapped = callback(note, absoluteOffset + offsetBeats);
+		if (mapped !== child) childrenChanged = true;
 
-				if (mapped !== note) changed = true;
+		newChildren.push({ offsetBeats, pattern: mapped });
+	}
 
-				newNotes.push({ offsetBeats, note: mapped });
-			}
+	let changed = false;
+	const newNotes: Array<RelativeNote> = [];
 
-			if (!changed) return node;
+	for (const [noteIndex, { offsetBeats, note }] of pattern.notes.entries()) {
+		const id = buildNoteId(parentIndexes, noteIndex);
+		const mapped = callback(note, { id, absoluteOffset: parentOffset + offsetBeats });
 
-			return node.clone({ notes: newNotes, children: node.children, ...extentOf(newNotes, node.children) });
-		},
-		parentOffset,
-	);
+		if (mapped !== note) changed = true;
+
+		newNotes.push({ offsetBeats, note: mapped });
+	}
+
+	if (!changed && !childrenChanged) return pattern;
+
+	const notes = changed ? newNotes : pattern.notes;
+	const children = childrenChanged ? newChildren : pattern.children;
+
+	return pattern.clone({ notes, children, ...extentOf(notes, children) });
 }
 
-export function flatMapNotes(pattern: Pattern, callback: (note: Note, absoluteBeat: number) => ReadonlyArray<Note>, parentOffset = 0): Pattern {
-	return mapPatterns(
-		pattern,
-		(node, absoluteOffset) => {
-			let changed = false;
+export function mapNotes(pattern: Pattern, callback: (note: Note, context: NoteContext) => Note, parentOffset = 0): Pattern {
+	return mapNotesInternal(pattern, callback, parentOffset, []);
+}
 
-			const expanded: Array<RelativeNote> = [];
+function flatMapNotesInternal(pattern: Pattern, callback: (note: Note, context: NoteContext) => ReadonlyArray<Note>, parentOffset: number, parentIndexes: ReadonlyArray<number>): Pattern {
+	let childrenChanged = false;
+	const newChildren: Array<RelativeChild> = [];
 
-			for (const { offsetBeats, note } of node.notes) {
-				const result = callback(note, absoluteOffset + offsetBeats);
+	for (const [childIndex, { offsetBeats, pattern: child }] of pattern.children.entries()) {
+		const mapped = flatMapNotesInternal(child, callback, parentOffset + offsetBeats, [...parentIndexes, childIndex]);
 
-				if (result.length !== 1 || result[0] !== note) changed = true;
+		if (mapped !== child) childrenChanged = true;
 
-				for (const mapped of result) {
-					expanded.push({ offsetBeats, note: mapped });
-				}
-			}
+		newChildren.push({ offsetBeats, pattern: mapped });
+	}
 
-			if (!changed) return node;
+	let changed = false;
+	const expanded: Array<RelativeNote> = [];
 
-			return node.clone({ notes: expanded, children: node.children, ...extentOf(expanded, node.children) });
-		},
-		parentOffset,
-	);
+	for (const [noteIndex, { offsetBeats, note }] of pattern.notes.entries()) {
+		const id = buildNoteId(parentIndexes, noteIndex);
+		const result = callback(note, { id, absoluteOffset: parentOffset + offsetBeats });
+
+		if (result.length !== 1 || result[0] !== note) changed = true;
+
+		for (const mapped of result) {
+			expanded.push({ offsetBeats, note: mapped });
+		}
+	}
+
+	if (!changed && !childrenChanged) return pattern;
+
+	const notes = changed ? expanded : pattern.notes;
+	const children = childrenChanged ? newChildren : pattern.children;
+
+	return pattern.clone({ notes, children, ...extentOf(notes, children) });
+}
+
+export function flatMapNotes(pattern: Pattern, callback: (note: Note, context: NoteContext) => ReadonlyArray<Note>, parentOffset = 0): Pattern {
+	return flatMapNotesInternal(pattern, callback, parentOffset, []);
 }
