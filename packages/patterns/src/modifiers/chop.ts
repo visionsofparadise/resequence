@@ -1,13 +1,12 @@
 import type { Keyframe } from "../events";
 import type { Note } from "../note";
-import type { Pitch } from "../pitch";
-import { evaluateSlide } from "../utils/slide";
-import type { PatternProperties } from "../patterns/pattern";
-import type { Pattern } from "../patterns/pattern";
-import type { ModifierProperties } from "../patterns/modifier-pattern";
-import { ModifierPattern } from "../patterns/modifier-pattern";
+import type { ModifierProperties } from "../patterns/modifier";
+import { ModifierPattern } from "../patterns/modifier";
+import type { Pattern, PatternProperties } from "../patterns/pattern";
 import { toPattern } from "../patterns/sequence";
+import type { Pitch } from "../pitch";
 import { flatMapNotes } from "../utils/map";
+import { evaluateSlide } from "../utils/slide";
 
 export interface ChopProperties extends ModifierProperties {
 	readonly subdivision: number;

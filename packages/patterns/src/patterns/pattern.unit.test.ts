@@ -1,10 +1,9 @@
 import { describe, expect, it } from "vitest";
-import type { NoteEvent } from "../events";
+import type { Event, NoteEvent } from "../events";
 import { note } from "../note";
 import { N } from "../tunings/chromatic";
-import { custom, CustomPattern } from "./custom-pattern";
 import { layer } from "./layer";
-import { MidiPattern } from "./midi-pattern";
+import { MidiPattern } from "./midi";
 import type { PatternProperties } from "./pattern";
 import { Pattern } from "./pattern";
 import { sequence } from "./sequence";
@@ -14,6 +13,25 @@ class TestPattern extends Pattern {
 	clone(overrides: Partial<PatternProperties>): TestPattern {
 		return new TestPattern({ ...this.properties, ...overrides, previousProperties: this.properties });
 	}
+}
+
+// Test pattern that emits custom events
+class TestEventPattern extends Pattern<PatternProperties & { readonly events: ReadonlyArray<Event> }> {
+	override _setup(): Array<Event> {
+		return [...this.properties.events];
+	}
+
+	override _schedule(): Array<Event> {
+		return [...this.properties.events];
+	}
+
+	clone(overrides: Partial<PatternProperties>): TestEventPattern {
+		return new TestEventPattern({ ...this.properties, ...overrides, previousProperties: this.properties });
+	}
+}
+
+function testEvents(events: ReadonlyArray<Event>, durationBeats: number): TestEventPattern {
+	return new TestEventPattern({ notes: [], children: [], startBeat: 0, endBeat: durationBeats, events });
 }
 
 describe("Pattern base class", () => {
@@ -48,7 +66,7 @@ describe("Pattern base class", () => {
 	});
 
 	it("setup recurses children", () => {
-		const child = custom({ setup: () => [{ type: "test" }], durationBeats: 1 });
+		const child = testEvents([{ type: "test" }], 1);
 		const parent = new TestPattern({ notes: [], children: [{ offsetBeats: 0, pattern: child }], startBeat: 0, endBeat: 1 });
 		const events = parent.setup(0);
 		expect(events).toHaveLength(1);
@@ -119,48 +137,9 @@ describe("MidiPattern", () => {
 	});
 });
 
-describe("CustomPattern", () => {
-	it("invokes schedule callback and returns events", () => {
-		const pattern = custom({
-			schedule: (beat) => [{ type: "myEvent", beat }],
-			durationBeats: 4,
-		});
-
-		const events = pattern.schedule(0, -Infinity, Infinity);
-		expect(events).toHaveLength(1);
-		expect(events[0]?.type).toBe("myEvent");
-	});
-
-	it("invokes setup callback", () => {
-		const pattern = custom({
-			setup: () => [{ type: "setupEvent" }],
-			durationBeats: 4,
-		});
-
-		const events = pattern.setup(0);
-		expect(events).toHaveLength(1);
-		expect(events[0]?.type).toBe("setupEvent");
-	});
-
-	it("clones preserving callbacks", () => {
-		const pattern = custom({
-			schedule: () => [{ type: "test" }],
-			durationBeats: 4,
-		});
-
-		const cloned = pattern.clone({ endBeat: 8 });
-		expect(cloned).toBeInstanceOf(CustomPattern);
-		expect(cloned.endBeat).toBe(8);
-
-		const events = cloned.schedule(0, -Infinity, Infinity);
-		expect(events).toHaveLength(1);
-	});
-
+describe("custom events in tree", () => {
 	it("custom events bubble up through tree", () => {
-		const customNode = custom({
-			schedule: () => [{ type: "custom" }],
-			durationBeats: 1,
-		});
+		const customNode = testEvents([{ type: "custom" }], 1);
 
 		const tree = layer(customNode, sequence(N.C4(1)).route("piano"));
 		const events = tree.schedule(0, -Infinity, Infinity);

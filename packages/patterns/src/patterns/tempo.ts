@@ -1,7 +1,19 @@
-import type { Keyframe } from "../events";
+import type { Event, Keyframe, MetadataEvent } from "../events";
 import { PatternsError } from "../error";
+import type { Port } from "../port";
+import type { ResolvedTuning } from "../tuning";
 import type { PatternProperties } from "./pattern";
 import { Pattern } from "./pattern";
+
+const BPM_RANGE = 1000;
+
+export function normalizeBpm(bpm: number): number {
+	return bpm / BPM_RANGE;
+}
+
+export function denormalizeBpm(value: number): number {
+	return value * BPM_RANGE;
+}
 
 export interface TempoOptions {
 	readonly keyframes?: ReadonlyArray<Keyframe>;
@@ -17,6 +29,17 @@ export interface TempoProperties extends PatternProperties {
 export class TempoPattern extends Pattern<TempoProperties> {
 	static is(value: unknown): value is TempoPattern {
 		return value instanceof TempoPattern;
+	}
+
+	override _schedule(absoluteBeat: number, _ports: ReadonlyArray<Port>, _tuning?: ResolvedTuning): Array<Event> {
+		const event: MetadataEvent = {
+			type: "metadata",
+			absoluteBeat,
+			bpm: this.properties.bpm,
+			tempoKeyframes: this.properties.keyframes.length > 0 ? this.properties.keyframes : undefined,
+			tempoIsOverride: this.properties.isOverride || undefined,
+		};
+		return [event];
 	}
 
 	clone(overrides: Partial<PatternProperties>): TempoPattern {

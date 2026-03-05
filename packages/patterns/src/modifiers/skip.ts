@@ -1,7 +1,6 @@
 import type { Event } from "../events";
-import type { PatternProperties } from "../patterns/pattern";
-import type { Pattern } from "../patterns/pattern";
-import { ModifierPattern } from "../patterns/modifier-pattern";
+import { ModifierPattern } from "../patterns/modifier";
+import type { Pattern, PatternProperties } from "../patterns/pattern";
 
 export class SkipPattern extends ModifierPattern {
 	static is(value: unknown): value is SkipPattern {

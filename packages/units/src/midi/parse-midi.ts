@@ -1,19 +1,7 @@
 import { parseMidi as decodeMidi } from "midi-file";
 import type { NoteEvent, NoteSlide } from "../note-event";
+import { CC } from "./cc";
 import { type TempoPoint, tickToMs } from "./tempo-map";
-
-const CC = {
-	attack: 73,
-	release: 72,
-	sustain: 64,
-	cutoff: 74,
-	resonance: 71,
-	volume: 7,
-	expression: 11,
-	pan: 10,
-	chorus: 93,
-	reverb: 91,
-} as const;
 
 interface PendingNote {
 	readonly startTick: number;
@@ -103,16 +91,16 @@ export function parseMidiFile(data: Uint8Array): Array<NoteEvent> {
 			velocity: note.velocity,
 			bend: 0,
 			frequency,
-			...(ccValues[CC.attack] !== undefined && { attack: ccValues[CC.attack] }),
-			...(ccValues[CC.release] !== undefined && { release: ccValues[CC.release] }),
-			...(ccValues[CC.sustain] !== undefined && { sustain: ccValues[CC.sustain] }),
-			...(ccValues[CC.cutoff] !== undefined && { cutoff: ccValues[CC.cutoff] }),
-			...(ccValues[CC.resonance] !== undefined && { resonance: ccValues[CC.resonance] }),
-			...(ccValues[CC.volume] !== undefined && { volume: ccValues[CC.volume] }),
-			...(ccValues[CC.expression] !== undefined && { expression: ccValues[CC.expression] }),
-			...(ccValues[CC.pan] !== undefined && { pan: ccValues[CC.pan] }),
-			...(ccValues[CC.chorus] !== undefined && { chorus: ccValues[CC.chorus] }),
-			...(ccValues[CC.reverb] !== undefined && { reverb: ccValues[CC.reverb] }),
+			...(ccValues[CC.ATTACK] !== undefined && { attack: ccValues[CC.ATTACK] }),
+			...(ccValues[CC.RELEASE] !== undefined && { release: ccValues[CC.RELEASE] }),
+			...(ccValues[CC.SUSTAIN] !== undefined && { sustain: ccValues[CC.SUSTAIN] }),
+			...(ccValues[CC.CUTOFF] !== undefined && { cutoff: ccValues[CC.CUTOFF] }),
+			...(ccValues[CC.RESONANCE] !== undefined && { resonance: ccValues[CC.RESONANCE] }),
+			...(ccValues[CC.VOLUME] !== undefined && { volume: ccValues[CC.VOLUME] }),
+			...(ccValues[CC.EXPRESSION] !== undefined && { expression: ccValues[CC.EXPRESSION] }),
+			...(ccValues[CC.PAN] !== undefined && { pan: ccValues[CC.PAN] }),
+			...(ccValues[CC.CHORUS] !== undefined && { chorus: ccValues[CC.CHORUS] }),
+			...(ccValues[CC.REVERB] !== undefined && { reverb: ccValues[CC.REVERB] }),
 			...(slides && { slides }),
 		};
 

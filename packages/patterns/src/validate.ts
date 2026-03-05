@@ -1,5 +1,5 @@
+import { MidiPattern } from "./patterns/midi";
 import type { Pattern } from "./patterns/pattern";
-import { MidiPattern } from "./patterns/midi-pattern";
 
 export interface ValidationWarning {
 	readonly code: string;
@@ -13,12 +13,7 @@ export function validate(pattern: Pattern): ReadonlyArray<ValidationWarning> {
 	return warnings;
 }
 
-function walkForValidation(
-	pattern: Pattern,
-	path: ReadonlyArray<number>,
-	hasPort: boolean,
-	warnings: Array<ValidationWarning>,
-): void {
+function walkForValidation(pattern: Pattern, path: ReadonlyArray<number>, hasPort: boolean, warnings: Array<ValidationWarning>): void {
 	const currentHasPort = hasPort || (pattern instanceof MidiPattern && pattern.ports.length > 0);
 
 	if (pattern.properties.notes.length > 0 && !currentHasPort) {

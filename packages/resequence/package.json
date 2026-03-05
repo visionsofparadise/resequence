@@ -41,11 +41,10 @@
     "vitest": "^3.0.0"
   },
   "dependencies": {
-    "@types/lodash": "^4.17.24",
-    "lodash": "^4.17.23",
-    "midi-file": "^1.2.4",
+    "@resequence/patterns": "*",
+    "@resequence/units": "*",
+    "commander": "^13.1.0",
     "node-web-audio-api": "^1.0.8",
-    "tonal": "^6.4.3",
     "tsx": "^4.21.0",
     "wavefile": "^11.0.0"
   }

@@ -1,7 +1,7 @@
-import type { Pitch } from "../pitch";
+import type { MidiPatternProperties } from "../patterns/midi";
+import { MidiPattern } from "../patterns/midi";
 import type { PatternProperties, RelativeNote } from "../patterns/pattern";
-import type { MidiPatternProperties } from "../patterns/midi-pattern";
-import { MidiPattern } from "../patterns/midi-pattern";
+import type { Pitch } from "../pitch";
 
 function mulberry32(seed: number): () => number {
 	let state = seed;

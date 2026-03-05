@@ -113,6 +113,8 @@ export { OutUnit, out } from "./out";
 export { walkUnits, collectUnits, mapUnits, descendUnit } from "./utils/graph";
 
 // MIDI parsing
+export { CC } from "./midi/cc";
+export type { CCNumber } from "./midi/cc";
 export type { TempoPoint } from "./midi/tempo-map";
 export { tickToMs } from "./midi/tempo-map";
 export { parseMidiFile } from "./midi/parse-midi";

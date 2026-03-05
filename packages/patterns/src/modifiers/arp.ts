@@ -1,14 +1,13 @@
 import type { Note } from "../note";
+import type { ModifierProperties } from "../patterns/modifier";
+import { ModifierPattern } from "../patterns/modifier";
+import type { Pattern, PatternProperties } from "../patterns/pattern";
+import { sequence, toPattern } from "../patterns/sequence";
 import type { Pitch } from "../pitch";
 import { pitchKey } from "../pitch";
-import type { PatternProperties } from "../patterns/pattern";
-import type { Pattern } from "../patterns/pattern";
-import type { ModifierProperties } from "../patterns/modifier-pattern";
-import { ModifierPattern } from "../patterns/modifier-pattern";
-import { sequence, toPattern } from "../patterns/sequence";
 import { I } from "../tunings/index-tuning";
-import { collectNotes, walkNotes } from "../utils/walk";
 import { flatMapNotes } from "../utils/map";
+import { collectNotes, walkNotes } from "../utils/walk";
 
 function mulberry32(seed: number): () => number {
 	let state = seed;

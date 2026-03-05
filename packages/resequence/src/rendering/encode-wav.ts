@@ -1,10 +1,7 @@
+import type { MarkerPoint, RegionPoint, TempoMap } from "@resequence/patterns";
+import { beatsToSeconds } from "@resequence/patterns";
+import type { WavBitDepth } from "@resequence/units";
 import { WaveFile } from "wavefile";
-import type { MarkerPoint } from "./pattern-metadata";
-import type { RegionPoint } from "./pattern-metadata";
-import type { TempoMap } from "./tempo-map";
-import { beatsToSeconds } from "./tempo-map";
-
-export type WavBitDepth = "16" | "24" | "32" | "32f" | "64";
 
 export function encodeWav(buffer: AudioBuffer, markers?: ReadonlyArray<MarkerPoint>, tempoMap?: TempoMap, regions?: ReadonlyArray<RegionPoint>, bitDepth?: WavBitDepth): ArrayBuffer {
 	const channels: Array<Float32Array> = [];
@@ -15,7 +12,9 @@ export function encodeWav(buffer: AudioBuffer, markers?: ReadonlyArray<MarkerPoi
 
 	const wav = new WaveFile();
 	const targetBitDepth = bitDepth ?? "24";
+
 	wav.fromScratch(buffer.numberOfChannels, buffer.sampleRate, "32f", channels);
+
 	if (targetBitDepth !== "32f") {
 		wav.toBitDepth(targetBitDepth);
 	}
@@ -31,6 +30,7 @@ export function encodeWav(buffer: AudioBuffer, markers?: ReadonlyArray<MarkerPoi
 		for (const region of regions) {
 			const startMs = beatsToSeconds(region.startBeat, tempoMap) * 1000;
 			const endMs = beatsToSeconds(region.endBeat, tempoMap) * 1000;
+
 			wav.setCuePoint({ position: startMs, label: region.name });
 			wav.setCuePoint({ position: endMs, label: region.name });
 		}
@@ -38,6 +38,8 @@ export function encodeWav(buffer: AudioBuffer, markers?: ReadonlyArray<MarkerPoi
 
 	const bytes = wav.toBuffer();
 	const result = new ArrayBuffer(bytes.byteLength);
+
 	new Uint8Array(result).set(bytes);
+
 	return result;
 }

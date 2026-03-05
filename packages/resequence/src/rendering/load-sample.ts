@@ -5,15 +5,12 @@ interface CuePoint {
 	readonly dwSampleOffset: number;
 }
 
-export async function loadSample(
-	key: string,
-	audioContext: BaseAudioContext,
-	fetchBuffer: (path: string) => Promise<ArrayBuffer>,
-): Promise<AudioBuffer> {
+export async function loadSample(key: string, audioContext: BaseAudioContext, fetchBuffer: (path: string) => Promise<ArrayBuffer>): Promise<AudioBuffer> {
 	const hashIndex = key.indexOf("#");
 
 	if (hashIndex === -1) {
 		const bytes = await fetchBuffer(key);
+
 		return audioContext.decodeAudioData(bytes);
 	}
 
@@ -41,6 +38,7 @@ export async function loadSample(
 	for (let channel = 0; channel < fullBuffer.numberOfChannels; channel++) {
 		const source = fullBuffer.getChannelData(channel);
 		const dest = regionBuffer.getChannelData(channel);
+
 		dest.set(source.subarray(startFrame, endFrame));
 	}
 

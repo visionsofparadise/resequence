@@ -10,6 +10,7 @@ export interface Keyframe {
 
 export interface BaseEvent {
 	readonly type: string;
+	readonly [key: string]: unknown;
 }
 
 export interface NoteEvent extends BaseEvent {
@@ -20,10 +21,28 @@ export interface NoteEvent extends BaseEvent {
 	readonly startBeat: number;
 	readonly durationBeats: number;
 	readonly velocity: number;
+	readonly frequency: number;
+	readonly midiNote: number;
+	readonly bend: number;
 	readonly lyric?: string;
 	readonly cc?: Partial<Record<number, number>>;
 	readonly slides?: ReadonlyArray<Keyframe>;
 	readonly tuning?: ResolvedTuning;
 }
 
-export type Event = NoteEvent | BaseEvent;
+export interface MetadataEvent extends BaseEvent {
+	readonly type: "metadata";
+	readonly absoluteBeat: number;
+	readonly tuning?: ResolvedTuning;
+	readonly bpm?: number;
+	readonly tempoKeyframes?: ReadonlyArray<Keyframe>;
+	readonly tempoIsOverride?: boolean;
+	readonly timeSignature?: readonly [number, number];
+	readonly marker?: string;
+	readonly region?: string;
+	readonly regionEndBeat?: number;
+	readonly name?: string;
+	readonly description?: string;
+}
+
+export type Event = NoteEvent | MetadataEvent | BaseEvent;

@@ -1,12 +1,11 @@
 import type { Keyframe } from "../events";
 import type { Note } from "../note";
-import { normalizePitch, pitchKey } from "../pitch";
-import { evaluateSlide, mergeSlides } from "../utils/slide";
-import type { PatternProperties } from "../patterns/pattern";
-import type { Pattern } from "../patterns/pattern";
-import { ModifierPattern } from "../patterns/modifier-pattern";
+import { ModifierPattern } from "../patterns/modifier";
+import type { Pattern, PatternProperties } from "../patterns/pattern";
 import { toPattern } from "../patterns/sequence";
+import { normalizePitch, pitchKey } from "../pitch";
 import { mapNotes } from "../utils/map";
+import { evaluateSlide, mergeSlides } from "../utils/slide";
 import { walkNotes } from "../utils/walk";
 
 export class SlidePattern extends ModifierPattern {

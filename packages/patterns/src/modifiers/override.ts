@@ -1,7 +1,6 @@
-import type { PatternProperties } from "../patterns/pattern";
-import type { Pattern } from "../patterns/pattern";
-import type { ModifierProperties } from "../patterns/modifier-pattern";
-import { ModifierPattern } from "../patterns/modifier-pattern";
+import type { ModifierProperties } from "../patterns/modifier";
+import { ModifierPattern } from "../patterns/modifier";
+import type { Pattern, PatternProperties } from "../patterns/pattern";
 import { descendAndClone } from "../utils/descend";
 
 export type OverrideCallback = (properties: PatternProperties) => Partial<PatternProperties>;

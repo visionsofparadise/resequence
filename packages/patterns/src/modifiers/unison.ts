@@ -1,10 +1,9 @@
 import type { Note } from "../note";
-import { addSteps, NUM_OCTAVES } from "../pitch";
-import type { PatternProperties } from "../patterns/pattern";
-import type { Pattern } from "../patterns/pattern";
-import type { ModifierProperties } from "../patterns/modifier-pattern";
-import { ModifierPattern } from "../patterns/modifier-pattern";
+import type { ModifierProperties } from "../patterns/modifier";
+import { ModifierPattern } from "../patterns/modifier";
+import type { Pattern, PatternProperties } from "../patterns/pattern";
 import { toPattern } from "../patterns/sequence";
+import { addSteps, NUM_OCTAVES } from "../pitch";
 import { flatMapNotes } from "../utils/map";
 
 export interface UnisonSpread {

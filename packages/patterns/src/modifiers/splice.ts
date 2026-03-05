@@ -1,11 +1,10 @@
 import type { Note } from "../note";
-import type { PatternProperties, RelativeChild, RelativeNote } from "../patterns/pattern";
-import type { Pattern } from "../patterns/pattern";
-import type { ModifierProperties } from "../patterns/modifier-pattern";
-import { ModifierPattern } from "../patterns/modifier-pattern";
+import type { ModifierProperties } from "../patterns/modifier";
+import { ModifierPattern } from "../patterns/modifier";
+import type { Pattern, PatternProperties, RelativeChild, RelativeNote } from "../patterns/pattern";
 import { toPattern } from "../patterns/sequence";
-import { collectNotes, walkPatterns } from "../utils/walk";
 import { flatMapNotes } from "../utils/map";
+import { collectNotes, walkPatterns } from "../utils/walk";
 
 export interface SpliceOptions {
 	readonly at: number;

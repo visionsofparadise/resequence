@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { bars } from "../utils/duration";
 import { formula } from "./formula";
+
+const bars = (count: number): number => count * 4;
 
 describe("formula", () => {
 	it("samples a linear function", () => {

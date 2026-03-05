@@ -1,5 +1,5 @@
 import type { Note } from "../note";
-import { MidiPattern } from "./midi-pattern";
+import { MidiPattern } from "./midi";
 import type { PatternProperties, RelativeChild, RelativeNote } from "./pattern";
 import { Pattern } from "./pattern";
 

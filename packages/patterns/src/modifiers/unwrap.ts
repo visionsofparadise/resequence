@@ -1,5 +1,5 @@
+import { ModifierPattern } from "../patterns/modifier";
 import type { PatternProperties } from "../patterns/pattern";
-import { ModifierPattern } from "../patterns/modifier-pattern";
 
 export class UnwrapPattern extends ModifierPattern {
 	static is(value: unknown): value is UnwrapPattern {

@@ -1,4 +1,4 @@
-import type { Event } from "../events";
+import type { Event, MetadataEvent } from "../events";
 import { PatternsError } from "../error";
 import type { Port } from "../port";
 import type { ResolvedTuning } from "../tuning";
@@ -35,15 +35,34 @@ export class MetadataPattern extends Pattern<MetadataProperties> {
 		if (absoluteBeat + this.properties.endBeat <= fromBeats || absoluteBeat + this.properties.startBeat >= toBeats) return [];
 
 		const effectiveTuning = this.properties.meta.tuning ?? tuning;
-		const childEvents: Array<Event> = [];
+		const meta = this.properties.meta;
+		const ownEvents: Array<Event> = [];
+
+		const metadataEvent: MetadataEvent = {
+			type: "metadata",
+			absoluteBeat,
+			tuning: meta.tuning,
+			timeSignature: meta.timeSignature,
+			marker: meta.marker,
+			region: meta.region,
+			regionEndBeat: meta.region !== undefined ? absoluteBeat + this.properties.endBeat : undefined,
+			name: meta.name,
+			description: meta.description,
+		};
+
+		const hasContent = meta.tuning !== undefined || meta.timeSignature !== undefined ||
+			meta.marker !== undefined || meta.region !== undefined ||
+			meta.name !== undefined || meta.description !== undefined;
+
+		if (hasContent) ownEvents.push(metadataEvent);
 
 		for (const { offsetBeats, pattern } of this.properties.children) {
 			const events = pattern.schedule(absoluteBeat + offsetBeats, fromBeats, toBeats, ports, effectiveTuning);
 
-			if (events.length > 0) childEvents.push(...events);
+			if (events.length > 0) ownEvents.push(...events);
 		}
 
-		return childEvents;
+		return ownEvents;
 	}
 
 	clone(overrides: Partial<PatternProperties>): MetadataPattern {

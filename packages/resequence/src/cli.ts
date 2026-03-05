@@ -1,206 +1,168 @@
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
-import { parseArgs } from "node:util";
-import { Pattern } from "./patterns/pattern";
-import type { WavBitDepth } from "./rendering/encode-wav";
-import { encodeWav } from "./rendering/encode-wav";
-import { collectMetadata } from "./rendering/pattern-metadata";
-import { renderAudio } from "./rendering/render-audio";
-import { renderMidi } from "./rendering/render-midi";
-import { beatsToSeconds } from "./rendering/tempo-map";
-import { filterNames } from "./utils/filter-names";
+import { Command } from "commander";
+import { Router } from "./router";
+import { render } from "./render";
+import { play } from "./playback";
+import type { WavBitDepth } from "@resequence/units";
 
-interface CliOptions {
-	readonly entrypoint: string;
-	readonly out: string;
-	readonly include?: ReadonlyArray<string>;
-	readonly exclude?: ReadonlyArray<string>;
-	readonly master: boolean;
-	readonly midiOnly: boolean;
-	readonly audioOnly: boolean;
-	readonly sampleRate: number;
-	readonly bitDepth: WavBitDepth;
-}
+async function loadRouter(entrypoint: string): Promise<Router> {
+	const fullPath = resolve(entrypoint);
 
-const HELP = `Usage: resequence [entrypoint] [options]
-
-Arguments:
-  entrypoint              Path to ts/js file (default: ./index.ts)
-
-Options:
-  --out <dir>             Output directory (default: .)
-  --include <names>       Comma-separated track names to include
-  --exclude <names>       Comma-separated track names to exclude
-  --master                Include master MIDI + master WAV
-  --midi-only             Only export MIDI
-  --audio-only            Only export audio
-  --sample-rate <hz>      Audio sample rate (default: 44100)
-  --bit-depth <depth>     WAV bit depth: 16, 24, 32, 32f, 64 (default: 24)
-  --help                  Show this help message
-`;
-
-export function parseCliArgs(argv: ReadonlyArray<string>): CliOptions | "help" {
-	const { values, positionals } = parseArgs({
-		args: [...argv],
-		options: {
-			out: { type: "string", default: "." },
-			include: { type: "string" },
-			exclude: { type: "string" },
-			master: { type: "boolean", default: false },
-			"midi-only": { type: "boolean", default: false },
-			"audio-only": { type: "boolean", default: false },
-			"sample-rate": { type: "string", default: "44100" },
-			"bit-depth": { type: "string", default: "24" },
-			help: { type: "boolean", default: false },
-		},
-		allowPositionals: true,
-		strict: true,
-	});
-
-	if (values.help) return "help";
-
-	return {
-		entrypoint: positionals[0] ?? "./index.ts",
-		out: values.out,
-		include: values.include?.split(",").map((name) => name.trim()),
-		exclude: values.exclude?.split(",").map((name) => name.trim()),
-		master: values.master,
-		midiOnly: values["midi-only"],
-		audioOnly: values["audio-only"],
-		sampleRate: Number(values["sample-rate"]),
-		bitDepth: values["bit-depth"] as WavBitDepth,
-	};
-}
-
-export function printHelp(): void {
-	process.stdout.write(HELP);
-}
-
-async function main(): Promise<void> {
-	const args = parseCliArgs(process.argv.slice(2));
-
-	if (args === "help") {
-		printHelp();
-		return;
+	if (!existsSync(fullPath)) {
+		throw new Error(`Entrypoint not found: ${fullPath}`);
 	}
-
-	await runCli(args);
-}
-
-async function runCli(args: CliOptions): Promise<void> {
-	const entrypoint = resolve(args.entrypoint);
-
-	if (!existsSync(entrypoint)) {
-		process.stderr.write(`Error: entrypoint not found: ${entrypoint}\n`);
-		process.exit(1);
-	}
-
-	const projectDir = dirname(entrypoint);
-	const outDir = resolve(args.out);
-
-	mkdirSync(outDir, { recursive: true });
-
-	process.stdout.write(`Evaluating ${entrypoint}...\n`);
 
 	const { register } = await import("tsx/esm/api");
 	const unregister = register();
 
 	try {
-		const mod = (await import(entrypoint)) as Record<string, unknown>;
-		const pattern = mod.default;
+		const mod = (await import(fullPath)) as Record<string, unknown>;
+		const defaultExport = mod.default;
 
-		if (!(pattern instanceof Pattern)) {
-			process.stderr.write("Error: default export must be a Pattern\n");
-			process.exit(1);
+		if (defaultExport instanceof Router) {
+			return defaultExport;
 		}
 
-		process.stdout.write(`Pattern: duration=${pattern.endBeat - pattern.startBeat} beats\n`);
-
-		const metadata = collectMetadata(pattern);
-
-		const trackNames = [...metadata.tracks];
-		const filteredNames = filterNames(trackNames, args.include, args.exclude);
-
-		process.stdout.write(`Tracks: ${filteredNames.join(", ")}\n`);
-
-		if (!args.audioOnly) {
-			const midiResult = renderMidi(pattern, {
-				include: args.include ? [...args.include] : undefined,
-				exclude: args.exclude ? [...args.exclude] : undefined,
-				master: args.master,
-				metadata,
-			});
-
-			for (const [name, data] of midiResult.tracks) {
-				const filePath = resolve(outDir, `${name}.mid`);
-
-				writeFileSync(filePath, data);
-
-				process.stdout.write(`  MIDI: ${name}.mid\n`);
-			}
-
-			if (midiResult.master) {
-				const filePath = resolve(outDir, "master.mid");
-
-				writeFileSync(filePath, midiResult.master);
-
-				process.stdout.write(`  MIDI: master.mid\n`);
-			}
-		}
-
-		if (!args.midiOnly) {
-			const { default: nodeWebAudio } = (await import("node-web-audio-api")) as { default: { OfflineAudioContext: typeof OfflineAudioContext } };
-			const { OfflineAudioContext: NodeOfflineAudioContext } = nodeWebAudio;
-
-			const totalSeconds = beatsToSeconds(pattern.endBeat - pattern.startBeat, metadata.tempoMap);
-			const sampleRate = args.sampleRate;
-
-			const fetchProjectBuffer = (path: string) =>
-				readFile(resolve(projectDir, path)).then((data) => {
-					const copy = new ArrayBuffer(data.byteLength);
-					new Uint8Array(copy).set(new Uint8Array(data.buffer, data.byteOffset, data.byteLength));
-					return copy;
-				});
-
-			for (const trackName of filteredNames) {
-				const offlineCtx = new NodeOfflineAudioContext(2, Math.ceil(totalSeconds * sampleRate), sampleRate);
-
-				const result = await renderAudio(pattern, offlineCtx as unknown as OfflineAudioContext, fetchProjectBuffer, {
-					trackFilter: new Set([trackName]),
-					metadata,
-				});
-
-				const wav = encodeWav(result.buffer as unknown as AudioBuffer, metadata.markers, metadata.tempoMap, metadata.regions, args.bitDepth);
-				const filePath = resolve(outDir, `${trackName}.wav`);
-
-				writeFileSync(filePath, Buffer.from(wav));
-
-				process.stdout.write(`  Audio: ${trackName}.wav\n`);
-			}
-
-			if (args.master) {
-				const offlineCtx = new NodeOfflineAudioContext(2, Math.ceil(totalSeconds * sampleRate), sampleRate);
-
-				const result = await renderAudio(pattern, offlineCtx as unknown as OfflineAudioContext, fetchProjectBuffer, { metadata });
-
-				const wav = encodeWav(result.buffer as unknown as AudioBuffer, metadata.markers, metadata.tempoMap, metadata.regions, args.bitDepth);
-				const filePath = resolve(outDir, "master.wav");
-
-				writeFileSync(filePath, Buffer.from(wav));
-
-				process.stdout.write(`  Audio: master.wav\n`);
-			}
-		}
-
-		process.stdout.write("Done.\n");
+		throw new Error("Default export must be a Router instance");
 	} finally {
 		await unregister();
 	}
 }
 
-main().catch((error: unknown) => {
-	process.stderr.write(`Error: ${error instanceof Error ? error.message : String(error)}\n`);
+function makeFetchBuffer(entrypoint: string): (path: string) => Promise<ArrayBuffer> {
+	const projectDir = dirname(resolve(entrypoint));
 
-	process.exit(1);
-});
+	return (path: string) =>
+		readFile(resolve(projectDir, path)).then((data) => {
+			const copy = new ArrayBuffer(data.byteLength);
+			new Uint8Array(copy).set(new Uint8Array(data.buffer, data.byteOffset, data.byteLength));
+			return copy;
+		});
+}
+
+const program = new Command();
+
+program
+	.name("resequence")
+	.description("Resequence — music composition toolkit")
+	.version("0.1.0");
+
+program
+	.command("render")
+	.description("Render audio stems from a router")
+	.argument("[entrypoint]", "Path to ts/js file", "./index.ts")
+	.option("--out <dir>", "Output directory", ".")
+	.option("--include <names>", "Comma-separated port names to include")
+	.option("--exclude <names>", "Comma-separated port names to exclude")
+	.option("--master", "Include master mix", false)
+	.option("--midi-only", "Only export MIDI", false)
+	.option("--audio-only", "Only export audio", false)
+	.option("--sample-rate <hz>", "Audio sample rate", "44100")
+	.option("--bit-depth <depth>", "WAV bit depth: 16, 24, 32, 32f, 64", "24")
+	.action(async (entrypoint: string, options: Record<string, string | boolean | undefined>) => {
+		const router = await loadRouter(entrypoint);
+		const outDir = resolve(options.out as string);
+
+		mkdirSync(outDir, { recursive: true });
+
+		process.stdout.write(`Rendering ${resolve(entrypoint)}...\n`);
+
+		const include = typeof options.include === "string" ? options.include.split(",").map((name) => name.trim()) : undefined;
+		const exclude = typeof options.exclude === "string" ? options.exclude.split(",").map((name) => name.trim()) : undefined;
+
+		const result = await render(router, makeFetchBuffer(entrypoint), {
+			output: outDir,
+			sampleRate: Number(options.sampleRate ?? 44100),
+			bitDepth: (options.bitDepth ?? "24") as WavBitDepth,
+			include,
+			exclude,
+			master: options.master as boolean,
+			midiOnly: options.midiOnly as boolean,
+			audioOnly: options.audioOnly as boolean,
+		});
+
+		for (const stem of result.stems) {
+			const filePath = resolve(outDir, `${stem.portKey}.wav`);
+			writeFileSync(filePath, Buffer.from(stem.wav));
+			process.stdout.write(`  Audio: ${stem.portKey}.wav\n`);
+		}
+
+		if (result.master) {
+			const filePath = resolve(outDir, "master.wav");
+			writeFileSync(filePath, Buffer.from(result.master.wav));
+			process.stdout.write(`  Audio: master.wav\n`);
+		}
+
+		process.stdout.write("Done.\n");
+	});
+
+program
+	.command("play")
+	.description("Play audio in real-time")
+	.argument("[entrypoint]", "Path to ts/js file", "./index.ts")
+	.option("--start-beat <beat>", "Beat to start playback from", "0")
+	.action(async (entrypoint: string, options: Record<string, string>) => {
+		const router = await loadRouter(entrypoint);
+
+		const { default: nodeWebAudio } = (await import("node-web-audio-api")) as { default: { AudioContext: typeof AudioContext } };
+		const audioContext = new nodeWebAudio.AudioContext() as unknown as AudioContext;
+
+		const playback = play(router, audioContext);
+		await playback.setup(makeFetchBuffer(entrypoint));
+
+		const startBeat = Number(options.startBeat ?? 0);
+
+		process.stdout.write(`Playing from beat ${startBeat}...\n`);
+
+		playback.on("marker", (name, beat) => {
+			process.stdout.write(`  [${beat.toFixed(1)}] ${name}\n`);
+		});
+
+		playback.on("statechange", (state) => {
+			if (state === "stopped") {
+				process.stdout.write("Playback finished.\n");
+				process.exit(0);
+			}
+		});
+
+		process.on("SIGINT", () => {
+			playback.stop();
+			process.exit(0);
+		});
+
+		await playback.play(startBeat);
+	});
+
+program
+	.command("export-midi")
+	.description("Export MIDI files")
+	.argument("[entrypoint]", "Path to ts/js file", "./index.ts")
+	.option("--out <dir>", "Output directory", ".")
+	.option("--ppq <number>", "Pulses per quarter note", "480")
+	.action(async (entrypoint: string, options: Record<string, string>) => {
+		const router = await loadRouter(entrypoint);
+		const outDir = resolve(options.out ?? ".");
+
+		mkdirSync(outDir, { recursive: true });
+
+		process.stdout.write(`Exporting MIDI from ${resolve(entrypoint)}...\n`);
+
+		const pattern = router.pattern;
+		if (!pattern) throw new Error("Router has no pattern");
+
+		const { renderMidi } = await import("@resequence/patterns");
+
+		const midiTracks = renderMidi(pattern, {});
+
+		for (const [name, data] of midiTracks) {
+			const filePath = resolve(outDir, `${name}.mid`);
+			writeFileSync(filePath, data);
+			process.stdout.write(`  MIDI: ${name}.mid\n`);
+		}
+
+		process.stdout.write("Done.\n");
+	});
+
+program.parse();

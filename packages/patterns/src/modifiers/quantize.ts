@@ -1,12 +1,11 @@
 import type { Note } from "../note";
-import type { PatternProperties } from "../patterns/pattern";
-import type { Pattern } from "../patterns/pattern";
-import type { ModifierProperties } from "../patterns/modifier-pattern";
-import { ModifierPattern } from "../patterns/modifier-pattern";
+import type { ModifierProperties } from "../patterns/modifier";
+import { ModifierPattern } from "../patterns/modifier";
+import type { Pattern, PatternProperties } from "../patterns/pattern";
 import { sequence, toPattern } from "../patterns/sequence";
 import { N } from "../tunings/chromatic";
-import { collectNotes } from "../utils/walk";
 import { mapNotes } from "../utils/map";
+import { collectNotes } from "../utils/walk";
 
 export interface QuantizeProperties extends ModifierProperties {
 	readonly subdivision: number;

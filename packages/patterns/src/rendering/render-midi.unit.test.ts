@@ -1,11 +1,27 @@
 import { parseMidi } from "midi-file";
 import { describe, expect, it } from "vitest";
-import { custom } from "../patterns/custom-pattern";
+import type { Event } from "../events";
 import { layer } from "../patterns/layer";
+import type { PatternProperties } from "../patterns/pattern";
+import { Pattern } from "../patterns/pattern";
 import { sequence } from "../patterns/sequence";
 import { BohlenPierce } from "../tunings/bohlen-pierce";
 import { N } from "../tunings/chromatic";
 import { renderMidi } from "./render-midi";
+
+class TestEventPattern extends Pattern<PatternProperties & { readonly events: ReadonlyArray<Event> }> {
+	override _schedule(): Array<Event> {
+		return [...this.properties.events];
+	}
+
+	clone(overrides: Partial<PatternProperties>): TestEventPattern {
+		return new TestEventPattern({ ...this.properties, ...overrides, previousProperties: this.properties });
+	}
+}
+
+function testEvents(events: ReadonlyArray<Event>, durationBeats: number): TestEventPattern {
+	return new TestEventPattern({ notes: [], children: [], startBeat: 0, endBeat: durationBeats, events });
+}
 
 describe("renderMidi", () => {
 	it("renders a simple pattern to MIDI", () => {
@@ -50,10 +66,7 @@ describe("renderMidi", () => {
 	});
 
 	it("ignores custom events in MIDI output", () => {
-		const customNode = custom({
-			schedule: () => [{ type: "custom-event" }],
-			durationBeats: 1,
-		});
+		const customNode = testEvents([{ type: "custom-event" }], 1);
 
 		const pattern = layer(customNode, sequence(N.C4(1)).route("piano"));
 		const result = renderMidi(pattern);

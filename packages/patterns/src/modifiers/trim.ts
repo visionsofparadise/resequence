@@ -1,6 +1,6 @@
 import type { Note } from "../note";
-import type { ModifierProperties } from "../patterns/modifier-pattern";
-import { ModifierPattern } from "../patterns/modifier-pattern";
+import type { ModifierProperties } from "../patterns/modifier";
+import { ModifierPattern } from "../patterns/modifier";
 import type { Pattern, PatternProperties } from "../patterns/pattern";
 import { toPattern } from "../patterns/sequence";
 import { flatMapNotes } from "../utils/map";
