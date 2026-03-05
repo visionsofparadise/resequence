@@ -5,6 +5,7 @@ import { driveParam } from "../utils/driver";
 
 export interface GainProperties extends UnitProperties {
 	readonly level: number;
+	readonly previousProperties?: GainProperties;
 }
 
 export class GainEffectUnit extends Unit {
@@ -28,7 +29,7 @@ export class GainEffectUnit extends Unit {
 	}
 
 	clone(overrides?: Partial<GainProperties>): GainEffectUnit {
-		return new GainEffectUnit({ ...this.properties, ...overrides });
+		return new GainEffectUnit({ ...this.properties, ...overrides, previousProperties: this.properties });
 	}
 
 	protected override _setup(context: UnitContext): SetupResult {

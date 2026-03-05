@@ -1,4 +1,5 @@
 import type { UnitContext } from "../context";
+import { CCEffectUnit } from "../effects/cc";
 import { linearGain, type GainEffectUnit } from "../effects/gain";
 import type { MidiUnitProperties } from "../midi-unit";
 import { MidiUnit } from "../midi-unit";
@@ -64,40 +65,29 @@ export abstract class GeneratorUnit extends MidiUnit {
 	protected scheduleVoice(exits: Array<AudioNode>, noteEvent: NoteEvent, context: UnitContext): () => void {
 		if (!this.mergeUnit) return () => {};
 
-		// TODO: CCEffectUnit — ported with unit library
-		// When CCEffectUnit is available, insert it here:
-		//   const ccEffect = new CCEffectUnit({ noteEvent });
-		//   source exits → ccEffect → voiceTo chain → mergeUnit
-		// For now, source exits connect directly to voiceTo chain or mergeUnit.
+		const ccEffect = new CCEffectUnit({ noteEvent });
 
-		let chainHead: Unit | undefined;
-		let chainTail: Unit | undefined;
+		const chainHead: Unit = ccEffect;
+		let chainTail: Unit = ccEffect;
 
 		if (this.properties.voiceToCallbacks.length > 0) {
 			for (const callback of this.properties.voiceToCallbacks) {
 				const voiceUnit = callback(noteEvent);
-				if (chainHead) {
-					chainTail?.to(voiceUnit);
-				} else {
-					chainHead = voiceUnit;
-				}
+				chainTail.to(voiceUnit);
 				chainTail = voiceUnit;
 			}
-			chainTail?.to(this.mergeUnit);
 		}
 
-		const connectTarget = chainHead ?? this.mergeUnit;
+		chainTail.to(this.mergeUnit);
 
-		if (chainHead) {
-			for (const decl of this.properties.voiceModDeclarations) {
-				(chainTail ?? chainHead).mod(decl.paths, decl.transform);
-			}
+		for (const decl of this.properties.voiceModDeclarations) {
+			chainTail.mod(decl.paths, decl.transform);
 		}
 
-		void connectTarget.setup(context);
+		void chainHead.setup(context);
 
 		for (const exit of exits) {
-			for (const entry of connectTarget.entryNodes) {
+			for (const entry of chainHead.entryNodes) {
 				exit.connect(entry);
 			}
 		}
@@ -106,9 +96,7 @@ export abstract class GeneratorUnit extends MidiUnit {
 			for (const exit of exits) {
 				exit.disconnect();
 			}
-			if (chainHead) {
-				chainHead.teardown(context);
-			}
+			chainHead.teardown(context);
 		};
 	}
 }

@@ -14,4 +14,14 @@ export default defineConfig([
 		banner: { js: "#!/usr/bin/env node" },
 		treeshake: true,
 	},
+	{
+		entry: {
+			"processors/bitcrush-processor": "src/processors/bitcrush-processor.js",
+			"processors/downsample-processor": "src/processors/downsample-processor.js",
+			"processors/noise-processor": "src/processors/noise-processor.js",
+			"processors/envelope-processor": "src/processors/envelope-processor.js",
+		},
+		format: ["esm"],
+		splitting: false,
+	},
 ]);

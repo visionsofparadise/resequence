@@ -13,6 +13,7 @@ export interface UnitProperties {
 	readonly id?: string;
 	readonly targets: Array<Unit>;
 	readonly modDeclarations: Array<ModDeclaration>;
+	readonly previousProperties?: UnitProperties;
 }
 
 export type UnitInput<P extends UnitProperties = UnitProperties> = OptionalProperties<P, "targets" | "modDeclarations">;
