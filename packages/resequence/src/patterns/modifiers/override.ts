@@ -1,6 +1,6 @@
 import type { OptionalProperties } from "../../utils/RequiredProperties";
 import type { Pattern, PatternProperties } from "../pattern";
-import { descendAndClone } from "../utils/tree";
+import { descendGraphAndClone } from "../../utils/graph";
 import { ModifierPattern, type ModifierProperties } from "./modifier";
 
 export type OverrideCallback = (properties: PatternProperties) => Partial<PatternProperties>;
@@ -37,7 +37,7 @@ export class OverridePattern extends ModifierPattern {
 }
 
 export function override(pattern: Pattern, indexes: ReadonlyArray<number>, callback: OverrideCallback): OverridePattern {
-	const result = descendAndClone(pattern, indexes, (node) => {
+	const result = descendGraphAndClone(pattern, { patternIndexes: indexes }, (node) => {
 		const overrides = callback(node.properties);
 		return node.clone(overrides);
 	});

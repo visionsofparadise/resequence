@@ -82,7 +82,6 @@ export interface Sequence {
 
 export interface Arrangement {
 	readonly sequences: ReadonlyArray<Sequence>;
-	readonly tempoMap: TempoMap;
 	readonly startBeat: number;
 	readonly endBeat: number;
 }
@@ -440,17 +439,19 @@ function pitchToSemitone(pitch: Pitch): number {
 
 const DEFAULT_META: MetadataContext = { activeTuning: null, activeTimeSignature: [4, 4], ancestorHasTempo: false };
 
-export function buildArrangement(rootPattern: Pattern): Arrangement {
+export function buildArrangement(rootPattern: Pattern): { arrangement: Arrangement; tempoMap: TempoMap } {
 	const tempoPoints: Array<TempoPoint> = [];
 
 	if (SequencePattern.is(rootPattern)) {
 		const sequences = collectSequences(rootPattern, 0, [], DEFAULT_META, tempoPoints);
 
 		return {
-			sequences,
+			arrangement: {
+				sequences,
+				startBeat: rootPattern.startBeat,
+				endBeat: rootPattern.endBeat,
+			},
 			tempoMap: tempoPoints.sort((left, right) => left.beat - right.beat),
-			startBeat: rootPattern.startBeat,
-			endBeat: rootPattern.endBeat,
 		};
 	}
 
@@ -473,9 +474,11 @@ export function buildArrangement(rootPattern: Pattern): Arrangement {
 	}
 
 	return {
-		sequences,
+		arrangement: {
+			sequences,
+			startBeat: rootPattern.startBeat,
+			endBeat: rootPattern.endBeat,
+		},
 		tempoMap: tempoPoints.sort((left, right) => left.beat - right.beat),
-		startBeat: rootPattern.startBeat,
-		endBeat: rootPattern.endBeat,
 	};
 }

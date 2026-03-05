@@ -22,7 +22,9 @@ export class MacroUnit extends Unit {
 
 	constructor(properties: UnitInput<MacroProperties>) {
 		if (!properties.id) throw new Error("MacroUnit requires an id");
+
 		super(properties);
+
 		this.properties = { ...properties, targets: properties.targets ?? [], modDeclarations: properties.modDeclarations ?? [] };
 	}
 

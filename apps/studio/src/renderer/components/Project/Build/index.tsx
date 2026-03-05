@@ -2,9 +2,9 @@ import { resolveEntrypoint } from "@/renderer/utils/resolveEntrypoint";
 import { LoaderCircle } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import type { BuildContext, ProjectContext } from "../../../models/Context";
+import { useBuildArrangement } from "./hooks/useBuildArrangement";
 import { useBundleBuild } from "./hooks/useBundle";
-import { useProcessPatternsA, useProcessPatternsB } from "./hooks/useProcessPatterns";
-import { useProcessUnits } from "./hooks/useProcessUnits";
+import { useMapGraph } from "./hooks/useMapGraph";
 import { useResolveBuild } from "./hooks/useResolve";
 import { useSetupPlayback } from "./hooks/useSetup";
 import { BuildLayout } from "./Layout";
@@ -26,10 +26,12 @@ export const Build: React.FC<BuildProps> = ({ context }) => {
 
 	useBundleBuild(entrypoint, context);
 
-	const { rootPattern, overrides } = useResolveBuild(context);
-	const { rootUnit } = useProcessPatternsA(rootPattern);
-	useProcessUnits(rootUnit);
-	const { arrangement, tempoMap } = useProcessPatternsB(rootPattern);
+	const { rootPattern: unmappedPattern, overrides } = useResolveBuild(context);
+
+	const { rootPattern, outputs, injectedNodes, injectedUnits, injectedPatterns } = useMapGraph(unmappedPattern);
+
+	const { arrangement, tempoMap } = useBuildArrangement(rootPattern);
+
 	const setup = useSetupPlayback(rootPattern, main);
 
 	const buildContext = useMemo((): BuildContext | undefined => {
@@ -41,14 +43,17 @@ export const Build: React.FC<BuildProps> = ({ context }) => {
 			...context,
 			arrangement,
 			audioContext,
+			injectedNodes,
+			injectedPatterns,
+			injectedUnits,
 			overrides,
 			playbackEngine,
 			rootPattern,
-			rootUnit,
+			outputs,
 			tempoMap,
 			unitDriverMap,
 		};
-	}, [context, arrangement, tempoMap, overrides, rootPattern, rootUnit, setup]);
+	}, [context, arrangement, tempoMap, injectedNodes, injectedPatterns, injectedUnits, outputs, overrides, rootPattern, setup]);
 
 	if (!buildContext)
 		return (

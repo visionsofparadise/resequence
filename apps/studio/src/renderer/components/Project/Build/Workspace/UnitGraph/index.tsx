@@ -1,6 +1,7 @@
 import { Background, ReactFlow, type OnMove, type OnMoveEnd } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { useCallback, useMemo } from "react";
+import type { Unit } from "resequence";
 import type { BuildContext } from "../../../../../models/Context";
 import type { ProjectState } from "../../../../../models/State/Project";
 import { UnitNode } from "./UnitNode";
@@ -11,18 +12,16 @@ const nodeTypes = { unit: UnitNode };
 
 interface UnitGraphProps {
 	readonly context: BuildContext;
-	readonly outputId: string;
+	readonly outputUnit: Unit;
 	readonly onBack: () => void;
 }
 
-export const UnitGraph: React.FC<UnitGraphProps> = ({ context, outputId, onBack }) => {
-	const { project, projectStore, rootUnit, unitDriverMap } = context;
+export const UnitGraph: React.FC<UnitGraphProps> = ({ context, outputUnit, onBack }) => {
+	const { project, projectStore, unitDriverMap } = context;
 
-	const outputUnit = useMemo(() => rootUnit.targets.find((unit) => (unit.id ?? "") === outputId) ?? null, [rootUnit, outputId]);
+	const outputId = outputUnit.id ?? "";
 
 	const { nodes, edges } = useMemo(() => {
-		if (!outputUnit) return { nodes: [], edges: [] };
-
 		const graph = buildGraph(outputUnit, unitDriverMap);
 
 		return { nodes: layoutGraph(graph.nodes, graph.edges), edges: graph.edges };
@@ -56,10 +55,6 @@ export const UnitGraph: React.FC<UnitGraphProps> = ({ context, outputId, onBack 
 		},
 		[project, projectStore, outputId],
 	);
-
-	if (!outputUnit) {
-		return <div className="flex h-full items-center justify-center text-sm text-muted-foreground">Output not found</div>;
-	}
 
 	return (
 		<div className="relative h-full">

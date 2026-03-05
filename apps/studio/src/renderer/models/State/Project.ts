@@ -22,6 +22,9 @@ export interface ProjectState extends State {
 	activePianoRoll: PianoRollTarget | null;
 	activeOutput: OutputTarget | null;
 
+	mutedOutputs: Set<string>;
+	soloedOutputs: Set<string>;
+
 	timelineScrollX: Transient<number>;
 	timelineScrollY: Transient<number>;
 	timelineZoom: Transient<number>;
@@ -50,6 +53,8 @@ export function useProjectState(initial: ProjectStateInitial = {}, store: ProxyS
 		{
 			activePianoRoll: initial.activePianoRoll ?? null,
 			activeOutput: initial.activeOutput ?? null,
+			mutedOutputs: new Set(),
+			soloedOutputs: new Set(),
 			timelineScrollX: new Transient(initial.timelineScrollX ?? 0),
 			timelineScrollY: new Transient(initial.timelineScrollY ?? 0),
 			timelineZoom: new Transient(initial.timelineZoom ?? 1),

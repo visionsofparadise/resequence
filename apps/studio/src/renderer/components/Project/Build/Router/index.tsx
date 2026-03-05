@@ -1,5 +1,6 @@
 import type { BuildContext } from "../../../../models/Context";
 import { ScrollArea } from "../../../ui/scroll-area";
+import { useMuteSolo } from "./hooks/useMuteSolo";
 import { useOutputs } from "./hooks/useOutputs";
 import { Output } from "./Output";
 
@@ -9,6 +10,8 @@ interface RouterProps {
 
 export const Router: React.FC<RouterProps> = ({ context }) => {
 	const outputs = useOutputs(context);
+
+	useMuteSolo(context);
 
 	return (
 		<div className="flex h-full flex-col">
@@ -22,7 +25,7 @@ export const Router: React.FC<RouterProps> = ({ context }) => {
 					<div className="space-y-1 px-2 pb-2">
 						{outputs.map((output, index) => (
 							<Output
-								key={output.id}
+								key={output.id ?? `output-${index}`}
 								output={output}
 								index={index}
 								context={context}

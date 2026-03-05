@@ -1,18 +1,26 @@
 import { useCallback } from "react";
+import { type Unit, AnalyserUnit } from "resequence";
 import type { BuildContext } from "../../../../models/Context";
 import type { ProjectState } from "../../../../models/State/Project";
-import type { OutputDescriptor } from "./hooks/useOutputs";
+import { Meter } from "./Meter";
 
 interface OutputProps {
-	readonly output: OutputDescriptor;
+	readonly output: Unit;
 	readonly index: number;
 	readonly context: BuildContext;
 }
 
 export const Output: React.FC<OutputProps> = ({ output, index, context }) => {
-	const { project, projectStore } = context;
+	const { project, projectStore, injectedUnits } = context;
 
+	const outputId = output.id ?? `output-${index}`;
 	const isActive = project.activeOutput?.index === index;
+	const isMuted = project.mutedOutputs.has(outputId);
+	const isSoloed = project.soloedOutputs.has(outputId);
+
+	const analyserKey = `system.${outputId}.router.analyser`;
+	const analyserUnit = injectedUnits.get(analyserKey);
+	const analyserNode = analyserUnit && AnalyserUnit.is(analyserUnit) ? analyserUnit.analyserNode : undefined;
 
 	const onSelect = useCallback(() => {
 		projectStore.mutate<ProjectState>(project, (proxy) => {
@@ -21,6 +29,34 @@ export const Output: React.FC<OutputProps> = ({ output, index, context }) => {
 		});
 	}, [project, projectStore, index]);
 
+	const onToggleMute = useCallback(
+		(event: React.MouseEvent) => {
+			event.stopPropagation();
+			projectStore.mutate<ProjectState>(project, (proxy) => {
+				if (proxy.mutedOutputs.has(outputId)) {
+					proxy.mutedOutputs.delete(outputId);
+				} else {
+					proxy.mutedOutputs.add(outputId);
+				}
+			});
+		},
+		[project, projectStore, outputId],
+	);
+
+	const onToggleSolo = useCallback(
+		(event: React.MouseEvent) => {
+			event.stopPropagation();
+			projectStore.mutate<ProjectState>(project, (proxy) => {
+				if (proxy.soloedOutputs.has(outputId)) {
+					proxy.soloedOutputs.delete(outputId);
+				} else {
+					proxy.soloedOutputs.add(outputId);
+				}
+			});
+		},
+		[project, projectStore, outputId],
+	);
+
 	return (
 		<button
 			type="button"
@@ -28,15 +64,29 @@ export const Output: React.FC<OutputProps> = ({ output, index, context }) => {
 			onClick={onSelect}
 		>
 			<div className="flex items-center justify-between">
-				<span className="truncate text-xs font-medium">{output.label}</span>
+				<span className="truncate text-xs font-medium">{output.id ?? `Output ${index + 1}`}</span>
 				<div className="flex shrink-0 gap-1">
-					<span className="rounded border border-zinc-700 px-1 text-[10px] text-zinc-500">M</span>
-					<span className="rounded border border-zinc-700 px-1 text-[10px] text-zinc-500">S</span>
+					<span
+						role="button"
+						tabIndex={0}
+						className={`rounded border px-1 text-[10px] cursor-pointer select-none ${isMuted ? "border-red-500 bg-red-500/20 text-red-400" : "border-zinc-700 text-zinc-500 hover:border-zinc-500"}`}
+						onClick={onToggleMute}
+						onKeyDown={(event) => event.key === "Enter" && onToggleMute(event as unknown as React.MouseEvent)}
+					>
+						M
+					</span>
+					<span
+						role="button"
+						tabIndex={0}
+						className={`rounded border px-1 text-[10px] cursor-pointer select-none ${isSoloed ? "border-yellow-500 bg-yellow-500/20 text-yellow-400" : "border-zinc-700 text-zinc-500 hover:border-zinc-500"}`}
+						onClick={onToggleSolo}
+						onKeyDown={(event) => event.key === "Enter" && onToggleSolo(event as unknown as React.MouseEvent)}
+					>
+						S
+					</span>
 				</div>
 			</div>
-			<div className="h-1.5 w-full overflow-hidden rounded-full bg-zinc-700">
-				<div className="h-full w-1/3 rounded-full bg-green-500/60" />
-			</div>
+			<Meter analyserNode={analyserNode} />
 		</button>
 	);
 };

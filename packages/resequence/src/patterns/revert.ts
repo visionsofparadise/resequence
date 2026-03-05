@@ -2,7 +2,7 @@ import type { OptionalProperties } from "../utils/RequiredProperties";
 import type { PatternProperties } from "./pattern";
 import { ModifierPattern, type ModifierProperties } from "./modifiers/modifier";
 import type { Pattern } from "./pattern";
-import { descendAndClone } from "./utils/tree";
+import { descendGraphAndClone } from "../utils/graph";
 
 export interface RevertProperties extends ModifierProperties {
 	readonly indexes: ReadonlyArray<number>;
@@ -36,7 +36,7 @@ export class RevertPattern extends ModifierPattern {
 }
 
 export function revert(pattern: Pattern, indexes: ReadonlyArray<number>, steps: number): RevertPattern {
-	const reverted = descendAndClone(pattern, indexes, (node) => {
+	const reverted = descendGraphAndClone(pattern, { patternIndexes: indexes }, (node) => {
 		let props = node.properties;
 
 		for (let step = 0; step < steps; step++) {

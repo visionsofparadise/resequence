@@ -23,7 +23,7 @@ export const ActiveView: React.FC<ActiveViewProps> = ({ context, goBack }) => {
 				<ReactFlowProvider>
 					<UnitGraph
 						context={context}
-						outputId={output.id}
+						outputUnit={output}
 						onBack={goBack}
 					/>
 				</ReactFlowProvider>
