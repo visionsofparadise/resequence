@@ -1,0 +1,171 @@
+import { describe, expect, it } from "vitest";
+import type { NoteEvent } from "../events";
+import { note } from "../note";
+import { N } from "../tunings/chromatic";
+import { custom, CustomPattern } from "./custom-pattern";
+import { layer } from "./layer";
+import { MidiPattern } from "./midi-pattern";
+import type { PatternProperties } from "./pattern";
+import { Pattern } from "./pattern";
+import { sequence } from "./sequence";
+
+// Concrete test pattern for base class testing
+class TestPattern extends Pattern {
+	clone(overrides: Partial<PatternProperties>): TestPattern {
+		return new TestPattern({ ...this.properties, ...overrides, previousProperties: this.properties });
+	}
+}
+
+describe("Pattern base class", () => {
+	it("exposes properties via getters", () => {
+		const n = note(N.C4, 1);
+		const pattern = new TestPattern({ notes: [{ offsetBeats: 0, note: n }], children: [], startBeat: 0, endBeat: 1 });
+
+		expect(pattern.notes).toHaveLength(1);
+		expect(pattern.children).toHaveLength(0);
+		expect(pattern.startBeat).toBe(0);
+		expect(pattern.endBeat).toBe(1);
+	});
+
+	it("schedule returns empty array when out of scope", () => {
+		const pattern = new TestPattern({ notes: [], children: [], startBeat: 0, endBeat: 4 });
+		const events = pattern.schedule(0, 5, 10);
+		expect(events).toEqual([]);
+	});
+
+	it("schedule recurses children", () => {
+		const child = sequence(N.C4(1)).route("piano");
+		const parent = new TestPattern({ notes: [], children: [{ offsetBeats: 0, pattern: child }], startBeat: 0, endBeat: 1 });
+		const events = parent.schedule(0, -Infinity, Infinity);
+		expect(events).toHaveLength(1);
+		expect((events[0] as NoteEvent).port).toBe("piano");
+	});
+
+	it("setup returns empty array by default", () => {
+		const pattern = new TestPattern({ notes: [], children: [], startBeat: 0, endBeat: 0 });
+		const events = pattern.setup(0);
+		expect(events).toEqual([]);
+	});
+
+	it("setup recurses children", () => {
+		const child = custom({ setup: () => [{ type: "test" }], durationBeats: 1 });
+		const parent = new TestPattern({ notes: [], children: [{ offsetBeats: 0, pattern: child }], startBeat: 0, endBeat: 1 });
+		const events = parent.setup(0);
+		expect(events).toHaveLength(1);
+		expect(events[0]?.type).toBe("test");
+	});
+});
+
+describe("MidiPattern", () => {
+	class TestMidiPattern extends MidiPattern {
+		clone(overrides: Partial<PatternProperties>): TestMidiPattern {
+			return new TestMidiPattern({ ...this.properties, ...overrides, previousProperties: this.properties });
+		}
+	}
+
+	it("produces NoteEvents from owned notes with ports", () => {
+		const n = note(N.C4, 1);
+		const pattern = new TestMidiPattern({ notes: [{ offsetBeats: 0, note: n }], children: [], startBeat: 0, endBeat: 1 });
+		pattern.route("piano");
+
+		const events = pattern.schedule(0, -Infinity, Infinity);
+		expect(events).toHaveLength(1);
+
+		const ne = events[0] as NoteEvent;
+		expect(ne.type).toBe("note");
+		expect(ne.port).toBe("piano");
+		expect(ne.channel).toBe(0);
+		expect(ne.startBeat).toBe(0);
+		expect(ne.durationBeats).toBe(1);
+		expect(ne.velocity).toBe(100);
+	});
+
+	it("produces no events without ports", () => {
+		const n = note(N.C4, 1);
+		const pattern = new TestMidiPattern({ notes: [{ offsetBeats: 0, note: n }], children: [], startBeat: 0, endBeat: 1 });
+		const events = pattern.schedule(0, -Infinity, Infinity);
+		expect(events).toEqual([]);
+	});
+
+	it("routes to specified channel", () => {
+		const n = note(N.C4, 1);
+		const pattern = new TestMidiPattern({ notes: [{ offsetBeats: 0, note: n }], children: [], startBeat: 0, endBeat: 1 });
+		pattern.route("drums", 9);
+
+		const events = pattern.schedule(0, -Infinity, Infinity);
+		const ne = events[0] as NoteEvent;
+		expect(ne.channel).toBe(9);
+	});
+
+	it("accumulates ports through nested patterns", () => {
+		const child = sequence(N.C4(1));
+		const parent = layer(child).route("piano");
+
+		const events = parent.schedule(0, -Infinity, Infinity);
+		expect(events).toHaveLength(1);
+		expect((events[0] as NoteEvent).port).toBe("piano");
+	});
+
+	it("emits one NoteEvent per port per note", () => {
+		const n = note(N.C4, 1);
+		const pattern = new TestMidiPattern({ notes: [{ offsetBeats: 0, note: n }], children: [], startBeat: 0, endBeat: 1 });
+		pattern.route("piano");
+		pattern.route("synth");
+
+		const events = pattern.schedule(0, -Infinity, Infinity);
+		expect(events).toHaveLength(2);
+		expect((events[0] as NoteEvent).port).toBe("piano");
+		expect((events[1] as NoteEvent).port).toBe("synth");
+	});
+});
+
+describe("CustomPattern", () => {
+	it("invokes schedule callback and returns events", () => {
+		const pattern = custom({
+			schedule: (beat) => [{ type: "myEvent", beat }],
+			durationBeats: 4,
+		});
+
+		const events = pattern.schedule(0, -Infinity, Infinity);
+		expect(events).toHaveLength(1);
+		expect(events[0]?.type).toBe("myEvent");
+	});
+
+	it("invokes setup callback", () => {
+		const pattern = custom({
+			setup: () => [{ type: "setupEvent" }],
+			durationBeats: 4,
+		});
+
+		const events = pattern.setup(0);
+		expect(events).toHaveLength(1);
+		expect(events[0]?.type).toBe("setupEvent");
+	});
+
+	it("clones preserving callbacks", () => {
+		const pattern = custom({
+			schedule: () => [{ type: "test" }],
+			durationBeats: 4,
+		});
+
+		const cloned = pattern.clone({ endBeat: 8 });
+		expect(cloned).toBeInstanceOf(CustomPattern);
+		expect(cloned.endBeat).toBe(8);
+
+		const events = cloned.schedule(0, -Infinity, Infinity);
+		expect(events).toHaveLength(1);
+	});
+
+	it("custom events bubble up through tree", () => {
+		const customNode = custom({
+			schedule: () => [{ type: "custom" }],
+			durationBeats: 1,
+		});
+
+		const tree = layer(customNode, sequence(N.C4(1)).route("piano"));
+		const events = tree.schedule(0, -Infinity, Infinity);
+
+		expect(events.some((ev) => ev.type === "custom")).toBe(true);
+		expect(events.some((ev) => ev.type === "note")).toBe(true);
+	});
+});
