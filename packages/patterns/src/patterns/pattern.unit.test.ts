@@ -10,6 +10,8 @@ import { sequence } from "./sequence";
 
 // Concrete test pattern for base class testing
 class TestPattern extends Pattern {
+	readonly type = ["pattern", "test"] as const;
+
 	clone(overrides: Partial<PatternProperties>): TestPattern {
 		return new TestPattern({ ...this.properties, ...overrides, previousProperties: this.properties });
 	}
@@ -17,6 +19,8 @@ class TestPattern extends Pattern {
 
 // Test pattern that emits custom events
 class TestEventPattern extends Pattern<PatternProperties & { readonly events: ReadonlyArray<Event> }> {
+	readonly type = ["pattern", "test-event"] as const;
+
 	override _setup(): Array<Event> {
 		return [...this.properties.events];
 	}
@@ -76,6 +80,8 @@ describe("Pattern base class", () => {
 
 describe("MidiPattern", () => {
 	class TestMidiPattern extends MidiPattern {
+		readonly type = ["pattern", "midi", "test"] as const;
+
 		clone(overrides: Partial<PatternProperties>): TestMidiPattern {
 			return new TestMidiPattern({ ...this.properties, ...overrides, previousProperties: this.properties });
 		}

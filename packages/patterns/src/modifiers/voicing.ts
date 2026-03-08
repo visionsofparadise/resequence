@@ -15,8 +15,10 @@ export interface VoicingProperties extends ModifierProperties {
 }
 
 export class VoicingPattern extends ModifierPattern<VoicingProperties> {
-	static is(value: unknown): value is VoicingPattern {
-		return value instanceof VoicingPattern;
+	readonly type = ["pattern", "midi", "modifier", "voicing"] as const;
+
+	static override is(value: unknown): value is VoicingPattern {
+		return ModifierPattern.is(value) && value.type[3] === "voicing";
 	}
 
 	clone(overrides: Partial<PatternProperties>): VoicingPattern {

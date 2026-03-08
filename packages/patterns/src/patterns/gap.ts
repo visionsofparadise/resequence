@@ -6,8 +6,10 @@ export interface GapProperties extends PatternProperties {
 }
 
 export class GapPattern extends Pattern<GapProperties> {
-	static is(value: unknown): value is GapPattern {
-		return value instanceof GapPattern;
+	readonly type = ["pattern", "gap"] as const;
+
+	static override is(value: unknown): value is GapPattern {
+		return Pattern.is(value) && value.type[1] === "gap";
 	}
 
 	clone(overrides: Partial<PatternProperties>): GapPattern {

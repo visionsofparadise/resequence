@@ -3,7 +3,7 @@ import type { BuildContext } from "../../../models/Context";
 import type { ProjectState } from "../../../models/State/Project";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "../../ui/resizable";
 import { Overrides } from "./Overrides";
-import { Router } from "./Router";
+import { Ports } from "./Ports";
 import { Workspace } from "./Workspace";
 
 interface BuildLayoutProps {
@@ -94,7 +94,7 @@ export const BuildLayout: React.FC<BuildLayoutProps> = ({ context }) => {
 						id="mixer"
 						minSize={10}
 					>
-						<Router context={context} />
+						<Ports context={context} />
 					</ResizablePanel>
 				</ResizablePanelGroup>
 			</ResizablePanel>

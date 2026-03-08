@@ -11,8 +11,10 @@ export interface HarmonizeProperties extends ModifierProperties {
 }
 
 export class HarmonizePattern extends ModifierPattern<HarmonizeProperties> {
-	static is(value: unknown): value is HarmonizePattern {
-		return value instanceof HarmonizePattern;
+	readonly type = ["pattern", "midi", "modifier", "harmonize"] as const;
+
+	static override is(value: unknown): value is HarmonizePattern {
+		return ModifierPattern.is(value) && value.type[3] === "harmonize";
 	}
 
 	clone(overrides: Partial<PatternProperties>): HarmonizePattern {

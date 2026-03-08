@@ -9,8 +9,10 @@ export interface RevertProperties extends ModifierProperties {
 }
 
 export class RevertPattern extends ModifierPattern<RevertProperties> {
-	static is(value: unknown): value is RevertPattern {
-		return value instanceof RevertPattern;
+	readonly type = ["pattern", "midi", "modifier", "revert"] as const;
+
+	static override is(value: unknown): value is RevertPattern {
+		return ModifierPattern.is(value) && value.type[3] === "revert";
 	}
 
 	clone(overrides: Partial<PatternProperties>): RevertPattern {

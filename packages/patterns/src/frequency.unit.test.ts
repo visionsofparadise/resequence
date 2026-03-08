@@ -2,27 +2,27 @@ import { describe, expect, it } from "vitest";
 import { frequencyToNoteAndBend, pitchToFrequency } from "./frequency";
 import type { Pitch } from "./pitch";
 import type { ResolvedTuning } from "./tuning";
-import { CHROMATIC_TUNING, N } from "./tunings/chromatic";
+import { N } from "./tunings/chromatic";
 
 describe("pitchToFrequency", () => {
 	it("resolves A4 to 440 Hz", () => {
-		expect(pitchToFrequency(N.A4, CHROMATIC_TUNING)).toBeCloseTo(440, 2);
+		expect(pitchToFrequency(N.A4, N.config)).toBeCloseTo(440, 2);
 	});
 
 	it("resolves C4 to ~261.63 Hz", () => {
-		expect(pitchToFrequency(N.C4, CHROMATIC_TUNING)).toBeCloseTo(261.63, 1);
+		expect(pitchToFrequency(N.C4, N.config)).toBeCloseTo(261.63, 1);
 	});
 
 	it("resolves across octaves", () => {
-		const a3 = pitchToFrequency(N.A3, CHROMATIC_TUNING);
-		const a5 = pitchToFrequency(N.A5, CHROMATIC_TUNING);
+		const a3 = pitchToFrequency(N.A3, N.config);
+		const a5 = pitchToFrequency(N.A5, N.config);
 		expect(a3).toBeCloseTo(220, 2);
 		expect(a5).toBeCloseTo(880, 2);
 	});
 
 	it("handles pitch class not in tuning by fractional mapping", () => {
 		const oddPitch: Pitch = { class: 3, stepsPerOctave: 7, octave: 4, octaveRatio: 2 };
-		const freq = pitchToFrequency(oddPitch, CHROMATIC_TUNING);
+		const freq = pitchToFrequency(oddPitch, N.config);
 		expect(freq).toBeGreaterThan(0);
 		expect(Number.isFinite(freq)).toBe(true);
 	});
@@ -56,7 +56,7 @@ describe("frequencyToNoteAndBend", () => {
 	});
 
 	it("round-trips through pitchToFrequency", () => {
-		const freq = pitchToFrequency(N.Fs3, CHROMATIC_TUNING);
+		const freq = pitchToFrequency(N.Fs3, N.config);
 		const result = frequencyToNoteAndBend(freq);
 		expect(result.note).toBe(54);
 		expect(Math.abs(result.bend)).toBeLessThan(1);

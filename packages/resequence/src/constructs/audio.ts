@@ -45,8 +45,10 @@ export interface AudioPatternProperties extends PatternProperties {
 }
 
 export class AudioPattern extends Pattern<AudioPatternProperties> {
-	static is(value: unknown): value is AudioPattern {
-		return value instanceof AudioPattern;
+	readonly type = ["pattern", "audio"] as const;
+
+	static override is(value: unknown): value is AudioPattern {
+		return Pattern.is(value) && value.type[1] === "audio";
 	}
 
 	override _setup(): Array<Event> {

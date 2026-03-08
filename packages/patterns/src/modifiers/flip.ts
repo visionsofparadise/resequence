@@ -13,8 +13,10 @@ export interface FlipProperties extends ModifierProperties {
 }
 
 export class FlipPattern extends ModifierPattern<FlipProperties> {
-	static is(value: unknown): value is FlipPattern {
-		return value instanceof FlipPattern;
+	readonly type = ["pattern", "midi", "modifier", "flip"] as const;
+
+	static override is(value: unknown): value is FlipPattern {
+		return ModifierPattern.is(value) && value.type[3] === "flip";
 	}
 
 	clone(overrides: Partial<PatternProperties>): FlipPattern {

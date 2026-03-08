@@ -19,8 +19,10 @@ export interface MetadataProperties extends PatternProperties {
 }
 
 export class MetadataPattern extends Pattern<MetadataProperties> {
-	static is(value: unknown): value is MetadataPattern {
-		return value instanceof MetadataPattern;
+	readonly type = ["pattern", "metadata"] as const;
+
+	static override is(value: unknown): value is MetadataPattern {
+		return Pattern.is(value) && value.type[1] === "metadata";
 	}
 
 	constructor(properties: MetadataProperties) {

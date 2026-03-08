@@ -12,8 +12,10 @@ export interface HealProperties extends ModifierProperties {
 }
 
 export class HealPattern extends ModifierPattern<HealProperties> {
-	static is(value: unknown): value is HealPattern {
-		return value instanceof HealPattern;
+	readonly type = ["pattern", "midi", "modifier", "heal"] as const;
+
+	static override is(value: unknown): value is HealPattern {
+		return ModifierPattern.is(value) && value.type[3] === "heal";
 	}
 
 	clone(overrides: Partial<PatternProperties>): HealPattern {

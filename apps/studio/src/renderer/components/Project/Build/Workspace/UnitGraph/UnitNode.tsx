@@ -1,5 +1,5 @@
 import { Handle, Position, type NodeProps } from "@xyflow/react";
-import type { Unit } from "resequence";
+import type { Unit } from "@resequence/units";
 import type { Snapshot } from "valtio";
 import type { StudioDriver } from "../../models/StudioDriver";
 import { Knob } from "./Knob";

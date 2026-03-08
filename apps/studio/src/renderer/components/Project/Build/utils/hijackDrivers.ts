@@ -7,14 +7,14 @@ export interface DerivedDriverMap {
 	readonly all: Map<string, StudioDriver>;
 }
 
-export function hijackDrivers(driverMap: Map<string, DriverEntry>, scheduler: ValueScheduler): DerivedDriverMap {
+export function hijackDrivers(driverMap: ReadonlyMap<string, DriverEntry>, scheduler: ValueScheduler): DerivedDriverMap {
 	const all = new Map<string, StudioDriver>();
 	const byUnit = new Map<string, Map<string, StudioDriver>>();
 
 	for (const [path, entry] of driverMap) {
 		const studioDriver = new StudioDriver(entry.node, entry.range, scheduler);
 
-		driverMap.set(path, { node: studioDriver, range: entry.range });
+		(driverMap as Map<string, DriverEntry>).set(path, { node: studioDriver, range: entry.range });
 
 		all.set(path, studioDriver);
 

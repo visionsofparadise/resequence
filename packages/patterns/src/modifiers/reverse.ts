@@ -5,8 +5,10 @@ import { toPattern } from "../patterns/sequence";
 import { mapNotes } from "../utils/map";
 
 export class ReversePattern extends ModifierPattern {
-	static is(value: unknown): value is ReversePattern {
-		return value instanceof ReversePattern;
+	readonly type = ["pattern", "midi", "modifier", "reverse"] as const;
+
+	static override is(value: unknown): value is ReversePattern {
+		return ModifierPattern.is(value) && value.type[3] === "reverse";
 	}
 
 	clone(overrides: Partial<PatternProperties>): ReversePattern {

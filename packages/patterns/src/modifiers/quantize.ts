@@ -13,8 +13,10 @@ export interface QuantizeProperties extends ModifierProperties {
 }
 
 export class QuantizePattern extends ModifierPattern<QuantizeProperties> {
-	static is(value: unknown): value is QuantizePattern {
-		return value instanceof QuantizePattern;
+	readonly type = ["pattern", "midi", "modifier", "quantize"] as const;
+
+	static override is(value: unknown): value is QuantizePattern {
+		return ModifierPattern.is(value) && value.type[3] === "quantize";
 	}
 
 	clone(overrides: Partial<PatternProperties>): QuantizePattern {

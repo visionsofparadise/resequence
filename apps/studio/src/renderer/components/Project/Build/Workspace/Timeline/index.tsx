@@ -12,13 +12,13 @@ interface TimelineProps {
 }
 
 export const Timeline: React.FC<TimelineProps> = ({ context }) => {
-	const { project, arrangement, rootPattern } = context;
+	const { project, arrangement } = context;
 
 	const containerRef = useRef<HTMLDivElement>(null);
 	const contentRef = useRef<HTMLDivElement>(null);
 	const [viewportWidth, setViewportWidth] = useState(0);
 
-	const totalBeats = rootPattern.endBeat - rootPattern.startBeat;
+	const totalBeats = arrangement.endBeat - arrangement.startBeat;
 
 	const bindWheel = useTimelineWheel({ context, containerRef, totalBeats });
 	const { bindPan, isPanning } = useTimelinePan({ context });

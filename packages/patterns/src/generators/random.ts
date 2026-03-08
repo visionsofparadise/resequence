@@ -34,8 +34,10 @@ export interface RandomProperties extends MidiPatternProperties {
 }
 
 export class RandomPattern extends MidiPattern<RandomProperties> {
-	static is(value: unknown): value is RandomPattern {
-		return value instanceof RandomPattern;
+	readonly type = ["pattern", "midi", "generator", "random"] as const;
+
+	static override is(value: unknown): value is RandomPattern {
+		return MidiPattern.is(value) && value.type[2] === "generator" && value.type[3] === "random";
 	}
 
 	clone(overrides: Partial<PatternProperties>): RandomPattern {

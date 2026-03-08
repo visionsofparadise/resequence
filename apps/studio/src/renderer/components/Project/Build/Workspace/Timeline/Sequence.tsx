@@ -38,7 +38,7 @@ export const SequenceCard: React.FC<SequenceCardProps> = ({ sequence, sequencePa
 						case "midi":
 							return (
 								<MidiClipCard
-									key={`note-${clip.outputKey}-${index}`}
+									key={`note-${clip.port}-${index}`}
 									clip={clip}
 									sequence={sequence}
 									sequencePath={sequencePath}

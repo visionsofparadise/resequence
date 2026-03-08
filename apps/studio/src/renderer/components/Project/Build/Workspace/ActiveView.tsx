@@ -1,6 +1,5 @@
 import { ReactFlowProvider } from "@xyflow/react";
 import type { BuildContext } from "../../../../models/Context";
-import { useOutputs } from "../Router/hooks/useOutputs";
 import { PianoRoll } from "./PianoRoll";
 import { Timeline } from "./Timeline";
 import { UnitGraph } from "./UnitGraph";
@@ -13,17 +12,16 @@ interface ActiveViewProps {
 export const ActiveView: React.FC<ActiveViewProps> = ({ context, goBack }) => {
 	const { project } = context;
 
-	const outputs = useOutputs(context);
+	if (project.activePort) {
+		const unit = context.router.ports.get(project.activePort);
 
-	if (project.activeOutput) {
-		const output = outputs[project.activeOutput.index];
-
-		if (output) {
+		if (unit) {
 			return (
 				<ReactFlowProvider>
 					<UnitGraph
 						context={context}
-						outputUnit={output}
+						portKey={project.activePort}
+						outputUnit={unit}
 						onBack={goBack}
 					/>
 				</ReactFlowProvider>

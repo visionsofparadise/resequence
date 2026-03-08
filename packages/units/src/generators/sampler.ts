@@ -80,6 +80,8 @@ export class SamplerUnit extends GeneratorUnit {
 		for (const settledResult of results) {
 			if (settledResult.status === "fulfilled") {
 				this.buffers.set(settledResult.value.path, settledResult.value.buffer);
+			} else {
+				console.warn(`sampler: failed to load sample: ${settledResult.reason}`);
 			}
 		}
 

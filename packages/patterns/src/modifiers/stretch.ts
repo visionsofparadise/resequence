@@ -10,8 +10,10 @@ export interface StretchProperties extends ModifierProperties {
 }
 
 export class StretchPattern extends ModifierPattern<StretchProperties> {
-	static is(value: unknown): value is StretchPattern {
-		return value instanceof StretchPattern;
+	readonly type = ["pattern", "midi", "modifier", "stretch"] as const;
+
+	static override is(value: unknown): value is StretchPattern {
+		return ModifierPattern.is(value) && value.type[3] === "stretch";
 	}
 
 	clone(overrides: Partial<PatternProperties>): StretchPattern {

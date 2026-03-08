@@ -10,6 +10,8 @@ import { N } from "../tunings/chromatic";
 import { renderMidi } from "./render-midi";
 
 class TestEventPattern extends Pattern<PatternProperties & { readonly events: ReadonlyArray<Event> }> {
+	readonly type = ["pattern", "test-event"] as const;
+
 	override _schedule(): Array<Event> {
 		return [...this.properties.events];
 	}

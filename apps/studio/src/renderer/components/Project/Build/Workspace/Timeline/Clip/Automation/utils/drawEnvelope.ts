@@ -1,4 +1,4 @@
-import { evaluateAt, type Keyframe } from "resequence";
+import { evaluateAt, type Keyframe } from "@resequence/patterns";
 export const AUTOMATION_COLOR = "hsl(45, 80%, 55%)";
 
 export function drawEnvelope(canvasCtx: CanvasRenderingContext2D, keyframes: ReadonlyArray<Keyframe>, width: number, height: number, startBeat: number, pxPerBeat: number): void {

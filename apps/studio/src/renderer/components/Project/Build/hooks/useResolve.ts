@@ -1,10 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
-import { Pattern, sequence } from "resequence";
+import { Router, router } from "resequence";
 import type { ProjectContext } from "../../../../models/Context";
 import type { OverrideEntry } from "../../../../models/State/Override";
 
-export function useResolveBuild(context: ProjectContext): { rootPattern: Pattern; overrides: Array<OverrideEntry> } {
+export function useResolveBuild(context: ProjectContext): { router: Router; overrides: Array<OverrideEntry> } {
 	const { build, main, queryClient } = context;
 
 	const buildPath = build.buildPath;
@@ -12,7 +12,7 @@ export function useResolveBuild(context: ProjectContext): { rootPattern: Pattern
 	const contextRef = useRef(context);
 	contextRef.current = context;
 
-	const { data: rootPattern, error } = useQuery(
+	const { data: resolvedRouter, error } = useQuery(
 		{
 			queryKey: ["eval-bundle", buildPath],
 			queryFn: async () => {
@@ -25,8 +25,8 @@ export function useResolveBuild(context: ProjectContext): { rootPattern: Pattern
 				try {
 					const mod = (await import(/* @vite-ignore */ url)) as { default: unknown };
 
-					if (!Pattern.is(mod.default)) {
-						throw new Error("Module default export is not a Pattern");
+					if (!Router.is(mod.default)) {
+						throw new Error("Module default export is not a Router");
 					}
 
 					return mod.default;
@@ -65,7 +65,7 @@ export function useResolveBuild(context: ProjectContext): { rootPattern: Pattern
 		if (error) {
 			projectStore.mutate(build, (proxy) => Object.assign(proxy, { error: String(error) }));
 		}
-	}, [rootPattern, error, buildPath]);
+	}, [resolvedRouter, error, buildPath]);
 
-	return { rootPattern: rootPattern ?? sequence(), overrides: overrides ?? [] };
+	return { router: resolvedRouter ?? router(), overrides: overrides ?? [] };
 }

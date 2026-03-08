@@ -1,4 +1,4 @@
-import type { Unit } from "resequence";
+import type { Unit } from "@resequence/units";
 import { resolveUnit } from "./resolveUnit";
 
 export function walkUnits(unit: Unit, visitor: (unit: Unit, index: number) => void, visited = new WeakSet<Unit>(), injectedNodes?: WeakSet<object>): void {

@@ -3,7 +3,7 @@ import { useTransients } from "../../../../../../../hooks/useTransients";
 import type { BuildContext } from "../../../../../../../models/Context";
 import type { ProjectState } from "../../../../../../../models/State/Project";
 import type { MidiClip, Sequence } from "../../../../utils/buildArrangement";
-import { outputSetColor } from "../../../../utils/outputColor";
+import { outputColor } from "../../../../utils/outputColor";
 import { PianoRollGrid } from "../../../PianoRoll/Grid";
 import { PianoRollNote } from "../../../PianoRoll/Note";
 import { PianoRollPitchSlide } from "../../../PianoRoll/PitchSlide";
@@ -34,7 +34,7 @@ export const MidiClipCard: React.FC<MidiClipCardProps> = ({ clip, sequence, sequ
 	const displayMax = displayMin + padded;
 	const displayRange = displayMax - displayMin;
 
-	const color = outputSetColor(clip.outputIds);
+	const color = outputColor(clip.port);
 	const stepsPerOctave = clip.tuning ? clip.tuning.classes.length : 12;
 
 	const transients = useMemo(() => [project.pitchZoom], [project.pitchZoom]);
@@ -115,7 +115,7 @@ export const MidiClipCard: React.FC<MidiClipCardProps> = ({ clip, sequence, sequ
 				/>
 			))}
 
-			<span className="absolute left-1 top-0.5 z-10 text-[10px] text-muted-foreground">{clip.outputKey === "unrouted" ? "unrouted" : clip.outputIds.join(", ")}</span>
+			<span className="absolute left-1 top-0.5 z-10 text-[10px] text-muted-foreground">{clip.port}</span>
 		</div>
 	);
 };

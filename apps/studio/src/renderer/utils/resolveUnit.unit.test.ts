@@ -1,4 +1,4 @@
-import { gain, linearGain } from "resequence";
+import { gain, linearGain } from "@resequence/units";
 import { describe, expect, it } from "vitest";
 import { resolveUnit } from "./resolveUnit";
 

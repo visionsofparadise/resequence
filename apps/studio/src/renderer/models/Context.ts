@@ -1,6 +1,7 @@
 import type { QueryClient } from "@tanstack/react-query";
-import type { Pattern, Playback, TempoMap, Unit } from "resequence";
-import type { OutputEntry } from "../components/Project/Build/hooks/useMapGraph";
+import type { TempoMap } from "@resequence/patterns";
+import type { Unit } from "@resequence/units";
+import type { Playback, Router } from "resequence";
 import type { Snapshot } from "valtio";
 import type { AppSettings } from "../../shared/models/AppSettings";
 import type { Logger } from "../../shared/models/Logger/Logger";
@@ -42,11 +43,9 @@ export interface BuildContext extends ProjectContext {
 	readonly audioContext: AudioContext;
 	readonly injectedNodes: WeakSet<object>;
 	readonly injectedUnits: Map<string, Unit>;
-	readonly injectedPatterns: Map<string, Pattern>;
 	readonly overrides: Array<OverrideEntry>;
 	readonly playbackEngine: Playback;
-	readonly rootPattern: Pattern;
-	readonly outputs: ReadonlyArray<OutputEntry>;
+	readonly router: Router;
 	readonly tempoMap: TempoMap;
 	readonly unitDriverMap: DerivedDriverMap;
 }

@@ -11,8 +11,10 @@ export interface TrimProperties extends ModifierProperties {
 }
 
 export class TrimPattern extends ModifierPattern<TrimProperties> {
-	static is(value: unknown): value is TrimPattern {
-		return value instanceof TrimPattern;
+	readonly type = ["pattern", "midi", "modifier", "trim"] as const;
+
+	static override is(value: unknown): value is TrimPattern {
+		return ModifierPattern.is(value) && value.type[3] === "trim";
 	}
 
 	clone(overrides: Partial<PatternProperties>): TrimPattern {

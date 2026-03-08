@@ -9,8 +9,10 @@ import { evaluateSlide, mergeSlides } from "../utils/slide";
 import { walkNotes } from "../utils/walk";
 
 export class SlidePattern extends ModifierPattern {
-	static is(value: unknown): value is SlidePattern {
-		return value instanceof SlidePattern;
+	readonly type = ["pattern", "midi", "modifier", "slide"] as const;
+
+	static override is(value: unknown): value is SlidePattern {
+		return ModifierPattern.is(value) && value.type[3] === "slide";
 	}
 
 	clone(overrides: Partial<PatternProperties>): SlidePattern {

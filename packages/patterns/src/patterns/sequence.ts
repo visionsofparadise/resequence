@@ -4,6 +4,12 @@ import type { PatternProperties, RelativeChild, RelativeNote } from "./pattern";
 import { Pattern } from "./pattern";
 
 export class SequencePattern extends MidiPattern {
+	readonly type = ["pattern", "midi", "sequence"] as const;
+
+	static override is(value: unknown): value is SequencePattern {
+		return MidiPattern.is(value) && value.type[2] === "sequence";
+	}
+
 	clone(overrides: Partial<PatternProperties>): SequencePattern {
 		return new SequencePattern({
 			...this.properties,

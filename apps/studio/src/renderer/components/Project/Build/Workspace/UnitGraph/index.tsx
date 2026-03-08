@@ -1,7 +1,7 @@
 import { Background, ReactFlow, type OnMove, type OnMoveEnd } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { useCallback, useMemo } from "react";
-import type { Unit } from "resequence";
+import type { Unit } from "@resequence/units";
 import type { BuildContext } from "../../../../../models/Context";
 import type { ProjectState } from "../../../../../models/State/Project";
 import { UnitNode } from "./UnitNode";
@@ -12,14 +12,15 @@ const nodeTypes = { unit: UnitNode };
 
 interface UnitGraphProps {
 	readonly context: BuildContext;
+	readonly portKey: string;
 	readonly outputUnit: Unit;
 	readonly onBack: () => void;
 }
 
-export const UnitGraph: React.FC<UnitGraphProps> = ({ context, outputUnit, onBack }) => {
+export const UnitGraph: React.FC<UnitGraphProps> = ({ context, portKey, outputUnit, onBack }) => {
 	const { project, projectStore, unitDriverMap } = context;
 
-	const outputId = outputUnit.id ?? "";
+	const outputId = portKey;
 
 	const { nodes, edges } = useMemo(() => {
 		const graph = buildGraph(outputUnit, unitDriverMap);

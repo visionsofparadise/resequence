@@ -34,8 +34,10 @@ export interface ArpProperties extends ModifierProperties {
 }
 
 export class ArpPattern extends ModifierPattern<ArpProperties> {
-	static is(value: unknown): value is ArpPattern {
-		return value instanceof ArpPattern;
+	readonly type = ["pattern", "midi", "modifier", "arp"] as const;
+
+	static override is(value: unknown): value is ArpPattern {
+		return ModifierPattern.is(value) && value.type[3] === "arp";
 	}
 
 	clone(overrides: Partial<PatternProperties>): ArpPattern {

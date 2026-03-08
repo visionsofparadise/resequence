@@ -11,8 +11,10 @@ export interface AccentProperties extends ModifierProperties {
 }
 
 export class AccentPattern extends ModifierPattern<AccentProperties> {
-	static is(value: unknown): value is AccentPattern {
-		return value instanceof AccentPattern;
+	readonly type = ["pattern", "midi", "modifier", "accent"] as const;
+
+	static override is(value: unknown): value is AccentPattern {
+		return ModifierPattern.is(value) && value.type[3] === "accent";
 	}
 
 	clone(overrides: Partial<PatternProperties>): AccentPattern {

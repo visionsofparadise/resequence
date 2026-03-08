@@ -1,4 +1,4 @@
-import type { Unit } from "resequence";
+import type { Unit } from "@resequence/units";
 import { resolveUnit } from "./resolveUnit";
 
 // FIX: A descent needs to take an array of indexes, not just 1 step

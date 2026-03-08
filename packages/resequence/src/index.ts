@@ -1,5 +1,4 @@
 /* eslint-disable barrel-files/avoid-barrel-files */
-export { harmonizeMidi, HarmonizeMidiUnit, humanizeMidi, HumanizeMidiUnit } from "@resequence/units";
 export { formula } from "./automation/formula";
 export type { FormulaOptions } from "./automation/formula";
 export { scheduleKeyframes } from "./automation/keyframe";

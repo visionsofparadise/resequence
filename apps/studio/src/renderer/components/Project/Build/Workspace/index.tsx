@@ -14,11 +14,11 @@ export const Workspace: React.FC<WorkspaceProps> = ({ context }) => {
 	const goBack = useCallback(() => {
 		projectStore.mutate<ProjectState>(project, (proxy) => {
 			proxy.activePianoRoll = null;
-			proxy.activeOutput = null;
+			proxy.activePort = null;
 		});
 	}, [project, projectStore]);
 
-	const isDrillDown = project.activeOutput !== null || project.activePianoRoll !== null;
+	const isDrillDown = project.activePort !== null || project.activePianoRoll !== null;
 
 	useEffect(() => {
 		if (!isDrillDown) return;

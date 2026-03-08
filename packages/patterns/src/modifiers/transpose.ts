@@ -11,8 +11,10 @@ export interface TransposeProperties extends ModifierProperties {
 }
 
 export class TransposePattern extends ModifierPattern<TransposeProperties> {
-	static is(value: unknown): value is TransposePattern {
-		return value instanceof TransposePattern;
+	readonly type = ["pattern", "midi", "modifier", "transpose"] as const;
+
+	static override is(value: unknown): value is TransposePattern {
+		return ModifierPattern.is(value) && value.type[3] === "transpose";
 	}
 
 	clone(overrides: Partial<PatternProperties>): TransposePattern {

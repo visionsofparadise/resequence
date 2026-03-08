@@ -1,6 +1,7 @@
 import type { Event, NoteEvent as PatternNoteEvent, TempoMap } from "@resequence/patterns";
 import { collectMetadata } from "@resequence/patterns";
-import type { DriverEntry, MidiUnit, NoteEvent } from "@resequence/units";
+import type { DriverEntry, UnitContext } from "@resequence/units";
+import { createUnitContext } from "@resequence/units";
 import type { AudioEvent } from "./constructs/audio";
 import { isAudioEvent, isPreloadAudioEvent } from "./constructs/audio";
 import type { AutomationEvent } from "./constructs/automate";
@@ -42,7 +43,7 @@ export class Playback {
 	};
 
 	private readonly sampleCache = new Map<string, AudioBuffer>();
-	private readonly driverMap = new Map<string, DriverEntry>();
+	private unitContext: UnitContext | undefined;
 	private tempoMap: TempoMap = [];
 	private markers: ReadonlyArray<{ beat: number; name: string }> = [];
 	private allAutomationEvents: ReadonlyArray<AutomationEvent> = [];
@@ -62,6 +63,10 @@ export class Playback {
 
 	get state(): PlaybackState {
 		return this._state;
+	}
+
+	get drivers(): ReadonlyMap<string, DriverEntry> {
+		return this.unitContext?.driverMap ?? new Map();
 	}
 
 	get beat(): number {
@@ -111,6 +116,26 @@ export class Playback {
 		this.tempoMap = metadata.tempoMap;
 		this.markers = metadata.markers;
 		this.patternEndBeat = pattern.endBeat - pattern.startBeat;
+
+		const unitContext = createUnitContext(
+			this.audioContext,
+			async (path: string) => {
+				const cached = this.sampleCache.get(path);
+				if (cached) return cached;
+				const buf = await loadSample(path, this.audioContext, getSample);
+				this.sampleCache.set(path, buf);
+				return buf;
+			},
+			async (url: string) => {
+				await this.audioContext.audioWorklet.addModule(url);
+			},
+		);
+
+		for (const [, unit] of this.router.ports) {
+			await unit.setup(unitContext);
+		}
+
+		this.unitContext = unitContext;
 	}
 
 	async play(startBeat = 0): Promise<void> {
@@ -152,7 +177,7 @@ export class Playback {
 		this.scheduledToBeats = beat;
 		this.startedAtSeconds = this.audioContext.currentTime;
 		this.markerCursor = lowerBound(this.markers, beat, (marker) => marker.beat);
-		seekAutomationFromEvents(this.allAutomationEvents, beat, this.driverMap, this.tempoMap);
+		seekAutomationFromEvents(this.allAutomationEvents, beat, this.unitContext?.driverMap ?? new Map(), this.tempoMap);
 	}
 
 	stop(): void {
@@ -229,14 +254,14 @@ export class Playback {
 			for (const noteEvent of portNotes) {
 				const note = mapNoteEvent(noteEvent, this.tempoMap);
 				this.emitNoteEvent(noteEvent, noteEvent.startBeat);
-				scheduleOnUnit(unit, note);
+				if (this.unitContext) unit.schedule(note, this.unitContext);
 			}
 		}
 
 		const totalBeats = this.patternEndBeat;
 
 		for (const automationEvent of automationEvents) {
-			dispatchAutomation(automationEvent, this.driverMap, this.audioContext, this.tempoMap, fromBeats, totalBeats);
+			dispatchAutomation(automationEvent, this.unitContext?.driverMap ?? new Map(), this.audioContext, this.tempoMap, fromBeats, totalBeats);
 		}
 
 		for (const cueEvent of audioEvents) {
@@ -284,12 +309,6 @@ export function play(router: Router, audioContext: AudioContext, options?: Playb
 
 function isNoteEvent(event: Event): event is PatternNoteEvent {
 	return event.type === "note";
-}
-
-function scheduleOnUnit(unit: MidiUnit, note: NoteEvent): void {
-	if ("scheduleNote" in unit && typeof unit.scheduleNote === "function") {
-		(unit as { scheduleNote: (note: NoteEvent) => void }).scheduleNote(note);
-	}
 }
 
 function filterPorts(keys: ReadonlyArray<string>, include?: ReadonlyArray<string>, exclude?: ReadonlyArray<string>): ReadonlyArray<string> {

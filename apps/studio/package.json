@@ -74,6 +74,8 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-resizable-panels": "^4.7.0",
+    "@resequence/patterns": "*",
+    "@resequence/units": "*",
     "resequence": "*",
     "sonner": "^2.0.7",
     "tailwind-merge": "^2.0.0",

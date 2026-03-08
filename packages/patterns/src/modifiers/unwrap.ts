@@ -2,8 +2,10 @@ import { ModifierPattern } from "../patterns/modifier";
 import type { PatternProperties } from "../patterns/pattern";
 
 export class UnwrapPattern extends ModifierPattern {
-	static is(value: unknown): value is UnwrapPattern {
-		return value instanceof UnwrapPattern;
+	readonly type = ["pattern", "midi", "modifier", "unwrap"] as const;
+
+	static override is(value: unknown): value is UnwrapPattern {
+		return ModifierPattern.is(value) && value.type[3] === "unwrap";
 	}
 
 	clone(overrides: Partial<PatternProperties>): UnwrapPattern {

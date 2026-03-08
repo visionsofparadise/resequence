@@ -11,8 +11,10 @@ export interface OverrideProperties extends ModifierProperties {
 }
 
 export class OverridePattern extends ModifierPattern<OverrideProperties> {
-	static is(value: unknown): value is OverridePattern {
-		return value instanceof OverridePattern;
+	readonly type = ["pattern", "midi", "modifier", "override"] as const;
+
+	static override is(value: unknown): value is OverridePattern {
+		return ModifierPattern.is(value) && value.type[3] === "override";
 	}
 
 	clone(overrides: Partial<PatternProperties>): OverridePattern {

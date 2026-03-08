@@ -4,7 +4,7 @@ import type { BuildContext } from "../../../../../models/Context";
 import { Icon } from "../../../../ui/Icon";
 import { Button } from "../../../../ui/button";
 import type { MidiClip, Sequence } from "../../utils/buildArrangement";
-import { outputSetColor } from "../../utils/outputColor";
+import { outputColor } from "../../utils/outputColor";
 import { PianoRollGrid } from "./Grid";
 import { PianoRollNote } from "./Note";
 import { PianoRollPitchSlide } from "./PitchSlide";
@@ -114,7 +114,7 @@ export const PianoRoll: React.FC<PianoRollProps> = ({ context, target, onBack })
 	}
 
 	const pxPerBeat = project.timelineZoom.value;
-	const color = outputSetColor(clip.outputIds);
+	const color = outputColor(clip.port);
 
 	return (
 		<div className="flex h-full flex-col">
@@ -127,7 +127,7 @@ export const PianoRoll: React.FC<PianoRollProps> = ({ context, target, onBack })
 					<Icon.ArrowLeft className="mr-1 h-3.5 w-3.5" />
 					Back
 				</Button>
-				<span className="text-sm text-muted-foreground">{clip.outputKey === "unrouted" ? "unrouted" : clip.outputIds.join(", ")}</span>
+				<span className="text-sm text-muted-foreground">{clip.port}</span>
 			</div>
 
 			<div

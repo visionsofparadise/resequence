@@ -58,6 +58,9 @@ export class NoiseUnit extends GeneratorUnit {
 
 		const isOffline = context.audioContext instanceof OfflineAudioContext;
 
+		// TODO: AudioWorkletNodes don't fire "ended" events, so cleanup relies on setTimeout
+		// in real-time contexts. This has timing uncertainty from event loop delays. Investigate
+		// alternatives: tracking active nodes for bulk teardown, or a message-port based signal.
 		if (!isOffline) {
 			const cleanupDelay = noteEvent.cleanupMs - context.audioContext.currentTime * 1000;
 

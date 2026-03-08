@@ -16,7 +16,7 @@ interface AudioClipCardProps {
 export const AudioClipCard: React.FC<AudioClipCardProps> = ({ clip, sequence, context }) => {
 	const { project } = context;
 	const innerRef = useRef<HTMLDivElement>(null);
-	const { data: waveform, isLoading, error } = useWaveformData(clip.filePath, context);
+	const { data: waveform, isLoading, error } = useWaveformData(clip.sampleKey, context);
 
 	const transients = useMemo(() => [project.timelineZoom], [project.timelineZoom]);
 

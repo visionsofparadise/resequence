@@ -11,8 +11,10 @@ export interface RepeatProperties extends ModifierProperties {
 }
 
 export class RepeatPattern extends ModifierPattern<RepeatProperties> {
-	static is(value: unknown): value is RepeatPattern {
-		return value instanceof RepeatPattern;
+	readonly type = ["pattern", "midi", "modifier", "repeat"] as const;
+
+	static override is(value: unknown): value is RepeatPattern {
+		return ModifierPattern.is(value) && value.type[3] === "repeat";
 	}
 
 	clone(overrides: Partial<PatternProperties>): RepeatPattern {

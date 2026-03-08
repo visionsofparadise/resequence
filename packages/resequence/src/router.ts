@@ -7,11 +7,13 @@ export interface RouterOptions {
 }
 
 export class Router {
+	readonly type = ["router"] as const;
+
 	private _pattern: Pattern | undefined;
 	private readonly _ports: Map<string, MidiUnit>;
 
 	static is(value: unknown): value is Router {
-		return value instanceof Router;
+		return typeof value === "object" && value !== null && "type" in value && Array.isArray(value.type) && value.type[0] === "router";
 	}
 
 	constructor(options?: RouterOptions) {

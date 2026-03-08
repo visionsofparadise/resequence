@@ -17,8 +17,10 @@ export interface StrumProperties extends ModifierProperties {
 }
 
 export class StrumPattern extends ModifierPattern<StrumProperties> {
-	static is(value: unknown): value is StrumPattern {
-		return value instanceof StrumPattern;
+	readonly type = ["pattern", "midi", "modifier", "strum"] as const;
+
+	static override is(value: unknown): value is StrumPattern {
+		return ModifierPattern.is(value) && value.type[3] === "strum";
 	}
 
 	clone(overrides: Partial<PatternProperties>): StrumPattern {

@@ -17,8 +17,10 @@ export interface UnisonProperties extends ModifierProperties {
 }
 
 export class UnisonPattern extends ModifierPattern<UnisonProperties> {
-	static is(value: unknown): value is UnisonPattern {
-		return value instanceof UnisonPattern;
+	readonly type = ["pattern", "midi", "modifier", "unison"] as const;
+
+	static override is(value: unknown): value is UnisonPattern {
+		return ModifierPattern.is(value) && value.type[3] === "unison";
 	}
 
 	clone(overrides: Partial<PatternProperties>): UnisonPattern {

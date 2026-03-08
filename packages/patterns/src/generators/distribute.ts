@@ -22,8 +22,10 @@ export interface DistributeProperties extends MidiPatternProperties {
 }
 
 export class DistributePattern extends MidiPattern<DistributeProperties> {
-	static is(value: unknown): value is DistributePattern {
-		return value instanceof DistributePattern;
+	readonly type = ["pattern", "midi", "generator", "distribute"] as const;
+
+	static override is(value: unknown): value is DistributePattern {
+		return MidiPattern.is(value) && value.type[2] === "generator" && value.type[3] === "distribute";
 	}
 
 	clone(overrides: Partial<PatternProperties>): DistributePattern {

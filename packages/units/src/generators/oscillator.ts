@@ -14,6 +14,7 @@ export interface OscillatorProperties extends GeneratorUnitProperties {
 
 export class OscillatorUnit extends GeneratorUnit {
 	readonly type = ["unit", "midi", "generator", "oscillator"] as const;
+
 	declare readonly properties: OscillatorProperties;
 
 	static override is(value: unknown): value is OscillatorUnit {
@@ -33,8 +34,12 @@ export class OscillatorUnit extends GeneratorUnit {
 		};
 	}
 
-	get oscillatorType(): WaveShape { return this.properties.oscillatorType; }
-	get detune(): number { return this.properties.detune ?? 0; }
+	get oscillatorType(): WaveShape {
+		return this.properties.oscillatorType;
+	}
+	get detune(): number {
+		return this.properties.detune ?? 0;
+	}
 
 	clone(overrides?: Partial<OscillatorProperties>): OscillatorUnit {
 		return new OscillatorUnit({ ...this.properties, ...overrides, previousProperties: this.properties });
@@ -61,13 +66,7 @@ export class OscillatorUnit extends GeneratorUnit {
 		driveParam(oscillator.detune, this.id ? `${this.id}.detune` : undefined, this.detune, [-1200, 1200], context);
 
 		if (noteEvent.slides && noteEvent.slides.length > 0) {
-			scheduleSlideRamps(
-				oscillator.detune,
-				this.detune,
-				noteEvent.slides,
-				noteEvent.startMs / 1000,
-				(cents) => this.detune + cents,
-			);
+			scheduleSlideRamps(oscillator.detune, this.detune, noteEvent.slides, noteEvent.startMs / 1000, (cents) => this.detune + cents);
 		}
 
 		oscillator.start(noteEvent.startMs / 1000);

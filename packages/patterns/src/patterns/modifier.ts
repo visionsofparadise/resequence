@@ -7,7 +7,9 @@ export interface ModifierProperties extends MidiPatternProperties {
 }
 
 export abstract class ModifierPattern<P extends ModifierProperties = ModifierProperties> extends MidiPattern<P> {
-	static is(value: unknown): value is ModifierPattern {
-		return value instanceof ModifierPattern;
+	abstract readonly type: readonly ["pattern", "midi", "modifier", ...Array<string>];
+
+	static override is(value: unknown): value is ModifierPattern {
+		return MidiPattern.is(value) && value.type[2] === "modifier";
 	}
 }

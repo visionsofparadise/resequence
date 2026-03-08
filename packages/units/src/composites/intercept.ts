@@ -100,6 +100,10 @@ export class InterceptUnit extends MidiUnit {
 }
 
 export function intercept(unit: Unit, options: InterceptOptions): InterceptUnit {
+	if (options.override && !unit.id) {
+		unit = unit.clone({ id: crypto.randomUUID() });
+	}
+
 	const targets: Array<Unit> = [...unit.targets];
 	unit.targets.length = 0;
 

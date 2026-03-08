@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { gain, linearGain, lowpass } from "resequence";
+import { gain, linearGain, lowpass } from "@resequence/units";
 import { descendUnits } from "./descendUnits";
 
 describe("descendUnits", () => {

@@ -18,13 +18,13 @@ export async function renderAudio(options: RenderAudioOptions): Promise<AudioBuf
 
 	await unit.setup(context);
 
-	for (const note of notes) {
-		unit.schedule(note, context);
+	try {
+		for (const note of notes) {
+			unit.schedule(note, context);
+		}
+
+		return await audioContext.startRendering();
+	} finally {
+		unit.teardown(context);
 	}
-
-	const audioBuffer = await audioContext.startRendering();
-
-	unit.teardown(context);
-
-	return audioBuffer;
 }

@@ -3,8 +3,10 @@ import { ModifierPattern } from "../patterns/modifier";
 import type { Pattern, PatternProperties } from "../patterns/pattern";
 
 export class SkipPattern extends ModifierPattern {
-	static is(value: unknown): value is SkipPattern {
-		return value instanceof SkipPattern;
+	readonly type = ["pattern", "midi", "modifier", "skip"] as const;
+
+	static override is(value: unknown): value is SkipPattern {
+		return ModifierPattern.is(value) && value.type[3] === "skip";
 	}
 
 	override setup(): Array<Event> {

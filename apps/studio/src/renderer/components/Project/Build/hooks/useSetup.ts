@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { type Pattern, Playback } from "resequence";
+import { type Router, Playback } from "resequence";
 import type { MainWithEvents } from "../../../../models/Main";
 import { ValueScheduler } from "../models/ValueScheduler";
 import { type DerivedDriverMap, hijackDrivers } from "../utils/hijackDrivers";
@@ -10,22 +10,22 @@ export interface SetupResult {
 	readonly unitDriverMap: DerivedDriverMap;
 }
 
-export function useSetupPlayback(rootPattern: Pattern, main: MainWithEvents): SetupResult | undefined {
+export function useSetupPlayback(router: Router, main: MainWithEvents): SetupResult | undefined {
 	const [result, setResult] = useState<SetupResult | undefined>();
 
 	useEffect(() => {
 		const audioContext = new AudioContext();
 		const scheduler = new ValueScheduler(audioContext);
-		const playbackEngine = new Playback(rootPattern, audioContext);
+		const playbackEngine = new Playback(router, audioContext);
 
 		let cancelled = false;
 
 		void playbackEngine
 			.setup((filePath) => main.readFileBuffer(filePath).then((arr) => arr.buffer as ArrayBuffer))
 			.then(() => {
-				if (cancelled || !playbackEngine.context) return;
+				if (cancelled) return;
 
-				const unitDriverMap = hijackDrivers(playbackEngine.context.driverMap, scheduler);
+				const unitDriverMap = hijackDrivers(playbackEngine.drivers, scheduler);
 
 				setResult({ audioContext, playbackEngine, unitDriverMap });
 			});
@@ -37,7 +37,7 @@ export function useSetupPlayback(rootPattern: Pattern, main: MainWithEvents): Se
 
 			void audioContext.close();
 		};
-	}, [rootPattern, main]);
+	}, [router, main]);
 
 	return result;
 }

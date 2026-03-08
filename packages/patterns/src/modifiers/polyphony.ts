@@ -12,8 +12,10 @@ export interface PolyphonyProperties extends ModifierProperties {
 }
 
 export class PolyphonyPattern extends ModifierPattern<PolyphonyProperties> {
-	static is(value: unknown): value is PolyphonyPattern {
-		return value instanceof PolyphonyPattern;
+	readonly type = ["pattern", "midi", "modifier", "polyphony"] as const;
+
+	static override is(value: unknown): value is PolyphonyPattern {
+		return ModifierPattern.is(value) && value.type[3] === "polyphony";
 	}
 
 	clone(overrides: Partial<PatternProperties>): PolyphonyPattern {

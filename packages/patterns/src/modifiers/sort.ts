@@ -15,8 +15,10 @@ export interface SortProperties extends ModifierProperties {
 }
 
 export class SortPattern extends ModifierPattern<SortProperties> {
-	static is(value: unknown): value is SortPattern {
-		return value instanceof SortPattern;
+	readonly type = ["pattern", "midi", "modifier", "sort"] as const;
+
+	static override is(value: unknown): value is SortPattern {
+		return ModifierPattern.is(value) && value.type[3] === "sort";
 	}
 
 	clone(overrides: Partial<PatternProperties>): SortPattern {

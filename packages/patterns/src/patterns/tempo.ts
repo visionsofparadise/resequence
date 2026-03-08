@@ -27,8 +27,10 @@ export interface TempoProperties extends PatternProperties {
 }
 
 export class TempoPattern extends Pattern<TempoProperties> {
-	static is(value: unknown): value is TempoPattern {
-		return value instanceof TempoPattern;
+	readonly type = ["pattern", "tempo"] as const;
+
+	static override is(value: unknown): value is TempoPattern {
+		return Pattern.is(value) && value.type[1] === "tempo";
 	}
 
 	override _schedule(absoluteBeat: number, _ports: ReadonlyArray<Port>, _tuning?: ResolvedTuning): Array<Event> {

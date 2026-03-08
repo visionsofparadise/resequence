@@ -26,13 +26,11 @@ export const Build: React.FC<BuildProps> = ({ context }) => {
 
 	useBundleBuild(entrypoint, context);
 
-	const { rootPattern: unmappedPattern, overrides } = useResolveBuild(context);
+	const { router, overrides } = useResolveBuild(context);
+	const { injectedNodes, injectedUnits } = useMapGraph(router);
+	const { arrangement, tempoMap } = useBuildArrangement(router);
 
-	const { rootPattern, outputs, injectedNodes, injectedUnits, injectedPatterns } = useMapGraph(unmappedPattern);
-
-	const { arrangement, tempoMap } = useBuildArrangement(rootPattern);
-
-	const setup = useSetupPlayback(rootPattern, main);
+	const setup = useSetupPlayback(router, main);
 
 	const buildContext = useMemo((): BuildContext | undefined => {
 		if (!setup) return undefined;
@@ -44,16 +42,14 @@ export const Build: React.FC<BuildProps> = ({ context }) => {
 			arrangement,
 			audioContext,
 			injectedNodes,
-			injectedPatterns,
 			injectedUnits,
 			overrides,
 			playbackEngine,
-			rootPattern,
-			outputs,
+			router,
 			tempoMap,
 			unitDriverMap,
 		};
-	}, [context, arrangement, tempoMap, injectedNodes, injectedPatterns, injectedUnits, outputs, overrides, rootPattern, setup]);
+	}, [context, arrangement, tempoMap, injectedNodes, injectedUnits, overrides, router, setup]);
 
 	if (!buildContext)
 		return (

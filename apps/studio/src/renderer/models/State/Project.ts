@@ -14,13 +14,9 @@ export interface PianoRollTarget {
 	index: number;
 }
 
-export interface OutputTarget {
-	index: number;
-}
-
 export interface ProjectState extends State {
 	activePianoRoll: PianoRollTarget | null;
-	activeOutput: OutputTarget | null;
+	activePort: string | null;
 
 	mutedOutputs: Set<string>;
 	soloedOutputs: Set<string>;
@@ -38,7 +34,7 @@ export interface ProjectState extends State {
 
 export interface ProjectStateInitial {
 	activePianoRoll?: PianoRollTarget | null;
-	activeOutput?: OutputTarget | null;
+	activePort?: string | null;
 	timelineScrollX?: number;
 	timelineScrollY?: number;
 	timelineZoom?: number;
@@ -52,7 +48,7 @@ export function useProjectState(initial: ProjectStateInitial = {}, store: ProxyS
 	return useCreateState<ProjectState>(
 		{
 			activePianoRoll: initial.activePianoRoll ?? null,
-			activeOutput: initial.activeOutput ?? null,
+			activePort: initial.activePort ?? null,
 			mutedOutputs: new Set(),
 			soloedOutputs: new Set(),
 			timelineScrollX: new Transient(initial.timelineScrollX ?? 0),
@@ -70,7 +66,7 @@ export function useProjectState(initial: ProjectStateInitial = {}, store: ProxyS
 export function serializeProjectState(state: ProjectState): ProjectStateInitial {
 	return {
 		activePianoRoll: state.activePianoRoll,
-		activeOutput: state.activeOutput,
+		activePort: state.activePort,
 		timelineScrollX: state.timelineScrollX.toJson(),
 		timelineScrollY: state.timelineScrollY.toJson(),
 		timelineZoom: state.timelineZoom.toJson(),
@@ -84,7 +80,7 @@ export function serializeProjectState(state: ProjectState): ProjectStateInitial 
 export function deserializeProjectState(json: Record<string, unknown>): ProjectStateInitial {
 	return {
 		activePianoRoll: isPianoRollTarget(json.activePianoRoll) ? json.activePianoRoll : undefined,
-		activeOutput: isOutputTarget(json.activeOutput) ? json.activeOutput : undefined,
+		activePort: typeof json.activePort === "string" ? json.activePort : undefined,
 		timelineScrollX: typeof json.timelineScrollX === "number" ? json.timelineScrollX : undefined,
 		timelineScrollY: typeof json.timelineScrollY === "number" ? json.timelineScrollY : undefined,
 		timelineZoom: typeof json.timelineZoom === "number" ? json.timelineZoom : undefined,
@@ -105,12 +101,6 @@ function isPianoRollTarget(value: unknown): value is PianoRollTarget {
 	if (typeof record.index !== "number") return false;
 
 	return true;
-}
-
-function isOutputTarget(value: unknown): value is OutputTarget {
-	if (typeof value !== "object" || value === null) return false;
-
-	return typeof (value as Record<string, unknown>).index === "number";
 }
 
 function isOutputGraphViewports(value: unknown): value is Record<string, OutputGraphViewport> {

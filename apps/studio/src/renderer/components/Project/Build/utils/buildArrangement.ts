@@ -1,6 +1,4 @@
 import {
-	AudioPattern,
-	AutomatePattern,
 	MetadataPattern,
 	MidiPattern,
 	SequencePattern,
@@ -8,18 +6,17 @@ import {
 	collectTempoPoints,
 	denormalizePitch,
 	type Keyframe,
-	type Lfo,
-	type MidiUnit,
+	type Note,
 	type Pattern,
 	type Pitch,
 	type ResolvedTuning,
-	type ScoreNote,
 	type TempoMap,
 	type TempoPoint,
-} from "resequence";
-import { outputSetColor } from "./outputColor";
+} from "@resequence/patterns";
+import { AudioPattern, AutomationPattern, type Lfo } from "resequence";
+import { outputColor } from "./outputColor";
 
-export interface MidiClipNote extends ScoreNote {
+export interface MidiClipNote extends Note {
 	readonly patternId: string;
 	readonly patternPath: Array<number>;
 }
@@ -34,8 +31,7 @@ export interface PatternSpan {
 
 export interface MidiClip {
 	readonly type: "midi";
-	readonly outputKey: string;
-	readonly outputIds: ReadonlyArray<string>;
+	readonly port: string;
 	readonly notes: ReadonlyArray<MidiClipNote>;
 	readonly spans: ReadonlyArray<PatternSpan>;
 	readonly minPitch: number;
@@ -52,8 +48,8 @@ export interface AudioClip {
 	readonly name: string;
 	readonly startBeat: number;
 	readonly endBeat: number;
-	readonly filePath: string;
-	readonly durationBeats: number;
+	readonly sampleKey: string;
+	readonly audioDurationBeats: number;
 	readonly playFromBeats: number;
 	readonly reversed: boolean;
 }
@@ -86,21 +82,18 @@ export interface Arrangement {
 	readonly endBeat: number;
 }
 
-function computeOutputKey(outputs: ReadonlyArray<MidiUnit>): string {
-	if (outputs.length === 0) return "unrouted";
+function computePortKey(ports: ReadonlyArray<string>): string {
+	if (ports.length === 0) return "unrouted";
 
-	return outputs
-		.map((output) => output.id)
-		.sort()
-		.join("|");
+	return [...ports].sort().join("|");
 }
 
-function computeClipKey(outputs: ReadonlyArray<MidiUnit>, tuning: ResolvedTuning | null, timeSignature: readonly [number, number]): string {
-	const outputPart = computeOutputKey(outputs);
+function computeClipKey(ports: ReadonlyArray<string>, tuning: ResolvedTuning | null, timeSignature: readonly [number, number]): string {
+	const portPart = computePortKey(ports);
 	const tuningPart = tuning ? tuning.classes.join(",") : "null";
 	const tsPart = `${timeSignature[0]}/${timeSignature[1]}`;
 
-	return `${outputPart}::${tuningPart}::${tsPart}`;
+	return `${portPart}::${tuningPart}::${tsPart}`;
 }
 
 function patternTypeLabel(pattern: Pattern): string {
@@ -116,7 +109,7 @@ interface MetadataContext {
 interface NoteCollector {
 	notes: Array<MidiClipNote>;
 	spans: Array<PatternSpan>;
-	outputKey: string;
+	port: string;
 	tuning: ResolvedTuning | null;
 	timeSignature: readonly [number, number];
 }
@@ -148,7 +141,7 @@ function buildPatternId(indexes: ReadonlyArray<number>): string {
 function collectSubtree(
 	pattern: Pattern,
 	offset: number,
-	accumulatedOutputs: ReadonlyArray<MidiUnit>,
+	accumulatedPorts: ReadonlyArray<string>,
 	state: SubtreeState,
 	indexes: ReadonlyArray<number>,
 	meta: MetadataContext,
@@ -157,11 +150,12 @@ function collectSubtree(
 	const patternId = buildPatternId(indexes);
 	const isMidi = MidiPattern.is(pattern);
 
-	const currentOutputs = isMidi && pattern.outputs.length > 0 ? [...accumulatedOutputs, ...pattern.outputs] : accumulatedOutputs;
+	const currentPorts = isMidi && pattern.ports.length > 0 ? [...accumulatedPorts, ...pattern.ports.map((port: { key: string }) => port.key)] : accumulatedPorts;
 
 	if (TempoPattern.is(pattern)) {
 		if (!meta.ancestorHasTempo || pattern.properties.isOverride) {
 			collectTempoPoints(pattern.properties.bpm, pattern.properties.keyframes, offset, tempoPoints);
+
 			meta = { ...meta, ancestorHasTempo: true };
 		}
 	}
@@ -174,7 +168,7 @@ function collectSubtree(
 		};
 
 		for (const [childIndex, { offsetBeats, pattern: child }] of pattern.children.entries()) {
-			collectSubtree(child, offset + offsetBeats, currentOutputs, state, [...indexes, childIndex], updatedMeta, tempoPoints);
+			collectSubtree(child, offset + offsetBeats, currentPorts, state, [...indexes, childIndex], updatedMeta, tempoPoints);
 		}
 
 		return;
@@ -188,8 +182,8 @@ function collectSubtree(
 			name: pattern.properties.name,
 			startBeat: offset + pattern.startBeat,
 			endBeat: offset + pattern.endBeat,
-			filePath: pattern.properties.path,
-			durationBeats: pattern.properties.durationBeats,
+			sampleKey: pattern.properties.sampleKey,
+			audioDurationBeats: pattern.properties.audioDurationBeats,
 			playFromBeats: pattern.properties.playFromBeats,
 			reversed: pattern.properties.reversed,
 		};
@@ -201,12 +195,12 @@ function collectSubtree(
 		return;
 	}
 
-	if (AutomatePattern.is(pattern)) {
+	if (AutomationPattern.is(pattern)) {
 		const clip: AutomationClip = {
 			type: "automation",
 			patternId,
 			patternPath: [...indexes],
-			name: pattern.properties.name,
+			name: pattern.properties.automationName,
 			paths: pattern.properties.paths,
 			source: pattern.properties.source,
 			startBeat: offset + pattern.startBeat,
@@ -228,17 +222,13 @@ function collectSubtree(
 	}
 
 	if (pattern.notes.length > 0) {
-		const outputKey = computeOutputKey(currentOutputs);
-		const clipKey = computeClipKey(currentOutputs, meta.activeTuning, meta.activeTimeSignature);
-		const outputIds: Array<string> = [];
-		for (const unit of currentOutputs) {
-			if (unit.id) outputIds.push(unit.id);
-		}
+		const port = computePortKey(currentPorts);
+		const clipKey = computeClipKey(currentPorts, meta.activeTuning, meta.activeTimeSignature);
 
 		let collector = state.midiClips.get(clipKey);
 
 		if (!collector) {
-			collector = { notes: [], spans: [], outputKey, tuning: meta.activeTuning, timeSignature: meta.activeTimeSignature };
+			collector = { notes: [], spans: [], port, tuning: meta.activeTuning, timeSignature: meta.activeTimeSignature };
 			state.midiClips.set(clipKey, collector);
 			state.encounterOrder.push(clipKey);
 		}
@@ -265,15 +255,10 @@ function collectSubtree(
 				patternPath: [...indexes],
 			});
 		}
-
-		// Ensure output IDs are stored (first encounter wins)
-		if (!collector.spans[0] || collector.spans.length === 1) {
-			(collector as { outputIds?: ReadonlyArray<string> }).outputIds = outputIds;
-		}
 	}
 
 	for (const [childIndex, { offsetBeats, pattern: child }] of pattern.children.entries()) {
-		collectSubtree(child, offset + offsetBeats, currentOutputs, state, [...indexes, childIndex], meta, tempoPoints);
+		collectSubtree(child, offset + offsetBeats, currentPorts, state, [...indexes, childIndex], meta, tempoPoints);
 	}
 }
 
@@ -281,26 +266,20 @@ function collectSequences(pattern: SequencePattern, offset: number, indexes: Rea
 	const sequences: Array<Sequence> = [];
 
 	const isMidi = MidiPattern.is(pattern);
-	const currentOutputs: ReadonlyArray<MidiUnit> = isMidi && pattern.outputs.length > 0 ? [...pattern.outputs] : [];
+	const currentPorts: ReadonlyArray<string> = isMidi && pattern.ports.length > 0 ? pattern.ports.map((port: { key: string }) => port.key) : [];
 
 	if (pattern.notes.length > 0) {
 		const state = createSubtreeState();
 		const patternId = buildPatternId(indexes);
-		const outputKey = computeOutputKey(currentOutputs);
-		const clipKey = computeClipKey(currentOutputs, meta.activeTuning, meta.activeTimeSignature);
+		const port = computePortKey(currentPorts);
+		const clipKey = computeClipKey(currentPorts, meta.activeTuning, meta.activeTimeSignature);
 
-		const outputIds: Array<string> = [];
-		for (const unit of currentOutputs) {
-			if (unit.id) outputIds.push(unit.id);
-		}
-
-		const collector: NoteCollector & { outputIds?: ReadonlyArray<string> } = {
+		const collector: NoteCollector = {
 			notes: [],
 			spans: [],
-			outputKey,
+			port,
 			tuning: meta.activeTuning,
 			timeSignature: meta.activeTimeSignature,
-			outputIds,
 		};
 		state.midiClips.set(clipKey, collector);
 		state.encounterOrder.push(clipKey);
@@ -348,7 +327,7 @@ function collectSequences(pattern: SequencePattern, offset: number, indexes: Rea
 			sequences.push(...collectSequences(child, offset + offsetBeats, childIndexes, meta, tempoPoints));
 		} else {
 			const state = createSubtreeState();
-			collectSubtree(child, offset + offsetBeats, currentOutputs, state, childIndexes, meta, tempoPoints);
+			collectSubtree(child, offset + offsetBeats, currentPorts, state, childIndexes, meta, tempoPoints);
 
 			const childEnd = offset + offsetBeats + child.endBeat;
 			const clips = buildClips(state, childEnd);
@@ -398,19 +377,16 @@ function buildClips(state: SubtreeState, endBeat?: number): Array<Clip> {
 				}
 			}
 
-			const outputIds = (collector as { outputIds?: ReadonlyArray<string> }).outputIds ?? [];
-
 			clips.push({
 				type: "midi",
-				outputKey: collector.outputKey,
-				outputIds,
+				port: collector.port,
 				notes: collector.notes,
 				spans: collector.spans,
 				minPitch,
 				maxPitch,
 				tuning: collector.tuning,
 				timeSignature: collector.timeSignature,
-				color: outputSetColor(outputIds),
+				color: outputColor(collector.port),
 			});
 		} else if (entry.kind === "audio") {
 			const clip = state.audioClips[entry.index];

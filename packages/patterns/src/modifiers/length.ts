@@ -10,8 +10,10 @@ export interface LengthProperties extends ModifierProperties {
 }
 
 export class LengthPattern extends ModifierPattern<LengthProperties> {
-	static is(value: unknown): value is LengthPattern {
-		return value instanceof LengthPattern;
+	readonly type = ["pattern", "midi", "modifier", "length"] as const;
+
+	static override is(value: unknown): value is LengthPattern {
+		return ModifierPattern.is(value) && value.type[3] === "length";
 	}
 
 	clone(overrides: Partial<PatternProperties>): LengthPattern {

@@ -1,6 +1,7 @@
 import type { Event, NoteEvent as PatternNoteEvent, TempoMap } from "@resequence/patterns";
 import { beatsToSeconds, collectMetadata } from "@resequence/patterns";
-import type { DriverEntry, MidiUnit } from "@resequence/units";
+import type { MidiUnit, NoteEvent, UnitContext } from "@resequence/units";
+import { createUnitContext } from "@resequence/units";
 import type { AudioEvent } from "./constructs/audio";
 import { isAudioEvent, isPreloadAudioEvent } from "./constructs/audio";
 import type { AutomationEvent } from "./constructs/automate";
@@ -97,7 +98,7 @@ export async function render(
 
 async function renderPort(
 	portKey: string,
-	_unit: MidiUnit,
+	unit: MidiUnit,
 	noteEvents: ReadonlyArray<PatternNoteEvent>,
 	automationEvents: ReadonlyArray<AutomationEvent>,
 	audioEvents: ReadonlyArray<AudioEvent>,
@@ -111,18 +112,30 @@ async function renderPort(
 
 	const length = Math.max(1, Math.ceil(totalDurationSeconds * sampleRate));
 	const offlineCtx = new OfflineAudioContext(2, length, sampleRate);
-	const driverMap = new Map<string, DriverEntry>();
+
+	const unitContext = createUnitContext(
+		offlineCtx,
+		(path: string) => {
+			const cached = sampleCache.get(path);
+			if (cached) return Promise.resolve(cached);
+			return Promise.reject(new Error(`Sample not found in cache: ${path}`));
+		},
+		(url: string) => offlineCtx.audioWorklet.addModule(url),
+	);
+
+	await unit.setup(unitContext);
+
 	const totalBeats = totalDurationSeconds * (tempoMap[0]?.bpm ?? 120) / 60;
 
 	for (const ne of portNotes) {
 		const note = mapNoteEvent(ne, tempoMap);
-		void note;
+		scheduleOnUnit(unit, note, unitContext);
 	}
 
 	for (const ae of automationEvents) {
 		const isRelevant = ae.paths.some((path) => path.startsWith(portKey + "."));
 		if (isRelevant) {
-			dispatchAutomation(ae, driverMap, offlineCtx, tempoMap, 0, totalBeats);
+			dispatchAutomation(ae, unitContext.driverMap, offlineCtx, tempoMap, 0, totalBeats);
 		}
 	}
 
@@ -136,7 +149,13 @@ async function renderPort(
 	const buffer = await offlineCtx.startRendering();
 	const wav = encodeWav(buffer, undefined, tempoMap, undefined, options.bitDepth);
 
+	unit.teardown(unitContext);
+
 	return { portKey, buffer, wav };
+}
+
+function scheduleOnUnit(unit: MidiUnit, note: NoteEvent, context: UnitContext): void {
+	unit.schedule(note, context);
 }
 
 function isNoteEvent(event: Event): event is PatternNoteEvent {
