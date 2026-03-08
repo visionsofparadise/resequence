@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { AnalyserUnit } from "@resequence/units";
+import { AnalyserUnit } from "@resequence/sync-units";
 import type { BuildContext } from "../../../../models/Context";
 import type { ProjectState } from "../../../../models/State/Project";
 import { Meter } from "./Meter";

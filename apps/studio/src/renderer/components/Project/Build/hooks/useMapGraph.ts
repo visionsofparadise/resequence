@@ -1,5 +1,5 @@
-import type { Unit } from "@resequence/units";
-import { OutUnit, analyser, linearGain, mapUnits } from "@resequence/units";
+import type { Unit } from "@resequence/sync-units";
+import { OutUnit, analyser, linearGain, mapUnits } from "@resequence/sync-units";
 import { useMemo } from "react";
 import type { Router } from "resequence";
 

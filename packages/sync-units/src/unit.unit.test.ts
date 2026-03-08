@@ -71,10 +71,10 @@ describe("Unit", () => {
 		expect(unit.setupCalled).toBe(false);
 	});
 
-	it("teardown clears state", () => {
+	it("teardown clears state", async () => {
 		const unit = new SetupUnit();
 		const context = mockContext();
-		unit.setup(context);
+		await unit.setup(context);
 		expect(unit.entryNodes.length).toBeGreaterThan(0);
 		unit.teardown(context);
 		expect(unit.entryNodes.length).toBe(0);

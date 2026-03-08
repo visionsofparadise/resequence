@@ -1,7 +1,7 @@
 import type { Event, NoteEvent as PatternNoteEvent, TempoMap } from "@resequence/patterns";
 import { beatsToSeconds, collectMetadata } from "@resequence/patterns";
-import type { MidiUnit, NoteEvent, UnitContext } from "@resequence/units";
-import { createUnitContext } from "@resequence/units";
+import type { MidiUnit, NoteEvent, UnitContext } from "@resequence/sync-units";
+import { createUnitContext } from "@resequence/sync-units";
 import type { AudioEvent } from "./constructs/audio";
 import { isAudioEvent, isPreloadAudioEvent } from "./constructs/audio";
 import type { AutomationEvent } from "./constructs/automate";
@@ -10,7 +10,7 @@ import { dispatchAutomation } from "./dispatch/automation";
 import { dispatchAudioCue, dispatchAudioSetup } from "./dispatch/audio";
 import { mapNoteEvent } from "./mapping";
 import { encodeWav } from "./rendering/encode-wav";
-import type { WavBitDepth } from "@resequence/units";
+import type { WavBitDepth } from "@resequence/sync-units";
 import { loadSample } from "./rendering/load-sample";
 import type { Router } from "./router";
 

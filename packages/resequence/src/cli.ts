@@ -5,7 +5,7 @@ import { Command } from "commander";
 import { Router } from "./router";
 import { render } from "./render";
 import { play } from "./playback";
-import type { WavBitDepth } from "@resequence/units";
+import type { WavBitDepth } from "@resequence/sync-units";
 
 async function loadRouter(entrypoint: string): Promise<Router> {
 	const fullPath = resolve(entrypoint);

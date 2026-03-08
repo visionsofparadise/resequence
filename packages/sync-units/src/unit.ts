@@ -11,6 +11,7 @@ export interface ModDeclaration {
 
 export interface UnitProperties {
 	readonly id?: string;
+	readonly latency?: number;
 	readonly targets: Array<Unit>;
 	readonly modDeclarations: Array<ModDeclaration>;
 	readonly previousProperties?: UnitProperties;
@@ -50,6 +51,15 @@ export abstract class Unit {
 		return this.properties.id;
 	}
 
+	get latency(): number {
+		return this.properties.latency ?? 0;
+	}
+
+	// eslint-disable-next-line @typescript-eslint/class-literal-property-style
+	get duration(): number {
+		return 0;
+	}
+
 	get targets(): Array<Unit> {
 		return this.properties.targets;
 	}
@@ -64,53 +74,41 @@ export abstract class Unit {
 		this.properties.modDeclarations.push({ paths, transform });
 	}
 
-	setup(context: UnitContext): void | Promise<void> {
+	async play(context: UnitContext): Promise<void> {
+		await this._play(context);
+
+		for (const target of this.targets) {
+			await target.play(context);
+		}
+	}
+
+	async setup(context: UnitContext): Promise<void> {
 		if (this.isSetUp) return;
 		this.isSetUp = true;
 
-		const resultOrPromise = this._setup(context);
-
-		if (resultOrPromise instanceof Promise) {
-			return resultOrPromise.then((result) => this._finishSetup(result, context));
-		}
-
-		return this._finishSetup(resultOrPromise, context);
-	}
-
-	private _finishSetup(result: SetupResult, context: UnitContext): void | Promise<void> {
+		const result = await this._setup(context);
 		const entries = result.entries ?? [];
 		const exits = result.exits ?? [];
 
-		const steps: Array<() => void | Promise<void>> = [];
+		for (const entry of entries) {
+			if (entry instanceof Unit) await entry.setup(context);
+		}
 
 		for (const entry of entries) {
-			if (entry instanceof Unit) {
-				const unit = entry;
-				steps.push(() => unit.setup(context));
-			}
+			if (entry instanceof Unit) this.entryNodes.push(...entry.entryNodes);
+			else this.entryNodes.push(entry);
 		}
-
-		steps.push(() => {
-			for (const entry of entries) {
-				if (entry instanceof Unit) this.entryNodes.push(...entry.entryNodes);
-				else this.entryNodes.push(entry);
-			}
-			for (const exit of exits) {
-				if (exit instanceof Unit) this.exitNodes.push(...exit.exitNodes);
-				else this.exitNodes.push(exit);
-			}
-		});
+		for (const exit of exits) {
+			if (exit instanceof Unit) this.exitNodes.push(...exit.exitNodes);
+			else this.exitNodes.push(exit);
+		}
 
 		for (const target of this.targets) {
-			steps.push(() => target.setup(context));
+			await target.setup(context);
 		}
 
-		steps.push(() => {
-			this.link();
-			this.linkMods(context);
-		});
-
-		return runSequence(steps);
+		this.link();
+		this.linkMods(context);
 	}
 
 	teardown(context: UnitContext): void {
@@ -130,6 +128,10 @@ export abstract class Unit {
 
 	protected _setup(_context: UnitContext): SetupResult | Promise<SetupResult> {
 		return {};
+	}
+
+	protected _play(_context: UnitContext): void | Promise<void> {
+		return;
 	}
 
 	protected _teardown(_context: UnitContext): void {
@@ -198,19 +200,5 @@ export abstract class Unit {
 			}
 		}
 		this.modConnections.length = 0;
-	}
-}
-
-function runSequence(steps: Array<() => void | Promise<void>>): void | Promise<void> {
-	for (let index = 0; index < steps.length; index++) {
-		const result = steps[index]?.();
-		if (result instanceof Promise) {
-			let chain = result;
-			for (let next = index + 1; next < steps.length; next++) {
-				const step = steps[next];
-				if (step) chain = chain.then(step);
-			}
-			return chain;
-		}
 	}
 }

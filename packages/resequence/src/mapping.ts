@@ -1,7 +1,7 @@
 import type { Keyframe, NoteEvent as PatternNoteEvent, TempoMap } from "@resequence/patterns";
 import { beatsToSeconds, denormalizePitch, pitchToCents } from "@resequence/patterns";
-import type { NoteSlide, NoteEvent as UnitNoteEvent } from "@resequence/units";
-import { CC } from "@resequence/units";
+import type { NoteSlide, NoteEvent as UnitNoteEvent } from "@resequence/sync-units";
+import { CC } from "@resequence/sync-units";
 
 export function mapNoteEvent(event: PatternNoteEvent, tempoMap: TempoMap): UnitNoteEvent {
 	const startMs = beatsToSeconds(event.startBeat, tempoMap) * 1000;

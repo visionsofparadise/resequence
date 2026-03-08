@@ -20,3 +20,5 @@ export { encodeWav } from "./rendering/encode-wav";
 export { loadSample } from "./rendering/load-sample";
 export { Router, router } from "./router";
 export type { RouterOptions } from "./router";
+export { PatternSource, PortUnit, patternSource } from "./sources/pattern";
+export type { PortUnitProperties } from "./sources/pattern";

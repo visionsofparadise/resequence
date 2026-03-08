@@ -42,7 +42,7 @@
   },
   "dependencies": {
     "@resequence/patterns": "*",
-    "@resequence/units": "*",
+    "@resequence/sync-units": "*",
     "commander": "^13.1.0",
     "node-web-audio-api": "^1.0.8",
     "tsx": "^4.21.0",

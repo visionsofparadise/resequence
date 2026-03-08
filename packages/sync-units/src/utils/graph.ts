@@ -6,7 +6,8 @@ export function walkUnits(root: Unit, callback: (unit: Unit, index: number) => v
 	let index = 0;
 
 	while (queue.length > 0) {
-		const unit = queue.shift()!;
+		const unit = queue.shift();
+		if (!unit) continue;
 		if (visited.has(unit)) continue;
 		visited.add(unit);
 
@@ -55,4 +56,35 @@ export function descendUnit(root: Unit, indexes: ReadonlyArray<number>): Unit {
 		current = target;
 	}
 	return current;
+}
+
+export function computeMaxDuration(root: Unit): number {
+	let max = 0;
+
+	walkUnits(root, (unit) => {
+		if (unit.duration > max) max = unit.duration;
+	});
+
+	return max;
+}
+
+export function computeMaxLatency(root: Unit): number {
+	let max = 0;
+
+	function walk(unit: Unit, cumulative: number): void {
+		const total = cumulative + unit.latency;
+
+		if (unit.targets.length === 0) {
+			if (total > max) max = total;
+			return;
+		}
+
+		for (const target of unit.targets) {
+			walk(target, total);
+		}
+	}
+
+	walk(root, 0);
+
+	return max;
 }

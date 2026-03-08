@@ -1,5 +1,5 @@
 import type { Edge, Node } from "@xyflow/react";
-import type { Unit } from "@resequence/units";
+import type { Unit } from "@resequence/sync-units";
 import type { Snapshot } from "valtio";
 import type { DerivedDriverMap } from "../../../utils/hijackDrivers";
 import type { UnitNodeData } from "../UnitNode";

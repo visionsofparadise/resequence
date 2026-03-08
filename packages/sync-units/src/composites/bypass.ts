@@ -36,24 +36,13 @@ export class BypassUnit extends MidiUnit {
 		return new BypassUnit({ ...this.properties, ...overrides });
 	}
 
-	protected override _setup(context: UnitContext): SetupResult | Promise<SetupResult> {
+	protected override async _setup(context: UnitContext): Promise<SetupResult> {
 		const passthrough = linearGain({ level: 1 });
 		this.passthrough = passthrough;
 
-		const innerResult = this.inner.setup(context);
-		const finish = (): SetupResult | Promise<SetupResult> => {
-			const passthroughResult = passthrough.setup(context);
-			if (passthroughResult instanceof Promise) {
-				return passthroughResult.then(() => ({ entries: [passthrough], exits: [passthrough] }));
-			}
-			return { entries: [passthrough], exits: [passthrough] };
-		};
+		await this.inner.setup(context);
 
-		if (innerResult instanceof Promise) {
-			return innerResult.then(finish);
-		}
-
-		return finish();
+		return { entries: [passthrough], exits: [passthrough] };
 	}
 
 	protected override _teardown(context: UnitContext): void {

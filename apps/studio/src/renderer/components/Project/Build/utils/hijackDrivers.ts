@@ -1,4 +1,4 @@
-import type { DriverEntry } from "resequence";
+import type { DriverEntry } from "@resequence/sync-units";
 import { StudioDriver } from "../models/StudioDriver";
 import type { ValueScheduler } from "../models/ValueScheduler";
 

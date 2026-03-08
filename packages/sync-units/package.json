@@ -1,5 +1,5 @@
 {
-  "name": "@resequence/units",
+  "name": "@resequence/sync-units",
   "version": "0.1.0",
   "type": "module",
   "exports": {
@@ -9,7 +9,7 @@
     }
   },
   "bin": {
-    "resequence-units": "./dist/cli.js"
+    "resequence-sync-units": "./dist/cli.js"
   },
   "files": [
     "dist"

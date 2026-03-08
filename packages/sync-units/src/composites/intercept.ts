@@ -44,7 +44,7 @@ export class InterceptUnit extends MidiUnit {
 		return new InterceptUnit({ ...this.properties, ...overrides });
 	}
 
-	protected override _setup(context: UnitContext): SetupResult | Promise<SetupResult> {
+	protected override _setup(context: UnitContext): SetupResult {
 		const { insert, override: overrides } = this.options;
 		const { inner } = this;
 
@@ -62,25 +62,15 @@ export class InterceptUnit extends MidiUnit {
 			if (first) entryUnit = first;
 		}
 
-		const finish = (): SetupResult => {
-			if (overrides && inner.id) {
-				for (const [paramName, value] of Object.entries(overrides)) {
-					const path = `${inner.id}.${paramName}`;
-					const entry = getOrCreateDriver(path, value, context);
-					entry.node.offset.value = value;
-				}
+		if (overrides && inner.id) {
+			for (const [paramName, value] of Object.entries(overrides)) {
+				const path = `${inner.id}.${paramName}`;
+				const entry = getOrCreateDriver(path, value, context);
+				entry.node.offset.value = value;
 			}
-
-			return { entries: [entryUnit], exits: [inner] };
-		};
-
-		const setupResult = entryUnit.setup(context);
-
-		if (setupResult instanceof Promise) {
-			return setupResult.then(finish);
 		}
 
-		return finish();
+		return { entries: [entryUnit], exits: [inner] };
 	}
 
 	protected override _schedule(noteEvent: NoteEvent, context: UnitContext): void {
