@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
+import { WaveFile } from "wavefile";
 import { SourceAsyncUnit, type SourceAsyncUnitProperties } from "../source";
 import type { AsyncUnitInput, AudioChunk, StreamContext } from "../unit";
-import { WaveFile } from "wavefile";
 
 export interface ReadProperties extends SourceAsyncUnitProperties {
 	readonly path: string;
@@ -13,6 +13,8 @@ export class ReadUnit extends SourceAsyncUnit {
 	readonly type = ["async-unit", "source", "read"] as const;
 
 	readonly properties: ReadProperties;
+	readonly bufferSize = 0;
+	readonly latency = 0;
 
 	private samples: Array<Float32Array> = [];
 	private sampleRate = 0;
@@ -23,16 +25,6 @@ export class ReadUnit extends SourceAsyncUnit {
 		super(properties);
 
 		this.properties = { ...properties, targets: properties.targets ?? [] };
-	}
-
-	// eslint-disable-next-line @typescript-eslint/class-literal-property-style
-	get bufferSize(): number {
-		return 0;
-	}
-
-	// eslint-disable-next-line @typescript-eslint/class-literal-property-style
-	get latency(): number {
-		return 0;
 	}
 
 	async _init(): Promise<StreamContext> {

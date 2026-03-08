@@ -1,7 +1,7 @@
 import { writeFile } from "node:fs/promises";
+import { WaveFile } from "wavefile";
 import { TargetAsyncUnit, type TargetAsyncUnitProperties } from "../target";
 import type { AsyncUnitInput, AudioChunk, StreamContext } from "../unit";
-import { WaveFile } from "wavefile";
 
 export type WavBitDepth = "16" | "24" | "32" | "32f";
 
@@ -14,6 +14,8 @@ export class WriteUnit extends TargetAsyncUnit {
 	readonly type = ["async-unit", "target", "write"] as const;
 
 	readonly properties: WriteProperties;
+	readonly bufferSize = 0;
+	readonly latency = 0;
 
 	private channelBuffers: Array<Array<Float32Array>> = [];
 	private context?: StreamContext;
@@ -22,16 +24,6 @@ export class WriteUnit extends TargetAsyncUnit {
 		super(properties);
 
 		this.properties = { ...properties, targets: properties.targets ?? [] };
-	}
-
-	// eslint-disable-next-line @typescript-eslint/class-literal-property-style
-	get bufferSize(): number {
-		return 0;
-	}
-
-	// eslint-disable-next-line @typescript-eslint/class-literal-property-style
-	get latency(): number {
-		return 0;
 	}
 
 	override _setup(context: StreamContext): void {

@@ -6,6 +6,7 @@ export type { AudioChunk, RenderOptions, StreamContext } from "./unit";
 export { AsyncUnit, type AsyncUnitInput, type AsyncUnitProperties } from "./unit";
 export { SourceAsyncUnit, type SourceAsyncUnitProperties } from "./source";
 export { TransformAsyncUnit, type TransformAsyncUnitProperties } from "./transform";
+export { ChunkBuffer, type BufferStorage } from "./chunk-buffer";
 export { TargetAsyncUnit, type TargetAsyncUnitProperties } from "./target";
 
 // Composition
@@ -15,4 +16,4 @@ export { fan, FanTransform, type FanTransformProperties } from "./composites/fan
 // Concrete units
 export { read, ReadUnit, type ReadProperties } from "./sources/read";
 export { write, WriteUnit, type WriteProperties, type WavBitDepth } from "./targets/write";
-export { gain, GainTransformUnit, type GainProperties } from "./transforms/gain";
+export { normalize, NormalizeTransformUnit, type NormalizeProperties } from "./transforms/normalize";

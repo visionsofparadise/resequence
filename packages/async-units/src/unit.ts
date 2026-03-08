@@ -58,11 +58,11 @@ export abstract class AsyncUnit {
 		this.properties.targets.push(target);
 	}
 
-	async setup(meta: StreamContext): Promise<void> {
-		await Promise.all([this._setup(meta), ...this.targets.map((target) => target.setup(meta))]);
+	async setup(context: StreamContext): Promise<void> {
+		await Promise.all([this._setup(context), ...this.targets.map((target) => target.setup(context))]);
 	}
 
-	protected _setup(_meta: StreamContext): Promise<void> | void {
+	protected _setup(_context: StreamContext): Promise<void> | void {
 		return;
 	}
 

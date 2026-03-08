@@ -9,6 +9,8 @@ export class FanTransform extends TransformAsyncUnit {
 	readonly type = ["async-unit", "transform", "fan"] as const;
 
 	readonly properties: FanTransformProperties;
+	readonly bufferSize = 0;
+	readonly latency = 0;
 
 	private readonly writers: Array<WritableStreamDefaultWriter<AudioChunk>> = [];
 
@@ -16,16 +18,6 @@ export class FanTransform extends TransformAsyncUnit {
 		super(properties);
 
 		this.properties = { ...properties, targets: properties.targets ?? [] };
-	}
-
-	// eslint-disable-next-line @typescript-eslint/class-literal-property-style
-	get bufferSize(): number {
-		return 0;
-	}
-
-	// eslint-disable-next-line @typescript-eslint/class-literal-property-style
-	get latency(): number {
-		return 0;
 	}
 
 	override createTransform(): TransformStream<AudioChunk, AudioChunk> {
@@ -42,16 +34,6 @@ export class FanTransform extends TransformAsyncUnit {
 				await Promise.all(writers.map((writer) => writer.close()));
 			},
 		});
-	}
-
-	_transform(chunk: AudioChunk, controller: TransformStreamDefaultController<AudioChunk>): Promise<void> {
-		controller.enqueue(chunk);
-
-		return Promise.resolve();
-	}
-
-	_flush(_controller: TransformStreamDefaultController<AudioChunk>): Promise<void> {
-		return Promise.resolve();
 	}
 
 	clone(overrides?: Partial<FanTransformProperties>): FanTransform {

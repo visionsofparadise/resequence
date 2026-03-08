@@ -55,25 +55,11 @@ class MockTransform extends TransformAsyncUnit {
 	readonly type = ["async-unit", "transform", "mock"] as const;
 	declare readonly properties: TransformAsyncUnitProperties;
 	readonly processedChunks: Array<AudioChunk> = [];
+	readonly bufferSize = 0;
+	readonly latency = 0;
 
-	get bufferSize(): number {
-		return 0;
-	}
-
-	get latency(): number {
-		return 0;
-	}
-
-	async _transform(
-		chunk: AudioChunk,
-		controller: TransformStreamDefaultController<AudioChunk>,
-	): Promise<void> {
+	override _buffer(chunk: AudioChunk): void {
 		this.processedChunks.push(chunk);
-		controller.enqueue(chunk);
-	}
-
-	async _flush(_controller: TransformStreamDefaultController<AudioChunk>): Promise<void> {
-		// no-op
 	}
 
 	clone(): MockTransform {
