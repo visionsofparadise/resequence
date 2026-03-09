@@ -64,6 +64,10 @@ export { ReverbEffectUnit, reverb } from "./effects/reverb";
 export type { ReverbProperties } from "./effects/reverb";
 export { RingModEffectUnit, ringmod } from "./effects/ringmod";
 export type { RingModProperties } from "./effects/ringmod";
+export { DeEssEffectUnit, deEss, deSibilance } from "./effects/de-ess";
+export type { DeEssProperties } from "./effects/de-ess";
+export { DeHumEffectUnit, deHum } from "./effects/de-hum";
+export type { DeHumProperties } from "./effects/de-hum";
 
 // Composites
 export { BypassUnit, bypass } from "./composites/bypass";

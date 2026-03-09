@@ -242,15 +242,19 @@ export class ChunkBuffer {
 
 	private async appendFile(samples: Array<Float32Array>, duration: number): Promise<void> {
 		const handle = await this.ensureFileHandle();
+		const channels = this._channels;
+
+		// Interleave all samples into a single buffer for one write call
+		const buf = Buffer.alloc(duration * channels * 4);
 
 		for (let frame = 0; frame < duration; frame++) {
-			for (let ch = 0; ch < this._channels; ch++) {
-				const value = samples[ch]?.[frame] ?? 0;
-				const buf = Buffer.alloc(4);
-				buf.writeFloatLE(value, 0);
-				await handle.write(buf, 0, 4, this.fileOffset(this.fileFramesWritten + frame, ch));
+			for (let ch = 0; ch < channels; ch++) {
+				buf.writeFloatLE(samples[ch]?.[frame] ?? 0, (frame * channels + ch) * 4);
 			}
 		}
+
+		const offset = this.fileOffset(this.fileFramesWritten, 0);
+		await handle.write(buf, 0, buf.length, offset);
 
 		this.fileFramesWritten += duration;
 	}
@@ -260,18 +264,28 @@ export class ChunkBuffer {
 			return { samples: [], offset, duration: 0 };
 		}
 
+		const channels = this.fileChannels;
+		const byteLength = frames * channels * 4;
+		const buf = Buffer.alloc(byteLength);
+		const filePos = this.fileOffset(offset, 0);
+
+		await this.tempHandle.read(buf, 0, byteLength, filePos);
+
+		// Deinterleave into per-channel arrays
 		const samples: Array<Float32Array> = [];
 
 		for (let ch = 0; ch < this._channels; ch++) {
-			const channel = new Float32Array(frames);
+			samples.push(new Float32Array(frames));
+		}
 
-			for (let frame = 0; frame < frames; frame++) {
-				const buf = Buffer.alloc(4);
-				await this.tempHandle.read(buf, 0, 4, this.fileOffset(offset + frame, ch));
-				channel[frame] = buf.readFloatLE(0);
+		for (let frame = 0; frame < frames; frame++) {
+			for (let ch = 0; ch < channels; ch++) {
+				const channel = samples[ch];
+
+				if (channel) {
+					channel[frame] = buf.readFloatLE((frame * channels + ch) * 4);
+				}
 			}
-
-			samples.push(channel);
 		}
 
 		return { samples, offset, duration: frames };
@@ -280,15 +294,19 @@ export class ChunkBuffer {
 	private async writeFile(offset: number, samples: Array<Float32Array>): Promise<void> {
 		const handle = await this.ensureFileHandle();
 		const duration = samples[0]?.length ?? 0;
+		const channels = this._channels;
+
+		// Interleave into a single buffer for one write call
+		const buf = Buffer.alloc(duration * channels * 4);
 
 		for (let frame = 0; frame < duration; frame++) {
-			for (let ch = 0; ch < samples.length; ch++) {
-				const value = samples[ch]?.[frame] ?? 0;
-				const buf = Buffer.alloc(4);
-				buf.writeFloatLE(value, 0);
-				await handle.write(buf, 0, 4, this.fileOffset(offset + frame, ch));
+			for (let ch = 0; ch < channels; ch++) {
+				buf.writeFloatLE(samples[ch]?.[frame] ?? 0, (frame * channels + ch) * 4);
 			}
 		}
+
+		const filePos = this.fileOffset(offset, 0);
+		await handle.write(buf, 0, buf.length, filePos);
 
 		if (offset + duration > this.fileFramesWritten) {
 			this.fileFramesWritten = offset + duration;
