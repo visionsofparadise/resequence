@@ -2,7 +2,7 @@ import type { Keyframe } from "@resequence/patterns";
 import { evaluateAt } from "@resequence/patterns";
 import { beatsToSeconds } from "@resequence/patterns";
 import type { TempoMap } from "@resequence/patterns";
-import type { DriverEntry } from "@resequence/sync-units";
+import type { DriverEntry } from "@resequence/web-au";
 import type { AutomationEvent } from "../constructs/automate";
 import { lastBefore } from "../utils/sorted";
 

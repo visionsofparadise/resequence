@@ -1,6 +1,6 @@
 import type { Keyframe, TempoMap } from "@resequence/patterns";
 import { beatsToSeconds, evaluateAt } from "@resequence/patterns";
-import type { DriverEntry } from "@resequence/sync-units";
+import type { DriverEntry } from "@resequence/web-au";
 import { scheduleKeyframes } from "../automation/keyframe";
 import type { AutomationEvent } from "../constructs/automate";
 import type { Lfo } from "../automation/lfo";

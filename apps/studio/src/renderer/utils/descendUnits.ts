@@ -1,4 +1,4 @@
-import type { Unit } from "@resequence/sync-units";
+import type { Unit } from "@resequence/web-au";
 import { resolveUnit } from "./resolveUnit";
 
 // FIX: A descent needs to take an array of indexes, not just 1 step

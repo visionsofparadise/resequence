@@ -1,6 +1,6 @@
 import type { QueryClient } from "@tanstack/react-query";
 import type { TempoMap } from "@resequence/patterns";
-import type { Unit } from "@resequence/sync-units";
+import type { Unit } from "@resequence/web-au";
 import type { Playback, Router } from "resequence";
 import type { Snapshot } from "valtio";
 import type { AppSettings } from "../../shared/models/AppSettings";

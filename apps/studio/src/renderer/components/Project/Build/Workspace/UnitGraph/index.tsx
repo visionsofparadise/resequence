@@ -1,7 +1,7 @@
 import { Background, ReactFlow, type OnMove, type OnMoveEnd } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { useCallback, useMemo } from "react";
-import type { Unit } from "@resequence/sync-units";
+import type { Unit } from "@resequence/web-au";
 import type { BuildContext } from "../../../../../models/Context";
 import type { ProjectState } from "../../../../../models/State/Project";
 import { UnitNode } from "./UnitNode";

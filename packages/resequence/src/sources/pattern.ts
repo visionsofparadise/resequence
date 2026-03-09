@@ -1,8 +1,8 @@
 import type { Event, NoteEvent as PatternNoteEvent, Pattern, TempoMap } from "@resequence/patterns";
 import { collectMetadata } from "@resequence/patterns";
-import type { NoteEvent, SetupResult, UnitContext } from "@resequence/sync-units";
-import { MidiUnit } from "@resequence/sync-units";
-import type { MidiUnitInput, MidiUnitProperties } from "@resequence/sync-units";
+import type { NoteEvent, SetupResult, UnitContext } from "@resequence/web-au";
+import { MidiUnit } from "@resequence/web-au";
+import type { MidiUnitInput, MidiUnitProperties } from "@resequence/web-au";
 import { mapNoteEvent } from "../mapping";
 
 export interface PortUnitProperties extends MidiUnitProperties {

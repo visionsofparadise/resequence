@@ -1,5 +1,5 @@
 import type { Pattern } from "@resequence/patterns";
-import type { MidiUnit } from "@resequence/sync-units";
+import type { MidiUnit } from "@resequence/web-au";
 
 export interface RouterOptions {
 	readonly pattern?: Pattern;

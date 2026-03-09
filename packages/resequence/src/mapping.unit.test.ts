@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { PatternNoteEvent } from "./mapping";
 import { mapNoteEvent } from "./mapping";
 import type { TempoMap } from "@resequence/patterns";
-import { CC } from "@resequence/sync-units";
+import { CC } from "@resequence/web-au";
 
 const C4_PITCH = { class: 0, stepsPerOctave: 12, octave: 4, octaveRatio: 2 };
 

@@ -1,7 +1,7 @@
 import type { Event, NoteEvent as PatternNoteEvent, TempoMap } from "@resequence/patterns";
 import { collectMetadata } from "@resequence/patterns";
-import type { DriverEntry, UnitContext } from "@resequence/sync-units";
-import { createUnitContext } from "@resequence/sync-units";
+import type { DriverEntry, UnitContext } from "@resequence/web-au";
+import { createUnitContext } from "@resequence/web-au";
 import type { AudioEvent } from "./constructs/audio";
 import { isAudioEvent, isPreloadAudioEvent } from "./constructs/audio";
 import type { AutomationEvent } from "./constructs/automate";

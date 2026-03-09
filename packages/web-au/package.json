@@ -1,5 +1,5 @@
 {
-  "name": "@resequence/async-units",
+  "name": "@resequence/web-au",
   "version": "0.1.0",
   "type": "module",
   "exports": {
@@ -9,7 +9,7 @@
     }
   },
   "bin": {
-    "resequence-async-units": "./dist/cli.js"
+    "resequence-web-au": "./dist/cli.js"
   },
   "files": [
     "dist"
@@ -35,21 +35,14 @@
   },
   "devDependencies": {
     "concurrently": "*",
+    "node-web-audio-api": "^1.0.8",
     "tsup": "^8.0.0",
     "typescript": "*",
     "vitest": "^3.0.0"
   },
-  "peerDependencies": {
-    "onnxruntime-node": "^1.24.3"
-  },
-  "peerDependenciesMeta": {
-    "onnxruntime-node": {
-      "optional": true
-    }
-  },
   "dependencies": {
-    "bufferfy": "^4.0.3",
     "commander": "^14.0.3",
+    "midi-file": "^1.2.4",
     "tsx": "^4.21.0",
     "wavefile": "^11.0.0"
   }

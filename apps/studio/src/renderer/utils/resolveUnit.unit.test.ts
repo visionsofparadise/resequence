@@ -1,4 +1,4 @@
-import { gain, linearGain } from "@resequence/sync-units";
+import { gain, linearGain } from "@resequence/web-au";
 import { describe, expect, it } from "vitest";
 import { resolveUnit } from "./resolveUnit";
 

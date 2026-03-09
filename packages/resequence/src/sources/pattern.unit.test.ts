@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import type { Event, NoteEvent as PatternNoteEvent } from "@resequence/patterns";
 import { Pattern } from "@resequence/patterns";
-import type { UnitContext } from "@resequence/sync-units";
+import type { UnitContext } from "@resequence/web-au";
 import { PatternSource, PortUnit, patternSource } from "./pattern";
 
 const C4_PITCH = { class: 0, stepsPerOctave: 12, octave: 4, octaveRatio: 2 };

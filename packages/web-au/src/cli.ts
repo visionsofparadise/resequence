@@ -39,7 +39,7 @@ function createModuleLoader(): (url: string) => Promise<void> {
 
 const program = new Command();
 
-program.name("resequence-sync-units").description("Render MIDI or process audio through unit graphs");
+program.name("resequence-web-au").description("Render MIDI or process audio through unit graphs");
 
 program
 	.command("render")
