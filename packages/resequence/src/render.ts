@@ -12,7 +12,7 @@ import { mapNoteEvent } from "./mapping";
 import { encodeWav } from "./rendering/encode-wav";
 import type { WavBitDepth } from "@resequence/web-au";
 import { loadSample } from "./rendering/load-sample";
-import type { Router } from "./router";
+import type { PatternSource } from "./sources/pattern";
 
 export interface RenderOptions {
 	readonly output: string;
@@ -38,13 +38,12 @@ export interface RenderResult {
 }
 
 export async function render(
-	router: Router,
+	source: PatternSource,
 	getSample: (path: string) => Promise<ArrayBuffer>,
 	options: RenderOptions,
 ): Promise<RenderResult> {
-	const pattern = router.pattern;
-	if (!pattern) throw new Error("Router has no pattern");
-	if (router.ports.size === 0) throw new Error("Router has no ports");
+	const pattern = source.pattern;
+	if (source.ports.size === 0) throw new Error("Source has no ports");
 
 	const setupEvents = pattern.setup(0);
 	const sampleRate = options.sampleRate ?? 44100;
@@ -79,15 +78,15 @@ export async function render(
 	const metadata = collectMetadata(allEvents);
 	const tempoMap = metadata.tempoMap;
 	const totalDurationSeconds = beatsToSeconds(pattern.endBeat - pattern.startBeat, tempoMap);
-	const portKeys = filterPorts(Array.from(router.ports.keys()), options.include, options.exclude);
+	const portKeys = filterPorts(Array.from(source.ports.keys()), options.include, options.exclude);
 	const stems: Array<RenderStemResult> = [];
 
 	for (const portKey of portKeys) {
-		const unit = router.ports.get(portKey);
-		if (!unit) continue;
+		const portUnit = source.ports.get(portKey);
+		if (!portUnit) continue;
 
 		const stem = await renderPort(
-			portKey, unit, noteEvents, automationEvents, audioEvents,
+			portKey, portUnit, noteEvents, automationEvents, audioEvents,
 			tempoMap, totalDurationSeconds, sampleCache, options,
 		);
 		stems.push(stem);

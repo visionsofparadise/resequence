@@ -111,7 +111,6 @@ export type { VelocityCurveProperties } from "./midi/velocity-curve";
 // Other
 export { AnalyserUnit, analyser } from "./analyser";
 export type { AnalyserProperties } from "./analyser";
-export { OutUnit, out } from "./out";
 
 // Utilities
 export { collectUnits, computeMaxDuration, computeMaxLatency, descendUnit, mapUnits, walkUnits } from "./utils/graph";

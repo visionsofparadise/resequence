@@ -1,19 +1,19 @@
 import type { Unit } from "@resequence/web-au";
-import { OutUnit, analyser, linearGain, mapUnits } from "@resequence/web-au";
+import { SpeakersUnit, analyser, linearGain, mapUnits } from "@resequence/web-au";
 import { useMemo } from "react";
-import type { Router } from "resequence";
+import type { PatternSource } from "resequence";
 
 export interface InjectResult {
 	readonly injectedNodes: WeakSet<object>;
 	readonly injectedUnits: Map<string, Unit>;
 }
 
-export function useMapGraph(router: Router): InjectResult {
+export function useMapGraph(source: PatternSource): InjectResult {
 	return useMemo(() => {
 		const injectedNodes = new WeakSet();
 		const injectedUnits = new Map<string, Unit>();
 
-		for (const [portKey, unit] of router.ports) {
+		for (const [portKey, unit] of source.ports) {
 			const portAnalyser = analyser({ fftSize: 256 });
 			injectedNodes.add(portAnalyser);
 			injectedUnits.set(`system.${portKey}.analyser`, portAnalyser);
@@ -22,7 +22,7 @@ export function useMapGraph(router: Router): InjectResult {
 
 			// FIX: We need to use the transformed unit graphs, we treat them as immutable
 			mapUnits(unit, (node) => {
-				if (OutUnit.is(node)) {
+				if (SpeakersUnit.is(node)) {
 					const gainId = `system.${portKey}.gain.${gainIndex++}`;
 					const channelGain = linearGain({ level: 1, id: gainId });
 
@@ -40,5 +40,5 @@ export function useMapGraph(router: Router): InjectResult {
 		}
 
 		return { injectedNodes, injectedUnits };
-	}, [router]);
+	}, [source]);
 }

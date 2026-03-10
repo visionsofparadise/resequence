@@ -2,12 +2,12 @@ import { useEffect } from "react";
 import type { BuildContext } from "../../../../../models/Context";
 
 export function useMuteSolo(context: BuildContext): void {
-	const { project, router, injectedUnits, unitDriverMap } = context;
+	const { project, source, injectedUnits, unitDriverMap } = context;
 
 	useEffect(() => {
 		const hasSolo = project.soloedOutputs.size > 0;
 
-		for (const [portKey] of router.ports) {
+		for (const [portKey] of source.ports) {
 			const isMuted = project.mutedOutputs.has(portKey);
 			const isSoloed = project.soloedOutputs.has(portKey);
 
@@ -25,5 +25,5 @@ export function useMuteSolo(context: BuildContext): void {
 				}
 			}
 		}
-	}, [project.mutedOutputs, project.soloedOutputs, router, injectedUnits, unitDriverMap]);
+	}, [project.mutedOutputs, project.soloedOutputs, source, injectedUnits, unitDriverMap]);
 }

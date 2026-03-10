@@ -9,7 +9,7 @@ interface PortsProps {
 }
 
 export const Ports: React.FC<PortsProps> = ({ context }) => {
-	const ports = useMemo(() => Array.from(context.router.ports), [context.router]);
+	const ports = useMemo(() => Array.from(context.source.ports), [context.source]);
 
 	useMuteSolo(context);
 

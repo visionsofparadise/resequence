@@ -49,6 +49,12 @@ export class PortUnit extends MidiUnit {
 }
 
 export class PatternSource {
+	readonly type = ["source", "pattern"] as const;
+
+	static is(value: unknown): value is PatternSource {
+		return typeof value === "object" && value !== null && "type" in value && Array.isArray(value.type) && value.type[0] === "source" && value.type[1] === "pattern";
+	}
+
 	private readonly _pattern: Pattern;
 	private readonly _ports = new Map<string, PortUnit>();
 	private _tempoMap: TempoMap = [];
