@@ -45,6 +45,7 @@ export function chop(pattern: Pattern | Note, subdivision: number): ChopPattern 
 			if (note.slides && note.slides.length > 0) {
 				pitch = evaluateSlide(note.pitch, note.slides, chopStart);
 				const segmentSlides = note.slides.filter((sl) => sl.beat > chopStart && sl.beat <= chopEnd).map((sl) => ({ ...sl, beat: sl.beat - chopStart }));
+
 				slides = segmentSlides.length > 0 ? segmentSlides : undefined;
 			}
 

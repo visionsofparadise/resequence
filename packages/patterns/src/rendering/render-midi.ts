@@ -39,6 +39,7 @@ export function renderMidi(pattern: Pattern, options?: { ppq?: number }): Map<st
 				const beatOffset = tickOffset / ppq;
 				const slideCents = evaluateSlideCents(ne.pitch, ne.slides, beatOffset, ne.tuning);
 				const totalCents = (bend || 0) + slideCents;
+
 				bends.push({ tick: tick + tickOffset, bend: totalCents });
 			}
 

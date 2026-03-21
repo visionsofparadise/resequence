@@ -29,6 +29,7 @@ export class LegatoPattern extends ModifierPattern<LegatoProperties> {
 export function legato(pattern: Pattern | Note, extendLast = true): LegatoPattern {
 	const resolved = toPattern(pattern);
 	const entries: Array<{ id: string; absoluteStart: number }> = [];
+
 	walkNotes(resolved, (note, { id, absoluteOffset }) => {
 		entries.push({ id, absoluteStart: absoluteOffset + note.startBeat });
 	});
@@ -39,6 +40,7 @@ export function legato(pattern: Pattern | Note, extendLast = true): LegatoPatter
 
 	for (let noteIndex = 0; noteIndex < entries.length; noteIndex++) {
 		const entry = entries[noteIndex];
+
 		if (!entry) continue;
 		const nextEntry = entries[noteIndex + 1];
 

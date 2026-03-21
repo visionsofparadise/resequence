@@ -80,12 +80,14 @@ export abstract class MidiUnit extends Unit {
 
 			for (const path of decl.paths) {
 				const entry = context.driverMap.get(path);
+
 				if (!entry) continue;
 
 				entry.node.offset.setValueAtTime(value, startSeconds);
 
 				if (decl.property === "gate") {
 					const stopSeconds = noteEvent.stopMs / 1000;
+
 					entry.node.offset.setValueAtTime(0, stopSeconds);
 				}
 			}

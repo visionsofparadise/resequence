@@ -21,10 +21,12 @@ export const Knob: React.FC<KnobProps> = ({ label, driver, range, step = 1, unit
 				if (!indicatorRef.current || !displayRef.current) return;
 
 				const rotation = -135 + normalized * 270;
+
 				indicatorRef.current.style.transform = `rotate(${rotation}deg)`;
 
 				const value = normalized * (max - min) + min;
 				const displayValue = Number.isInteger(step) ? Math.round(value) : value.toFixed(1);
+
 				displayRef.current.textContent = `${displayValue}${unit}`;
 			}),
 		[driver, min, max, step, unit],

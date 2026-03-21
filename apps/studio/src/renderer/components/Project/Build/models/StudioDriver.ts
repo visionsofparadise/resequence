@@ -69,12 +69,16 @@ export class StudioDriver {
 	connect(destination: AudioNode | AudioParam, output?: number, input?: number): AudioNode | void {
 		if (destination instanceof StudioDriverOffset) {
 			this._real.connect(destination.realParam, output);
+
 			return undefined;
 		}
+
 		if (destination instanceof AudioParam) {
 			this._real.connect(destination, output);
+
 			return undefined;
 		}
+
 		return this._real.connect(destination, output, input);
 	}
 
@@ -126,16 +130,19 @@ export class StudioDriverOffset {
 
 	setValueAtTime(value: number, startTime: number): AudioParam {
 		this._driver.scheduler.schedule(this._driver, "setValueAtTime", value, startTime);
+
 		return this._driver.realNode.offset.setValueAtTime(value, startTime);
 	}
 
 	linearRampToValueAtTime(value: number, endTime: number): AudioParam {
 		this._driver.scheduler.schedule(this._driver, "linearRamp", value, endTime);
+
 		return this._driver.realNode.offset.linearRampToValueAtTime(value, endTime);
 	}
 
 	exponentialRampToValueAtTime(value: number, endTime: number): AudioParam {
 		this._driver.scheduler.schedule(this._driver, "exponentialRamp", value, endTime);
+
 		return this._driver.realNode.offset.exponentialRampToValueAtTime(value, endTime);
 	}
 
@@ -149,6 +156,7 @@ export class StudioDriverOffset {
 
 	cancelScheduledValues(startTime: number): AudioParam {
 		this._driver.scheduler.cancel(this._driver, startTime);
+
 		return this._driver.realNode.offset.cancelScheduledValues(startTime);
 	}
 

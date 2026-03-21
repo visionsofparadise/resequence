@@ -15,6 +15,7 @@ export function useMapGraph(source: PatternSource): InjectResult {
 
 		for (const [portKey, unit] of source.ports) {
 			const portAnalyser = analyser({ fftSize: 256 });
+
 			injectedNodes.add(portAnalyser);
 			injectedUnits.set(`system.${portKey}.analyser`, portAnalyser);
 

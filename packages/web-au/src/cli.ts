@@ -58,6 +58,7 @@ program
 			process.stderr.write(`Error: chain file not found: ${chainPath}\n`);
 			process.exit(1);
 		}
+
 		if (!existsSync(inputPath)) {
 			process.stderr.write(`Error: MIDI file not found: ${inputPath}\n`);
 			process.exit(1);
@@ -103,6 +104,7 @@ program
 				const audioBuffer = await offlineContext.startRendering();
 
 				const wav = encodeWav(audioBuffer as unknown as AudioBuffer, options.bitDepth as WavBitDepth);
+
 				writeFileSync(outputPath, Buffer.from(wav));
 
 				process.stdout.write(`Output: ${outputPath}\nDone.\n`);
@@ -146,6 +148,7 @@ program
 
 			// Probe setup to determine duration from the graph
 			const probeContext = createUnitContext(new NodeOfflineAudioContext(2, 1, sampleRate) as unknown as BaseAudioContext, getSample, loadModule, 0, basePath);
+
 			await unit.setup(probeContext);
 
 			const duration = computeMaxDuration(unit);

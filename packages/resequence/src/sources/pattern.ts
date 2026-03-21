@@ -40,6 +40,7 @@ export class PortUnit extends MidiUnit {
 
 	protected override _setup(context: UnitContext): SetupResult {
 		const gainNode = context.audioContext.createGain();
+
 		return { entries: [gainNode], exits: [gainNode] };
 	}
 
@@ -85,6 +86,7 @@ export class PatternSource {
 	async setup(context: UnitContext): Promise<void> {
 		const setupEvents = this._pattern.setup(0);
 		const metadata = collectMetadata(setupEvents);
+
 		this._tempoMap = metadata.tempoMap;
 
 		for (const [, portUnit] of this._ports) {
@@ -109,6 +111,7 @@ export class PatternSource {
 			if (!portUnit) continue;
 
 			const note = mapNoteEvent(event, this._tempoMap);
+
 			portUnit.dispatch(note, context);
 		}
 	}

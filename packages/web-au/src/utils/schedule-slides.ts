@@ -30,6 +30,7 @@ export function scheduleSlideRamps(
 			for (let si = 0; si < sampleCount; si++) {
 				const progress = si / (sampleCount - 1);
 				const curved = applyCurve(progress, slide.curve);
+
 				values[si] = prevValue + (targetValue - prevValue) * curved;
 			}
 
@@ -44,5 +45,6 @@ export function scheduleSlideRamps(
 function applyCurve(progress: number, curve: number): number {
 	if (curve === 0) return progress;
 	if (curve > 0) return Math.pow(progress, 1 + curve * 3);
+
 	return 1 - Math.pow(1 - progress, 1 + Math.abs(curve) * 3);
 }

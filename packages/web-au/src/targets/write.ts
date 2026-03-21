@@ -63,6 +63,7 @@ export class WriteUnit extends Unit {
 			mkdirSync(dirname(outputPath), { recursive: true });
 
 			const wav = encodeWav(audioBuffer, this.bitDepth);
+
 			writeFileSync(outputPath, Buffer.from(wav));
 		}
 	}

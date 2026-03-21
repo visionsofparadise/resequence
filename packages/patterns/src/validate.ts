@@ -9,7 +9,9 @@ export interface ValidationWarning {
 
 export function validate(pattern: Pattern): ReadonlyArray<ValidationWarning> {
 	const warnings: Array<ValidationWarning> = [];
+
 	walkForValidation(pattern, [], false, warnings);
+
 	return warnings;
 }
 
@@ -26,6 +28,7 @@ function walkForValidation(pattern: Pattern, path: ReadonlyArray<number>, hasPor
 
 	for (let childIndex = 0; childIndex < pattern.properties.children.length; childIndex++) {
 		const child = pattern.properties.children[childIndex];
+
 		if (child) {
 			walkForValidation(child.pattern, [...path, childIndex], currentHasPort, warnings);
 		}

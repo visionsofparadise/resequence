@@ -41,6 +41,7 @@ export class TempoPattern extends Pattern<TempoProperties> {
 			tempoKeyframes: this.properties.keyframes.length > 0 ? this.properties.keyframes : undefined,
 			tempoIsOverride: this.properties.isOverride || undefined,
 		};
+
 		return [event];
 	}
 
@@ -64,6 +65,7 @@ export function tempo(pattern: Pattern, bpm: number, options?: TempoOptions): Te
 		if (keyframe.beat < 0) {
 			throw new PatternsError("INVALID_TEMPO", `tempo(): keyframe beat must be >= 0, got ${keyframe.beat}`);
 		}
+
 		if (keyframe.value < 0) {
 			throw new PatternsError("INVALID_TEMPO", `tempo(): keyframe value must be >= 0, got ${keyframe.value}`);
 		}

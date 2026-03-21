@@ -5,9 +5,11 @@ import { type ProjectState, serializeProjectState } from "../../../models/State/
 
 function hashProjectPath(projectPath: string): string {
 	let hash = 0;
+
 	for (const char of projectPath) {
 		hash = ((hash << 5) - hash + char.charCodeAt(0)) | 0;
 	}
+
 	return Math.abs(hash).toString(36);
 }
 

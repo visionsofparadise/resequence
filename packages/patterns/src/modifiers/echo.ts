@@ -34,6 +34,7 @@ export function echo(pattern: Pattern | Note, interval: number, repeats: number,
 
 		for (let echoIndex = 1; echoIndex <= repeats; echoIndex++) {
 			const echoVelocity = Math.round(note.velocity * decay ** echoIndex);
+
 			result.push({
 				...note,
 				startBeat: note.startBeat + echoIndex * interval,

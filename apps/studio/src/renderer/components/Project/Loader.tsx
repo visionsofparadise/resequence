@@ -10,9 +10,11 @@ interface ProjectLoaderProps {
 
 function hashProjectPath(projectPath: string): number {
 	let hash = 0;
+
 	for (const char of projectPath) {
 		hash = ((hash << 5) - hash + char.charCodeAt(0)) | 0;
 	}
+
 	return Math.abs(hash);
 }
 

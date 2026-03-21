@@ -7,14 +7,18 @@ export function getOrCreateDriver(
 	range?: readonly [number, number],
 ): DriverEntry {
 	const existing = context.driverMap.get(path);
+
 	if (existing) return existing;
 
 	const node = context.audioContext.createConstantSource();
+
 	node.offset.value = defaultValue;
 	node.start(0);
 
 	const entry: DriverEntry = { node, range };
+
 	context.driverMap.set(path, entry);
+
 	return entry;
 }
 
@@ -31,6 +35,7 @@ export function driveParam(
 		const entry = getOrCreateDriver(path, normalized, context, range);
 
 		const scaleGain = context.audioContext.createGain();
+
 		scaleGain.gain.value = max - min;
 		param.value = min;
 
@@ -55,6 +60,7 @@ export function offsetParam(
 		const entry = getOrCreateDriver(path, 0, context, range);
 
 		const scaleGain = context.audioContext.createGain();
+
 		scaleGain.gain.value = max - min;
 
 		entry.node.connect(scaleGain);
@@ -74,6 +80,7 @@ export function proxyDriver(id: string | undefined, key: string, childPath: stri
 	if (!id) return;
 
 	const childEntry = context.driverMap.get(childPath);
+
 	if (!childEntry) return;
 
 	const parentEntry = getOrCreateDriver(`${id}.${key}`, childEntry.node.offset.value, context, childEntry.range);

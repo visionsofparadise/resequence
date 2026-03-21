@@ -16,6 +16,7 @@ export function addSteps(pitch: Pitch, steps: number): Pitch {
 	const spo = pitch.stepsPerOctave;
 	const newClass = ((total % spo) + spo) % spo;
 	const octaveShift = Math.floor(total / spo);
+
 	return { class: newClass, stepsPerOctave: pitch.stepsPerOctave, octave: pitch.octave + octaveShift, octaveRatio: pitch.octaveRatio };
 }
 
@@ -70,5 +71,6 @@ export function denormalizePitch(value: number, stepsPerOctave: number, octaveRa
 	const totalSteps = Math.round(value * stepsPerOctave * NUM_OCTAVES);
 	const pitchClass = ((totalSteps % stepsPerOctave) + stepsPerOctave) % stepsPerOctave;
 	const octave = Math.floor(totalSteps / stepsPerOctave);
+
 	return { class: pitchClass, stepsPerOctave, octave, octaveRatio };
 }

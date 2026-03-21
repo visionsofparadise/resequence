@@ -49,6 +49,7 @@ function resolveTarget(sequences: ReadonlyArray<Sequence>, target: PianoRollTarg
 			return { clip, sequence: segment };
 		}
 	}
+
 	return null;
 }
 

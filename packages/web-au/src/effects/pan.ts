@@ -31,9 +31,11 @@ export class PanEffectUnit extends Unit {
 
 	protected override _setup(context: UnitContext): SetupResult {
 		const panNode = context.audioContext.createStereoPanner();
+
 		driveParam(panNode.pan, this.id ? `${this.id}.position` : undefined, this.position, [-1, 1], context);
 
 		this.panNode = panNode;
+
 		return { entries: [panNode], exits: [panNode] };
 	}
 

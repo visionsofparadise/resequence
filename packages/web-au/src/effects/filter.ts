@@ -39,12 +39,14 @@ export class FilterEffectUnit extends Unit {
 
 	protected override _setup(context: UnitContext): SetupResult {
 		const filterNode = context.audioContext.createBiquadFilter();
+
 		filterNode.type = this.mode;
 		driveParam(filterNode.frequency, this.id ? `${this.id}.frequency` : undefined, this.frequency, [20, 20000], context);
 		if (this.resonance !== undefined || this.id) driveParam(filterNode.Q, this.id ? `${this.id}.resonance` : undefined, this.resonance ?? 1, [0, 30], context);
 		if (this.gain !== undefined) filterNode.gain.value = this.gain;
 
 		this.filterNode = filterNode;
+
 		return { entries: [filterNode], exits: [filterNode] };
 	}
 

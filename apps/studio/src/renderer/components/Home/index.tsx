@@ -41,6 +41,7 @@ export const Home: React.FC<HomeProps> = ({ context }) => {
 		});
 
 		const dirPath = result?.[0];
+
 		if (!dirPath) return;
 
 		const success = await openProject(dirPath);

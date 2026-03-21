@@ -29,8 +29,10 @@ function mulberry32(seed: number): () => number {
 	return function (): number {
 		state += 0x6d2b79f5;
 		let value = state;
+
 		value = Math.imul(value ^ (value >>> 15), value | 1);
 		value ^= value + Math.imul(value ^ (value >>> 7), value | 61);
+
 		return ((value ^ (value >>> 14)) >>> 0) / 4294967296;
 	};
 }
@@ -41,6 +43,7 @@ function applyPropToValue(value: number, spec: LevelProp, mean: number, rng: () 
 	let computed = spec.value ?? value;
 
 	const scaleFactor = spec.expand ?? spec.compress;
+
 	if (scaleFactor !== undefined) {
 		computed = mean + scaleFactor * (value - mean);
 	}
@@ -59,11 +62,13 @@ function applyPropToValue(value: number, spec: LevelProp, mean: number, rng: () 
 
 function createRng(spec: LevelProp): () => number {
 	if (typeof spec === "number") return Math.random;
+
 	return spec.seed !== undefined ? mulberry32(spec.seed) : Math.random.bind(Math);
 }
 
 function needsMean(spec: LevelProp): boolean {
 	if (typeof spec === "number") return false;
+
 	return spec.expand !== undefined || spec.compress !== undefined;
 }
 
@@ -96,6 +101,7 @@ export function level(pattern: Pattern | Note, config: LevelConfig): LevelPatter
 
 	if (needsCollect) {
 		const allNotes = collectNotes(resolved);
+
 		if (allNotes.length > 0) {
 			if (config.velocity !== undefined && needsMean(config.velocity)) {
 				velocityMean = allNotes.reduce((sum, { note }) => sum + note.velocity, 0) / allNotes.length;
@@ -105,6 +111,7 @@ export function level(pattern: Pattern | Note, config: LevelConfig): LevelPatter
 				for (const [ccKey, ccSpec] of Object.entries(config.cc)) {
 					if (ccSpec === undefined || !needsMean(ccSpec)) continue;
 					const ccNum = Number(ccKey);
+
 					ccMeans.set(ccNum, allNotes.reduce((sum, { note }) => sum + (note.cc?.[ccNum] ?? 0), 0) / allNotes.length);
 				}
 			}
@@ -136,6 +143,7 @@ export function level(pattern: Pattern | Note, config: LevelConfig): LevelPatter
 				if (ccSpec === undefined) continue;
 				const ccNum = Number(ccKey);
 				const ccRng = ccRngs.get(ccNum) ?? Math.random;
+
 				newCc[ccNum] = applyPropToValue(note.cc?.[ccNum] ?? 0, ccSpec, ccMeans.get(ccNum) ?? 0, ccRng);
 			}
 

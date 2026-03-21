@@ -39,6 +39,7 @@ export class BitcrushEffectUnit extends Unit {
 		});
 
 		this.bitcrushNode = bitcrushNode;
+
 		return { entries: [bitcrushNode], exits: [bitcrushNode] };
 	}
 

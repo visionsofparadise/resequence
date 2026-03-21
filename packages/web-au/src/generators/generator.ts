@@ -73,6 +73,7 @@ export abstract class GeneratorUnit extends MidiUnit {
 		if (this.properties.voiceToCallbacks.length > 0) {
 			for (const callback of this.properties.voiceToCallbacks) {
 				const voiceUnit = callback(noteEvent);
+
 				chainTail.to(voiceUnit);
 				chainTail = voiceUnit;
 			}
@@ -96,6 +97,7 @@ export abstract class GeneratorUnit extends MidiUnit {
 			for (const exit of exits) {
 				exit.disconnect();
 			}
+
 			chainHead.teardown(context);
 		};
 	}

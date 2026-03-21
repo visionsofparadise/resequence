@@ -79,6 +79,7 @@ export class CCEffectUnit extends MidiUnit {
 			const cutoffFrequency = cutoff !== undefined ? 20 * Math.pow(1000, cutoff / 127) : 1000;
 			const filterResonance = resonance !== undefined ? (resonance / 127) * 20 : undefined;
 			const filterUnit = lowpass({ frequency: cutoffFrequency, resonance: filterResonance });
+
 			this.filterUnit = filterUnit;
 			units.push(filterUnit);
 		}
@@ -88,6 +89,7 @@ export class CCEffectUnit extends MidiUnit {
 		if (volume !== undefined || expression !== undefined) {
 			const linear = (volume !== undefined ? volume / 127 : 1) * (expression !== undefined ? expression / 127 : 1);
 			const volumeUnit = gain({ level: linearToDecibels(linear) });
+
 			this.volumeUnit = volumeUnit;
 			units.push(volumeUnit);
 		}
@@ -96,6 +98,7 @@ export class CCEffectUnit extends MidiUnit {
 
 		if (chorusAmount !== undefined && chorusAmount > 0) {
 			const chorusUnit = mix(chorus({ rate: 0.5, depth: 0.005 }), chorusAmount / 127);
+
 			this.chorusUnit = chorusUnit;
 			units.push(chorusUnit);
 		}
@@ -104,6 +107,7 @@ export class CCEffectUnit extends MidiUnit {
 
 		if (panValue !== undefined) {
 			const panUnit = pan({ position: (panValue / 127) * 2 - 1 });
+
 			this.panUnit = panUnit;
 			units.push(panUnit);
 		}
@@ -112,12 +116,14 @@ export class CCEffectUnit extends MidiUnit {
 
 		if (reverbAmount !== undefined && reverbAmount > 0) {
 			const reverbUnit = mix(reverb({ roomSize: 0.8, damping: 0.5 }), reverbAmount / 127);
+
 			this.reverbUnit = reverbUnit;
 			units.push(reverbUnit);
 		}
 
 		if (units.length === 0) {
 			const gate = linearGain({ level: 1 });
+
 			this.gateUnit = gate;
 			units.push(gate);
 		}
@@ -125,6 +131,7 @@ export class CCEffectUnit extends MidiUnit {
 		for (let index = 0; index < units.length - 1; index++) {
 			const current = units[index];
 			const next = units[index + 1];
+
 			if (current && next) current.to(next);
 		}
 
@@ -159,6 +166,7 @@ export class CCEffectUnit extends MidiUnit {
 		} else if (this.gateUnit?.gainNode) {
 			const gateParam = this.gateUnit.gainNode.gain;
 			const stopSec = noteEvent.stopMs / 1000;
+
 			gateParam.setValueAtTime(1, stopSec);
 			gateParam.linearRampToValueAtTime(0, stopSec + 0.005);
 		}

@@ -30,17 +30,21 @@ export class InvertPattern extends ModifierPattern<InvertProperties> {
 export function invertChord(pattern: Pattern | Note, inversions: number): InvertPattern {
 	const resolved = toPattern(pattern);
 	const entries: Array<{ id: string; absoluteStart: number; key: number; stepsPerOctave: number }> = [];
+
 	walkNotes(resolved, (note, { id, absoluteOffset }) => {
 		entries.push({ id, absoluteStart: absoluteOffset + note.startBeat, key: pitchKey(note.pitch), stepsPerOctave: note.pitch.stepsPerOctave });
 	});
 
 	const byBeat = new Map<number, typeof entries>();
+
 	for (const entry of entries) {
 		let group = byBeat.get(entry.absoluteStart);
+
 		if (!group) {
 			group = [];
 			byBeat.set(entry.absoluteStart, group);
 		}
+
 		group.push(entry);
 	}
 
@@ -57,6 +61,7 @@ export function invertChord(pattern: Pattern | Note, inversions: number): Invert
 			}
 		} else if (inversions < 0) {
 			const count = -inversions;
+
 			for (const [noteIndex, entry] of sorted.entries()) {
 				if (noteIndex >= sorted.length - count) {
 					shiftMap.set(entry.id, -entry.stepsPerOctave);

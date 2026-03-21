@@ -27,6 +27,7 @@ export class RingModEffectUnit extends Unit {
 
 	protected override async _setup(context: UnitContext): Promise<SetupResult> {
 		const modulatorGain = context.audioContext.createGain();
+
 		modulatorGain.gain.value = 0;
 
 		await this.carrier.setup(context);

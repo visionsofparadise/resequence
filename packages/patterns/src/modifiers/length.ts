@@ -29,6 +29,7 @@ export function length(pattern: Pattern | Note, duration: number): LengthPattern
 	const resolved = toPattern(pattern);
 	const transformed = mapNotes(resolved, (note) => {
 		const truncatedSlides = note.slides?.filter((sl) => sl.beat <= duration);
+
 		return {
 			...note,
 			endBeat: note.startBeat + duration,

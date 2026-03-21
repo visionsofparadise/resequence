@@ -34,8 +34,10 @@ export class LinkwitzRileyUnit extends Unit {
 	protected override _setup(): SetupResult {
 		const first = filter({ mode: this.filterType, frequency: this.frequency, resonance: 0.707 });
 		const second = filter({ mode: this.filterType, frequency: this.frequency, resonance: 0.707 });
+
 		first.to(second);
 		this.filters = [first, second];
+
 		return { entries: [first], exits: [second] };
 	}
 

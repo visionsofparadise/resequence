@@ -98,6 +98,7 @@ export abstract class Unit {
 			if (entry instanceof Unit) this.entryNodes.push(...entry.entryNodes);
 			else this.entryNodes.push(entry);
 		}
+
 		for (const exit of exits) {
 			if (exit instanceof Unit) this.exitNodes.push(...exit.exitNodes);
 			else this.exitNodes.push(exit);
@@ -169,6 +170,7 @@ export abstract class Unit {
 
 				if (decl.transform) {
 					const shaper = context.audioContext.createWaveShaper();
+
 					shaper.curve = buildCurve(decl.transform);
 					shaper.connect(entry.node.offset);
 
@@ -199,6 +201,7 @@ export abstract class Unit {
 				// already disconnected
 			}
 		}
+
 		this.modConnections.length = 0;
 	}
 }

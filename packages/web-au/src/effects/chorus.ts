@@ -53,6 +53,7 @@ export class ChorusEffectUnit extends Unit {
 			depth: this.depth,
 			id: lfoId,
 		});
+
 		await lfoUnit.setup(context);
 
 		proxyDriver(this.id, "time", `${delayId}.time`, context);

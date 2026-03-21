@@ -31,9 +31,11 @@ export function slice(pattern: Pattern | Note, from: number, to: number): SliceP
 	const resolved = toPattern(pattern);
 
 	const entries: Array<{ note: Note; absoluteStart: number; absoluteEnd: number }> = [];
+
 	walkPatterns(resolved, (node, absoluteOffset) => {
 		for (const { offsetBeats, note } of node.notes) {
 			const totalOffset = absoluteOffset + offsetBeats;
+
 			entries.push({ note, absoluteStart: totalOffset + note.startBeat, absoluteEnd: totalOffset + note.endBeat });
 		}
 	});
@@ -54,6 +56,7 @@ export function slice(pattern: Pattern | Note, from: number, to: number): SliceP
 
 	const transformed = flatMapNotes(resolved, (note) => {
 		if (!kept.has(note)) return [];
+
 		return [{ ...note, startBeat: note.startBeat - firstStart, endBeat: note.endBeat - firstStart }];
 	});
 

@@ -54,11 +54,15 @@ export class InterceptUnit extends MidiUnit {
 			for (let index = 0; index < insert.length - 1; index++) {
 				const current = insert[index];
 				const next = insert[index + 1];
+
 				if (current && next) current.to(next);
 			}
+
 			const last = insert[insert.length - 1];
+
 			if (last) last.to(inner);
 			const first = insert[0];
+
 			if (first) entryUnit = first;
 		}
 
@@ -66,6 +70,7 @@ export class InterceptUnit extends MidiUnit {
 			for (const [paramName, value] of Object.entries(overrides)) {
 				const path = `${inner.id}.${paramName}`;
 				const entry = getOrCreateDriver(path, value, context);
+
 				entry.node.offset.value = value;
 			}
 		}
@@ -85,6 +90,7 @@ export class InterceptUnit extends MidiUnit {
 				unit.teardown(context);
 			}
 		}
+
 		this.inner.teardown(context);
 	}
 }
@@ -95,14 +101,17 @@ export function intercept(unit: Unit, options: InterceptOptions): InterceptUnit 
 	}
 
 	const targets: Array<Unit> = [...unit.targets];
+
 	unit.targets.length = 0;
 
 	if (unit instanceof Composite) {
 		const tail = "tail" in unit ? (unit as { tail: Unit }).tail : undefined;
+
 		if (tail) {
 			for (const target of tail.targets) {
 				if (!targets.includes(target)) targets.push(target);
 			}
+
 			tail.targets.length = 0;
 		}
 	}

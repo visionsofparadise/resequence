@@ -26,6 +26,7 @@ function applyOp(targetProxy: object, op: ValtioOp, reverse: boolean): void {
 	}
 
 	const key = path[path.length - 1];
+
 	if (key === undefined) return;
 
 	if (op[0] === "set") {
@@ -70,6 +71,7 @@ export function useHistoryState(store: ProxyStore): HistoryState {
 				this._entries.get(key)?.ops.push(...ops);
 			} else {
 				const removed = this._stack.splice(this._index + 1);
+
 				for (const removedKey of removed) this._entries.delete(removedKey);
 
 				this._stack.push(key);
@@ -82,6 +84,7 @@ export function useHistoryState(store: ProxyStore): HistoryState {
 			if (this._index < 0) return;
 
 			const stackKey = this._stack[this._index];
+
 			if (stackKey === undefined) return;
 
 			const entry = this._entries.get(stackKey);
@@ -100,6 +103,7 @@ export function useHistoryState(store: ProxyStore): HistoryState {
 
 			this._index++;
 			const stackKey = this._stack[this._index];
+
 			if (stackKey === undefined) return;
 
 			const entry = this._entries.get(stackKey);

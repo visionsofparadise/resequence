@@ -39,6 +39,7 @@ export class DownsampleEffectUnit extends Unit {
 		});
 
 		this.downsampleNode = downsampleNode;
+
 		return { entries: [downsampleNode], exits: [downsampleNode] };
 	}
 

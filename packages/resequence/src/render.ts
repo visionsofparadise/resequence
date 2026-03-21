@@ -43,6 +43,7 @@ export async function render(
 	options: RenderOptions,
 ): Promise<RenderResult> {
 	const pattern = source.pattern;
+
 	if (source.ports.size === 0) throw new Error("Source has no ports");
 
 	const setupEvents = pattern.setup(0);
@@ -55,11 +56,15 @@ export async function render(
 
 		const buffer = await dispatchAudioSetup(event, async (path: string) => {
 			const cached = sampleCache.get(path);
+
 			if (cached) return cached;
 			const buf = await loadSample(path, dummyCtx, getSample);
+
 			sampleCache.set(path, buf);
+
 			return buf;
 		});
+
 		if (buffer) sampleCache.set(event.sampleKey, buffer);
 	}
 
@@ -83,12 +88,14 @@ export async function render(
 
 	for (const portKey of portKeys) {
 		const portUnit = source.ports.get(portKey);
+
 		if (!portUnit) continue;
 
 		const stem = await renderPort(
 			portKey, portUnit, noteEvents, automationEvents, audioEvents,
 			tempoMap, totalDurationSeconds, sampleCache, options,
 		);
+
 		stems.push(stem);
 	}
 
@@ -116,7 +123,9 @@ async function renderPort(
 		offlineCtx,
 		(path: string) => {
 			const cached = sampleCache.get(path);
+
 			if (cached) return Promise.resolve(cached);
+
 			return Promise.reject(new Error(`Sample not found in cache: ${path}`));
 		},
 		(url: string) => offlineCtx.audioWorklet.addModule(url),
@@ -128,11 +137,13 @@ async function renderPort(
 
 	for (const ne of portNotes) {
 		const note = mapNoteEvent(ne, tempoMap);
+
 		scheduleOnUnit(unit, note, unitContext);
 	}
 
 	for (const ae of automationEvents) {
 		const isRelevant = ae.paths.some((path) => path.startsWith(portKey + "."));
+
 		if (isRelevant) {
 			dispatchAutomation(ae, unitContext.driverMap, offlineCtx, tempoMap, 0, totalBeats);
 		}
@@ -140,6 +151,7 @@ async function renderPort(
 
 	for (const ce of audioEvents) {
 		const buffer = sampleCache.get(ce.sampleKey);
+
 		if (buffer) {
 			dispatchAudioCue(ce, buffer, offlineCtx, tempoMap, offlineCtx.destination);
 		}
@@ -167,13 +179,18 @@ function filterPorts(
 	exclude?: ReadonlyArray<string>,
 ): ReadonlyArray<string> {
 	let filtered = [...keys];
+
 	if (include && include.length > 0) {
 		const set = new Set(include);
+
 		filtered = filtered.filter((key) => set.has(key));
 	}
+
 	if (exclude && exclude.length > 0) {
 		const set = new Set(exclude);
+
 		filtered = filtered.filter((key) => !set.has(key));
 	}
+
 	return filtered;
 }

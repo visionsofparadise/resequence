@@ -29,6 +29,7 @@ export class OverridePattern extends ModifierPattern<OverrideProperties> {
 export function override(pattern: Pattern, indexes: ReadonlyArray<number>, callback: OverrideCallback): OverridePattern {
 	const result = descendAndClone(pattern, indexes, (node) => {
 		const overrides = callback(node.properties);
+
 		return node.clone(overrides);
 	});
 

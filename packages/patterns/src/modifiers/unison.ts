@@ -51,6 +51,7 @@ export function unison(pattern: Pattern | Note, voices: number, spread: UnisonSp
 				for (const [ccKey, ccSpread] of Object.entries(spread.cc)) {
 					const ccNum = Number(ccKey);
 					const baseVal = note.cc?.[ccNum] ?? 64;
+
 					mergedCc[ccNum] = Math.round(baseVal + (voiceIndex - (voices - 1) / 2) * (ccSpread ?? 0));
 				}
 

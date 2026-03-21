@@ -22,6 +22,7 @@ export const AudioCanvas: React.FC<AudioCanvasProps> = ({ clip, context, wavefor
 
 	useTransients(transients, () => {
 		const canvas = canvasRef.current;
+
 		if (!canvas) return;
 
 		const pxPerBeat = project.timelineZoom.value;
@@ -35,6 +36,7 @@ export const AudioCanvas: React.FC<AudioCanvasProps> = ({ clip, context, wavefor
 		canvas.style.height = `${AUDIO_LANE_HEIGHT}px`;
 
 		const context2d = canvas.getContext("2d");
+
 		if (!context2d) return;
 
 		context2d.scale(dpr, dpr);

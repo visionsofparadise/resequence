@@ -16,6 +16,7 @@ export function useBuilds(context: ProjectContext): ReadonlyArray<BuildEntry> {
 				const entries = await main.readDirectory(`${currentProjectPath}/build`);
 
 				const timestamps = entries.map(Number).filter((ts) => !isNaN(ts));
+
 				timestamps.sort((tsA, tsB) => tsB - tsA);
 
 				return timestamps.map((timestamp) => ({

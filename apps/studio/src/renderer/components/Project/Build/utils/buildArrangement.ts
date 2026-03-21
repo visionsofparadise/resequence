@@ -189,6 +189,7 @@ function collectSubtree(
 		};
 
 		const audioIndex = state.audioClips.length;
+
 		state.audioClips.push(clip);
 		state.encounterOrder.push({ kind: "audio", index: audioIndex });
 
@@ -208,6 +209,7 @@ function collectSubtree(
 		};
 
 		const autoIndex = state.automationClips.length;
+
 		state.automationClips.push(clip);
 		state.encounterOrder.push({ kind: "automation", index: autoIndex });
 
@@ -216,6 +218,7 @@ function collectSubtree(
 
 	if (SequencePattern.is(pattern) && indexes.length > 0) {
 		const childSequences = collectSequences(pattern, offset, indexes, meta, tempoPoints);
+
 		state.childSequences.push(...childSequences);
 
 		return;
@@ -281,6 +284,7 @@ function collectSequences(pattern: SequencePattern, offset: number, indexes: Rea
 			tuning: meta.activeTuning,
 			timeSignature: meta.activeTimeSignature,
 		};
+
 		state.midiClips.set(clipKey, collector);
 		state.encounterOrder.push(clipKey);
 
@@ -327,6 +331,7 @@ function collectSequences(pattern: SequencePattern, offset: number, indexes: Rea
 			sequences.push(...collectSequences(child, offset + offsetBeats, childIndexes, meta, tempoPoints));
 		} else {
 			const state = createSubtreeState();
+
 			collectSubtree(child, offset + offsetBeats, currentPorts, state, childIndexes, meta, tempoPoints);
 
 			const childEnd = offset + offsetBeats + child.endBeat;
@@ -432,6 +437,7 @@ export function buildArrangement(rootPattern: Pattern): { arrangement: Arrangeme
 	}
 
 	const state = createSubtreeState();
+
 	collectSubtree(rootPattern, 0, [], state, [], DEFAULT_META, tempoPoints);
 
 	const clips = buildClips(state, rootPattern.endBeat);

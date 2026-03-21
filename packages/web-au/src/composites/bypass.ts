@@ -38,6 +38,7 @@ export class BypassUnit extends MidiUnit {
 
 	protected override async _setup(context: UnitContext): Promise<SetupResult> {
 		const passthrough = linearGain({ level: 1 });
+
 		this.passthrough = passthrough;
 
 		await this.inner.setup(context);
@@ -54,14 +55,17 @@ export class BypassUnit extends MidiUnit {
 
 export function bypass(unit: Unit): BypassUnit {
 	const targets: Array<Unit> = [...unit.targets];
+
 	unit.targets.length = 0;
 
 	if (unit instanceof Composite) {
 		const tail = "tail" in unit ? (unit as { tail: Unit }).tail : undefined;
+
 		if (tail) {
 			for (const target of tail.targets) {
 				if (!targets.includes(target)) targets.push(target);
 			}
+
 			tail.targets.length = 0;
 		}
 	}

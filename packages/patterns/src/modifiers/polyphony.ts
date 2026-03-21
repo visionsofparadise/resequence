@@ -30,6 +30,7 @@ export class PolyphonyPattern extends ModifierPattern<PolyphonyProperties> {
 export function polyphony(pattern: Pattern | Note, max: number, isGreedy = false): PolyphonyPattern {
 	const resolved = toPattern(pattern);
 	const entries: Array<{ id: string; absoluteStart: number; absoluteEnd: number }> = [];
+
 	walkNotes(resolved, (note, { id, absoluteOffset }) => {
 		entries.push({ id, absoluteStart: absoluteOffset + note.startBeat, absoluteEnd: absoluteOffset + note.endBeat });
 	});
@@ -46,6 +47,7 @@ export function polyphony(pattern: Pattern | Note, max: number, isGreedy = false
 			active.push(entry);
 		} else if (isGreedy) {
 			let oldest = stillActive[0];
+
 			if (!oldest) continue;
 
 			for (const activeEntry of stillActive) {
@@ -54,6 +56,7 @@ export function polyphony(pattern: Pattern | Note, max: number, isGreedy = false
 
 			kept.delete(oldest.id);
 			const oldestIndex = active.indexOf(oldest);
+
 			if (oldestIndex >= 0) active.splice(oldestIndex, 1);
 
 			kept.add(entry.id);
@@ -63,6 +66,7 @@ export function polyphony(pattern: Pattern | Note, max: number, isGreedy = false
 
 	const transformed = flatMapNotes(resolved, (note, { id }) => {
 		if (kept.has(id)) return [note];
+
 		return [];
 	});
 

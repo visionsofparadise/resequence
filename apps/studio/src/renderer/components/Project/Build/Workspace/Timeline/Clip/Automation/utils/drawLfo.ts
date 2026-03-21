@@ -3,6 +3,7 @@ import { AUTOMATION_COLOR } from "./drawEnvelope";
 
 function sampleLfoWaveform(shape: Lfo["shape"], phase: number): number {
 	const normalized = ((phase % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+
 	switch (shape) {
 		case "sine":
 			return (Math.sin(normalized) + 1) / 2;

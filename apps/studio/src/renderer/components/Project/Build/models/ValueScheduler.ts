@@ -102,6 +102,7 @@ export class ValueScheduler {
 
 						return prevValue + (seg.value - prevValue) * Math.min(1, Math.max(0, progress));
 					}
+
 					case "exponentialRamp": {
 						const duration = seg.time - prevTime;
 

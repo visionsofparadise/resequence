@@ -84,6 +84,7 @@ export const createWindow = async (dependencies: WindowFactoryDependencies): Pro
 
 	const emitBounds = (): void => {
 		const { x, y, width, height } = browserWindow.getBounds();
+
 		emitToRenderer(browserWindow, "windowBoundsChanged", { x, y, width, height, maximized: browserWindow.isMaximized() });
 	};
 

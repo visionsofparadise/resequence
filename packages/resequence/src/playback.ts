@@ -101,6 +101,7 @@ export class Playback {
 				if (cached) return cached;
 
 				const buf = await loadSample(path, this.audioContext, getSample);
+
 				this.sampleCache.set(path, buf);
 
 				return buf;
@@ -110,6 +111,7 @@ export class Playback {
 		}
 
 		const metadata = collectMetadata(setupEvents);
+
 		this.tempoMap = metadata.tempoMap;
 		this.markers = metadata.markers;
 		this.patternEndBeat = pattern.endBeat - pattern.startBeat;
@@ -118,9 +120,12 @@ export class Playback {
 			this.audioContext,
 			async (path: string) => {
 				const cached = this.sampleCache.get(path);
+
 				if (cached) return cached;
 				const buf = await loadSample(path, this.audioContext, getSample);
+
 				this.sampleCache.set(path, buf);
+
 				return buf;
 			},
 			async (url: string) => {
@@ -248,6 +253,7 @@ export class Playback {
 
 			for (const noteEvent of portNotes) {
 				const note = mapNoteEvent(noteEvent, this.tempoMap);
+
 				this.emitNoteEvent(noteEvent, noteEvent.startBeat);
 				if (this.unitContext) portUnit.dispatch(note, this.unitContext);
 			}
@@ -311,11 +317,13 @@ function filterPorts(keys: ReadonlyArray<string>, include?: ReadonlyArray<string
 
 	if (include && include.length > 0) {
 		const set = new Set(include);
+
 		filtered = filtered.filter((key) => set.has(key));
 	}
 
 	if (exclude && exclude.length > 0) {
 		const set = new Set(exclude);
+
 		filtered = filtered.filter((key) => !set.has(key));
 	}
 

@@ -114,6 +114,7 @@ export class SamplerUnit extends GeneratorUnit {
 		if (!result) return;
 
 		const source = context.audioContext.createBufferSource();
+
 		source.buffer = result.buffer;
 		source.playbackRate.value = result.playbackRate;
 
@@ -129,8 +130,10 @@ export class SamplerUnit extends GeneratorUnit {
 
 		if (this.id) {
 			const detuneEntry = context.driverMap.get(`${this.id}.detune`);
+
 			if (detuneEntry) {
 				const scaleGain = context.audioContext.createGain();
+
 				scaleGain.gain.value = 2400;
 				source.detune.value = -1200;
 				detuneEntry.node.connect(scaleGain);
@@ -149,6 +152,7 @@ export class SamplerUnit extends GeneratorUnit {
 	private selectSample(midiNote: number, velocity: number): ResolvedSample | null {
 		if (this.config.kind === "single") {
 			const buffer = this.buffers.get(this.config.path);
+
 			if (!buffer) return null;
 
 			const playbackRate = this.config.rootMidi !== undefined ? 2 ** ((midiNote - this.config.rootMidi) / 12) : 1;
@@ -227,6 +231,7 @@ function selectVelocityLayer<T extends { velocity?: number }>(layers: ReadonlyAr
 
 function normalizeZone(zone: SamplerZone): NormalizedZone {
 	const sample = zone.region && !zone.sample.includes("#") ? `${zone.sample}#${zone.region}` : zone.sample;
+
 	return { sample, root: zone.root, velocity: zone.velocity, loopStartMs: zone.loopStartMs, loopEndMs: zone.loopEndMs };
 }
 

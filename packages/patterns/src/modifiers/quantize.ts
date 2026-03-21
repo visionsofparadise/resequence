@@ -40,6 +40,7 @@ export function quantize(pattern: Pattern | Note, subdivision: number, grooveMap
 			const remainder = absBeat % grid;
 			const snapped = absBeat - remainder + (remainder <= grid / 2 ? 0 : grid);
 			const shift = snapped - absBeat;
+
 			return { ...note, startBeat: note.startBeat + shift, endBeat: note.endBeat + shift };
 		});
 	} else {
@@ -53,6 +54,7 @@ export function quantize(pattern: Pattern | Note, subdivision: number, grooveMap
 			const remainder = absBeat % grid;
 			const nearest = groovePositions.reduce((best, grooveTick) => (Math.abs(grooveTick - remainder) < Math.abs(best - remainder) ? grooveTick : best), groovePositions[0] ?? 0);
 			const shift = cycle * grid + nearest - absBeat;
+
 			return { ...note, startBeat: note.startBeat + shift, endBeat: note.endBeat + shift };
 		});
 	}

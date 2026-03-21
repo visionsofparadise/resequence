@@ -42,6 +42,7 @@ export function collectTempoPoints(
 ): void {
 	if (keyframes.length === 0) {
 		entries.push({ beat: offsetBeats, bpm: baseBpm });
+
 		return;
 	}
 
@@ -69,8 +70,10 @@ export function collectTempoPoints(
 			entries.push({ beat: offsetBeats + kf.beat, bpm: denormalizeBpm(kf.value) });
 		} else {
 			let sampleBeat = prevBeat + SAMPLE_RESOLUTION;
+
 			while (sampleBeat <= kf.beat) {
 				const bpm = denormalizeBpm(evaluateAt(sorted, sampleBeat));
+
 				entries.push({ beat: offsetBeats + Math.round(sampleBeat * 100) / 100, bpm });
 				sampleBeat = Math.round((sampleBeat + SAMPLE_RESOLUTION) * 100) / 100;
 			}
@@ -86,6 +89,7 @@ export function buildTempoMap(events: ReadonlyArray<Event>): TempoMap {
 	for (const event of events) {
 		if (event.type !== "metadata") continue;
 		const meta = event as MetadataEvent;
+
 		if (meta.bpm === undefined) continue;
 
 		collectTempoPoints(meta.bpm, meta.tempoKeyframes ?? [], meta.absoluteBeat, entries);
@@ -125,12 +129,15 @@ export function secondsToBeats(fromBeat: number, elapsedSeconds: number, tempoMa
 			bpm = point.bpm;
 			continue;
 		}
+
 		if (point.beat > currentBeat) {
 			const beatsAtTempo = point.beat - currentBeat;
 			const secondsAtTempo = beatsAtTempo * (60 / bpm);
+
 			if (remaining <= secondsAtTempo) {
 				return currentBeat + remaining / (60 / bpm);
 			}
+
 			remaining -= secondsAtTempo;
 			currentBeat = point.beat;
 			bpm = point.bpm;

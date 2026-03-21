@@ -28,6 +28,7 @@ function buildSlidePathD(note: MidiClipNote, clip: MidiClip, sequence: Sequence,
 
 	for (let ki = 0; ki < slides.length; ki++) {
 		const kf = slides[ki];
+
 		if (!kf) continue;
 		const prevKf = ki > 0 ? (slides[ki - 1] ?? null) : null;
 		const prevBeat = prevKf ? note.startBeat + prevKf.beat : note.startBeat;
@@ -52,6 +53,7 @@ function buildSlidePathD(note: MidiClipNote, clip: MidiClip, sequence: Sequence,
 				const curvedProgress = applyCurve(progress, curve);
 				const interpBeat = prevBeat + (kfBeat - prevBeat) * progress;
 				const interpKey = prevKey + (kfKey - prevKey) * curvedProgress;
+
 				points.push({ x: beatToX(interpBeat), y: keyToY(interpKey) });
 			}
 		}

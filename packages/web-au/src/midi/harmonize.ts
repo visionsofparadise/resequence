@@ -39,6 +39,7 @@ export class HarmonizeMidiUnit extends MidiUnit {
 
 		for (const interval of this.intervals) {
 			const transposed: NoteEvent = { ...noteEvent, note: noteEvent.note + interval };
+
 			super.schedule(transposed, context);
 		}
 	}

@@ -37,17 +37,21 @@ export function strum(pattern: Pattern | Note, options: StrumOptions = {}): Stru
 	const strumOffset = options.strumOffset ?? 15;
 	const direction = options.direction ?? "up";
 	const entries: Array<{ id: string; absoluteStart: number; key: number }> = [];
+
 	walkNotes(resolved, (note, { id, absoluteOffset }) => {
 		entries.push({ id, absoluteStart: absoluteOffset + note.startBeat, key: pitchKey(note.pitch) });
 	});
 
 	const byBeat = new Map<number, typeof entries>();
+
 	for (const entry of entries) {
 		let group = byBeat.get(entry.absoluteStart);
+
 		if (!group) {
 			group = [];
 			byBeat.set(entry.absoluteStart, group);
 		}
+
 		group.push(entry);
 	}
 

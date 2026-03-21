@@ -42,6 +42,7 @@ export class ChannelEffectUnit extends Unit {
 		const splitOther = split.channels[otherCh];
 		const mergeTarget = merge.channels[targetCh];
 		const mergeOther = merge.channels[otherCh];
+
 		if (!splitTarget || !splitOther || !mergeTarget || !mergeOther) return {};
 
 		splitTarget.to(this.inner);
@@ -97,6 +98,7 @@ export class MidEffectUnit extends Unit {
 		const splitR = split.channels[1];
 		const mergeL = merge.channels[0];
 		const mergeR = merge.channels[1];
+
 		if (!splitL || !splitR || !mergeL || !mergeR) return {};
 
 		splitL.to(sum);
@@ -152,6 +154,7 @@ export class SideEffectUnit extends Unit {
 		const splitR = split.channels[1];
 		const mergeL = merge.channels[0];
 		const mergeR = merge.channels[1];
+
 		if (!splitL || !splitR || !mergeL || !mergeR) return {};
 
 		splitL.to(diff);

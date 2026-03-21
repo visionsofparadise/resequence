@@ -41,6 +41,7 @@ export function parseMidiFile(data: Uint8Array): Array<NoteEvent> {
 				tempoMap.push({ tick, bpm: 60000000 / event.microsecondsPerBeat });
 			} else if (event.type === "noteOn" && event.velocity > 0) {
 				const key = `${event.channel}-${event.noteNumber}`;
+
 				pending.set(key, { startTick: tick, note: event.noteNumber, velocity: event.velocity, channel: event.channel });
 			} else if (event.type === "noteOff" || (event.type === "noteOn" && event.velocity === 0)) {
 				const key = `${event.channel}-${event.noteNumber}`;
@@ -68,6 +69,7 @@ export function parseMidiFile(data: Uint8Array): Array<NoteEvent> {
 		const channelCCs = ccEvents.filter((cc) => cc.channel === note.channel && cc.tick >= note.startTick && cc.tick <= stopTick);
 
 		const ccValues: Partial<Record<number, number>> = {};
+
 		for (const cc of channelCCs) {
 			ccValues[cc.controller] = cc.value;
 		}
@@ -75,6 +77,7 @@ export function parseMidiFile(data: Uint8Array): Array<NoteEvent> {
 		const channelBends = bendEvents.filter((bend) => bend.channel === note.channel && bend.tick >= note.startTick && bend.tick <= stopTick);
 
 		let slides: ReadonlyArray<NoteSlide> | undefined;
+
 		if (channelBends.length > 0) {
 			slides = channelBends.map((bend) => ({
 				timeMs: tickToMs(bend.tick, tempoMap, ppq) - startMs,

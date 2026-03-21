@@ -60,6 +60,7 @@ export const MidiClipCard: React.FC<MidiClipCardProps> = ({ clip, sequence, sequ
 			}}
 			onMouseUp={(ev) => {
 				const pos = mouseDownPos.current;
+
 				mouseDownPos.current = null;
 
 				if (!pos) return;

@@ -42,11 +42,13 @@ export function flip(pattern: Pattern | Note, center: Pitch, range?: [Pitch, Pit
 		if (range) {
 			const rangeMinKey = pitchKey(range[0]);
 			const rangeMaxKey = pitchKey(range[1]);
+
 			while (pitchKey(pitch) < rangeMinKey) pitch = addSteps(pitch, spo);
 			while (pitchKey(pitch) > rangeMaxKey) pitch = addSteps(pitch, -spo);
 		}
 
 		const shift = pitchKey(pitch) - pitchKey(note.pitch);
+
 		return {
 			...note,
 			pitch,

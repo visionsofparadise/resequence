@@ -46,6 +46,7 @@ export class EqEffectUnit extends Unit {
 		for (let index = 0; index < filters.length - 1; index++) {
 			const current = filters[index];
 			const next = filters[index + 1];
+
 			if (current && next) current.to(next);
 		}
 

@@ -38,11 +38,13 @@ export class ChannelSplitterUnit extends Unit {
 
 		for (let ch = 0; ch < this.channelCount; ch++) {
 			const channel = this.channels[ch];
+
 			if (!channel) continue;
 
 			await channel.setup(context);
 
 			const entry = channel.entryNodes[0];
+
 			if (entry) splitter.connect(entry, ch);
 		}
 

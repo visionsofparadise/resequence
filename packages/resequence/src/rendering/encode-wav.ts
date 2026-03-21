@@ -22,6 +22,7 @@ export function encodeWav(buffer: AudioBuffer, markers?: ReadonlyArray<MarkerPoi
 	if (markers && markers.length > 0 && tempoMap) {
 		for (const markerPoint of markers) {
 			const positionMs = beatsToSeconds(markerPoint.beat, tempoMap) * 1000;
+
 			wav.setCuePoint({ position: positionMs, label: markerPoint.name });
 		}
 	}

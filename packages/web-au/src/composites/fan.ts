@@ -23,10 +23,12 @@ export class Fan extends Composite {
 	constructor(properties: UnitInput<FanProperties>) {
 		super(properties);
 		const branches = properties.branches;
+
 		this.head = linearGain({ level: 1 });
 		for (const branch of branches) {
 			this.head.to(branch);
 		}
+
 		this.tails = [...branches];
 		this.units = [this.head, ...flattenUnits(branches)];
 		this.properties = { ...properties, targets: properties.targets ?? [], modDeclarations: properties.modDeclarations ?? [] };

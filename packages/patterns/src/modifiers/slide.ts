@@ -27,6 +27,7 @@ export class SlidePattern extends ModifierPattern {
 export function slide(pattern: Pattern | Note): SlidePattern {
 	const resolved = toPattern(pattern);
 	const entries: Array<{ id: string; absoluteStart: number; absoluteEnd: number; note: Note }> = [];
+
 	walkNotes(resolved, (note, { id, absoluteOffset }) => {
 		entries.push({ id, absoluteStart: absoluteOffset + note.startBeat, absoluteEnd: absoluteOffset + note.endBeat, note });
 	});
@@ -55,6 +56,7 @@ export function slide(pattern: Pattern | Note): SlidePattern {
 			if (entryB.absoluteStart >= aEnd) continue;
 
 			const dist = Math.abs(pitchKey(entryA.note.pitch) - pitchKey(entryB.note.pitch));
+
 			if (dist < bestDistance) {
 				bestDistance = dist;
 				bestMatch = entryB;

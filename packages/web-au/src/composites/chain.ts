@@ -23,9 +23,11 @@ export class Chain extends Composite {
 	constructor(properties: UnitInput<ChainProperties>) {
 		super(properties);
 		const units = [...properties.units];
+
 		this.properties = { ...properties, targets: properties.targets ?? [], modDeclarations: properties.modDeclarations ?? [], units };
 		const firstUnit = units[0];
 		const last = units[units.length - 1];
+
 		if (!firstUnit || !last) throw new Error("chain() requires at least one unit");
 		this.head = firstUnit;
 		this.tail = last;
@@ -52,7 +54,9 @@ export function chain(...inputUnits: Array<Unit>): Chain {
 	for (let index = 0; index < inputUnits.length - 1; index++) {
 		const current = inputUnits[index];
 		const next = inputUnits[index + 1];
+
 		if (current && next) current.to(next);
 	}
+
 	return new Chain({ units: flattenUnits(inputUnits) });
 }

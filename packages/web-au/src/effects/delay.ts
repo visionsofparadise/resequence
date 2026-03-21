@@ -41,6 +41,7 @@ export class DelayEffectUnit extends Unit {
 
 		if (this.feedback !== undefined && this.feedback > 0) {
 			const feedbackUnit = linearGain({ level: this.feedback });
+
 			void feedbackUnit.setup(context);
 
 			for (const entry of feedbackUnit.entryNodes) delayNode.connect(entry);

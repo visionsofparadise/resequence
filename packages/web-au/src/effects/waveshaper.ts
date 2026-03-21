@@ -45,10 +45,12 @@ export class WaveShaperEffectUnit extends Unit {
 
 	protected override _setup(context: UnitContext): SetupResult {
 		const waveShaperNode = context.audioContext.createWaveShaper();
+
 		waveShaperNode.curve = this.curve;
 		if (this.oversample !== undefined) waveShaperNode.oversample = this.oversample;
 
 		this.waveShaperNode = waveShaperNode;
+
 		return { entries: [waveShaperNode], exits: [waveShaperNode] };
 	}
 

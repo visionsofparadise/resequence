@@ -17,6 +17,7 @@ function createTuningNote(pitch: Pitch, hz: number, name: string): TuningNote {
 		optionsOrVelocity?: number | { velocity?: number; lyric?: string; cc?: Partial<Record<number, number>>; slides?: ReadonlyArray<Keyframe> },
 	): Note {
 		const options = typeof optionsOrVelocity === "number" ? { velocity: optionsOrVelocity } : optionsOrVelocity;
+
 		return note(callable, duration, options);
 	} as TuningNote;
 
@@ -68,6 +69,7 @@ export function createTuning(config: EqualTuningInput | FrequencyTuningInput): T
 	if ("classes" in config) {
 		return createEqualTuning(config);
 	}
+
 	return createFrequencyTuning(config);
 }
 
@@ -81,6 +83,7 @@ function createEqualTuning(config: EqualTuningInput): Tuning<string> {
 	}
 
 	const frequencies: Record<string, number> = {};
+
 	for (const [ci, className] of classes.entries()) {
 		frequencies[className] = reference.hz * Math.pow(octaveRatio, (ci - refClassIndex) / spo);
 	}
@@ -100,6 +103,7 @@ function createEqualTuning(config: EqualTuningInput): Tuning<string> {
 			const pitch: Pitch = { class: classIndex, stepsPerOctave: spo, octave, octaveRatio };
 			const baseHz = frequencies[className] ?? 0;
 			const hz = baseHz * Math.pow(octaveRatio, octave - reference.octave);
+
 			namespace[key] = createTuningNote(pitch, hz, key);
 		}
 	}
@@ -114,6 +118,7 @@ function createFrequencyTuning(config: FrequencyTuningInput): Tuning<string> {
 	const classes = sorted.map(([name]) => name);
 	const spo = classes.length;
 	const frequencies: Record<string, number> = {};
+
 	for (const [name, hz] of sorted) {
 		frequencies[name] = hz;
 	}
@@ -133,6 +138,7 @@ function createFrequencyTuning(config: FrequencyTuningInput): Tuning<string> {
 			const pitch: Pitch = { class: classIndex, stepsPerOctave: spo, octave, octaveRatio };
 			const baseHz = frequencies[className] ?? 0;
 			const hz = baseHz * Math.pow(octaveRatio, octave - referenceOctave);
+
 			namespace[key] = createTuningNote(pitch, hz, key);
 		}
 	}
@@ -146,9 +152,11 @@ export function addAliases<C extends string, A extends string>(tuning: Tuning<C>
 
 	for (const [alias, target] of Object.entries<string | readonly [string, number]>(aliases)) {
 		const [targetName, octaveOffset] = typeof target === "string" ? ([target, 0] as const) : target;
+
 		for (let octave = minOctave; octave <= maxOctave; octave++) {
 			const targetOctave = octave + octaveOffset;
 			const entry = ns[`${targetName}${targetOctave}`];
+
 			if (entry) ns[`${alias}${octave}`] = entry;
 		}
 	}
@@ -165,6 +173,7 @@ export function createIndexTuning(count: number): (index: number) => TuningNote 
 
 		if (!entry) {
 			const pitch: Pitch = { class: index, stepsPerOctave: spo, octave: 0, octaveRatio: 2 };
+
 			entry = createTuningNote(pitch, 0, `${index}`);
 			cache[index] = entry;
 		}
@@ -176,13 +185,17 @@ export function createIndexTuning(count: number): (index: number) => TuningNote 
 function getOctaveRange(ns: Record<string, unknown>): [number, number] {
 	let min = Infinity;
 	let max = -Infinity;
+
 	for (const key of Object.keys(ns)) {
 		const match = /(-?\d+)$/.exec(key);
+
 		if (match) {
 			const oct = parseInt(match[1] ?? "", 10);
+
 			if (oct < min) min = oct;
 			if (oct > max) max = oct;
 		}
 	}
+
 	return [min, max];
 }

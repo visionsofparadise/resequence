@@ -20,6 +20,7 @@ const getRelativeTime = (timestamp: number): string => {
 	if (diffDays > 0) return rtf.format(-diffDays, "day");
 	if (diffHours > 0) return rtf.format(-diffHours, "hour");
 	if (diffMinutes > 0) return rtf.format(-diffMinutes, "minute");
+
 	return rtf.format(-diffSeconds, "second");
 };
 

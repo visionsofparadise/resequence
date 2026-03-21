@@ -31,6 +31,7 @@ export function heal(pattern: Pattern | Note, threshold?: number): HealPattern {
 	const resolved = toPattern(pattern);
 	const resolvedThreshold = threshold ?? 0;
 	const entries: Array<{ id: string; absoluteStart: number; absoluteEnd: number; key: number }> = [];
+
 	walkNotes(resolved, (note, { id, absoluteOffset }) => {
 		entries.push({ id, absoluteStart: absoluteOffset + note.startBeat, absoluteEnd: absoluteOffset + note.endBeat, key: pitchKey(note.pitch) });
 	});
@@ -61,6 +62,7 @@ export function heal(pattern: Pattern | Note, threshold?: number): HealPattern {
 		if (merged.has(id)) return [];
 
 		const newEndBeat = extensions.get(id);
+
 		if (newEndBeat !== undefined) {
 			return [{ ...note, endBeat: newEndBeat - absoluteOffset }];
 		}

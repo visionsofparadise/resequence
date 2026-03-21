@@ -39,6 +39,7 @@ export class CompressorEffectUnit extends Unit {
 
 	protected override _setup(context: UnitContext): SetupResult {
 		const compressorNode = context.audioContext.createDynamicsCompressor();
+
 		driveParam(compressorNode.threshold, this.id ? `${this.id}.threshold` : undefined, this.threshold, [-100, 0], context);
 		driveParam(compressorNode.ratio, this.id ? `${this.id}.ratio` : undefined, this.ratio, [1, 20], context);
 
@@ -47,6 +48,7 @@ export class CompressorEffectUnit extends Unit {
 		if (this.release !== undefined) compressorNode.release.value = this.release / 1000;
 
 		this.compressorNode = compressorNode;
+
 		return { entries: [compressorNode], exits: [compressorNode] };
 	}
 

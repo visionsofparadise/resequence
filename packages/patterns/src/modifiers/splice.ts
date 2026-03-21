@@ -63,9 +63,11 @@ export function splice(pattern: Pattern | Note, options: SpliceOptions): SpliceP
 	const removeCount = options.remove ?? 0;
 
 	const entries: Array<{ note: Note; absoluteStart: number; absoluteEnd: number }> = [];
+
 	walkPatterns(resolved, (node, absoluteOffset) => {
 		for (const { offsetBeats, note } of node.notes) {
 			const totalOffset = absoluteOffset + offsetBeats;
+
 			entries.push({ note, absoluteStart: totalOffset + note.startBeat, absoluteEnd: totalOffset + note.endBeat });
 		}
 	});
@@ -93,6 +95,7 @@ export function splice(pattern: Pattern | Note, options: SpliceOptions): SpliceP
 		if (afterSet.has(note)) {
 			return [{ ...note, startBeat: note.startBeat + shift, endBeat: note.endBeat + shift }];
 		}
+
 		return [note];
 	});
 
@@ -104,9 +107,11 @@ export function splice(pattern: Pattern | Note, options: SpliceOptions): SpliceP
 		: [];
 
 	const notes = [...transformed.notes, ...insertedNotes];
+
 	notes.sort((ra, rb) => ra.offsetBeats + ra.note.startBeat - (rb.offsetBeats + rb.note.startBeat));
 
 	const newDuration = totalDuration + shift;
+
 	return new SplicePattern({ notes, children: transformed.children, startBeat: 0, endBeat: newDuration, spliceOptions: options, input: resolved });
 }
 
@@ -121,9 +126,11 @@ export function insert(pattern: Pattern | Note, options: InsertOptions): InsertP
 
 	const transformed = flatMapNotes(resolved, (note, { absoluteOffset }) => {
 		const noteEnd = absoluteOffset + note.endBeat;
+
 		if (noteEnd <= atTick) return [note];
 
 		const noteStart = absoluteOffset + note.startBeat;
+
 		if (noteStart >= removeEndTick) {
 			return [{ ...note, startBeat: note.startBeat + shift, endBeat: note.endBeat + shift }];
 		}
@@ -132,10 +139,12 @@ export function insert(pattern: Pattern | Note, options: InsertOptions): InsertP
 	});
 
 	const children: Array<RelativeChild> = [...transformed.children];
+
 	if (options.insert) {
 		children.push({ offsetBeats: atTick, pattern: options.insert });
 	}
 
 	const newDuration = totalDuration + shift;
+
 	return new InsertPattern({ notes: transformed.notes, children, startBeat: 0, endBeat: newDuration, insertOptions: options, input: resolved });
 }

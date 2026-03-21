@@ -21,6 +21,7 @@ export const AutomationCanvas: React.FC<AutomationCanvasProps> = ({ clip, contex
 
 	useTransients(transients, () => {
 		const canvas = canvasRef.current;
+
 		if (!canvas) return;
 
 		const pxPerBeat = project.timelineZoom.value;
@@ -36,6 +37,7 @@ export const AutomationCanvas: React.FC<AutomationCanvasProps> = ({ clip, contex
 		canvas.height = Math.ceil(height * dpr);
 
 		const context2d = canvas.getContext("2d");
+
 		if (!context2d) return;
 
 		context2d.setTransform(dpr, 0, 0, dpr, 0, 0);

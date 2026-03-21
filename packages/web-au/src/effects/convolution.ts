@@ -42,6 +42,7 @@ export class ConvolutionEffectUnit extends Unit {
 		}
 
 		this.convolverNode = convolverNode;
+
 		return { entries: [convolverNode], exits: [convolverNode] };
 	}
 

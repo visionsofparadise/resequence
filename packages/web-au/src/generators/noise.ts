@@ -39,6 +39,7 @@ export class NoiseUnit extends GeneratorUnit {
 
 	protected override async _setup(context: UnitContext): Promise<SetupResult> {
 		await context.loadModule(new URL("../processors/noise-processor.js", import.meta.url).href);
+
 		return super._setup(context);
 	}
 
@@ -48,6 +49,7 @@ export class NoiseUnit extends GeneratorUnit {
 		});
 
 		const gate = context.audioContext.createGain();
+
 		gate.gain.setValueAtTime(0, 0);
 		gate.gain.setValueAtTime(1, noteEvent.startMs / 1000);
 		gate.gain.setValueAtTime(0, noteEvent.cleanupMs / 1000);

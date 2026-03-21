@@ -32,10 +32,12 @@ export class VoicingPattern extends ModifierPattern<VoicingProperties> {
 
 function applyVoicing(group: ReadonlyArray<{ id: string; pitch: Pitch }>, style: VoicingStyle): Map<string, Pitch> {
 	const pitchMap = new Map<string, Pitch>();
+
 	if (group.length < 2) return pitchMap;
 
 	const sorted = group.slice().sort((ea, eb) => pitchKey(ea.pitch) - pitchKey(eb.pitch));
 	const firstSorted = sorted[0];
+
 	if (!firstSorted) return pitchMap;
 
 	const baseKey = pitchKey(firstSorted.pitch);
@@ -44,8 +46,10 @@ function applyVoicing(group: ReadonlyArray<{ id: string; pitch: Pitch }>, style:
 	const close = sorted.map((entry, groupIndex) => {
 		if (groupIndex === 0) return entry.pitch;
 		let pitch = entry.pitch;
+
 		while (pitchKey(pitch) > baseKey + spo) pitch = addSteps(pitch, -spo);
 		while (pitchKey(pitch) <= baseKey) pitch = addSteps(pitch, spo);
+
 		return pitch;
 	});
 
@@ -55,6 +59,7 @@ function applyVoicing(group: ReadonlyArray<{ id: string; pitch: Pitch }>, style:
 		voiced = close.slice();
 		const dropIndex = voiced.length - 2;
 		const secondFromTop = voiced[dropIndex];
+
 		if (secondFromTop) {
 			voiced[dropIndex] = addSteps(secondFromTop, -spo);
 		}
@@ -62,6 +67,7 @@ function applyVoicing(group: ReadonlyArray<{ id: string; pitch: Pitch }>, style:
 		voiced = close.slice();
 		const dropIndex = voiced.length - 3;
 		const thirdFromTop = voiced[dropIndex];
+
 		if (thirdFromTop) {
 			voiced[dropIndex] = addSteps(thirdFromTop, -spo);
 		}
@@ -69,6 +75,7 @@ function applyVoicing(group: ReadonlyArray<{ id: string; pitch: Pitch }>, style:
 		voiced = close.slice();
 		for (let noteIndex = voiced.length - 1; noteIndex >= 0; noteIndex -= 2) {
 			const pitch = voiced[noteIndex];
+
 			if (pitch) {
 				voiced[noteIndex] = addSteps(pitch, spo);
 			}
@@ -77,6 +84,7 @@ function applyVoicing(group: ReadonlyArray<{ id: string; pitch: Pitch }>, style:
 
 	for (const [groupIndex, entry] of sorted.entries()) {
 		const newPitch = voiced[groupIndex];
+
 		if (newPitch && pitchKey(newPitch) !== pitchKey(entry.pitch)) {
 			pitchMap.set(entry.id, newPitch);
 		}
@@ -88,23 +96,29 @@ function applyVoicing(group: ReadonlyArray<{ id: string; pitch: Pitch }>, style:
 export function voicing(pattern: Pattern | Note, style: VoicingStyle): VoicingPattern {
 	const resolved = toPattern(pattern);
 	const entries: Array<{ id: string; absoluteStart: number; pitch: Pitch }> = [];
+
 	walkNotes(resolved, (note, { id, absoluteOffset }) => {
 		entries.push({ id, absoluteStart: absoluteOffset + note.startBeat, pitch: note.pitch });
 	});
 
 	const byBeat = new Map<number, typeof entries>();
+
 	for (const entry of entries) {
 		let group = byBeat.get(entry.absoluteStart);
+
 		if (!group) {
 			group = [];
 			byBeat.set(entry.absoluteStart, group);
 		}
+
 		group.push(entry);
 	}
 
 	const pitchChanges = new Map<string, Pitch>();
+
 	for (const group of byBeat.values()) {
 		const changes = applyVoicing(group, style);
+
 		for (const [id, pitch] of changes) {
 			pitchChanges.set(id, pitch);
 		}
@@ -115,6 +129,7 @@ export function voicing(pattern: Pattern | Note, style: VoicingStyle): VoicingPa
 
 		if (newPitch) {
 			const shift = pitchKey(newPitch) - pitchKey(note.pitch);
+
 			return {
 				...note,
 				pitch: newPitch,

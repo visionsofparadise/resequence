@@ -51,6 +51,7 @@ export class OscillatorUnit extends GeneratorUnit {
 		if (this.id) {
 			getOrCreateDriver(`${this.id}.frequency`, 0, context, [20, 20000]);
 			const normalized = (this.detune - -1200) / (1200 - -1200);
+
 			getOrCreateDriver(`${this.id}.detune`, normalized, context, [-1200, 1200]);
 		}
 
@@ -59,9 +60,11 @@ export class OscillatorUnit extends GeneratorUnit {
 
 	protected override _schedule(noteEvent: NoteEvent, context: UnitContext): void {
 		const oscillator = context.audioContext.createOscillator();
+
 		oscillator.type = this.oscillatorType;
 
 		const frequency = noteToFrequency(noteEvent.note, noteEvent.bend);
+
 		offsetParam(oscillator.frequency, this.id ? `${this.id}.frequency` : undefined, frequency, [20, 20000], context);
 		driveParam(oscillator.detune, this.id ? `${this.id}.detune` : undefined, this.detune, [-1200, 1200], context);
 

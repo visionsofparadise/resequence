@@ -1,0 +1,159 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+  /* Surface colors */
+  --color-surface-0: var(--surface-0);
+  --color-surface-1: var(--surface-1);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-surface-4: var(--surface-4);
+
+  /* Border colors */
+  --color-border-subtle: var(--border-subtle);
+  --color-border-default: var(--border-default);
+  --color-border-strong: var(--border-strong);
+
+  /* Text colors */
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-tertiary: var(--text-tertiary);
+
+  /* Gold accent */
+  --color-gold-300: var(--gold-300);
+  --color-gold-400: var(--gold-400);
+  --color-gold-500: var(--gold-500);
+  --color-gold-600: var(--gold-600);
+  --color-gold-900: var(--gold-900);
+
+  /* Semantic colors */
+  --color-meter-green: var(--meter-green);
+  --color-meter-yellow: var(--meter-yellow);
+  --color-meter-red: var(--meter-red);
+  --color-solo-yellow: var(--solo-yellow);
+  --color-mute-red: var(--mute-red);
+  --color-record-red: var(--record-red);
+
+  /* Fonts */
+  --font-display: "IBM Plex Sans", sans-serif;
+  --font-mono: "IBM Plex Mono", monospace;
+}
+
+:root {
+  /* Surface - Light theme — more neutral */
+  --surface-0: #f9f9f7;
+  --surface-1: #f0f0ec;
+  --surface-2: #e5e5e0;
+  --surface-3: #dadad4;
+  --surface-4: #ccccc6;
+
+  /* Border - Light theme — neutral */
+  --border-subtle: #ccccc6;
+  --border-default: #b0b0a8;
+  --border-strong: #929289;
+
+  /* Text - Light theme */
+  --text-primary: #1a1a18;
+  --text-secondary: #585855;
+  --text-tertiary: #82827a;
+
+  /* Amber accent — deeper, less yellow, more copper/amber */
+  --gold-300: #d4a860;
+  --gold-400: #c89545;
+  --gold-500: #b8862e;
+  --gold-600: #9a7024;
+  --gold-900: #261c0c;
+  --gold-glow: rgba(184, 134, 46, 0.18);
+
+  /* Semantic colors */
+  --meter-green: #5a9a3e;
+  --meter-yellow: #b8862e;
+  --meter-red: #c44040;
+  --solo-yellow: #b8862e;
+  --mute-red: #c44040;
+  --record-red: #dd4444;
+
+  /* Shadows - Inset */
+  --shadow-inset-sm: inset 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-inset-md: inset 0 2px 4px rgba(0, 0, 0, 0.5),
+    inset 0 0 1px rgba(0, 0, 0, 0.3);
+  --shadow-inset-lg: inset 0 3px 6px rgba(0, 0, 0, 0.6),
+    inset 0 0 2px rgba(0, 0, 0, 0.4);
+
+  /* Shadows - Elevation */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3), 0 0 1px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 2px 4px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.5), 0 2px 4px rgba(0, 0, 0, 0.3);
+  --shadow-xl: 0 8px 24px rgba(0, 0, 0, 0.6), 0 4px 8px rgba(0, 0, 0, 0.3);
+
+  /* Spacing */
+  --space-0-5: 2px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+
+  /* Typography sizes (rem) */
+  --text-xxs: 0.625rem;
+  --text-xs: 0.6875rem;
+  --text-sm-size: 0.75rem;
+  --text-base-size: 0.8125rem;
+  --text-lg-size: 1rem;
+  --text-xl-size: 1.25rem;
+  --text-2xl-size: 1.75rem;
+}
+
+.dark {
+  /* Surface - Dark theme — very dark shell, lighter content bodies */
+  --surface-0: #060606;
+  --surface-1: #0e0e0e;
+  --surface-2: #1a1a1a;
+  --surface-3: #262626;
+  --surface-4: #333333;
+
+  /* Border - Dark theme — neutral gray */
+  --border-subtle: #262626;
+  --border-default: #383838;
+  --border-strong: #4a4a4a;
+
+  /* Text - Dark theme — slightly cooler */
+  --text-primary: #e4e0dc;
+  --text-secondary: #9a9590;
+  --text-tertiary: #636060;
+}
+
+:root {
+  --display-transform: none;
+  --display-letter-spacing: normal;
+}
+
+@layer base {
+  body {
+    font-family: var(--font-mono);
+    background-color: var(--surface-0);
+    color: var(--text-primary);
+    font-size: 0.75rem;
+    line-height: 1.125rem;
+  }
+
+  * {
+    border-color: var(--border-default);
+  }
+}
+
+/* Apply text-transform and letter-spacing to all display font elements */
+.font-display {
+  text-transform: var(--display-transform);
+  letter-spacing: var(--display-letter-spacing);
+}
+
+/* Label style — small caps for control labels, parameter names, section sub-headers */
+.label-caps {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 0.625rem;
+  line-height: 0.875rem;
+}

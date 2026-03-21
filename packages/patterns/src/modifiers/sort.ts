@@ -33,6 +33,7 @@ export class SortPattern extends ModifierPattern<SortProperties> {
 export function sort(pattern: Pattern | Note, key: SortKey = "asc"): SortPattern {
 	const resolved = toPattern(pattern);
 	const entries: Array<{ id: string; absoluteStart: number; pitch: Pitch; absoluteNote: Note }> = [];
+
 	walkNotes(resolved, (note, { id, absoluteOffset }) => {
 		entries.push({
 			id,
@@ -60,6 +61,7 @@ export function sort(pattern: Pattern | Note, key: SortKey = "asc"): SortPattern
 
 	for (const [noteIndex, entry] of byTick.entries()) {
 		const newPitch = pitches[noteIndex] ?? entry.pitch;
+
 		if (pitchKey(newPitch) !== pitchKey(entry.pitch)) {
 			pitchAssignment.set(entry.id, newPitch);
 		}
@@ -70,6 +72,7 @@ export function sort(pattern: Pattern | Note, key: SortKey = "asc"): SortPattern
 
 		if (newPitch) {
 			const shift = pitchKey(newPitch) - pitchKey(note.pitch);
+
 			return {
 				...note,
 				pitch: newPitch,

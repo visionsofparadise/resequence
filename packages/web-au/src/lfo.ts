@@ -44,12 +44,14 @@ export class LfoUnit extends Unit {
 
 	protected override async _setup(context: UnitContext): Promise<SetupResult> {
 		const oscillatorNode = context.audioContext.createOscillator();
+
 		oscillatorNode.type = this.shape;
 
 		driveParam(oscillatorNode.frequency, this.id ? `${this.id}.rate` : undefined, this.rate, [0.01, 100], context);
 
 		const depthId = crypto.randomUUID();
 		const depthUnit = linearGain({ level: this.depth, id: depthId });
+
 		await depthUnit.setup(context);
 
 		if (!depthUnit.gainNode) throw new Error();

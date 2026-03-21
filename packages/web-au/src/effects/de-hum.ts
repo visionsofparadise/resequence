@@ -49,6 +49,7 @@ export class DeHumEffectUnit extends Unit {
 		}
 
 		const filterChain = chain(...notches);
+
 		this.filterChain = filterChain;
 
 		return { entries: [filterChain], exits: [filterChain] };

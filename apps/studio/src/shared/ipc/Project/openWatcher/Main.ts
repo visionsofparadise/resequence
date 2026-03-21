@@ -7,6 +7,7 @@ export class OpenWatcherMainIpc extends AsyncMainIpc<OpenWatcherIpcParameters, O
 
 	async handler(dirPath: string, dependencies: IpcHandlerDependencies): Promise<OpenWatcherIpcReturn> {
 		await openProjectWatcher(dirPath, dependencies.browserWindow);
+
 		return undefined;
 	}
 }

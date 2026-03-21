@@ -15,6 +15,7 @@ const stringify = (value: unknown): string => {
 	if (value === null || value === undefined) return "";
 	if (typeof value === "string") return value;
 	if (typeof value === "number" || typeof value === "boolean") return String(value);
+
 	return JSON.stringify(value);
 };
 
@@ -40,6 +41,7 @@ const getLogLevel = (): string => {
 	if (app.isPackaged) {
 		return "error";
 	}
+
 	return process.env.LOG_LEVEL ?? "info";
 };
 

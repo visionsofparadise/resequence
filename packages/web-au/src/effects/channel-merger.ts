@@ -38,6 +38,7 @@ export class ChannelMergerUnit extends Unit {
 
 		for (let ch = 0; ch < this.channelCount; ch++) {
 			const channel = this.channels[ch];
+
 			if (!channel) continue;
 
 			await channel.setup(context);

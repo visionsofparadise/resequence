@@ -44,5 +44,6 @@ export function sequence(...inputs: ReadonlyArray<Pattern | Note>): SequencePatt
 
 export function toPattern(input: Pattern | Note): Pattern {
 	if (input instanceof Pattern) return input;
+
 	return sequence(input);
 }

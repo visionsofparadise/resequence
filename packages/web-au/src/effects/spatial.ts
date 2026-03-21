@@ -58,6 +58,7 @@ export class SpatialEffectUnit extends Unit {
 		driveParam(pannerNode.positionZ, this.id ? `${this.id}.z` : undefined, this.z, [-100, 100], context);
 
 		this.pannerNode = pannerNode;
+
 		return { entries: [pannerNode], exits: [pannerNode] };
 	}
 

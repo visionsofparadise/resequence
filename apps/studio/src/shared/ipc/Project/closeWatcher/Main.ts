@@ -7,6 +7,7 @@ export class CloseWatcherMainIpc extends AsyncMainIpc<CloseWatcherIpcParameters,
 
 	async handler(_dependencies: IpcHandlerDependencies): Promise<CloseWatcherIpcReturn> {
 		await closeProjectWatcher();
+
 		return undefined;
 	}
 }

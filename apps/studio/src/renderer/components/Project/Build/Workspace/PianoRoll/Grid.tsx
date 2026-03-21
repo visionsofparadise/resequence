@@ -46,6 +46,7 @@ export const PianoRollGrid: React.FC<PianoRollGridProps> = ({ minPitchKey, maxPi
 
 		if (isOctaveBoundary) {
 			const octaveNumber = Math.floor(pitchKey / stepsPerOctave);
+
 			rows.push(
 				<span
 					key={`oct-${pitchKey}`}
@@ -59,9 +60,11 @@ export const PianoRollGrid: React.FC<PianoRollGridProps> = ({ minPitchKey, maxPi
 	}
 
 	const beatLines: Array<React.ReactNode> = [];
+
 	for (let beat = 0; beat <= totalBeats; beat++) {
 		const absoluteBeat = startBeat + beat;
 		const isBarLine = absoluteBeat % beatsPerBar === 0;
+
 		beatLines.push(
 			<div
 				key={`beat-${beat}`}
@@ -77,6 +80,7 @@ export const PianoRollGrid: React.FC<PianoRollGridProps> = ({ minPitchKey, maxPi
 
 		if (isBarLine) {
 			const barNumber = Math.floor(absoluteBeat / beatsPerBar) + 1;
+
 			beatLines.push(
 				<span
 					key={`bar-${beat}`}

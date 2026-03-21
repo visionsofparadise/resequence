@@ -7,6 +7,7 @@ export class WriteFileMainIpc extends AsyncMainIpc<WriteFileIpcParameters, Write
 
 	async handler(filePath: string, content: string, _dependencies: IpcHandlerDependencies): Promise<WriteFileIpcReturn> {
 		await fs.writeFile(filePath, content, "utf-8");
+
 		return undefined;
 	}
 }

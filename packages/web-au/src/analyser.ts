@@ -33,6 +33,7 @@ export class AnalyserUnit extends Unit {
 
 	protected override _setup(context: UnitContext): SetupResult {
 		const analyserNode = context.audioContext.createAnalyser();
+
 		analyserNode.fftSize = this.fftSize;
 
 		this.analyserNode = analyserNode;

@@ -37,7 +37,9 @@ function makeFetchBuffer(entrypoint: string): (path: string) => Promise<ArrayBuf
 	return (path: string) =>
 		readFile(resolve(projectDir, path)).then((data) => {
 			const copy = new ArrayBuffer(data.byteLength);
+
 			new Uint8Array(copy).set(new Uint8Array(data.buffer, data.byteOffset, data.byteLength));
+
 			return copy;
 		});
 }
@@ -85,12 +87,14 @@ program
 
 		for (const stem of result.stems) {
 			const filePath = resolve(outDir, `${stem.portKey}.wav`);
+
 			writeFileSync(filePath, Buffer.from(stem.wav));
 			process.stdout.write(`  Audio: ${stem.portKey}.wav\n`);
 		}
 
 		if (result.master) {
 			const filePath = resolve(outDir, "master.wav");
+
 			writeFileSync(filePath, Buffer.from(result.master.wav));
 			process.stdout.write(`  Audio: master.wav\n`);
 		}
@@ -110,6 +114,7 @@ program
 		const audioContext = new nodeWebAudio.AudioContext() as unknown as AudioContext;
 
 		const playback = play(source, audioContext);
+
 		await playback.setup(makeFetchBuffer(entrypoint));
 
 		const startBeat = Number(options.startBeat ?? 0);
@@ -157,6 +162,7 @@ program
 
 		for (const [name, data] of midiTracks) {
 			const filePath = resolve(outDir, `${name}.mid`);
+
 			writeFileSync(filePath, data);
 			process.stdout.write(`  MIDI: ${name}.mid\n`);
 		}

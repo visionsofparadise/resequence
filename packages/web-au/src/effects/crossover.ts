@@ -66,6 +66,7 @@ export class CrossoverEffectUnit extends Unit {
 
 		for (let bandIndex = 0; bandIndex < this.parsedBands.length; bandIndex++) {
 			const band = this.parsedBands[bandIndex];
+
 			if (!band) continue;
 			const bandNodes: Array<Unit> = [];
 
@@ -73,8 +74,10 @@ export class CrossoverEffectUnit extends Unit {
 
 			if (bandIndex > 0) {
 				const prevBand = this.parsedBands[bandIndex - 1];
+
 				if (prevBand?.frequency !== undefined) {
 					const hp = linkwitzRiley(prevBand.frequency, "highpass");
+
 					inputUnit.to(hp);
 					bandHead = hp;
 					bandNodes.push(hp);
@@ -83,13 +86,16 @@ export class CrossoverEffectUnit extends Unit {
 
 			if (band.frequency !== undefined) {
 				const lp = linkwitzRiley(band.frequency, "lowpass");
+
 				bandHead.to(lp);
 				bandHead = lp;
 				bandNodes.push(lp);
 			} else if (bandHead === inputUnit && bandIndex > 0) {
 				const prevBand = this.parsedBands[bandIndex - 1];
+
 				if (prevBand?.frequency !== undefined) {
 					const hp = linkwitzRiley(prevBand.frequency, "highpass");
+
 					inputUnit.to(hp);
 					bandHead = hp;
 					bandNodes.push(hp);
@@ -100,6 +106,7 @@ export class CrossoverEffectUnit extends Unit {
 				for (let unitIndex = 0; unitIndex < band.units.length - 1; unitIndex++) {
 					const current = band.units[unitIndex];
 					const next = band.units[unitIndex + 1];
+
 					if (current && next) current.to(next);
 				}
 
@@ -130,6 +137,7 @@ export class CrossoverEffectUnit extends Unit {
 				unit.teardown(context);
 			}
 		}
+
 		this.bandUnits = [];
 	}
 }

@@ -15,6 +15,7 @@ function mulberry32(seed: number): () => number {
 	return function (): number {
 		state += 0x6d2b79f5;
 		let value = state;
+
 		value = Math.imul(value ^ (value >>> 15), value | 1);
 		value ^= value + Math.imul(value ^ (value >>> 7), value | 61);
 
@@ -52,6 +53,7 @@ export class ArpPattern extends ModifierPattern<ArpProperties> {
 export function arp(pattern: Pattern | Note, mappingPattern: Pattern): ArpPattern {
 	const resolved = toPattern(pattern);
 	const sourceEntries: Array<{ id: string; absoluteStart: number; absoluteEnd: number; pitch: Pitch }> = [];
+
 	walkNotes(resolved, (note, { id, absoluteOffset }) => {
 		sourceEntries.push({ id, absoluteStart: absoluteOffset + note.startBeat, absoluteEnd: absoluteOffset + note.endBeat, pitch: note.pitch });
 	});
@@ -102,6 +104,7 @@ export function arp(pattern: Pattern | Note, mappingPattern: Pattern): ArpPatter
 
 		for (;;) {
 			const mappingNote = mappingNotes[stepIndex % mappingNotes.length];
+
 			if (!mappingNote) break;
 			const absoluteBeat = segment.start + cycle * mappingDuration + mappingNote.absoluteBeat;
 
@@ -182,36 +185,45 @@ export function arp(pattern: Pattern | Note, mappingPattern: Pattern): ArpPatter
 
 export function arpUp(voices: number, rate: number): Pattern {
 	const steps: Array<Note> = [];
+
 	for (let voiceIndex = 0; voiceIndex < voices; voiceIndex++) {
 		steps.push(I(voiceIndex)(rate));
 	}
+
 	return sequence(...steps);
 }
 
 export function arpDown(voices: number, rate: number): Pattern {
 	const steps: Array<Note> = [];
+
 	for (let voiceIndex = voices - 1; voiceIndex >= 0; voiceIndex--) {
 		steps.push(I(voiceIndex)(rate));
 	}
+
 	return sequence(...steps);
 }
 
 export function arpUpDown(voices: number, rate: number): Pattern {
 	const steps: Array<Note> = [];
+
 	for (let voiceIndex = 0; voiceIndex < voices; voiceIndex++) {
 		steps.push(I(voiceIndex)(rate));
 	}
+
 	for (let voiceIndex = voices - 2; voiceIndex >= 1; voiceIndex--) {
 		steps.push(I(voiceIndex)(rate));
 	}
+
 	return sequence(...steps);
 }
 
 export function arpRandom(voices: number, rate: number, seed?: number): Pattern {
 	const rng = seed !== undefined ? mulberry32(seed) : Math.random.bind(Math);
 	const steps: Array<Note> = [];
+
 	for (let stepIndex = 0; stepIndex < voices; stepIndex++) {
 		steps.push(I(Math.floor(rng() * voices))(rate));
 	}
+
 	return sequence(...steps);
 }

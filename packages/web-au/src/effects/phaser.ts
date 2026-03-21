@@ -41,6 +41,7 @@ export class PhaserEffectUnit extends Unit {
 
 		for (let index = 0; index < this.stages; index++) {
 			const stageId = crypto.randomUUID();
+
 			stageIds.push(stageId);
 			stageFilters.push(allpass({ frequency: 1000, id: stageId }));
 		}
@@ -63,12 +64,15 @@ export class PhaserEffectUnit extends Unit {
 		const lfoId = crypto.randomUUID();
 
 		const lfoUnit = lfo({ path: lfoPath, shape: "sine", rate: this.rate, depth: this.depth, id: lfoId });
+
 		await lfoUnit.setup(context);
 
 		const lfoEntry = context.driverMap.get(lfoPath);
+
 		if (lfoEntry) {
 			for (const stageId of stageIds) {
 				const stageEntry = context.driverMap.get(`${stageId}.frequency`);
+
 				if (stageEntry) lfoEntry.node.connect(stageEntry.node.offset);
 			}
 		}

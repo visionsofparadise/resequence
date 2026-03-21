@@ -5,6 +5,7 @@ import type { NoteContext } from "./walk";
 
 function buildNoteId(indexes: ReadonlyArray<number>, noteIndex: number): string {
 	if (indexes.length === 0) return `n${noteIndex}`;
+
 	return `${indexes.join("-")}-n${noteIndex}`;
 }
 

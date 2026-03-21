@@ -39,6 +39,7 @@ function dispatchKeyframes(event: AutomationEvent, envelope: ReadonlyArray<Keyfr
 			if (nextKf && !nextKf.step) {
 				const value = evaluateAt(absoluteKeyframes, toBeats);
 				const toSeconds = beatToSec(toBeats);
+
 				entry.node.offset.linearRampToValueAtTime(value, toSeconds);
 			}
 		}
@@ -70,6 +71,7 @@ function dispatchLfo(event: AutomationEvent, lfo: Lfo, driverMap: ReadonlyMap<st
 		if (!entry) continue;
 
 		const osc = audioContext.createOscillator();
+
 		osc.type = lfo.shape;
 		osc.frequency.value = freqHz;
 

@@ -28,6 +28,7 @@ export class RepeatPattern extends ModifierPattern<RepeatProperties> {
 
 export function repeat(pattern: Pattern | Note, count: number): RepeatPattern {
 	const resolved = toPattern(pattern);
+
 	if (count < 1 || !Number.isInteger(count)) {
 		throw new PatternsError("INVALID_REPEAT_COUNT", `repeat(): count must be a positive integer, got ${count}`);
 	}

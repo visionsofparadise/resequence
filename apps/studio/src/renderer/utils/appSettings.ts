@@ -6,6 +6,7 @@ const SETTINGS_FILE = "settings.json";
 
 const getSettingsPath = async (main: MainWithEvents): Promise<string> => {
 	const userDataPath = await main.getUserDataPath();
+
 	return `${userDataPath}/${SETTINGS_FILE}`;
 };
 

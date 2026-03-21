@@ -12,6 +12,7 @@ export function pitchToFrequency(pitch: Pitch, tuning: ResolvedTuning): number {
 	const rootName = tuning.classes[0];
 	const rootHz = rootName !== undefined ? (tuning.frequencies[rootName] ?? 0) : 0;
 	const fraction = pitch.class / pitch.stepsPerOctave;
+
 	return rootHz * Math.pow(tuning.octaveRatio, fraction + (pitch.octave - tuning.referenceOctave));
 }
 

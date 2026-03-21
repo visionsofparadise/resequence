@@ -21,15 +21,18 @@ export class GenerateWaveformMainIpc extends AsyncMainIpc<GenerateWaveformIpcPar
 		const cachePath = path.join(waveformsDir, `${hash}.dat`);
 
 		const cached = await stat(cachePath).catch(() => null);
+
 		if (cached) {
 			logger.debug("Waveform cache hit", { namespace: "waveform", absolutePath, cachePath });
 			const buffer = await readFile(cachePath);
+
 			return new Uint8Array(buffer);
 		}
 
 		await mkdir(waveformsDir, { recursive: true });
 
 		const audiowaveformPath = getAudiowaveformPath();
+
 		logger.debug("Generating waveform", { namespace: "waveform", absolutePath, cachePath, audiowaveformPath });
 
 		const { stderr } = await execFileAsync(audiowaveformPath, [
@@ -45,6 +48,7 @@ export class GenerateWaveformMainIpc extends AsyncMainIpc<GenerateWaveformIpcPar
 		}
 
 		const buffer = await readFile(cachePath);
+
 		return new Uint8Array(buffer);
 	}
 }

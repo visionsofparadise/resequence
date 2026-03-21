@@ -19,6 +19,7 @@ export function tickToMs(tick: number, tempoMap: ReadonlyArray<TempoPoint>, ppq:
 	}
 
 	const remainingTicks = tick - lastTick;
+
 	ms += (remainingTicks / ppq) * (60000 / bpm);
 
 	return ms;

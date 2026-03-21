@@ -7,6 +7,7 @@ const CENTS: Record<string, number> = {
 };
 
 const frequencies: Record<string, number> = {};
+
 for (const [name, cents] of Object.entries(CENTS)) {
 	frequencies[name] = REF_HZ * Math.pow(2, cents / 1200);
 }

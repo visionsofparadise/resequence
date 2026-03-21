@@ -1,0 +1,43 @@
+{
+  "name": "design-system-v1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "concurrently \"eslint . --fix --cache --format ../../agent-eslint.js\" \"tsc --noEmit --pretty false 2>&1 | node ../../agent-tsc.js\"",
+    "check:verbose": "concurrently \"eslint .\" \"tsc --noEmit\"",
+    "lint": "eslint . --fix --cache --format ../../agent-eslint.js",
+    "lint:verbose": "eslint .",
+    "start": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@dagrejs/dagre": "^2.0.4",
+    "@radix-ui/react-collapsible": "^1.1.0",
+    "@radix-ui/react-dialog": "^1.1.0",
+    "@radix-ui/react-popover": "^1.1.0",
+    "@radix-ui/react-select": "^2.1.0",
+    "@radix-ui/react-slider": "^1.2.0",
+    "@radix-ui/react-slot": "^1.1.0",
+    "@radix-ui/react-tabs": "^1.1.0",
+    "@radix-ui/react-toggle": "^1.1.0",
+    "@tailwindcss/postcss": "^4.2.1",
+    "@use-gesture/react": "^10.3.1",
+    "@xyflow/react": "^12.10.1",
+    "class-variance-authority": "^0.7.0",
+    "clsx": "^2.0.0",
+    "lucide-react": "^0.469.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "tailwind-merge": "^2.0.0"
+  },
+  "devDependencies": {
+    "@types/dagre": "^0.7.54",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^4.0.0",
+    "tailwindcss": "^4.2.1",
+    "typescript": "*",
+    "vite": "^5.4.0"
+  }
+}

@@ -8,6 +8,7 @@ export interface Keyframe {
 export function applyCurve(progress: number, curve: number): number {
 	if (curve === 0) return progress;
 	if (curve > 0) return Math.pow(progress, 1 + curve * 3);
+
 	return 1 - Math.pow(1 - progress, 1 + Math.abs(curve) * 3);
 }
 
@@ -20,11 +21,13 @@ export function evaluateAt(keyframes: ReadonlyArray<Keyframe>, beat: number): nu
 			if (kf.step) return prevValue;
 
 			const span = kf.beat - prevBeat;
+
 			if (span === 0) return kf.value;
 
 			const progress = (beat - prevBeat) / span;
 			const curve = kf.curve ?? 0;
 			const curved = applyCurve(progress, curve);
+
 			return prevValue + (kf.value - prevValue) * curved;
 		}
 
@@ -51,6 +54,7 @@ export function scheduleKeyframes(
 	if (options?.initialValue !== undefined) {
 		const first = keyframes[0];
 		const time = beatToSeconds(fromBeat ?? (first ? first.beat : 0));
+
 		param.setValueAtTime(options.initialValue, time);
 	}
 
@@ -83,6 +87,7 @@ export function scheduleKeyframes(
 					for (let si = 0; si < sampleCount; si++) {
 						const progress = si / (sampleCount - 1);
 						const curved = applyCurve(progress, curve);
+
 						values[si] = prevValue + (kf.value - prevValue) * curved;
 					}
 

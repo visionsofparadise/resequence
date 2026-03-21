@@ -50,6 +50,7 @@ export function encodeMidi(tracks: Map<string, ReadonlyArray<MidiNote>>, options
 	for (const point of timeSigChanges) {
 		const [numerator, denominator] = point.timeSignature;
 		const denominatorPower = Math.log2(denominator);
+
 		tempoTimeEvents.push({
 			tick: Math.round(point.beat * options.ppq),
 			event: { deltaTime: 0, type: "timeSignature", numerator, denominator: denominatorPower, metronome: 24, thirtyseconds: 8, meta: true },
@@ -117,13 +118,16 @@ function buildTrackEvents(name: string, notes: ReadonlyArray<MidiNote>): Array<M
 		if (mn.pitchBends && mn.pitchBends.length > 0) {
 			for (const pb of mn.pitchBends) {
 				const bendValue = centsToBendValue(pb.bend, bendRange);
+
 				timeEvents.push({ tick: pb.tick, event: { deltaTime: 0, type: "pitchBend", channel, value: bendValue } });
 			}
 
 			const noteEndTick = mn.tick + mn.durationTicks;
+
 			timeEvents.push({ tick: noteEndTick, event: { deltaTime: 0, type: "pitchBend", channel, value: 8192 } });
 		} else if (mn.bend !== undefined) {
 			const bendValue = centsToBendValue(mn.bend, bendRange);
+
 			timeEvents.push({ tick: mn.tick, event: { deltaTime: 0, type: "pitchBend", channel, value: bendValue } });
 		}
 
@@ -167,12 +171,15 @@ function hasOverlappingSlides(notes: ReadonlyArray<MidiNote>): boolean {
 
 	for (let ni = 0; ni < sliding.length; ni++) {
 		const noteA = sliding[ni];
+
 		if (!noteA) continue;
 		const aEnd = noteA.tick + noteA.durationTicks;
 
 		for (let nj = ni + 1; nj < sliding.length; nj++) {
 			const noteB = sliding[nj];
+
 			if (!noteB || noteB.tick >= aEnd) break;
+
 			return true;
 		}
 	}
@@ -193,6 +200,7 @@ function allocateChannels(notes: ReadonlyArray<MidiNote>): Map<number, number> {
 		}
 
 		let assignedChannel = 0;
+
 		for (let ch = 0; ch < 16; ch++) {
 			if (ch === 9) continue;
 			if ((channelFreeAt[ch] ?? 0) <= mn.tick) {
@@ -218,6 +226,7 @@ function calculateBendRanges(notes: ReadonlyArray<MidiNote>, channelAssignments?
 			for (const pb of mn.pitchBends) {
 				const absCents = Math.abs(pb.bend);
 				const current = maxCentsPerChannel.get(channel) ?? 0;
+
 				if (absCents > current) maxCentsPerChannel.set(channel, absCents);
 			}
 		}
@@ -225,6 +234,7 @@ function calculateBendRanges(notes: ReadonlyArray<MidiNote>, channelAssignments?
 		if (mn.bend !== undefined) {
 			const absCents = Math.abs(mn.bend);
 			const current = maxCentsPerChannel.get(channel) ?? 0;
+
 			if (absCents > current) maxCentsPerChannel.set(channel, absCents);
 		}
 	}
@@ -233,6 +243,7 @@ function calculateBendRanges(notes: ReadonlyArray<MidiNote>, channelAssignments?
 
 	for (const [channel, maxCents] of maxCentsPerChannel) {
 		const semitones = Math.ceil(maxCents / 100);
+
 		ranges.set(channel, Math.max(2, semitones));
 	}
 

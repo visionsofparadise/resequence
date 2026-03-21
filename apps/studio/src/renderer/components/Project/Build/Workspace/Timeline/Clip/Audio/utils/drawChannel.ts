@@ -32,6 +32,7 @@ export function drawChannel(canvasCtx: CanvasRenderingContext2D, points: Readonl
 
 	const style = getComputedStyle(canvasCtx.canvas);
 	const primaryHsl = style.getPropertyValue("--primary").trim();
+
 	canvasCtx.fillStyle = `hsl(${primaryHsl} / ${opacity})`;
 	canvasCtx.fill();
 

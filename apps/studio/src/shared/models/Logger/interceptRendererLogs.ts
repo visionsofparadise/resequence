@@ -23,6 +23,7 @@ export const interceptRendererLogs = (transactionId: string, dependencies: Pick<
 		} catch {
 			const isValidLevel = (lvl: number): lvl is ConsoleMessageLevel => lvl >= 0 && lvl <= 3;
 			const mappedLevel = isValidLevel(level) ? levelMap[level] : "info";
+
 			logEntry = logger.createLogEntry(mappedLevel, message);
 		}
 

@@ -4,9 +4,11 @@ import type { ProjectContext } from "../../../../models/Context";
 
 export function useBundleBuild(entrypoint: string | undefined, context: ProjectContext): void {
 	const contextRef = useRef(context);
+
 	contextRef.current = context;
 
 	const buildPathRef = useRef(context.build.buildPath);
+
 	buildPathRef.current = context.build.buildPath;
 
 	const latestBuildPath = useRef<string | null>(null);
@@ -22,16 +24,19 @@ export function useBundleBuild(entrypoint: string | undefined, context: ProjectC
 			bundleString = await main.bundleProject(entrypoint);
 		} catch (error) {
 			projectStore.mutate(build, (proxy) => Object.assign(proxy, { error: String(error) }));
+
 			return;
 		}
 
 		const newBuildPath = `${currentProjectPath}/build/${Date.now()}`;
+
 		await main.ensureDirectory(newBuildPath);
 
 		await main.writeFile(`${newBuildPath}/bundle.js`, bundleString);
 		await main.writeFile(`${newBuildPath}/overrides.json`, JSON.stringify([]));
 
 		const previousLatest = latestBuildPath.current;
+
 		latestBuildPath.current = newBuildPath;
 
 		if (buildPathRef.current === previousLatest) {
@@ -54,10 +59,12 @@ export function useBundleBuild(entrypoint: string | undefined, context: ProjectC
 			const entries = await main.readDirectory(`${currentProjectPath}/build`);
 
 			const timestamps = entries.map(Number).filter((ts) => !isNaN(ts));
+
 			timestamps.sort((timestampA, timestampB) => timestampB - timestampA);
 
 			if (timestamps.length > 0) {
 				const latest = `${currentProjectPath}/build/${timestamps[0]}`;
+
 				latestBuildPath.current = latest;
 
 				const { projectStore, build } = contextRef.current;
@@ -71,6 +78,7 @@ export function useBundleBuild(entrypoint: string | undefined, context: ProjectC
 		void init();
 
 		const handleChange = () => void bundleBuild();
+
 		main.events.on("change", handleChange);
 
 		return () => {

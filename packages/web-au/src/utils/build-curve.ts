@@ -4,6 +4,7 @@ export function buildCurve(transform: (x: number) => number): Float32Array<Array
 
 	for (let index = 0; index < samples; index++) {
 		const x = (index * 2) / (samples - 1) - 1;
+
 		curve[index] = transform(x);
 	}
 

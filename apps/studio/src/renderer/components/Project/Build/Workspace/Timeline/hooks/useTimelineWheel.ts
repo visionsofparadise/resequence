@@ -20,6 +20,7 @@ export function useTimelineWheel({ context, containerRef, totalBeats }: UseTimel
 			if (event.cancelable) event.preventDefault();
 
 			const container = containerRef.current;
+
 			if (!container) return;
 
 			if (ctrlKey) {

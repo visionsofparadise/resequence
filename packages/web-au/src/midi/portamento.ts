@@ -59,6 +59,7 @@ export class PortamentoUnit extends MidiUnit {
 
 	protected override _setup(_context: UnitContext): SetupResult {
 		this.lastPitch = undefined;
+
 		return {};
 	}
 
@@ -69,6 +70,7 @@ export class PortamentoUnit extends MidiUnit {
 
 		if (this.lastPitch.slides && this.lastPitch.slides.length > 0) {
 			const lastSlide = this.lastPitch.slides[this.lastPitch.slides.length - 1];
+
 			if (lastSlide) prevAbsolute += lastSlide.cents / 100;
 		}
 

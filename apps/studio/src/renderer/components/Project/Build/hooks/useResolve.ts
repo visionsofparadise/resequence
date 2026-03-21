@@ -11,6 +11,7 @@ export function useResolveBuild(context: ProjectContext): { source: PatternSourc
 	const buildPath = build.buildPath;
 
 	const contextRef = useRef(context);
+
 	contextRef.current = context;
 
 	const { data: resolvedSource, error } = useQuery(

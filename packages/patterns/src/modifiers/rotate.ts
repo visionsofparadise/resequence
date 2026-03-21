@@ -29,6 +29,7 @@ export class RotatePattern extends ModifierPattern<RotateProperties> {
 export function rotate(pattern: Pattern | Note, steps: number): RotatePattern {
 	const resolved = toPattern(pattern);
 	const entries: Array<{ id: string; absoluteStart: number }> = [];
+
 	walkNotes(resolved, (note, { id, absoluteOffset }) => {
 		entries.push({ id, absoluteStart: absoluteOffset + note.startBeat });
 	});
@@ -64,10 +65,12 @@ export function rotate(pattern: Pattern | Note, steps: number): RotatePattern {
 
 	for (let gapIndex = 0; gapIndex < noteCount; gapIndex++) {
 		const curr = entries[gapIndex];
+
 		if (!curr) continue;
 
 		if (gapIndex < noteCount - 1) {
 			const next = entries[gapIndex + 1];
+
 			if (!next) continue;
 			gaps.push(next.absoluteStart - curr.absoluteStart);
 		} else {
@@ -85,6 +88,7 @@ export function rotate(pattern: Pattern | Note, steps: number): RotatePattern {
 	for (let noteIndex = 0; noteIndex < noteCount; noteIndex++) {
 		const rotatedEntry = rotatedEntries[noteIndex];
 		const rotatedGap = rotatedGaps[noteIndex];
+
 		if (!rotatedEntry || rotatedGap === undefined) continue;
 
 		beatAssignment.set(rotatedEntry.id, beat);
@@ -96,6 +100,7 @@ export function rotate(pattern: Pattern | Note, steps: number): RotatePattern {
 
 		if (newAbsBeat !== undefined) {
 			const noteDuration = note.endBeat - note.startBeat;
+
 			return {
 				...note,
 				startBeat: newAbsBeat - absoluteOffset,

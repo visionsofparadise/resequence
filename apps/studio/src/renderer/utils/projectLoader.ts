@@ -37,6 +37,7 @@ export const useProjectLoader = (context: AppContext) => {
 			}
 
 			const name = getProjectName(dirPath);
+
 			addToRecentProjects(name, dirPath);
 			setAppSettings.mutate({ lastProjectPath: dirPath });
 			setCurrentProjectPath(dirPath);

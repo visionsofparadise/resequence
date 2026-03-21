@@ -76,6 +76,7 @@ export class EnvelopeUnit extends MidiUnit {
 		});
 
 		this.envelopeNode = envelopeNode;
+
 		return { entries: [envelopeNode], exits: [envelopeNode] };
 	}
 

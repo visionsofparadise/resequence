@@ -14,6 +14,7 @@ import { useAppState } from "./models/State/App";
 import { APP_SETTINGS_QUERY_KEY, getAppSettings } from "./utils/appSettings";
 
 const logger = new Logger("renderer");
+
 Logger.level = "debug";
 
 const queryClient = new QueryClient({

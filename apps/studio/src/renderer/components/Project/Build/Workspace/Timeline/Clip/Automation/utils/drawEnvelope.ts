@@ -12,6 +12,7 @@ export function drawEnvelope(canvasCtx: CanvasRenderingContext2D, keyframes: Rea
 		const beat = startBeat + px / pxPerBeat;
 		const value = evaluateAt(keyframes, beat);
 		const vy = padding + drawHeight * (1 - value);
+
 		canvasCtx.lineTo(px, vy);
 	}
 
@@ -31,6 +32,7 @@ export function drawEnvelope(canvasCtx: CanvasRenderingContext2D, keyframes: Rea
 		if (px === 0) canvasCtx.moveTo(px, vy);
 		else canvasCtx.lineTo(px, vy);
 	}
+
 	canvasCtx.strokeStyle = AUTOMATION_COLOR;
 	canvasCtx.lineWidth = 1.5;
 	canvasCtx.stroke();
@@ -43,6 +45,7 @@ export function drawEnvelope(canvasCtx: CanvasRenderingContext2D, keyframes: Rea
 		if (kx < 0 || kx > width) continue;
 
 		const ky = padding + drawHeight * (1 - kf.value);
+
 		canvasCtx.beginPath();
 		canvasCtx.arc(kx, ky, 3, 0, 2 * Math.PI);
 		canvasCtx.fill();

@@ -48,6 +48,7 @@ program
 
 			for (const [portKey, data] of result) {
 				const filePath = resolve(outDir, `${portKey}.mid`);
+
 				writeFileSync(filePath, data);
 				process.stdout.write(`  MIDI: ${portKey}.mid\n`);
 			}

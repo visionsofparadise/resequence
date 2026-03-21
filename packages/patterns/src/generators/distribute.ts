@@ -6,10 +6,13 @@ import type { Pitch } from "../pitch";
 function euclidean(hits: number, steps: number, rotate: number): ReadonlyArray<boolean> {
 	if (steps === 0) return [];
 	const pattern: Array<boolean> = [];
+
 	for (let stepIndex = 0; stepIndex < steps; stepIndex++) {
 		pattern.push((stepIndex * hits) % steps < hits);
 	}
+
 	const rotateAmount = ((rotate % steps) + steps) % steps;
+
 	return [...pattern.slice(rotateAmount), ...pattern.slice(0, rotateAmount)];
 }
 

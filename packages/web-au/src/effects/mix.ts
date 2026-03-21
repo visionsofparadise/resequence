@@ -42,6 +42,7 @@ export class MixNode extends Unit {
 			level: linearToDb(1 - this.amount),
 			id: this.id ? `${this.id}.dry` : undefined,
 		});
+
 		this.dryChain = dryChain;
 
 		return { entries: [this.inner, dryChain], exits: [wetGainUnit, dryChain] };

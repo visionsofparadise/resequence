@@ -7,6 +7,7 @@ export function walkUnits(root: Unit, callback: (unit: Unit, index: number) => v
 
 	while (queue.length > 0) {
 		const unit = queue.shift();
+
 		if (!unit) continue;
 		if (visited.has(unit)) continue;
 		visited.add(unit);
@@ -21,7 +22,9 @@ export function walkUnits(root: Unit, callback: (unit: Unit, index: number) => v
 
 export function collectUnits(root: Unit): Array<Unit> {
 	const result: Array<Unit> = [];
+
 	walkUnits(root, (unit) => { result.push(unit); });
+
 	return result;
 }
 
@@ -30,6 +33,7 @@ export function mapUnits(root: Unit, callback: (unit: Unit) => Unit): Unit {
 
 	walkUnits(root, (unit) => {
 		const replacement = callback(unit);
+
 		mapping.set(unit, replacement);
 	});
 
@@ -37,8 +41,10 @@ export function mapUnits(root: Unit, callback: (unit: Unit) => Unit): Unit {
 		if (replacement !== original) {
 			replacement.targets.length = 0;
 		}
+
 		for (const target of original.targets) {
 			const mappedTarget = mapping.get(target) ?? target;
+
 			if (!replacement.targets.includes(mappedTarget)) {
 				replacement.to(mappedTarget);
 			}
@@ -50,11 +56,14 @@ export function mapUnits(root: Unit, callback: (unit: Unit) => Unit): Unit {
 
 export function descendUnit(root: Unit, indexes: ReadonlyArray<number>): Unit {
 	let current = root;
+
 	for (const index of indexes) {
 		const target = current.targets[index];
+
 		if (!target) throw new Error(`No target at index ${index}`);
 		current = target;
 	}
+
 	return current;
 }
 
@@ -76,6 +85,7 @@ export function computeMaxLatency(root: Unit): number {
 
 		if (unit.targets.length === 0) {
 			if (total > max) max = total;
+
 			return;
 		}
 
