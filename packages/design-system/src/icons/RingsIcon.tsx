@@ -1,0 +1,11 @@
+import type { IconProps } from './PrimaryIcon'
+
+const RingsIcon = ({ color, size = 32, className }: IconProps) => (
+  <svg width={size} height={size} viewBox="0 0 32 32" className={className}>
+    <circle cx="16" cy="16" r="14.5" stroke={color} fill="none" strokeWidth="1" />
+    <circle cx="16" cy="16" r="10" stroke={color} fill="none" strokeWidth="1" opacity="0.6" />
+    <circle cx="16" cy="16" r="5.5" stroke={color} fill="none" strokeWidth="1" opacity="0.4" />
+  </svg>
+)
+
+export default RingsIcon
