@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef } from "react";
-import { toast } from "sonner";
 import type { ProjectContext } from "../../../../models/Context";
 
 export function useBundleBuild(entrypoint: string | undefined, context: ProjectContext): void {
@@ -45,7 +44,7 @@ export function useBundleBuild(entrypoint: string | undefined, context: ProjectC
 
 		void context.queryClient.invalidateQueries({ queryKey: ["builds", currentProjectPath] });
 
-		toast("Build ready");
+		context.logger.info("Build ready", { namespace: "ui" });
 	}, [entrypoint]);
 
 	useEffect(() => {

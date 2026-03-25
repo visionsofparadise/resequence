@@ -10,13 +10,13 @@ interface ThemeContextValue {
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
-const applyThemeToDocument = (theme: Theme, systemPrefersDark: boolean) => {
-	const isDark = theme === "dark" || (theme === "system" && systemPrefersDark);
+const applyThemeToDocument = (theme: Theme, systemPrefersLight: boolean) => {
+	const isLight = theme === "light" || (theme === "system" && systemPrefersLight);
 
-	if (isDark) {
-		document.documentElement.classList.add("dark");
+	if (isLight) {
+		document.documentElement.classList.add("theme-light");
 	} else {
-		document.documentElement.classList.remove("dark");
+		document.documentElement.classList.remove("theme-light");
 	}
 };
 
@@ -30,13 +30,13 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children, context 
 
 	const setAppSettings = useSetAppSettings(main);
 
-	const [systemPrefersDark, setSystemPrefersDark] = useState(() => window.matchMedia("(prefers-color-scheme: dark)").matches);
+	const [systemPrefersLight, setSystemPrefersLight] = useState(() => window.matchMedia("(prefers-color-scheme: light)").matches);
 
 	useEffect(() => {
-		const media = window.matchMedia("(prefers-color-scheme: dark)");
+		const media = window.matchMedia("(prefers-color-scheme: light)");
 
 		const handleChange = (event: MediaQueryListEvent) => {
-			setSystemPrefersDark(event.matches);
+			setSystemPrefersLight(event.matches);
 		};
 
 		media.addEventListener("change", handleChange);
@@ -45,8 +45,8 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children, context 
 	}, []);
 
 	useEffect(() => {
-		applyThemeToDocument(appSettings.theme, systemPrefersDark);
-	}, [appSettings.theme, systemPrefersDark]);
+		applyThemeToDocument(appSettings.theme, systemPrefersLight);
+	}, [appSettings.theme, systemPrefersLight]);
 
 	const setTheme = useCallback(
 		(newTheme: Theme) => {

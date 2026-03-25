@@ -45,6 +45,7 @@ export interface BuildContext extends ProjectContext {
 	readonly injectedUnits: Map<string, Unit>;
 	readonly overrides: Array<OverrideEntry>;
 	readonly playbackEngine: Playback;
+	readonly portColorMap: Map<string, string>;
 	readonly source: PatternSource;
 	readonly tempoMap: TempoMap;
 	readonly unitDriverMap: DerivedDriverMap;

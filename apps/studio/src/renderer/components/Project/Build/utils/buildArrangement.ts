@@ -14,7 +14,6 @@ import {
 	type TempoPoint,
 } from "@resequence/patterns";
 import { AudioPattern, AutomationPattern, type Lfo } from "resequence";
-import { outputColor } from "./outputColor";
 
 export interface MidiClipNote extends Note {
 	readonly patternId: string;
@@ -38,7 +37,6 @@ export interface MidiClip {
 	readonly maxPitch: number;
 	readonly tuning: ResolvedTuning | null;
 	readonly timeSignature: readonly [number, number];
-	readonly color: string;
 }
 
 export interface AudioClip {
@@ -391,7 +389,6 @@ function buildClips(state: SubtreeState, endBeat?: number): Array<Clip> {
 				maxPitch,
 				tuning: collector.tuning,
 				timeSignature: collector.timeSignature,
-				color: outputColor(collector.port),
 			});
 		} else if (entry.kind === "audio") {
 			const clip = state.audioClips[entry.index];

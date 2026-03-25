@@ -1,3 +1,4 @@
+import { elevated, border } from "@resequence/design-system";
 import type { BuildContext } from "../../../../../models/Context";
 
 const CHROMATIC_BLACK_KEYS = new Set([1, 3, 6, 8, 10]);
@@ -38,25 +39,14 @@ export const PianoRollGrid: React.FC<PianoRollGridProps> = ({ minPitchKey, maxPi
 				style={{
 					top: row * pitchZoom,
 					height: pitchZoom,
-					backgroundColor: isBlack ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.06)",
-					borderBottom: isOctaveBoundary ? "1px solid rgba(255,255,255,0.15)" : "1px solid rgba(255,255,255,0.04)",
+					backgroundColor: isBlack ? elevated : undefined,
+					borderBottom: `1px solid ${border}`,
+					borderBottomWidth: 1,
+					opacity: isOctaveBoundary ? 1 : undefined,
+					borderColor: isOctaveBoundary ? border : `color-mix(in srgb, ${border} 40%, transparent)`,
 				}}
 			/>,
 		);
-
-		if (isOctaveBoundary) {
-			const octaveNumber = Math.floor(pitchKey / stepsPerOctave);
-
-			rows.push(
-				<span
-					key={`oct-${pitchKey}`}
-					className="pointer-events-none absolute left-0.5 text-[8px] text-muted-foreground/50"
-					style={{ top: row * pitchZoom }}
-				>
-					{octaveNumber}
-				</span>,
-			);
-		}
 	}
 
 	const beatLines: Array<React.ReactNode> = [];
@@ -73,24 +63,11 @@ export const PianoRollGrid: React.FC<PianoRollGridProps> = ({ minPitchKey, maxPi
 					left: beat * pxPerBeat,
 					width: 1,
 					height,
-					backgroundColor: isBarLine ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.04)",
+					backgroundColor: border,
+					opacity: isBarLine ? 0.6 : 0.25,
 				}}
 			/>,
 		);
-
-		if (isBarLine) {
-			const barNumber = Math.floor(absoluteBeat / beatsPerBar) + 1;
-
-			beatLines.push(
-				<span
-					key={`bar-${beat}`}
-					className="pointer-events-none absolute text-[8px] text-muted-foreground/50"
-					style={{ left: beat * pxPerBeat + 2, top: 0 }}
-				>
-					{barNumber}
-				</span>,
-			);
-		}
 	}
 
 	return (

@@ -40,7 +40,7 @@ export const AutomationClipCard: React.FC<AutomationClipCardProps> = ({ clip, se
 				style={{ height: AUTOMATION_LANE_HEIGHT }}
 			>
 				<AutomationCanvas clip={clip} context={context} />
-				<span className="pointer-events-none absolute left-1 top-0.5 rounded-sm bg-background/60 px-1 text-[10px] text-muted-foreground">
+				<span className="pointer-events-none absolute left-1 top-0.5 rounded-sm bg-surface/60 px-1 type-label">
 					{clip.name} &middot; {clip.paths.join(", ")}
 				</span>
 			</div>

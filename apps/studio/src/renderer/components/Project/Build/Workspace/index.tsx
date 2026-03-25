@@ -2,7 +2,6 @@ import { useCallback, useEffect } from "react";
 import type { BuildContext } from "../../../../models/Context";
 import type { ProjectState } from "../../../../models/State/Project";
 import { ActiveView } from "./ActiveView";
-import { WorkspaceToolbar } from "./Toolbar";
 
 interface WorkspaceProps {
 	readonly context: BuildContext;
@@ -35,14 +34,11 @@ export const Workspace: React.FC<WorkspaceProps> = ({ context }) => {
 	}, [isDrillDown, goBack]);
 
 	return (
-		<div className="flex h-full flex-col">
-			<div className="min-h-0 flex-1">
-				<ActiveView
-					context={context}
-					goBack={goBack}
-				/>
-			</div>
-			<WorkspaceToolbar context={context} />
+		<div className="h-full">
+			<ActiveView
+				context={context}
+				goBack={goBack}
+			/>
 		</div>
 	);
 };

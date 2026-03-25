@@ -5,7 +5,6 @@ import { ErrorBoundary } from "./components/ErrorBoundary";
 import { Home } from "./components/Home";
 import { ProjectLoader } from "./components/Project/Loader";
 import { ThemeProvider } from "./components/ThemeProvider";
-import { Toaster } from "./components/ui/sonner";
 import { useWindowState } from "./hooks/useWindowState";
 import type { AppContext } from "./models/Context";
 import { MainEvents } from "./models/MainEvents";
@@ -85,8 +84,8 @@ export const App: React.FC = () => {
 
 	if (!context) {
 		return (
-			<div className="flex min-h-screen items-center justify-center bg-background">
-				<div className="animate-pulse text-muted-foreground">Loading...</div>
+			<div className="flex min-h-screen items-center justify-center bg-surface">
+				<div className="animate-pulse text-text-secondary">Loading...</div>
 			</div>
 		);
 	}
@@ -103,8 +102,7 @@ export const App: React.FC = () => {
 					) : (
 						<Home context={context} />
 					)}
-					<Toaster />
-				</ErrorBoundary>
+					</ErrorBoundary>
 			</ThemeProvider>
 		</QueryClientProvider>
 	);

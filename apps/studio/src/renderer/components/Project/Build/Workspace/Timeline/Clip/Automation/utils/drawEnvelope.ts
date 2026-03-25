@@ -1,5 +1,7 @@
 import { evaluateAt, type Keyframe } from "@resequence/patterns";
-export const AUTOMATION_COLOR = "hsl(45, 80%, 55%)";
+import { textPrimary, accentPrimary } from "@resequence/design-system";
+
+export const AUTOMATION_COLOR = textPrimary;
 
 export function drawEnvelope(canvasCtx: CanvasRenderingContext2D, keyframes: ReadonlyArray<Keyframe>, width: number, height: number, startBeat: number, pxPerBeat: number): void {
 	const padding = 2;
@@ -18,9 +20,10 @@ export function drawEnvelope(canvasCtx: CanvasRenderingContext2D, keyframes: Rea
 
 	canvasCtx.lineTo(width, height);
 	canvasCtx.closePath();
-	canvasCtx.fillStyle = AUTOMATION_COLOR.replace("55%)", "55% / 0.15)").replace("hsl(", "hsl(");
-	canvasCtx.globalAlpha = 1;
+	canvasCtx.fillStyle = AUTOMATION_COLOR;
+	canvasCtx.globalAlpha = 0.1;
 	canvasCtx.fill();
+	canvasCtx.globalAlpha = 1;
 
 	canvasCtx.beginPath();
 
@@ -37,7 +40,7 @@ export function drawEnvelope(canvasCtx: CanvasRenderingContext2D, keyframes: Rea
 	canvasCtx.lineWidth = 1.5;
 	canvasCtx.stroke();
 
-	canvasCtx.fillStyle = AUTOMATION_COLOR;
+	canvasCtx.fillStyle = accentPrimary;
 
 	for (const kf of keyframes) {
 		const kx = (kf.beat - startBeat) * pxPerBeat;

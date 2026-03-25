@@ -1,13 +1,14 @@
 import { resolveEntrypoint } from "@/renderer/utils/resolveEntrypoint";
-import { LoaderCircle } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import type { BuildContext, ProjectContext } from "../../../models/Context";
+import { createPortColorMap } from "./utils/outputColor";
+import { TransportBar } from "../../TransportBar";
+import { Workspace } from "./Workspace";
 import { useBuildArrangement } from "./hooks/useBuildArrangement";
 import { useBundleBuild } from "./hooks/useBundle";
 import { useMapGraph } from "./hooks/useMapGraph";
 import { useResolveBuild } from "./hooks/useResolve";
 import { useSetupPlayback } from "./hooks/useSetup";
-import { BuildLayout } from "./Layout";
 
 interface BuildProps {
 	readonly context: ProjectContext;
@@ -32,6 +33,11 @@ export const Build: React.FC<BuildProps> = ({ context }) => {
 
 	const setup = useSetupPlayback(source, main);
 
+	const portColorMap = useMemo(
+		() => createPortColorMap([...source.ports.keys()]),
+		[source],
+	);
+
 	const buildContext = useMemo((): BuildContext | undefined => {
 		if (!setup) return undefined;
 
@@ -45,18 +51,26 @@ export const Build: React.FC<BuildProps> = ({ context }) => {
 			injectedUnits,
 			overrides,
 			playbackEngine,
+			portColorMap,
 			source,
 			tempoMap,
 			unitDriverMap,
 		};
-	}, [context, arrangement, tempoMap, injectedNodes, injectedUnits, overrides, source, setup]);
+	}, [context, arrangement, tempoMap, injectedNodes, injectedUnits, overrides, portColorMap, source, setup]);
 
 	if (!buildContext)
 		return (
-			<div className="flex flex-1 items-center justify-center">
-				<LoaderCircle className="h-5 w-5 animate-spin text-muted-foreground" />
+			<div className="flex flex-1 h-full items-center justify-center">
+				<span className="type-label text-text-secondary animate-pulse">Loading...</span>
 			</div>
 		);
 
-	return <BuildLayout context={buildContext} />;
+	return (
+		<div className="flex flex-col h-full">
+			<div className="flex-1 min-h-0">
+				<Workspace context={buildContext} />
+			</div>
+			<TransportBar context={buildContext} />
+		</div>
+	);
 };

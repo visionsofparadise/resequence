@@ -1,109 +1,81 @@
-import { basename } from "pathe";
+import {
+	Content,
+	Item,
+	Portal,
+	Root,
+	Separator,
+	Trigger,
+} from "@radix-ui/react-dropdown-menu";
 import type { ProjectContext } from "../../models/Context";
 import { useProjectLoader } from "../../utils/projectLoader";
-import { Button } from "../ui/button";
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuSeparator,
-	DropdownMenuShortcut,
-	DropdownMenuTrigger,
-} from "../ui/dropdown-menu";
-import { Icon } from "../ui/Icon";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
-import { useBuilds } from "./hooks/useBuilds";
+import { useTheme } from "../ThemeProvider";
 
 interface TitlebarProps {
 	readonly context: ProjectContext;
 }
 
 export const Titlebar: React.FC<TitlebarProps> = ({ context }) => {
-	const { projectStore, build, history } = context;
-
+	const { history } = context;
 	const { closeProject } = useProjectLoader(context);
-	const entries = useBuilds(context);
-
-	const projectName = basename(context.currentProjectPath);
-
-	const formatBuildLabel = (timestamp: number) =>
-		new Date(timestamp).toLocaleString(undefined, {
-			month: "short",
-			day: "numeric",
-			hour: "2-digit",
-			minute: "2-digit",
-			second: "2-digit",
-		});
+	const { theme, setTheme } = useTheme();
 
 	return (
-		<div
-			className="flex h-[44px] shrink-0 items-center gap-2 px-4"
-			style={{ appRegion: "drag" } as React.CSSProperties}
-		>
-			<div style={{ appRegion: "no-drag" } as React.CSSProperties}>
-				<DropdownMenu>
-					<DropdownMenuTrigger asChild>
-						<Button variant="ghost" size="icon" className="h-7 w-7">
-							<Icon.Menu className="h-4 w-4" />
-						</Button>
-					</DropdownMenuTrigger>
-					<DropdownMenuContent align="start">
-						<DropdownMenuItem
-							disabled={!history.canUndo}
-							onSelect={() => history.undo()}
+		<div className="titlebar flex h-[44px] shrink-0 items-center bg-surface border-b border-border px-4">
+			<div style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}>
+				<Root>
+					<Trigger asChild>
+						<button className="flex h-7 w-7 items-center justify-center bg-transparent border-none cursor-pointer text-text-secondary hover:text-text-primary transition-colors">
+							<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+								<rect x="2" y="3" width="12" height="1.5" />
+								<rect x="2" y="7.25" width="12" height="1.5" />
+								<rect x="2" y="11.5" width="12" height="1.5" />
+							</svg>
+						</button>
+					</Trigger>
+					<Portal>
+						<Content
+							align="start"
+							sideOffset={4}
+							className="z-50 min-w-[180px] bg-elevated border border-border p-1"
 						>
-							<Icon.Undo className="h-4 w-4" />
-							Undo
-							<DropdownMenuShortcut>Ctrl+Z</DropdownMenuShortcut>
-						</DropdownMenuItem>
-						<DropdownMenuItem
-							disabled={!history.canRedo}
-							onSelect={() => history.redo()}
-						>
-							<Icon.Redo className="h-4 w-4" />
-							Redo
-							<DropdownMenuShortcut>Ctrl+Shift+Z</DropdownMenuShortcut>
-						</DropdownMenuItem>
-						<DropdownMenuSeparator />
-						<DropdownMenuItem onSelect={() => { /* TODO: navigate to settings */ }}>
-							<Icon.Settings className="h-4 w-4" />
-							Settings
-						</DropdownMenuItem>
-						<DropdownMenuSeparator />
-						<DropdownMenuItem onSelect={closeProject}>
-							<Icon.Home className="h-4 w-4" />
-							Close Project
-						</DropdownMenuItem>
-					</DropdownMenuContent>
-				</DropdownMenu>
+							<Item
+								disabled={!history.canUndo}
+								onSelect={() => history.undo()}
+								className="flex items-center justify-between px-3 py-1.5 type-label text-text-primary cursor-pointer hover:bg-surface outline-none data-[disabled]:opacity-40 data-[disabled]:pointer-events-none"
+							>
+								Undo
+								<span className="text-text-secondary ml-4">Ctrl+Z</span>
+							</Item>
+							<Item
+								disabled={!history.canRedo}
+								onSelect={() => history.redo()}
+								className="flex items-center justify-between px-3 py-1.5 type-label text-text-primary cursor-pointer hover:bg-surface outline-none data-[disabled]:opacity-40 data-[disabled]:pointer-events-none"
+							>
+								Redo
+								<span className="text-text-secondary ml-4">Ctrl+Shift+Z</span>
+							</Item>
+							<Separator className="my-1 h-px bg-border" />
+							<Item
+								onSelect={() => setTheme(theme === "dark" ? "light" : "dark")}
+								className="flex items-center justify-between px-3 py-1.5 type-label text-text-primary cursor-pointer hover:bg-surface outline-none"
+							>
+								{theme === "light" ? "Dark" : "Light"}
+							</Item>
+							<Separator className="my-1 h-px bg-border" />
+							<Item
+								onSelect={closeProject}
+								className="flex items-center px-3 py-1.5 type-label text-text-primary cursor-pointer hover:bg-surface outline-none"
+							>
+								Close Project
+							</Item>
+						</Content>
+					</Portal>
+				</Root>
 			</div>
-			<span className="text-sm font-medium">{projectName}</span>
-			{entries.length > 0 && (
-				<div style={{ appRegion: "no-drag" } as React.CSSProperties}>
-					<Select
-						value={build.buildPath ?? undefined}
-						onValueChange={(value) => {
-							projectStore.mutate(build, (proxy) => Object.assign(proxy, { buildPath: value }));
-						}}
-					>
-						<SelectTrigger className="h-7 w-auto gap-1 border-none bg-transparent px-2 text-xs text-muted-foreground hover:text-foreground">
-							<SelectValue />
-						</SelectTrigger>
-						<SelectContent>
-							{entries.map((entry) => (
-								<SelectItem
-									key={entry.buildPath}
-									value={entry.buildPath}
-								>
-									{formatBuildLabel(entry.timestamp)}
-								</SelectItem>
-							))}
-						</SelectContent>
-					</Select>
-				</div>
-			)}
-			<div className="flex-1" />
-			<div className="w-[68px]" />
+			<div className="flex-1 flex items-center justify-center">
+				<span className="type-label">RESEQUENCE</span>
+			</div>
+			<div className="w-[68px] shrink-0" />
 		</div>
 	);
 };

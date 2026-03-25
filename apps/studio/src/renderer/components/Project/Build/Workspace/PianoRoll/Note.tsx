@@ -16,6 +16,7 @@ export const PianoRollNote: React.FC<PianoRollNoteProps> = ({ note, clip, contex
 
 	const pitchKey = note.pitch.octave * note.pitch.stepsPerOctave + note.pitch.class;
 	const baseOpacity = 0.4 + (note.velocity / 127) * 0.6;
+	const unitColor = context.portColorMap.get(clip.port) ?? "var(--color-text-secondary)";
 
 	const transients = useMemo(() => [project.timelineZoom, project.pitchZoom], [project.timelineZoom, project.pitchZoom]);
 
@@ -45,21 +46,22 @@ export const PianoRollNote: React.FC<PianoRollNoteProps> = ({ note, clip, contex
 	return (
 		<div
 			ref={ref}
-			className="absolute"
+			className="absolute box-border"
 			style={{
 				left: note.startBeat * pxPerBeat,
 				top: (clip.maxPitch - pitchKey) * pitchZoom,
 				width: (note.endBeat - note.startBeat) * pxPerBeat,
 				height: pitchZoom,
-				backgroundColor: clip.color,
+				backgroundColor: unitColor,
 				opacity,
 				borderRadius: 1,
+				borderLeft: `1px solid color-mix(in srgb, ${unitColor} 70%, black 30%)`,
 			}}
 		>
 			{note.lyric && (
 				<span
 					ref={lyricRef}
-					className="pointer-events-none absolute inset-0 overflow-hidden truncate px-0.5 text-[8px] leading-none text-white"
+					className="pointer-events-none absolute inset-0 overflow-hidden truncate px-0.5 text-[8px] leading-none text-text-primary"
 					style={{ lineHeight: `${pitchZoom}px`, display: pitchZoom >= 8 ? "" : "none" }}
 				>
 					{note.lyric}

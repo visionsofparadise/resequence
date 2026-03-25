@@ -38,17 +38,17 @@ export const AudioClipCard: React.FC<AudioClipCardProps> = ({ clip, sequence, co
 		>
 			<div
 				ref={innerRef}
-				className="absolute top-0 overflow-hidden rounded-sm border border-muted-foreground/30 bg-muted/50"
+				className="absolute top-0 overflow-hidden border border-border bg-surface"
 				style={{ height: AUDIO_LANE_HEIGHT }}
 			>
-				{isLoading && <div className="absolute inset-0 animate-pulse bg-muted/30" />}
+				{isLoading && <div className="absolute inset-0 animate-pulse bg-elevated/30" />}
 				{error && !waveform && (
 					<div className="flex h-full items-center px-1.5">
-						<span className="truncate text-[10px] text-muted-foreground">{clip.name}</span>
+						<span className="type-label truncate">{clip.name}</span>
 					</div>
 				)}
 				{waveform && <AudioCanvas clip={clip} context={context} waveform={waveform} />}
-				<span className="absolute left-1.5 top-0.5 truncate text-[10px] text-muted-foreground drop-shadow-sm">{clip.name}</span>
+				<span className="type-label absolute left-1.5 top-0.5 truncate">{clip.name}</span>
 			</div>
 		</div>
 	);

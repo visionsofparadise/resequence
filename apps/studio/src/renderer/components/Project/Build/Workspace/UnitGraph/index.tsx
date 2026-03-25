@@ -1,14 +1,21 @@
-import { Background, ReactFlow, type OnMove, type OnMoveEnd } from "@xyflow/react";
+import { ReactFlow, ReactFlowProvider, type OnMove, type OnMoveEnd } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { useCallback, useMemo } from "react";
 import type { Unit } from "@resequence/web-au";
+import { surface, border } from "@resequence/design-system";
 import type { BuildContext } from "../../../../../models/Context";
 import type { ProjectState } from "../../../../../models/State/Project";
+import { ViewHeader } from "../../../../ViewHeader";
 import { UnitNode } from "./UnitNode";
 import { buildGraph } from "./utils/buildGraph";
 import { layoutGraph } from "./utils/layoutGraph";
 
 const nodeTypes = { unit: UnitNode };
+
+const defaultEdgeOptions = {
+	type: "default" as const,
+	style: { stroke: border, strokeWidth: 1.5 },
+};
 
 interface UnitGraphProps {
 	readonly context: BuildContext;
@@ -18,7 +25,7 @@ interface UnitGraphProps {
 }
 
 export const UnitGraph: React.FC<UnitGraphProps> = ({ context, portKey, outputUnit, onBack }) => {
-	const { project, projectStore, unitDriverMap } = context;
+	const { project, projectStore, unitDriverMap, portColorMap } = context;
 
 	const outputId = portKey;
 
@@ -57,30 +64,32 @@ export const UnitGraph: React.FC<UnitGraphProps> = ({ context, portKey, outputUn
 		[project, projectStore, outputId],
 	);
 
+	const unitColor = portColorMap.get(portKey);
+
 	return (
-		<div className="relative h-full">
-			<div className="absolute left-3 top-2 z-10">
-				<button
-					type="button"
-					className="text-xs text-muted-foreground hover:text-foreground"
-					onClick={onBack}
-				>
-					&larr; Back
-				</button>
+		<ReactFlowProvider>
+			<div className="relative h-full" style={{ backgroundColor: surface }}>
+				<ViewHeader
+					title={portKey}
+					unitColor={unitColor}
+					metadata={[{ label: `${nodes.length} NODES`, className: "text-dimmed" }]}
+					onClose={onBack}
+					floating
+				/>
+				<ReactFlow
+					nodes={nodes}
+					edges={edges}
+					nodeTypes={nodeTypes}
+					defaultViewport={defaultViewport}
+					defaultEdgeOptions={defaultEdgeOptions}
+					onMove={onMove}
+					onMoveEnd={onMoveEnd}
+					proOptions={{ hideAttribution: true }}
+					nodesDraggable={false}
+					nodesConnectable={false}
+					style={{ backgroundColor: surface }}
+				/>
 			</div>
-			<ReactFlow
-				nodes={nodes}
-				edges={edges}
-				nodeTypes={nodeTypes}
-				defaultViewport={defaultViewport}
-				onMove={onMove}
-				onMoveEnd={onMoveEnd}
-				proOptions={{ hideAttribution: true }}
-				nodesDraggable={false}
-				nodesConnectable={false}
-			>
-				<Background />
-			</ReactFlow>
-		</div>
+		</ReactFlowProvider>
 	);
 };

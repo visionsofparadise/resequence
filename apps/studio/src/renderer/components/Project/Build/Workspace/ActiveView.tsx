@@ -1,4 +1,3 @@
-import { ReactFlowProvider } from "@xyflow/react";
 import type { BuildContext } from "../../../../models/Context";
 import { PianoRoll } from "./PianoRoll";
 import { Timeline } from "./Timeline";
@@ -17,14 +16,12 @@ export const ActiveView: React.FC<ActiveViewProps> = ({ context, goBack }) => {
 
 		if (unit) {
 			return (
-				<ReactFlowProvider>
-					<UnitGraph
-						context={context}
-						portKey={project.activePort}
-						outputUnit={unit}
-						onBack={goBack}
-					/>
-				</ReactFlowProvider>
+				<UnitGraph
+					context={context}
+					portKey={project.activePort}
+					outputUnit={unit}
+					onBack={goBack}
+				/>
 			);
 		}
 	}

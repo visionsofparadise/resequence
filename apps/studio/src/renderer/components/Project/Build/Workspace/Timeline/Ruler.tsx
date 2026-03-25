@@ -45,11 +45,11 @@ function createTickElement(isMajor: boolean): TickElement {
 	const line = document.createElement("div");
 
 	if (isMajor) {
-		line.className = "absolute bottom-0 w-px h-4 bg-muted-foreground/60";
+		line.className = "absolute bottom-0 w-px h-4 bg-text-secondary";
 
 		const label = document.createElement("span");
 
-		label.className = "absolute text-[10px] text-muted-foreground whitespace-nowrap";
+		label.className = "absolute type-label text-text-primary whitespace-nowrap";
 		label.style.left = "4px";
 		label.style.bottom = "10px";
 		container.appendChild(line);
@@ -58,7 +58,7 @@ function createTickElement(isMajor: boolean): TickElement {
 		return { container, line, label };
 	}
 
-	line.className = "absolute bottom-0 w-px h-2 bg-muted-foreground/30";
+	line.className = "absolute bottom-0 w-px h-2 bg-text-secondary/50";
 	container.appendChild(line);
 
 	return { container, line };
@@ -189,7 +189,7 @@ export const Ruler: React.FC<RulerProps> = ({ context }) => {
 	return (
 		<div
 			ref={rulerRef}
-			className="sticky top-0 z-10 w-full cursor-col-resize border-b border-border bg-muted"
+			className="sticky top-0 z-10 w-full cursor-col-resize border-b border-border bg-elevated"
 			style={{ height: RULER_HEIGHT, touchAction: "none" }}
 			onClick={handleClick}
 			{...bindDrag()}

@@ -18,10 +18,10 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
 	render() {
 		if (this.state.error) {
 			return (
-				<div className="flex min-h-screen items-center justify-center bg-background p-8">
+				<div className="flex min-h-screen items-center justify-center bg-surface p-8">
 					<div className="max-w-md text-center">
-						<h1 className="mb-2 text-xl font-bold text-destructive">Something went wrong</h1>
-						<p className="text-sm text-muted-foreground">{this.state.error.message}</p>
+						<h1 className="mb-2 text-xl font-bold text-accent-primary">Something went wrong</h1>
+						<p className="text-sm text-text-secondary">{this.state.error.message}</p>
 					</div>
 				</div>
 			);

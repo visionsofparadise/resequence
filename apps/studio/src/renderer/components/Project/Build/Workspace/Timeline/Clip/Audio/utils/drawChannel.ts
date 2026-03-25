@@ -1,3 +1,4 @@
+import { textSecondary } from "@resequence/design-system";
 import type { PointData } from "./collectPoints";
 
 export function drawChannel(canvasCtx: CanvasRenderingContext2D, points: ReadonlyArray<PointData>, height: number, bits: 8 | 16, opacity: number): void {
@@ -30,13 +31,13 @@ export function drawChannel(canvasCtx: CanvasRenderingContext2D, points: Readonl
 
 	canvasCtx.closePath();
 
-	const style = getComputedStyle(canvasCtx.canvas);
-	const primaryHsl = style.getPropertyValue("--primary").trim();
-
-	canvasCtx.fillStyle = `hsl(${primaryHsl} / ${opacity})`;
+	canvasCtx.fillStyle = textSecondary;
+	canvasCtx.globalAlpha = opacity;
 	canvasCtx.fill();
 
-	canvasCtx.strokeStyle = `hsl(${primaryHsl} / ${Math.min(opacity + 0.2, 1)})`;
+	canvasCtx.globalAlpha = Math.min(opacity + 0.2, 1);
+	canvasCtx.strokeStyle = textSecondary;
 	canvasCtx.lineWidth = 0.5;
 	canvasCtx.stroke();
+	canvasCtx.globalAlpha = 1;
 }

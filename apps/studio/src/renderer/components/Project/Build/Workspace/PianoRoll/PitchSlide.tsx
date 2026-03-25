@@ -86,10 +86,10 @@ export const PianoRollPitchSlide: React.FC<PianoRollPitchSlideProps> = ({ note, 
 			<path
 				ref={pathRef}
 				d={pathD}
-				stroke={clip.color}
+				stroke={context.portColorMap.get(clip.port) ?? "var(--color-text-secondary)"}
 				strokeWidth={2}
 				fill="none"
-				opacity={0.8}
+				opacity={0.6}
 			/>
 		</svg>
 	);

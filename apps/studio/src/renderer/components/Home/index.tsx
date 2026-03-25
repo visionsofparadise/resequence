@@ -1,8 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react";
+import { Button, DomainWarpShader } from "@resequence/design-system";
 import type { AppContext } from "../../models/Context";
 import { useProjectLoader } from "../../utils/projectLoader";
-import { Button } from "../ui/button";
-import { Icon } from "../ui/Icon";
 import { RecentProjectsList } from "./RecentProjectsList";
 import { Titlebar } from "./Titlebar";
 
@@ -65,32 +64,47 @@ export const Home: React.FC<HomeProps> = ({ context }) => {
 	);
 
 	return (
-		<div className="flex h-screen flex-col overflow-y-auto">
+		<div className="flex h-screen flex-col">
 			<Titlebar />
-			<div className="mx-auto w-full max-w-lg px-8 py-12">
-				<div className="mb-8">
-					<h1 className="text-2xl font-bold">Resequence Studio</h1>
-					<p className="mt-1 text-sm text-muted-foreground">Open a resequence project to get started.</p>
+			<div className="flex-1 min-h-0 flex items-center justify-center">
+				<div className="grid w-full border-t border-b border-border" style={{ gridTemplateColumns: "2fr 1fr", gridTemplateRows: "auto 240px" }}>
+					<div className="border-r border-b border-border p-8 relative overflow-hidden">
+						<p className="type-label mb-3 text-accent-primary">HOME</p>
+						<h1 className="type-display text-[56px] leading-none">RESEQUENCE</h1>
+						<p className="type-display-outline text-[56px] leading-none mt-1">RESEQUENCE</p>
+						<p className="type-label mt-4 text-dimmed">AUDIO AS CODE</p>
+						<span className="type-label text-dimmed absolute bottom-3 right-4">V0.1.0</span>
+					</div>
+
+					<div className="border-b border-border p-6 flex flex-col">
+						<p className="type-label mb-4">RECENT</p>
+						<RecentProjectsList
+							recentProjects={appSettings.recentProjects}
+							onSelectProject={handleSelectRecent}
+						/>
+					</div>
+
+					<div className="border-r border-border overflow-hidden rounded relative">
+						<div className="absolute inset-0">
+							<DomainWarpShader />
+						</div>
+					</div>
+
+					<div className="border-border p-6 flex flex-col justify-between">
+						<p className="type-label mb-4">PROJECT</p>
+
+						{error && (
+							<div className="mb-4 px-3 py-2 border border-accent-primary/30 bg-accent-primary/10 type-label text-accent-primary">
+								{error}
+							</div>
+						)}
+
+						<div className="flex flex-col gap-3 mt-auto">
+							<Button disabled>CREATE PROJECT</Button>
+							<Button variant="outline" onClick={handleOpenDirectory}>OPEN PROJECT</Button>
+						</div>
+					</div>
 				</div>
-
-				{error && <div className="mb-6 rounded-md bg-destructive/10 px-4 py-3 text-sm text-destructive">{error}</div>}
-
-				<div className="mb-6">
-					<h2 className="mb-3 text-sm font-medium text-muted-foreground">Recent Projects</h2>
-					<RecentProjectsList
-						recentProjects={appSettings.recentProjects}
-						onSelectProject={handleSelectRecent}
-					/>
-				</div>
-
-				<Button
-					variant="outline"
-					className="w-full gap-2"
-					onClick={handleOpenDirectory}
-				>
-					<Icon.FolderOpen className="h-4 w-4" />
-					Open Project
-				</Button>
 			</div>
 		</div>
 	);

@@ -12,10 +12,10 @@ export function layoutGraph(nodes: Array<Node>, edges: Array<Edge>): Array<Node>
 	const graph = new dagre.graphlib.Graph();
 
 	graph.setDefaultEdgeLabel(() => ({}));
-	graph.setGraph({ rankdir: "LR", nodesep: 40, ranksep: 80 });
+	graph.setGraph({ rankdir: "LR", nodesep: 60, ranksep: 80 });
 
 	for (const node of nodes) {
-		graph.setNode(node.id, { width: 180, height: 100 });
+		graph.setNode(node.id, { width: 200, height: 120 });
 	}
 
 	for (const edge of edges) {

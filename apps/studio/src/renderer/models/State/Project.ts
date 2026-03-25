@@ -27,9 +27,6 @@ export interface ProjectState extends State {
 	pitchZoom: Transient<number>;
 
 	outputGraphViewports: Record<string, OutputGraphViewport>;
-
-	topHeightPercent: Transient<number>;
-	overridesWidthPercent: Transient<number>;
 }
 
 export interface ProjectStateInitial {
@@ -40,8 +37,6 @@ export interface ProjectStateInitial {
 	timelineZoom?: number;
 	pitchZoom?: number;
 	outputGraphViewports?: Record<string, OutputGraphViewport>;
-	topHeightPercent?: number;
-	overridesWidthPercent?: number;
 }
 
 export function useProjectState(initial: ProjectStateInitial = {}, store: ProxyStore) {
@@ -56,8 +51,6 @@ export function useProjectState(initial: ProjectStateInitial = {}, store: ProxyS
 			timelineZoom: new Transient(initial.timelineZoom ?? 1),
 			pitchZoom: new Transient(initial.pitchZoom ?? 10, { minimum: 2, maximum: 30 }),
 			outputGraphViewports: initial.outputGraphViewports ?? {},
-			topHeightPercent: new Transient(initial.topHeightPercent ?? 35, { minimum: 10, maximum: 90 }),
-			overridesWidthPercent: new Transient(initial.overridesWidthPercent ?? 40, { minimum: 10, maximum: 90 }),
 		},
 		store,
 	);
@@ -72,8 +65,6 @@ export function serializeProjectState(state: ProjectState): ProjectStateInitial 
 		timelineZoom: state.timelineZoom.toJson(),
 		pitchZoom: state.pitchZoom.toJson(),
 		outputGraphViewports: state.outputGraphViewports,
-		topHeightPercent: state.topHeightPercent.toJson(),
-		overridesWidthPercent: state.overridesWidthPercent.toJson(),
 	};
 }
 
@@ -86,8 +77,6 @@ export function deserializeProjectState(json: Record<string, unknown>): ProjectS
 		timelineZoom: typeof json.timelineZoom === "number" ? json.timelineZoom : undefined,
 		pitchZoom: typeof json.pitchZoom === "number" ? json.pitchZoom : undefined,
 		outputGraphViewports: isOutputGraphViewports(json.outputGraphViewports) ? json.outputGraphViewports : undefined,
-		topHeightPercent: typeof json.topHeightPercent === "number" ? json.topHeightPercent : undefined,
-		overridesWidthPercent: typeof json.overridesWidthPercent === "number" ? json.overridesWidthPercent : undefined,
 	};
 }
 

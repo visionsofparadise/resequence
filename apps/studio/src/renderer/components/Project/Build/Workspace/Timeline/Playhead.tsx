@@ -25,15 +25,8 @@ export const Playhead: React.FC<PlayheadProps> = ({ context }) => {
 		<div className="pointer-events-none absolute inset-0 z-20 overflow-hidden">
 			<div
 				ref={playheadRef}
-				className="absolute left-0 top-0 h-full w-px bg-red-500"
-			>
-				<div className="absolute left-1/2 top-0 -translate-x-1/2">
-					<div
-						className="border-l-4 border-r-4 border-t-8 border-l-transparent border-r-transparent border-t-red-500"
-						style={{ width: 0, height: 0 }}
-					/>
-				</div>
-			</div>
+				className="absolute left-0 top-0 h-full w-px bg-accent-primary"
+			/>
 		</div>
 	);
 };

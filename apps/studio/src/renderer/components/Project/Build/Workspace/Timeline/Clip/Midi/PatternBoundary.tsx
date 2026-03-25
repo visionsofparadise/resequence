@@ -40,7 +40,7 @@ export const PatternBoundary: React.FC<PatternBoundaryProps> = ({ span, clip, se
 			style={{
 				left,
 				width,
-				border: `1px solid ${clip.color}`,
+				border: `1px solid ${context.portColorMap.get(clip.port) ?? "var(--color-text-secondary)"}`,
 				opacity: isDimmed ? 0.3 : isHovered ? 1 : 0.6,
 			}}
 			onMouseEnter={() => {
@@ -54,7 +54,7 @@ export const PatternBoundary: React.FC<PatternBoundaryProps> = ({ span, clip, se
 				});
 			}}
 		>
-			<span className="absolute left-0.5 top-0.5 text-[10px] text-muted-foreground">{span.patternType}</span>
+			<span className="type-label absolute left-0.5 top-0.5">{span.patternType}</span>
 		</div>
 	);
 };
