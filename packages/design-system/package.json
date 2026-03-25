@@ -16,31 +16,23 @@
   "sideEffects": false,
   "scripts": {
     "build": "tsup",
-    "start": "vite",
-    "check": "concurrently \"eslint . --fix --cache --format ../../agent-eslint.js\" \"tsc -p tsconfig.json --noEmit --pretty false 2>&1 | node ../../agent-tsc.js\" \"tsc -p tsconfig.showcase.json --noEmit --pretty false 2>&1 | node ../../agent-tsc.js\""
+    "check": "concurrently \"eslint . --fix --cache --format ../../agent-eslint.js\" \"tsc --noEmit --pretty false 2>&1 | node ../../agent-tsc.js\""
   },
   "peerDependencies": {
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
-    "@dagrejs/dagre": "^2.0.4",
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.5.0",
-    "@tailwindcss/postcss": "^4.2.1",
-    "@types/dagre": "^0.7.54",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@types/three": "^0.183.1",
-    "@vitejs/plugin-react": "^4.0.0",
     "concurrently": "*",
-    "lucide-react": "^0.577.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "tailwindcss": "^4.2.1",
     "three": "^0.183.2",
     "tsup": "^8.0.0",
-    "typescript": "*",
-    "vite": "^5.4.0"
+    "typescript": "*"
   }
 }
