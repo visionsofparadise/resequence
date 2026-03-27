@@ -1,11 +1,5 @@
-import type { UnitContext } from "../context";
-import type { NoteEvent } from "../note-event";
-import type { MidiUnitInput, MidiUnitProperties } from "../midi-unit";
-import { MidiUnit } from "../midi-unit";
-import type { SetupResult } from "../unit";
-import type { Unit } from "../unit";
-import { getOrCreateDriver } from "../utils/driver";
-import { Composite } from "./composite";
+import type { MidiUnitInput, MidiUnitProperties, NoteEvent, SetupResult, Unit, UnitContext } from "@resequence/web-au-core";
+import { CompositeUnit, getOrCreateDriver, MidiUnit } from "@resequence/web-au-core";
 
 export interface InterceptOptions {
 	readonly override?: Readonly<Record<string, number>>;
@@ -104,7 +98,7 @@ export function intercept(unit: Unit, options: InterceptOptions): InterceptUnit 
 
 	unit.targets.length = 0;
 
-	if (unit instanceof Composite) {
+	if (unit instanceof CompositeUnit) {
 		const tail = "tail" in unit ? (unit as { tail: Unit }).tail : undefined;
 
 		if (tail) {

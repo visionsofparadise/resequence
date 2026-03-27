@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import type { UnitContext } from "../context";
+import type { UnitContext } from "@resequence/web-au-core";
 import { SpeakersUnit, speakers } from "./speakers";
 
 function mockContext(offline: boolean) {

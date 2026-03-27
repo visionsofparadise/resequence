@@ -1,4 +1,4 @@
-import type { DriverEntry } from "@resequence/web-au";
+import type { DriverEntry } from "@resequence/web-au/core";
 import { StudioDriver } from "../models/StudioDriver";
 import type { ValueScheduler } from "../models/ValueScheduler";
 

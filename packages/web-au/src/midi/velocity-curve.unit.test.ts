@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import type { UnitContext } from "../context";
-import { MidiUnit } from "../midi-unit";
-import type { NoteEvent } from "../note-event";
+import type { UnitContext } from "@resequence/web-au-core";
+import { MidiUnit } from "@resequence/web-au-core";
+import type { NoteEvent } from "@resequence/web-au-core";
 import { velocityCurve } from "./velocity-curve";
 
 class CaptureMidiUnit extends MidiUnit {

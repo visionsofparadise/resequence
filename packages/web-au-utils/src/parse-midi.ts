@@ -1,5 +1,5 @@
 import { parseMidi as decodeMidi } from "midi-file";
-import type { NoteEvent, NoteSlide } from "../note-event";
+import type { NoteEvent, NoteSlide } from "@resequence/web-au-core";
 import { CC } from "./cc";
 import { type TempoPoint, tickToMs } from "./tempo-map";
 

@@ -1,7 +1,7 @@
-import type { UnitContext } from "../context";
+import type { SetupResult, UnitContext, UnitInput, UnitProperties } from "@resequence/web-au-core";
 import { lfo, type LfoUnit } from "../lfo";
-import { proxyDriver } from "../utils/driver";
-import { Unit, type SetupResult, type UnitInput, type UnitProperties } from "../unit";
+import { Unit, proxyDriver } from "@resequence/web-au-core";
+
 import { allpass, type FilterEffectUnit } from "./filter";
 
 export interface PhaserProperties extends UnitProperties {

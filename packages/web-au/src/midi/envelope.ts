@@ -1,9 +1,5 @@
-import type { UnitContext } from "../context";
-import { driveParam } from "../utils/driver";
-import type { MidiUnitProperties } from "../midi-unit";
-import { MidiUnit, type MidiUnitInput } from "../midi-unit";
-import type { NoteEvent } from "../note-event";
-import type { SetupResult } from "../unit";
+import type { MidiUnitProperties, NoteEvent, SetupResult, UnitContext } from "@resequence/web-au-core";
+import { driveParam, MidiUnit, type MidiUnitInput } from "@resequence/web-au-core";
 
 export interface EnvelopeAdsr {
 	readonly attack?: number;

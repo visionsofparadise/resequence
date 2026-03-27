@@ -1,6 +1,5 @@
-import type { UnitContext } from "../context";
-import type { NoteEvent } from "../note-event";
-import type { SetupResult } from "../unit";
+import type { NoteEvent, SetupResult, UnitContext } from "@resequence/web-au-core";
+
 import { GeneratorUnit, type GeneratorUnitInput, type GeneratorUnitProperties } from "./generator";
 
 export interface NoiseProperties extends GeneratorUnitProperties {

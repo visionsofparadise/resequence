@@ -1,7 +1,5 @@
-import type { UnitContext } from "../context";
-import { driveParam } from "../utils/driver";
-import type { SetupResult, UnitInput, UnitProperties } from "../unit";
-import { Unit } from "../unit";
+import type { SetupResult, UnitContext, UnitInput, UnitProperties } from "@resequence/web-au-core";
+import { Unit, driveParam } from "@resequence/web-au-core";
 
 export type FilterMode = "lowpass" | "highpass" | "bandpass" | "peaking" | "notch" | "lowshelf" | "highshelf" | "allpass";
 

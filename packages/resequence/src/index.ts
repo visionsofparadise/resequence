@@ -1,4 +1,4 @@
-/* eslint-disable barrel-files/avoid-barrel-files */
+/* eslint-disable barrel-files/avoid-barrel-files, barrel-files/avoid-re-export-all */
 export * from "@resequence/patterns";
 export { formula } from "./automation/formula";
 export type { FormulaOptions } from "./automation/formula";

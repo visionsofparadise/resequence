@@ -1,4 +1,4 @@
-import type { Unit } from "../unit";
+import type { Unit } from "./unit";
 
 export function walkUnits(root: Unit, callback: (unit: Unit, index: number) => void): void {
 	const visited = new Set<Unit>();

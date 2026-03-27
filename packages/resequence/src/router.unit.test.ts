@@ -1,5 +1,5 @@
 import { sequence } from "@resequence/patterns";
-import type { MidiUnit } from "@resequence/web-au";
+import type { MidiUnit } from "@resequence/web-au-core";
 import { describe, expect, it } from "vitest";
 import { Playback } from "./playback";
 import { Router, router } from "./router";

@@ -1,18 +1,6 @@
 /* eslint-disable barrel-files/avoid-barrel-files */
-export { createUnitContext } from "./context";
-export type { DriverEntry, UnitContext } from "./context";
 export { GeneratorUnit } from "./generators/generator";
 export type { GeneratorUnitInput, GeneratorUnitProperties } from "./generators/generator";
-export { MidiUnit } from "./midi-unit";
-export type { MidiUnitInput, MidiUnitProperties, NoteModDeclaration, NoteProperty } from "./midi-unit";
-export type { NoteEvent, NoteSlide } from "./note-event";
-export { Unit } from "./unit";
-export type { ModDeclaration, SetupResult, UnitInput, UnitProperties } from "./unit";
-export { buildCurve } from "./utils/build-curve";
-export { driveParam, getOrCreateDriver, offsetParam, proxyDriver, undriveParam } from "./utils/driver";
-export { pitchToMidi } from "./utils/pitch";
-export type { Pitch } from "./utils/pitch";
-export { scheduleSlideRamps } from "./utils/schedule-slides";
 
 // Effects — leaf
 export { CompressorEffectUnit, compressor, limiter } from "./effects/compressor";
@@ -74,7 +62,6 @@ export { BypassUnit, bypass } from "./composites/bypass";
 export type { BypassProperties } from "./composites/bypass";
 export { Chain, chain } from "./composites/chain";
 export type { ChainProperties } from "./composites/chain";
-export { Composite, flattenUnits } from "./composites/composite";
 export { Fan, fan } from "./composites/fan";
 export type { FanProperties } from "./composites/fan";
 export { InterceptUnit, intercept } from "./composites/intercept";
@@ -112,16 +99,6 @@ export type { VelocityCurveProperties } from "./midi/velocity-curve";
 export { AnalyserUnit, analyser } from "./analyser";
 export type { AnalyserProperties } from "./analyser";
 
-// Utilities
-export { collectUnits, computeMaxDuration, computeMaxLatency, descendUnit, mapUnits, walkUnits } from "./utils/graph";
-
-// MIDI parsing
-export { CC } from "./midi/cc";
-export type { CCNumber } from "./midi/cc";
-export { parseMidiFile } from "./midi/parse-midi";
-export { tickToMs } from "./midi/tempo-map";
-export type { TempoPoint } from "./midi/tempo-map";
-
 // Targets
 export { SpeakersUnit, speakers } from "./targets/speakers";
 export type { SpeakersProperties } from "./targets/speakers";
@@ -131,7 +108,3 @@ export type { WriteProperties } from "./targets/write";
 // Sources
 export { ReadUnit, read } from "./sources/read";
 export type { ReadProperties } from "./sources/read";
-
-// Rendering
-export { encodeWav } from "./rendering/encode-wav";
-export type { WavBitDepth } from "./rendering/encode-wav";

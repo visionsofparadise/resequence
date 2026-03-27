@@ -1,18 +1,17 @@
-import type { UnitContext } from "../context";
-import type { SetupResult, UnitInput, UnitProperties } from "../unit";
-import type { Unit } from "../unit";
-import { Composite, flattenUnits } from "./composite";
+import type { SetupResult, Unit, UnitContext, UnitInput, UnitProperties } from "@resequence/web-au-core";
+
+import { CompositeUnit, flattenUnits } from "@resequence/web-au-core";
 
 export interface ChainProperties extends UnitProperties {
 	readonly units: ReadonlyArray<Unit>;
 }
 
-export class Chain extends Composite {
+export class Chain extends CompositeUnit {
 	readonly type = ["unit", "composite", "chain"] as const;
 	declare readonly properties: ChainProperties;
 
 	static override is(value: unknown): value is Chain {
-		return Composite.is(value) && value.type[2] === "chain";
+		return CompositeUnit.is(value) && value.type[2] === "chain";
 	}
 
 	readonly head: Unit;

@@ -1,9 +1,8 @@
-import type { UnitContext } from "../context";
-import type { MidiUnitProperties } from "../midi-unit";
-import { MidiUnit, type MidiUnitInput } from "../midi-unit";
+import type { MidiUnitProperties, NoteEvent, SetupResult, Unit, UnitContext } from "@resequence/web-au-core";
+
+import { MidiUnit, type MidiUnitInput } from "@resequence/web-au-core";
 import { envelope, type EnvelopeUnit } from "../midi/envelope";
-import type { NoteEvent } from "../note-event";
-import type { SetupResult, Unit } from "../unit";
+
 import { chorus } from "./chorus";
 import { lowpass, type FilterEffectUnit } from "./filter";
 import { gain, linearGain, type GainEffectUnit } from "./gain";

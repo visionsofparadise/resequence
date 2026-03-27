@@ -1,6 +1,5 @@
-import type { UnitContext } from "./context";
-import { driveParam } from "./utils/driver";
-import { Unit, type SetupResult, type UnitInput, type UnitProperties } from "./unit";
+import type { SetupResult, UnitContext, UnitInput, UnitProperties } from "@resequence/web-au-core";
+import { driveParam, Unit } from "@resequence/web-au-core";
 
 export interface MacroProperties extends UnitProperties {
 	readonly value: number;

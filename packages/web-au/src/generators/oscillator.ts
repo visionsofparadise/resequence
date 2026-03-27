@@ -1,9 +1,8 @@
-import type { UnitContext } from "../context";
+import type { NoteEvent, SetupResult, UnitContext } from "@resequence/web-au-core";
 import type { WaveShape } from "../lfo";
-import type { NoteEvent } from "../note-event";
-import type { SetupResult } from "../unit";
-import { driveParam, getOrCreateDriver, offsetParam } from "../utils/driver";
-import { scheduleSlideRamps } from "../utils/schedule-slides";
+
+import { driveParam, getOrCreateDriver, offsetParam } from "@resequence/web-au-core";
+import { scheduleSlideRamps } from "@resequence/web-au-utils";
 import { GeneratorUnit, type GeneratorUnitInput, type GeneratorUnitProperties } from "./generator";
 
 export interface OscillatorProperties extends GeneratorUnitProperties {

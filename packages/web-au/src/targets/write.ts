@@ -1,10 +1,10 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
-import type { UnitContext } from "../context";
-import type { WavBitDepth } from "../rendering/encode-wav";
-import { encodeWav } from "../rendering/encode-wav";
-import type { SetupResult, UnitInput, UnitProperties } from "../unit";
-import { Unit } from "../unit";
+import type { SetupResult, UnitContext, UnitInput, UnitProperties } from "@resequence/web-au-core";
+import type { WavBitDepth } from "@resequence/web-au-utils";
+import { encodeWav } from "@resequence/web-au-utils";
+
+import { Unit } from "@resequence/web-au-core";
 
 export interface WriteProperties extends UnitProperties {
 	readonly path: string;

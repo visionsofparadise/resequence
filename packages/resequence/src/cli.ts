@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { Command } from "commander";
 import { Router } from "./router";
-import type { WavBitDepth } from "@resequence/web-au";
+import type { WavBitDepth } from "@resequence/web-au-utils";
 
 async function loadRouter(entrypoint: string): Promise<Router> {
 	const fullPath = resolve(entrypoint);

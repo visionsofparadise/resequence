@@ -1,4 +1,4 @@
-import type { NoteSlide } from "../note-event";
+import type { NoteSlide } from "@resequence/web-au-core";
 
 export function scheduleSlideRamps(
 	param: AudioParam,

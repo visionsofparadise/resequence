@@ -1,10 +1,8 @@
-import type { UnitContext } from "../context";
-import type { NoteEvent } from "../note-event";
-import type { SetupResult } from "../unit";
-import { getOrCreateDriver } from "../utils/driver";
-import type { Pitch } from "../utils/pitch";
-import { pitchToMidi } from "../utils/pitch";
-import { scheduleSlideRamps } from "../utils/schedule-slides";
+import type { NoteEvent, SetupResult, UnitContext } from "@resequence/web-au-core";
+import { getOrCreateDriver } from "@resequence/web-au-core";
+import type { Pitch } from "@resequence/web-au-utils";
+import { pitchToMidi, scheduleSlideRamps } from "@resequence/web-au-utils";
+
 import { GeneratorUnit, type GeneratorUnitInput, type GeneratorUnitProperties } from "./generator";
 
 export interface SamplerZone {

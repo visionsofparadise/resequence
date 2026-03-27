@@ -1,5 +1,6 @@
-import type { Unit } from "@resequence/web-au";
-import { SpeakersUnit, analyser, linearGain, mapUnits } from "@resequence/web-au";
+import type { Unit } from "@resequence/web-au/core";
+import { mapUnits } from "@resequence/web-au/core";
+import { SpeakersUnit, analyser, linearGain } from "@resequence/web-au";
 import { useMemo } from "react";
 import type { Router } from "resequence";
 
@@ -22,6 +23,7 @@ export function useMapGraph(router: Router): InjectResult {
 			let gainIndex = 0;
 
 			// FIX: We need to use the transformed unit graphs, we treat them as immutable
+			 
 			mapUnits(unit, (node) => {
 				if (SpeakersUnit.is(node)) {
 					const gainId = `system.${portKey}.gain.${gainIndex++}`;

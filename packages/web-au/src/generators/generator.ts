@@ -1,10 +1,7 @@
-import type { UnitContext } from "../context";
+import type { MidiUnitProperties, ModDeclaration, NoteEvent, SetupResult, Unit, UnitContext } from "@resequence/web-au-core";
+import { MidiUnit } from "@resequence/web-au-core";
 import { CCEffectUnit } from "../effects/cc";
 import { linearGain, type GainEffectUnit } from "../effects/gain";
-import type { MidiUnitProperties } from "../midi-unit";
-import { MidiUnit } from "../midi-unit";
-import type { NoteEvent } from "../note-event";
-import type { ModDeclaration, SetupResult, Unit } from "../unit";
 
 export interface GeneratorUnitProperties extends MidiUnitProperties {
 	readonly voiceToCallbacks: Array<(noteEvent: NoteEvent) => Unit>;
@@ -17,7 +14,7 @@ export type GeneratorUnitInput<P extends GeneratorUnitProperties = GeneratorUnit
 
 export abstract class GeneratorUnit extends MidiUnit {
 	abstract readonly type: readonly ["unit", "midi", "generator", ...Array<string>];
-	declare readonly properties: GeneratorUnitProperties;
+	declare properties: GeneratorUnitProperties;
 	public mergeUnit: GainEffectUnit | undefined;
 
 	static override is(value: unknown): value is GeneratorUnit {
@@ -38,13 +35,13 @@ export abstract class GeneratorUnit extends MidiUnit {
 	}
 
 	voiceTo(callback: (noteEvent: NoteEvent) => Unit): this {
-		this.properties.voiceToCallbacks.push(callback);
+		this.properties = { ...this.properties, voiceToCallbacks: [...this.properties.voiceToCallbacks, callback] };
 
 		return this;
 	}
 
 	voiceMod(paths: Array<string>, transform?: (value: number) => number): void {
-		this.properties.voiceModDeclarations.push({ paths, transform });
+		this.properties = { ...this.properties, voiceModDeclarations: [...this.properties.voiceModDeclarations, { paths, transform }] };
 	}
 
 	protected override async _setup(context: UnitContext): Promise<SetupResult> {

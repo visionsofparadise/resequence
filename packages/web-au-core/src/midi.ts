@@ -21,7 +21,7 @@ export type MidiUnitInput<P extends MidiUnitProperties = MidiUnitProperties> = O
 
 export abstract class MidiUnit extends Unit {
 	abstract readonly type: readonly ["unit", "midi", ...Array<string>];
-	declare readonly properties: MidiUnitProperties;
+	declare properties: MidiUnitProperties;
 
 	static override is(value: unknown): value is MidiUnit {
 		return Unit.is(value) && value.type[1] === "midi";
@@ -39,7 +39,7 @@ export abstract class MidiUnit extends Unit {
 	}
 
 	noteMod(property: NoteProperty, paths: Array<string>, transform?: (value: number) => number): void {
-		this.properties.noteModDeclarations.push({ property, paths, transform });
+		this.properties = { ...this.properties, noteModDeclarations: [...this.properties.noteModDeclarations, { property, paths, transform }] };
 	}
 
 	schedule(noteEvent: NoteEvent, context: UnitContext): void {

@@ -1,6 +1,6 @@
-import type { UnitContext } from "../context";
-import type { SetupResult, UnitInput } from "../unit";
-import { Unit, type UnitProperties } from "../unit";
+import type { SetupResult, UnitContext, UnitInput, UnitProperties } from "@resequence/web-au-core";
+
+import { Unit } from "@resequence/web-au-core";
 import { type GainEffectUnit, linearGain } from "./gain";
 
 export interface ChannelSplitterProperties extends UnitProperties {

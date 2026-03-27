@@ -1,6 +1,6 @@
 import type { UnitContext } from "./context";
-import { buildCurve } from "./utils/build-curve";
-import { getOrCreateDriver } from "./utils/driver";
+import { buildCurve } from "./build-curve";
+import { getOrCreateDriver } from "./driver";
 
 type OptionalProperties<D extends object, K extends keyof D> = Omit<D, K> & Partial<Pick<D, K>>;
 
@@ -26,7 +26,7 @@ export interface SetupResult {
 
 export abstract class Unit {
 	abstract readonly type: ReadonlyArray<string>;
-	readonly properties: UnitProperties;
+	declare properties: UnitProperties;
 
 	static is(value: unknown): value is Unit {
 		return typeof value === "object" && value !== null && "type" in value && Array.isArray(value.type) && value.type[0] === "unit";
@@ -67,11 +67,11 @@ export abstract class Unit {
 	abstract clone(overrides?: Partial<UnitProperties>): Unit;
 
 	to(unit: Unit): void {
-		this.properties.targets.push(unit);
+		this.properties = { ...this.properties, targets: [...this.properties.targets, unit] };
 	}
 
 	mod(paths: ReadonlyArray<string>, transform?: (value: number) => number): void {
-		this.properties.modDeclarations.push({ paths, transform });
+		this.properties = { ...this.properties, modDeclarations: [...this.properties.modDeclarations, { paths, transform }] };
 	}
 
 	async play(context: UnitContext): Promise<void> {

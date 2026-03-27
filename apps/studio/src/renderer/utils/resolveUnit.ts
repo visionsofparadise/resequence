@@ -1,4 +1,4 @@
-import type { Unit } from "@resequence/web-au";
+import type { Unit } from "@resequence/web-au/core";
 
 export function resolveUnit(unit: Unit, injectedNodes: WeakSet<object>): Unit {
 	let current = unit;

@@ -1,7 +1,6 @@
-import type { UnitContext } from "./context";
-import { driveParam, proxyDriver } from "./utils/driver";
+import type { SetupResult, UnitContext, UnitInput, UnitProperties } from "@resequence/web-au-core";
+import { driveParam, proxyDriver, Unit } from "@resequence/web-au-core";
 import { linearGain, type GainEffectUnit } from "./effects/gain";
-import { Unit, type SetupResult, type UnitInput, type UnitProperties } from "./unit";
 
 export type WaveShape = "sine" | "square" | "sawtooth" | "triangle";
 

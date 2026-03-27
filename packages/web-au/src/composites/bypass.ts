@@ -1,10 +1,6 @@
-import type { UnitContext } from "../context";
+import type { MidiUnitInput, MidiUnitProperties, SetupResult, Unit, UnitContext } from "@resequence/web-au-core";
+import { CompositeUnit, MidiUnit } from "@resequence/web-au-core";
 import { linearGain, type GainEffectUnit } from "../effects/gain";
-import type { MidiUnitInput, MidiUnitProperties } from "../midi-unit";
-import { MidiUnit } from "../midi-unit";
-import type { SetupResult } from "../unit";
-import type { Unit } from "../unit";
-import { Composite } from "./composite";
 
 export interface BypassProperties extends MidiUnitProperties {
 	readonly inner: Unit;
@@ -58,7 +54,7 @@ export function bypass(unit: Unit): BypassUnit {
 
 	unit.targets.length = 0;
 
-	if (unit instanceof Composite) {
+	if (unit instanceof CompositeUnit) {
 		const tail = "tail" in unit ? (unit as { tail: Unit }).tail : undefined;
 
 		if (tail) {

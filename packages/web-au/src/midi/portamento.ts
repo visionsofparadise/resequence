@@ -1,8 +1,6 @@
-import type { UnitContext } from "../context";
-import type { MidiUnitProperties } from "../midi-unit";
-import { MidiUnit, type MidiUnitInput } from "../midi-unit";
-import type { NoteEvent, NoteSlide } from "../note-event";
-import type { SetupResult } from "../unit";
+import type { MidiUnitProperties, NoteEvent, NoteSlide, SetupResult, UnitContext } from "@resequence/web-au-core";
+
+import { MidiUnit, type MidiUnitInput } from "@resequence/web-au-core";
 
 interface LastPitch {
 	readonly note: number;

@@ -1,6 +1,6 @@
-import type { UnitContext } from "../context";
-import type { SetupResult, UnitInput, UnitProperties } from "../unit";
-import { Unit } from "../unit";
+import type { SetupResult, UnitContext, UnitInput, UnitProperties } from "@resequence/web-au-core";
+
+import { Unit } from "@resequence/web-au-core";
 import { type FilterEffectUnit, filter } from "./filter";
 
 export interface LinkwitzRileyProperties extends UnitProperties {

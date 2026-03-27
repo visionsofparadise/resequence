@@ -1,6 +1,6 @@
 import { Handle, Position, type NodeProps } from "@xyflow/react";
 import { useEffect, useState, useCallback } from "react";
-import type { Unit } from "@resequence/web-au";
+import type { Unit } from "@resequence/web-au/core";
 import type { Snapshot } from "valtio";
 import { Knob } from "@resequence/design-system";
 import type { StudioDriver } from "../../models/StudioDriver";

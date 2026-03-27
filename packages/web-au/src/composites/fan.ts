@@ -1,19 +1,18 @@
-import type { UnitContext } from "../context";
+import type { SetupResult, Unit, UnitContext, UnitInput, UnitProperties } from "@resequence/web-au-core";
 import { linearGain } from "../effects/gain";
-import type { SetupResult, UnitInput, UnitProperties } from "../unit";
-import type { Unit } from "../unit";
-import { Composite, flattenUnits } from "./composite";
+
+import { CompositeUnit, flattenUnits } from "@resequence/web-au-core";
 
 export interface FanProperties extends UnitProperties {
 	readonly branches: ReadonlyArray<Unit>;
 }
 
-export class Fan extends Composite {
+export class Fan extends CompositeUnit {
 	readonly type = ["unit", "composite", "fan"] as const;
 	declare readonly properties: FanProperties;
 
 	static override is(value: unknown): value is Fan {
-		return Composite.is(value) && value.type[2] === "fan";
+		return CompositeUnit.is(value) && value.type[2] === "fan";
 	}
 
 	readonly head: Unit;

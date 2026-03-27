@@ -6,6 +6,14 @@
     ".": {
       "import": "./dist/index.js",
       "types": "./dist/index.d.ts"
+    },
+    "./core": {
+      "import": "./dist/core.js",
+      "types": "./dist/core.d.ts"
+    },
+    "./utils": {
+      "import": "./dist/utils.js",
+      "types": "./dist/utils.d.ts"
     }
   },
   "bin": {
@@ -41,9 +49,9 @@
     "vitest": "^3.0.0"
   },
   "dependencies": {
+    "@resequence/web-au-core": "*",
+    "@resequence/web-au-utils": "*",
     "commander": "^14.0.3",
-    "midi-file": "^1.2.4",
-    "tsx": "^4.21.0",
-    "wavefile": "^11.0.0"
+    "tsx": "^4.21.0"
   }
 }

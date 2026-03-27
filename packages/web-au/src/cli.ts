@@ -3,13 +3,8 @@ import nodeWebAudio from "node-web-audio-api";
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
-import { createUnitContext } from "./context";
-import { MidiUnit } from "./midi-unit";
-import { parseMidiFile } from "./midi/parse-midi";
-import type { WavBitDepth } from "./rendering/encode-wav";
-import { encodeWav } from "./rendering/encode-wav";
-import { Unit } from "./unit";
-import { computeMaxDuration, computeMaxLatency } from "./utils/graph";
+import { computeMaxDuration, computeMaxLatency, createUnitContext, MidiUnit, Unit } from "@resequence/web-au-core";
+import { encodeWav, parseMidiFile, type WavBitDepth } from "@resequence/web-au-utils";
 
 const { OfflineAudioContext: NodeOfflineAudioContext } = nodeWebAudio;
 

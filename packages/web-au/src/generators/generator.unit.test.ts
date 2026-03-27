@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { UnitContext } from "../context";
-import type { NoteEvent } from "../note-event";
-import type { SetupResult } from "../unit";
+import type { NoteEvent, SetupResult, UnitContext } from "@resequence/web-au-core";
+
 import { GeneratorUnit, type GeneratorUnitInput } from "./generator";
 
 class TestGenerator extends GeneratorUnit {

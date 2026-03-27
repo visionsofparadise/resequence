@@ -1,5 +1,5 @@
-import type { UnitContext } from "../context";
-import { Unit, type SetupResult, type UnitInput, type UnitProperties } from "../unit";
+import type { SetupResult, UnitContext, UnitInput, UnitProperties } from "@resequence/web-au-core";
+import { Unit } from "@resequence/web-au-core";
 import { channelMerger } from "./channel-merger";
 import { channelSplitter } from "./channel-splitter";
 import { linearGain } from "./gain";

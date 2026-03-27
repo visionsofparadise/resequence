@@ -37,6 +37,8 @@ function mockContext(): UnitContext {
 		driverMap: new Map(),
 		getSample: () => Promise.resolve({} as AudioBuffer),
 		loadModule: () => Promise.resolve(),
+		latencyBudget: 0,
+		basePath: ".",
 	};
 }
 
@@ -94,5 +96,32 @@ describe("Unit", () => {
 		unit.mod(["path.a", "path.b"]);
 		expect(unit.properties.modDeclarations).toHaveLength(1);
 		expect(unit.properties.modDeclarations[0]?.paths).toEqual(["path.a", "path.b"]);
+	});
+
+	it("to() does not mutate a clone's targets array", () => {
+		const original = new TestUnit();
+		const target = new TestUnit();
+		original.to(target);
+
+		const cloned = original.clone();
+		const newTarget = new TestUnit();
+		original.to(newTarget);
+
+		expect(original.targets).toHaveLength(2);
+		expect(cloned.targets).toHaveLength(1);
+		expect(cloned.targets).toContain(target);
+		expect(cloned.targets).not.toContain(newTarget);
+	});
+
+	it("mod() does not mutate a clone's modDeclarations array", () => {
+		const original = new TestUnit();
+		original.mod(["path.a"]);
+
+		const cloned = original.clone();
+		original.mod(["path.b"]);
+
+		expect(original.properties.modDeclarations).toHaveLength(2);
+		expect(cloned.properties.modDeclarations).toHaveLength(1);
+		expect(cloned.properties.modDeclarations[0]?.paths).toEqual(["path.a"]);
 	});
 });

@@ -1,16 +1,16 @@
-import type { UnitContext } from "../context";
-import { Unit } from "../unit";
+import type { UnitContext } from "./context";
+import { Unit } from "./unit";
 
 export function flattenUnits(units: ReadonlyArray<Unit>): ReadonlyArray<Unit> {
-	return units.flatMap((unit) => (unit instanceof Composite ? unit.units : [unit]));
+	return units.flatMap((unit) => (unit instanceof CompositeUnit ? unit.units : [unit]));
 }
 
-export abstract class Composite extends Unit {
+export abstract class CompositeUnit extends Unit {
 	abstract readonly type: readonly ["unit", "composite", ...Array<string>];
 	abstract readonly head: Unit;
 	abstract readonly units: ReadonlyArray<Unit>;
 
-	static override is(value: unknown): value is Composite {
+	static override is(value: unknown): value is CompositeUnit {
 		return Unit.is(value) && value.type[1] === "composite";
 	}
 

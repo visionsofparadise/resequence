@@ -1,7 +1,6 @@
-import type { UnitContext } from "../context";
-import type { MidiUnitProperties } from "../midi-unit";
-import { MidiUnit, type MidiUnitInput } from "../midi-unit";
-import type { NoteEvent } from "../note-event";
+import type { MidiUnitProperties, NoteEvent, UnitContext } from "@resequence/web-au-core";
+
+import { MidiUnit, type MidiUnitInput } from "@resequence/web-au-core";
 
 export interface NoteFilterProperties extends MidiUnitProperties {
 	readonly predicate: (noteEvent: NoteEvent) => boolean;

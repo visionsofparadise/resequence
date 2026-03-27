@@ -1,4 +1,4 @@
-import type { DriverEntry, UnitContext } from "../context";
+import type { DriverEntry, UnitContext } from "./context";
 
 export function getOrCreateDriver(
 	path: string,

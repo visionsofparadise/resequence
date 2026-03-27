@@ -1,5 +1,5 @@
-import type { UnitContext } from "../context";
-import { Unit, type SetupResult, type UnitInput, type UnitProperties } from "../unit";
+import type { SetupResult, UnitContext, UnitInput, UnitProperties } from "@resequence/web-au-core";
+import { Unit } from "@resequence/web-au-core";
 import { filter } from "./filter";
 import { compressor } from "./compressor";
 import { mix } from "./mix";

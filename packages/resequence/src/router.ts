@@ -1,7 +1,8 @@
 import type { Event, Pattern, NoteEvent as PatternNoteEvent, TempoMap } from "@resequence/patterns";
 import { beatsToSeconds, collectMetadata } from "@resequence/patterns";
-import type { MidiUnit, WavBitDepth } from "@resequence/web-au";
-import { computeMaxLatency, createUnitContext } from "@resequence/web-au";
+import type { MidiUnit } from "@resequence/web-au-core";
+import { computeMaxLatency, createUnitContext } from "@resequence/web-au-core";
+import type { WavBitDepth } from "@resequence/web-au-utils";
 import type { AudioEvent } from "./constructs/audio";
 import { isAudioEvent, isPreloadAudioEvent } from "./constructs/audio";
 import type { AutomationEvent } from "./constructs/automate";

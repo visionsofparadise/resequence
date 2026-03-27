@@ -1,6 +1,6 @@
-import type { UnitContext } from "../context";
-import { proxyDriver } from "../utils/driver";
-import { Unit, type SetupResult, type UnitInput, type UnitProperties } from "../unit";
+import type { SetupResult, UnitContext, UnitInput, UnitProperties } from "@resequence/web-au-core";
+import { Unit, proxyDriver } from "@resequence/web-au-core";
+
 import { delay, type DelayEffectUnit } from "./delay";
 import { allpass, lowpass, type FilterEffectUnit } from "./filter";
 import { linearGain, type GainEffectUnit } from "./gain";

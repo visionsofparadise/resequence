@@ -1,7 +1,5 @@
-import type { UnitContext } from "../context";
-import { buildCurve } from "../utils/build-curve";
-import type { SetupResult, UnitInput, UnitProperties } from "../unit";
-import { Unit } from "../unit";
+import type { SetupResult, UnitContext, UnitInput, UnitProperties } from "@resequence/web-au-core";
+import { Unit, buildCurve } from "@resequence/web-au-core";
 
 export const WaveShaperCurve = {
 	SoftClip: buildCurve((x) => x / (1 + Math.abs(x))),
