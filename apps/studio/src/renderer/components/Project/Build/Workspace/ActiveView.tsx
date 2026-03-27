@@ -12,7 +12,7 @@ export const ActiveView: React.FC<ActiveViewProps> = ({ context, goBack }) => {
 	const { project } = context;
 
 	if (project.activePort) {
-		const unit = context.source.ports.get(project.activePort);
+		const unit = context.router.ports.get(project.activePort);
 
 		if (unit) {
 			return (

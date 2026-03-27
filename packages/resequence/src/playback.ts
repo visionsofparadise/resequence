@@ -11,7 +11,7 @@ import { dispatchAutomation } from "./dispatch/automation";
 import { seekAutomationFromEvents } from "./dispatch/seek";
 import { mapNoteEvent } from "./mapping";
 import { loadSample } from "./rendering/load-sample";
-import type { PatternSource } from "./sources/pattern";
+import type { Router } from "./router";
 import { lowerBound } from "./utils/sorted";
 
 export type PlaybackState = "playing" | "paused" | "stopped";
@@ -33,7 +33,7 @@ const DEFAULT_LOOKAHEAD_MS = 100;
 const DEFAULT_TICK_MS = 25;
 
 export class Playback {
-	private readonly source: PatternSource;
+	private readonly router: Router;
 	private readonly audioContext: AudioContext;
 	private readonly options: PlaybackOptions;
 	private readonly listeners: { [K in keyof PlaybackEventMap]: Array<PlaybackEventMap[K]> } = {
@@ -55,8 +55,8 @@ export class Playback {
 	private _state: PlaybackState = "stopped";
 	private patternEndBeat = 0;
 
-	constructor(source: PatternSource, audioContext: AudioContext, options: PlaybackOptions = {}) {
-		this.source = source;
+	constructor(router: Router, audioContext: AudioContext, options: PlaybackOptions = {}) {
+		this.router = router;
 		this.audioContext = audioContext;
 		this.options = options;
 	}
@@ -89,7 +89,7 @@ export class Playback {
 	}
 
 	async setup(getSample: (path: string) => Promise<ArrayBuffer>): Promise<void> {
-		const pattern = this.source.pattern;
+		const pattern = this.router.pattern;
 		const setupEvents = pattern.setup(0);
 
 		for (const event of setupEvents) {
@@ -118,8 +118,8 @@ export class Playback {
 
 		let latencyBudget = 0;
 
-		for (const [, portUnit] of this.source.ports) {
-			const portLatency = computeMaxLatency(portUnit);
+		for (const [, unit] of this.router.ports) {
+			const portLatency = computeMaxLatency(unit);
 
 			if (portLatency > latencyBudget) latencyBudget = portLatency;
 		}
@@ -142,8 +142,8 @@ export class Playback {
 			latencyBudget,
 		);
 
-		for (const [, portUnit] of this.source.ports) {
-			await portUnit.setup(unitContext);
+		for (const [, unit] of this.router.ports) {
+			await unit.setup(unitContext);
 		}
 
 		this.unitContext = unitContext;
@@ -225,7 +225,7 @@ export class Playback {
 	private tick(): void {
 		if (this._state !== "playing") return;
 
-		const pattern = this.source.pattern;
+		const pattern = this.router.pattern;
 
 		const lookaheadMs = this.options.lookaheadMs ?? DEFAULT_LOOKAHEAD_MS;
 		const currentBeat = this.beat;
@@ -251,12 +251,12 @@ export class Playback {
 
 		this.allAutomationEvents = [...this.allAutomationEvents, ...automationEvents];
 
-		const portKeys = filterPorts(Array.from(this.source.ports.keys()), this.options.include, this.options.exclude);
+		const portKeys = filterPorts(Array.from(this.router.ports.keys()), this.options.include, this.options.exclude);
 
 		for (const portKey of portKeys) {
-			const portUnit = this.source.ports.get(portKey);
+			const unit = this.router.ports.get(portKey);
 
-			if (!portUnit) continue;
+			if (!unit) continue;
 
 			const portNotes = noteEvents.filter((ev) => ev.port === portKey);
 
@@ -264,7 +264,7 @@ export class Playback {
 				const note = mapNoteEvent(noteEvent, this.tempoMap);
 
 				this.emitNoteEvent(noteEvent, noteEvent.startBeat);
-				if (this.unitContext) portUnit.dispatch(note, this.unitContext);
+				if (this.unitContext) unit.schedule(note, this.unitContext);
 			}
 		}
 
@@ -311,10 +311,6 @@ export class Playback {
 			marker = this.markers[this.markerCursor];
 		}
 	}
-}
-
-export function play(source: PatternSource, audioContext: AudioContext, options?: PlaybackOptions): Playback {
-	return new Playback(source, audioContext, options);
 }
 
 function isNoteEvent(event: Event): event is PatternNoteEvent {

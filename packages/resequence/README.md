@@ -1,6 +1,6 @@
 # resequence
 
-Music-as-code. A TypeScript framework for agent-native audio production — composition, synthesis, effects, automation, expressed as code and produced by agents.
+Music-as-code. A TypeScript framework for audio production — composition, synthesis, effects, and automation, expressed entirely as code.
 
 ```bash
 npm install resequence
@@ -11,82 +11,47 @@ npm install resequence
 A resequence program builds a pattern tree — notes, sequences, layers, repeats, and modifiers — then routes it through an audio graph of generators, effects, and composites. Two composable systems, one design: patterns handle _what to play and when_, units handle _how it sounds_.
 
 ```typescript
-import {
-  N, sequence, layer, repeat, gap, metadata,
-  automate, formula, resolveLfo, audio,
-  patternSource,
-} from "resequence";
-import {
-  osc, sampler, noise, chain, fan, mix,
-  lowpass, highpass, gain, reverb, delay,
-  compressor, pan, eq, chorus, envelope,
-  lfo, speakers,
-} from "resequence/web-au";
+import { N, sequence, layer, repeat, gap, metadata, automate, formula, resolveLfo, audio, router } from "resequence";
+import { osc, sampler, noise, chain, fan, mix, lowpass, highpass, gain, reverb, delay, compressor, pan, eq, chorus, envelope, lfo, speakers } from "resequence/web-au";
 
 // --- Instruments ---
 
 const kick = sampler({ url: "samples/kick.wav", id: "kick" });
 const snare = sampler({ url: "samples/snare.wav", id: "snare" });
-const bass = chain(
-  osc({ type: "sawtooth", id: "bass" }),
-  lowpass({ frequency: 800, resonance: 4, id: "bassLp" }),
-  gain({ level: -6 }),
-);
-const pad = chain(
-  osc({ type: "triangle", id: "pad" }),
-  mix(reverb({ decay: 2.5 }), 0.4),
-  pan({ angle: -0.3 }),
-);
+const bass = chain(osc({ type: "sawtooth", id: "bass" }), lowpass({ frequency: 800, resonance: 4, id: "bassLp" }), gain({ level: -6 }));
+const pad = chain(osc({ type: "triangle", id: "pad" }), mix(reverb({ decay: 2.5 }), 0.4), pan({ angle: -0.3 }));
 
 // --- Patterns ---
 
 const kickPat = repeat(N.C2(1), 4);
 const snarePat = sequence(gap(1), N.D3(1), gap(1), N.D3(1));
 
-const bassline = sequence(
-  N.C2(2), N.Ds2(1), N.F2(1),
-  N.G2(2), N.As2(1), N.G2(1),
-);
+const bassline = sequence(N.C2(2), N.Ds2(1), N.F2(1), N.G2(2), N.As2(1), N.G2(1));
 
-const chords = layer(
-  sequence(N.C4(4), N.Gs3(4)),
-  sequence(N.Ds4(4), N.As3(4)),
-  sequence(N.G4(4), N.Ds4(4)),
-);
+const chords = layer(sequence(N.C4(4), N.Gs3(4)), sequence(N.Ds4(4), N.As3(4)), sequence(N.G4(4), N.Ds4(4)));
 
 // --- Automation ---
 
-const filterSweep = automate("filter sweep", "bass.bassLp.frequency", formula(
-  (t) => t * t,
-  { duration: 8, resolution: 32 },
-));
+const filterSweep = automate(
+	"filter sweep",
+	"bass.bassLp.frequency",
+	formula((t) => t * t, { duration: 8, resolution: 32 }),
+);
 
 // --- Composition ---
 
-const drums = layer(
-  kickPat.route("kick"),
-  snarePat.route("snare"),
-);
+const drums = layer(kickPat.route("kick"), snarePat.route("snare"));
 
-const song = metadata(
-  layer(
-    repeat(drums, 4),
-    repeat(bassline, 2).route("bass"),
-    repeat(chords, 2).route("pad"),
-    repeat(filterSweep, 2),
-  ),
-  { tempo: 128 },
-);
+const song = metadata(layer(repeat(drums, 4), repeat(bassline, 2).route("bass"), repeat(chords, 2).route("pad"), repeat(filterSweep, 2)), { tempo: 128 });
 
 // --- Routing ---
 
-const source = patternSource(song);
-source.port("kick").to(kick).to(speakers());
-source.port("snare").to(snare).to(speakers());
-source.port("bass").to(bass).to(speakers());
-source.port("pad").to(pad).to(speakers());
-
-export default source;
+export default router(song, {
+	kick,
+	snare,
+	bass,
+	pad,
+});
 ```
 
 Patterns are immutable trees. Notes carry `Pitch` objects and beat-based durations. Units form a directed audio graph connected with `.to()`. Automation targets unit parameters by ID path. Everything composes — patterns into larger patterns, units into larger units.
@@ -100,7 +65,7 @@ import { N, sequence, layer, repeat, transpose } from "resequence";
 import { osc, chain, lowpass, gain, reverb } from "resequence/web-au";
 ```
 
-On top of the sub-packages, `resequence` provides the orchestration layer: `PatternSource` (routing), `Playback` (real-time), `render()` (offline to WAV), automation constructs, and a CLI.
+On top of the sub-packages, `resequence` provides the orchestration layer: `Router` (routing, rendering, playback), `Playback` (real-time transport), automation constructs, and a CLI.
 
 ## Patterns
 
@@ -116,14 +81,13 @@ Patterns are a hierarchical composition system. You build trees of musical event
 
 ### Routing
 
-Patterns connect to units via `.route(portName)`. This binds each note in the pattern to a named output port. Port names accumulate through the tree — children inherit parent ports. On the source side, `source.port(portName)` creates the audio port and `.to(unit)` connects it to the audio graph.
+Patterns connect to units via `.route(portName)`. This binds each note in the pattern to a named output port. Port names accumulate through the tree — children inherit parent ports. On the router side, the port-to-unit map connects port names to their audio units.
 
 ```typescript
 const melody = sequence(N.C4(1), N.E4(1), N.G4(2)).route("lead");
 const synth = chain(osc({ type: "sawtooth", id: "lead" }), gain({ level: -6 }));
 
-const source = patternSource(melody);
-source.port("lead").to(synth).to(speakers());
+export default router(melody, { lead: synth });
 ```
 
 Notes without a route are orphaned and produce no sound.
@@ -172,11 +136,7 @@ Units abstract over the Web Audio API. Each unit declares entry and exit audio n
 ```typescript
 import { osc, chain, mix, reverb, gain } from "resequence/web-au";
 
-chain(
-  osc({ type: "sawtooth" }),
-  mix(reverb({ decay: 2.0 }), 0.3),
-  gain({ level: -3 }),
-);
+chain(osc({ type: "sawtooth" }), mix(reverb({ decay: 2.0 }), 0.3), gain({ level: -3 }));
 ```
 
 ### IDs and Parameter Paths
@@ -186,11 +146,7 @@ Assigning an `id` to a unit creates a namespace for its parameters. Automation a
 ```typescript
 import { chain, osc, lowpass, gain } from "resequence/web-au";
 
-const synth = chain(
-  osc({ type: "sawtooth", id: "osc" }),
-  lowpass({ frequency: 2000, id: "lp" }),
-  gain({ level: -6, id: "vol" }),
-);
+const synth = chain(osc({ type: "sawtooth", id: "osc" }), lowpass({ frequency: 2000, id: "lp" }), gain({ level: -6, id: "vol" }));
 
 // Parameter paths:
 // "osc.lp.frequency"   — filter cutoff
@@ -238,10 +194,11 @@ Keyframe values are normalized 0–1. Range scaling happens at the driver connec
 ```typescript
 import { automate, formula } from "resequence";
 
-automate("fade in", "synth.vol.level", formula(
-  (t) => t,
-  { duration: 4, resolution: 16 },
-));
+automate(
+	"fade in",
+	"synth.vol.level",
+	formula((t) => t, { duration: 4, resolution: 16 }),
+);
 ```
 
 ### LFO Source
@@ -251,9 +208,15 @@ Pass an `Lfo` object (via `resolveLfo`) as the source for continuous oscillation
 ```typescript
 import { automate, resolveLfo } from "resequence";
 
-automate("wobble", "bass.lp.frequency", resolveLfo({
-  shape: "sine", value: 0.5, frequency: 4,
-}));
+automate(
+	"wobble",
+	"bass.lp.frequency",
+	resolveLfo({
+		shape: "sine",
+		value: 0.5,
+		frequency: 4,
+	}),
+);
 ```
 
 ### LFO Unit
@@ -263,11 +226,7 @@ The `lfo` unit provides real-time parameter modulation in the audio graph, indep
 ```typescript
 import { chain, osc, lowpass, lfo } from "resequence/web-au";
 
-chain(
-  osc({ type: "sawtooth", id: "synth" }),
-  lowpass({ frequency: 1000, id: "filt" }),
-  lfo({ path: "synth.filt.frequency", shape: "sine", rate: 2, depth: 0.5 }),
-);
+chain(osc({ type: "sawtooth", id: "synth" }), lowpass({ frequency: 1000, id: "filt" }), lfo({ path: "synth.filt.frequency", shape: "sine", rate: 2, depth: 0.5 }));
 ```
 
 ## Audio Patterns
@@ -292,10 +251,10 @@ The `N` namespace provides typed pitch access for 12-TET. Sharps use `s`, flats 
 ```typescript
 import { N } from "resequence";
 
-N.C4(1)         // quarter note middle C
-N.Cs4(0.5)      // eighth note C#4
-N.Db4(2, 80)    // half note Db4 at velocity 80
-N.Fs3(1)        // quarter note F#3
+N.C4(1); // quarter note middle C
+N.Cs4(0.5); // eighth note C#4
+N.Db4(2, 80); // half note Db4 at velocity 80
+N.Fs3(1); // quarter note F#3
 ```
 
 ### Chords and Scales
@@ -305,8 +264,8 @@ N.Fs3(1)        // quarter note F#3
 ```typescript
 import { CD, CS } from "resequence";
 
-CD("Cm7", 2);      // Cm7 chord, half note each
-CS("C4 minor");     // scale accessor
+CD("Cm7", 2); // Cm7 chord, half note each
+CS("C4 minor"); // scale accessor
 ```
 
 ### Custom Tunings
@@ -317,12 +276,12 @@ CS("C4 minor");     // scale accessor
 import { createTuning } from "resequence";
 
 const quarterTone = createTuning({
-  classes: ["C", "C+", "Cs", "Cs+", "D", /* ... 24 classes */],
-  reference: { class: "A", octave: 4, hz: 440 },
+	classes: ["C", "C+", "Cs", "Cs+", "D" /* ... 24 classes */],
+	reference: { class: "A", octave: 4, hz: 440 },
 });
 
-quarterTone.C4(1);       // quarter-tone C4
-quarterTone["C+4"](1);   // quarter-tone between C and C#
+quarterTone.C4(1); // quarter-tone C4
+quarterTone["C+4"](1); // quarter-tone between C and C#
 ```
 
 Built-in tunings: `Chromatic` (12-TET), `Midi`, `A432`, `QuarterTone`, `Just`, `Pythagorean`, `Meantone`, `Werckmeister`, `Pelog`, `Slendro`, `BohlenPierce`, `Tet19`, `Tet31`, `Tet53`.
@@ -336,14 +295,14 @@ Durations are numbers representing beats. A quarter note is `1`, an eighth note 
 ```typescript
 import { resolveDuration, bars } from "resequence";
 
-resolveDuration("4n")   // 1     (quarter note)
-resolveDuration("8n")   // 0.5   (eighth note)
-resolveDuration("16n")  // 0.25  (sixteenth note)
-resolveDuration("4n.")  // 1.5   (dotted quarter)
-resolveDuration("4t")   // 0.667 (quarter triplet)
+resolveDuration("4n"); // 1     (quarter note)
+resolveDuration("8n"); // 0.5   (eighth note)
+resolveDuration("16n"); // 0.25  (sixteenth note)
+resolveDuration("4n."); // 1.5   (dotted quarter)
+resolveDuration("4t"); // 0.667 (quarter triplet)
 
-bars(4)            // 16 (4 bars of 4/4)
-bars(2, [3, 4])    // 6  (2 bars of 3/4)
+bars(4); // 16 (4 bars of 4/4)
+bars(2, [3, 4]); // 6  (2 bars of 3/4)
 ```
 
 ## Metadata
@@ -353,10 +312,7 @@ Wrap any pattern with metadata for tempo, time signature, tuning, markers, cue p
 ```typescript
 import { metadata, tempo, timeSignature, marker, cue, region, tuning } from "resequence";
 
-const song = metadata(
-  myPattern,
-  { tempo: 140 },
-);
+const song = metadata(myPattern, { tempo: 140 });
 
 // Individual helpers
 tempo(120);
@@ -366,17 +322,18 @@ cue("drop", 32);
 region("verse", 0, 16);
 ```
 
-## PatternSource
+## Router
 
-`patternSource` wraps a pattern and provides the audio routing layer. It connects pattern port names to unit graphs:
+`router` connects a pattern to its audio units. It takes the pattern and a port-to-unit map, and provides methods for rendering and playback:
 
 ```typescript
-import { patternSource } from "resequence";
-import { osc, gain, chain, speakers } from "resequence/web-au";
+import { router } from "resequence";
+import { osc, gain, chain } from "resequence/web-au";
 
-const source = patternSource(song);
-source.port("lead").to(chain(osc({ type: "sawtooth" }), gain({ level: -6 }))).to(speakers());
-source.port("bass").to(bassUnit).to(speakers());
+export default router(song, {
+	lead: chain(osc({ type: "sawtooth" }), gain({ level: -6 })),
+	bass: bassUnit,
+});
 ```
 
 ## Rendering
@@ -394,27 +351,31 @@ npx resequence play ./song.ts
 npx resequence export-midi ./song.ts --out ./midi --ppq 480
 ```
 
-The entry file must export a `PatternSource` as its default export.
+The entry file must export a `Router` as its default export.
 
 ### Programmatic API
 
 ```typescript
-import { render, play, patternSource } from "resequence";
+import { router } from "resequence";
 
 // Offline render to WAV stems
-const result = await render(source, getSample, {
-  output: "./stems",
-  sampleRate: 44100,
-  bitDepth: "24",
-  master: true,
+const result = await myRouter.render(getSample, {
+	output: "./stems",
+	sampleRate: 44100,
+	bitDepth: "24",
+	master: true,
 });
 
 // Real-time playback
-const playback = play(source, audioContext);
+const playback = myRouter.play(audioContext);
 await playback.setup(getSample);
 await playback.play();
-playback.on("note", (note, beat) => { /* ... */ });
-playback.on("marker", (name, beat) => { /* ... */ });
+playback.on("note", (note, beat) => {
+	/* ... */
+});
+playback.on("marker", (name, beat) => {
+	/* ... */
+});
 playback.seek(16);
 playback.pause();
 playback.stop();
@@ -437,8 +398,8 @@ const midiFiles = renderMidi(pattern, { ppq: 480 });
 import { encodeWav } from "resequence";
 
 const wavBytes = encodeWav(audioBuffer, {
-  bitDepth: "24",
-  markers: [{ name: "chorus", beat: 16 }],
+	bitDepth: "24",
+	markers: [{ name: "chorus", beat: 16 }],
 });
 ```
 

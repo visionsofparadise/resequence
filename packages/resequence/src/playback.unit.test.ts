@@ -1,19 +1,11 @@
 import { sequence } from "@resequence/patterns";
 import { describe, expect, it } from "vitest";
-import { Playback, play } from "./playback";
-import { PatternSource } from "./sources/pattern";
+import { Playback } from "./playback";
+import { Router } from "./router";
 
-function createSource(): PatternSource {
-	return new PatternSource(sequence());
+function createSource(): Router {
+	return new Router(sequence(), {});
 }
-
-describe("play factory", () => {
-	it("returns a Playback instance", () => {
-		const source = createSource();
-		const playback = play(source, {} as AudioContext);
-		expect(playback).toBeInstanceOf(Playback);
-	});
-});
 
 describe("Playback", () => {
 	it("starts in stopped state", () => {

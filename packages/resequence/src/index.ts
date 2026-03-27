@@ -9,15 +9,9 @@ export { audio, AudioPattern, isAudioEvent, isPreloadAudioEvent } from "./constr
 export type { AudioClipOptions, AudioEvent, AudioPatternProperties, PreloadAudioEvent } from "./constructs/audio";
 export { automate, AutomationPattern, isAutomationEvent } from "./constructs/automate";
 export type { AutomationEvent, AutomationPatternProperties } from "./constructs/automate";
-export { dispatchAudioCue, dispatchAudioSetup } from "./dispatch/audio";
-export { dispatchAutomation } from "./dispatch/automation";
-export { seekAutomationFromEvents } from "./dispatch/seek";
-export { mapNoteEvent } from "./mapping";
-export { play, Playback } from "./playback";
+export { Playback } from "./playback";
 export type { PlaybackOptions, PlaybackState } from "./playback";
-export { render } from "./render";
-export type { RenderOptions, RenderResult, RenderStemResult } from "./render";
+export { Router, router } from "./router";
+export type { RenderOptions, RenderResult, RenderStemResult } from "./router";
 export { encodeWav } from "./rendering/encode-wav";
 export { loadSample } from "./rendering/load-sample";
-export { PatternSource, PortUnit, patternSource } from "./sources/pattern";
-export type { PortUnitProperties } from "./sources/pattern";

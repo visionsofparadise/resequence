@@ -2,12 +2,10 @@ import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { Command } from "commander";
-import { PatternSource } from "./sources/pattern";
-import { render } from "./render";
-import { play } from "./playback";
+import { Router } from "./router";
 import type { WavBitDepth } from "@resequence/web-au";
 
-async function loadSource(entrypoint: string): Promise<PatternSource> {
+async function loadRouter(entrypoint: string): Promise<Router> {
 	const fullPath = resolve(entrypoint);
 
 	if (!existsSync(fullPath)) {
@@ -21,11 +19,11 @@ async function loadSource(entrypoint: string): Promise<PatternSource> {
 		const mod = (await import(fullPath)) as Record<string, unknown>;
 		const defaultExport = mod.default;
 
-		if (PatternSource.is(defaultExport)) {
+		if (Router.is(defaultExport)) {
 			return defaultExport;
 		}
 
-		throw new Error("Default export must be a PatternSource instance");
+		throw new Error("default export is not a Router");
 	} finally {
 		await unregister();
 	}
@@ -64,7 +62,7 @@ program
 	.option("--sample-rate <hz>", "Audio sample rate", "44100")
 	.option("--bit-depth <depth>", "WAV bit depth: 16, 24, 32, 32f, 64", "24")
 	.action(async (entrypoint: string, options: Record<string, string | boolean | undefined>) => {
-		const source = await loadSource(entrypoint);
+		const router = await loadRouter(entrypoint);
 		const outDir = resolve(options.out as string);
 
 		mkdirSync(outDir, { recursive: true });
@@ -74,7 +72,7 @@ program
 		const include = typeof options.include === "string" ? options.include.split(",").map((name) => name.trim()) : undefined;
 		const exclude = typeof options.exclude === "string" ? options.exclude.split(",").map((name) => name.trim()) : undefined;
 
-		const result = await render(source, makeFetchBuffer(entrypoint), {
+		const result = await router.render(makeFetchBuffer(entrypoint), {
 			output: outDir,
 			sampleRate: Number(options.sampleRate ?? 44100),
 			bitDepth: (options.bitDepth ?? "24") as WavBitDepth,
@@ -108,12 +106,12 @@ program
 	.argument("[entrypoint]", "Path to ts/js file", "./index.ts")
 	.option("--start-beat <beat>", "Beat to start playback from", "0")
 	.action(async (entrypoint: string, options: Record<string, string>) => {
-		const source = await loadSource(entrypoint);
+		const router = await loadRouter(entrypoint);
 
 		const { default: nodeWebAudio } = (await import("node-web-audio-api")) as { default: { AudioContext: typeof AudioContext } };
 		const audioContext = new nodeWebAudio.AudioContext() as unknown as AudioContext;
 
-		const playback = play(source, audioContext);
+		const playback = router.play(audioContext);
 
 		await playback.setup(makeFetchBuffer(entrypoint));
 
@@ -147,14 +145,14 @@ program
 	.option("--out <dir>", "Output directory", ".")
 	.option("--ppq <number>", "Pulses per quarter note", "480")
 	.action(async (entrypoint: string, options: Record<string, string>) => {
-		const source = await loadSource(entrypoint);
+		const router = await loadRouter(entrypoint);
 		const outDir = resolve(options.out ?? ".");
 
 		mkdirSync(outDir, { recursive: true });
 
 		process.stdout.write(`Exporting MIDI from ${resolve(entrypoint)}...\n`);
 
-		const pattern = source.pattern;
+		const pattern = router.pattern;
 
 		const { renderMidi } = await import("@resequence/patterns");
 

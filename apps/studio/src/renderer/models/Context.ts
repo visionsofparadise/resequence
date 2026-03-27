@@ -1,7 +1,7 @@
 import type { QueryClient } from "@tanstack/react-query";
 import type { TempoMap } from "@resequence/patterns";
 import type { Unit } from "@resequence/web-au";
-import type { PatternSource, Playback } from "resequence";
+import type { Router, Playback } from "resequence";
 import type { Snapshot } from "valtio";
 import type { AppSettings } from "../../shared/models/AppSettings";
 import type { Logger } from "../../shared/models/Logger/Logger";
@@ -46,7 +46,7 @@ export interface BuildContext extends ProjectContext {
 	readonly overrides: Array<OverrideEntry>;
 	readonly playbackEngine: Playback;
 	readonly portColorMap: Map<string, string>;
-	readonly source: PatternSource;
+	readonly router: Router;
 	readonly tempoMap: TempoMap;
 	readonly unitDriverMap: DerivedDriverMap;
 }

@@ -1,19 +1,19 @@
 import type { Unit } from "@resequence/web-au";
 import { SpeakersUnit, analyser, linearGain, mapUnits } from "@resequence/web-au";
 import { useMemo } from "react";
-import type { PatternSource } from "resequence";
+import type { Router } from "resequence";
 
 export interface InjectResult {
 	readonly injectedNodes: WeakSet<object>;
 	readonly injectedUnits: Map<string, Unit>;
 }
 
-export function useMapGraph(source: PatternSource): InjectResult {
+export function useMapGraph(router: Router): InjectResult {
 	return useMemo(() => {
 		const injectedNodes = new WeakSet();
 		const injectedUnits = new Map<string, Unit>();
 
-		for (const [portKey, unit] of source.ports) {
+		for (const [portKey, unit] of router.ports) {
 			const portAnalyser = analyser({ fftSize: 256 });
 
 			injectedNodes.add(portAnalyser);
@@ -41,5 +41,5 @@ export function useMapGraph(source: PatternSource): InjectResult {
 		}
 
 		return { injectedNodes, injectedUnits };
-	}, [source]);
+	}, [router]);
 }

@@ -27,15 +27,15 @@ export const Build: React.FC<BuildProps> = ({ context }) => {
 
 	useBundleBuild(entrypoint, context);
 
-	const { source, overrides } = useResolveBuild(context);
-	const { injectedNodes, injectedUnits } = useMapGraph(source);
-	const { arrangement, tempoMap } = useBuildArrangement(source);
+	const { router, overrides } = useResolveBuild(context);
+	const { injectedNodes, injectedUnits } = useMapGraph(router);
+	const { arrangement, tempoMap } = useBuildArrangement(router);
 
-	const setup = useSetupPlayback(source, main);
+	const setup = useSetupPlayback(router, main);
 
 	const portColorMap = useMemo(
-		() => createPortColorMap([...source.ports.keys()]),
-		[source],
+		() => createPortColorMap([...router.ports.keys()]),
+		[router],
 	);
 
 	const buildContext = useMemo((): BuildContext | undefined => {
@@ -52,11 +52,11 @@ export const Build: React.FC<BuildProps> = ({ context }) => {
 			overrides,
 			playbackEngine,
 			portColorMap,
-			source,
+			router,
 			tempoMap,
 			unitDriverMap,
 		};
-	}, [context, arrangement, tempoMap, injectedNodes, injectedUnits, overrides, portColorMap, source, setup]);
+	}, [context, arrangement, tempoMap, injectedNodes, injectedUnits, overrides, portColorMap, router, setup]);
 
 	if (!buildContext)
 		return (
