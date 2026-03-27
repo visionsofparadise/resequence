@@ -248,9 +248,9 @@ const Showcase = ({ selectedFont, onSelectFont }: { selectedFont: string; onSele
           <div className="border-b border-r border-border p-6">
             <p className="type-label mb-4">METERS</p>
             <div className="flex gap-3 items-end">
-              <Meter level={0.3} animated />
-              <Meter level={0.6} animated />
-              <Meter level={0.9} animated />
+              <Meter level={0.3} />
+              <Meter level={0.6} />
+              <Meter level={0.9} />
             </div>
           </div>
 

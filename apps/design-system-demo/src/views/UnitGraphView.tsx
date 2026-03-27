@@ -387,8 +387,8 @@ const UnitGraphView = () => {
         <div className="absolute bottom-4 right-4 flex flex-col items-end gap-1 z-10">
           <span className="type-label text-dimmed tabular-nums">-3.2 dB</span>
           <div className="flex gap-1.5">
-            <Meter level={0.6} height={320} animated />
-            <Meter level={0.5} height={320} animated />
+            <Meter level={0.6} height={320} />
+            <Meter level={0.5} height={320} />
           </div>
         </div>
       </div>

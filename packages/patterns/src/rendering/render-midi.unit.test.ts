@@ -2,9 +2,12 @@ import { parseMidi } from "midi-file";
 import { describe, expect, it } from "vitest";
 import type { Event } from "../events";
 import { layer } from "../patterns/layer";
+import { marker } from "../patterns/metadata";
+import { timeSignature } from "../patterns/metadata";
 import type { PatternProperties } from "../patterns/pattern";
 import { Pattern } from "../patterns/pattern";
 import { sequence } from "../patterns/sequence";
+import { tempo } from "../patterns/tempo";
 import { BohlenPierce } from "../tunings/bohlen-pierce";
 import { N } from "../tunings/chromatic";
 import { renderMidi } from "./render-midi";
@@ -99,5 +102,34 @@ describe("renderMidi", () => {
 		// Should have pitch bend events for non-12-TET pitch
 		const pitchBends = parsed.tracks.flatMap((track) => track.filter((ev) => ev.type === "pitchBend"));
 		expect(pitchBends.length).toBeGreaterThanOrEqual(0); // May or may not need bend depending on mapping
+	});
+
+	it("includes tempo, time signature, and marker metadata in MIDI export", () => {
+		const notes = sequence(N.C4(1)).route("piano");
+		const withMeta = marker(timeSignature(tempo(notes, 140), [3, 4]), "intro");
+		const result = renderMidi(withMeta);
+
+		expect(result.size).toBe(1);
+		const bytes = result.get("piano")!;
+		const parsed = parseMidi(Array.from(bytes));
+
+		// Track 0 is the tempo/metadata track
+		const tempoTrack = parsed.tracks[0]!;
+
+		const tempoEvents = tempoTrack.filter((ev) => ev.type === "setTempo");
+		expect(tempoEvents.length).toBeGreaterThanOrEqual(1);
+		// 140 BPM = 60_000_000 / 140 ≈ 428571 microseconds per beat
+		const tempoEvent = tempoEvents.find((ev) => ev.type === "setTempo" && Math.abs(ev.microsecondsPerBeat - Math.round(60_000_000 / 140)) < 2);
+		expect(tempoEvent).toBeDefined();
+
+		const timeSigEvents = tempoTrack.filter((ev) => ev.type === "timeSignature");
+		expect(timeSigEvents.length).toBeGreaterThanOrEqual(1);
+		const timeSig = timeSigEvents.find((ev) => ev.type === "timeSignature" && ev.numerator === 3 && ev.denominator === Math.log2(4));
+		expect(timeSig).toBeDefined();
+
+		const markerEvents = tempoTrack.filter((ev) => ev.type === "marker");
+		expect(markerEvents.length).toBeGreaterThanOrEqual(1);
+		const introMarker = markerEvents.find((ev) => ev.type === "marker" && ev.text === "intro");
+		expect(introMarker).toBeDefined();
 	});
 });

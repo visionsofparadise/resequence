@@ -59,23 +59,24 @@ export class OscillatorUnit extends GeneratorUnit {
 	}
 
 	protected override _schedule(noteEvent: NoteEvent, context: UnitContext): void {
+		const ne = this.offsetNote(noteEvent, context);
 		const oscillator = context.audioContext.createOscillator();
 
 		oscillator.type = this.oscillatorType;
 
-		const frequency = noteToFrequency(noteEvent.note, noteEvent.bend);
+		const frequency = noteToFrequency(ne.note, ne.bend);
 
 		offsetParam(oscillator.frequency, this.id ? `${this.id}.frequency` : undefined, frequency, [20, 20000], context);
 		driveParam(oscillator.detune, this.id ? `${this.id}.detune` : undefined, this.detune, [-1200, 1200], context);
 
-		if (noteEvent.slides && noteEvent.slides.length > 0) {
-			scheduleSlideRamps(oscillator.detune, this.detune, noteEvent.slides, noteEvent.startMs / 1000, (cents) => this.detune + cents);
+		if (ne.slides && ne.slides.length > 0) {
+			scheduleSlideRamps(oscillator.detune, this.detune, ne.slides, ne.startMs / 1000, (cents) => this.detune + cents);
 		}
 
-		oscillator.start(noteEvent.startMs / 1000);
-		oscillator.stop(noteEvent.cleanupMs / 1000);
+		oscillator.start(ne.startMs / 1000);
+		oscillator.stop(ne.cleanupMs / 1000);
 
-		const cleanup = this.scheduleVoice([oscillator], noteEvent, context);
+		const cleanup = this.scheduleVoice([oscillator], ne, context);
 
 		oscillator.addEventListener("ended", cleanup);
 	}

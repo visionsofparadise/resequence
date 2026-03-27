@@ -1,6 +1,7 @@
 /* eslint-disable barrel-files/avoid-barrel-files */
+export { cn } from './cn'
+
 export { default as Barcode } from './components/Barcode'
-export { default as BeatRuler } from './components/BeatRuler'
 export { default as Button } from './components/Button'
 export { default as ButtonSelection } from './components/ButtonSelection'
 export { default as CloseButton } from './components/CloseButton'
@@ -14,7 +15,6 @@ export { default as PlayButton } from './components/PlayButton'
 export { default as VolumeControl } from './components/VolumeControl'
 
 export type { BarcodeProps } from './components/Barcode'
-export type { BeatRulerProps } from './components/BeatRuler'
 export type { ButtonProps } from './components/Button'
 export type { DotGridProps } from './components/DotGrid'
 export type { PauseButtonProps } from './components/PauseButton'

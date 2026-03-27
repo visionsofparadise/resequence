@@ -6,6 +6,10 @@
     ".": {
       "import": "./dist/index.js",
       "types": "./dist/index.d.ts"
+    },
+    "./web-au": {
+      "import": "./dist/web-au.js",
+      "types": "./dist/web-au.d.ts"
     }
   },
   "bin": {

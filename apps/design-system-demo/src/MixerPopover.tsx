@@ -20,7 +20,7 @@ const MixerPopover = ({ channels }: { channels: Array<Channel> }) => (
     {channels.map((ch) => (
       <div key={ch.name} className="flex flex-col items-center gap-2" style={{ width: 36 }}>
         <div className="flex items-center gap-1" style={{ height: 80 }}>
-          <Meter level={ch.level} height={80} animated />
+          <Meter level={ch.level} height={80} />
           <Fader value={ch.gain} label="" height={80} />
         </div>
         <div

@@ -1,11 +1,9 @@
-export interface ButtonProps {
-  children: React.ReactNode
-  onClick?: () => void
+import { cn } from '../cn'
+
+export interface ButtonProps extends React.ComponentPropsWithRef<'button'> {
   active?: boolean
   variant?: 'default' | 'ghost' | 'outline'
   size?: 'sm' | 'md'
-  className?: string
-  disabled?: boolean
 }
 
 const variantClasses = {
@@ -20,30 +18,28 @@ const sizeClasses = {
 } as const
 
 const Button = ({
-  children,
-  onClick,
   active = false,
   variant = 'default',
   size = 'md',
   className,
   disabled = false,
+  ref,
+  ...rest
 }: ButtonProps) => (
   <button
-    onClick={onClick}
+    ref={ref}
     disabled={disabled}
-    className={[
-      `transition-colors font-[inherit] ${disabled ? 'cursor-not-allowed' : 'cursor-pointer'}`,
+    className={cn(
+      'transition-colors font-[inherit]',
+      disabled ? 'cursor-not-allowed' : 'cursor-pointer',
       active ? 'bg-text-primary text-surface' : variantClasses[variant],
       sizeClasses[size],
-      disabled ? 'opacity-50' : '',
+      disabled && 'opacity-50',
       'focus-visible:ring-1 focus-visible:ring-text-secondary',
       className,
-    ]
-      .filter(Boolean)
-      .join(' ')}
-  >
-    {children}
-  </button>
+    )}
+    {...rest}
+  />
 )
 
 export default Button

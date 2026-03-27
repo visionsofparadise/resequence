@@ -14,6 +14,11 @@ class NoiseProcessor extends AudioWorkletProcessor {
 		this._b4 = 0;
 		this._b5 = 0;
 		this._b6 = 0;
+		this._stopped = false;
+
+		this.port.onmessage = (e) => {
+			if (e.data === "stop") this._stopped = true;
+		};
 	}
 
 	_generateSample() {
@@ -40,6 +45,8 @@ class NoiseProcessor extends AudioWorkletProcessor {
 	}
 
 	process(_inputs, outputs) {
+		if (this._stopped) return false;
+
 		const output = outputs[0];
 
 		for (let channel = 0; channel < output.length; channel++) {

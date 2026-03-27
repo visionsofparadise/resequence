@@ -1,4 +1,13 @@
 import { useState, useCallback, useRef } from 'react';
+import { cn } from '../cn';
+
+interface KnobProps extends Omit<React.ComponentPropsWithRef<'div'>, 'onChange'> {
+  value: number;
+  label: string;
+  size?: number;
+  onChange?: (v: number) => void;
+  overridden?: boolean;
+}
 
 const Knob = ({
   value,
@@ -7,14 +16,9 @@ const Knob = ({
   onChange,
   overridden = false,
   className,
-}: {
-  value: number;
-  label: string;
-  size?: number;
-  onChange?: (v: number) => void;
-  overridden?: boolean;
-  className?: string;
-}) => {
+  ref,
+  ...rest
+}: KnobProps) => {
   const svgRef = useRef<SVGSVGElement>(null);
   const [dragging, setDragging] = useState(false);
   const startY = useRef(0);
@@ -72,7 +76,7 @@ const Knob = ({
   }, []);
 
   return (
-    <div className={`flex flex-col items-center gap-1${className ? ` ${className}` : ''}`}>
+    <div ref={ref} className={cn('flex flex-col items-center gap-1', className)} {...rest}>
       <span className="type-label">{Math.round(value * 100)}</span>
       <svg
         ref={svgRef}

@@ -44,6 +44,7 @@ export class NoiseUnit extends GeneratorUnit {
 	}
 
 	protected override _schedule(noteEvent: NoteEvent, context: UnitContext): void {
+		const ne = this.offsetNote(noteEvent, context);
 		const noiseNode = new AudioWorkletNode(context.audioContext, "noise-processor", {
 			processorOptions: { color: this.color, seed: this.seed },
 		});
@@ -51,29 +52,23 @@ export class NoiseUnit extends GeneratorUnit {
 		const gate = context.audioContext.createGain();
 
 		gate.gain.setValueAtTime(0, 0);
-		gate.gain.setValueAtTime(1, noteEvent.startMs / 1000);
-		gate.gain.setValueAtTime(0, noteEvent.cleanupMs / 1000);
+		gate.gain.setValueAtTime(1, ne.startMs / 1000);
+		gate.gain.setValueAtTime(0, ne.cleanupMs / 1000);
 
 		noiseNode.connect(gate);
 
-		const cleanup = this.scheduleVoice([gate], noteEvent, context);
+		const cleanup = this.scheduleVoice([gate], ne, context);
 
-		const isOffline = context.audioContext instanceof OfflineAudioContext;
+		const cleanupDelay = ne.cleanupMs - context.audioContext.currentTime * 1000;
 
-		// TODO: AudioWorkletNodes don't fire "ended" events, so cleanup relies on setTimeout
-		// in real-time contexts. This has timing uncertainty from event loop delays. Investigate
-		// alternatives: tracking active nodes for bulk teardown, or a message-port based signal.
-		if (!isOffline) {
-			const cleanupDelay = noteEvent.cleanupMs - context.audioContext.currentTime * 1000;
-
-			setTimeout(
-				() => {
-					noiseNode.disconnect();
-					cleanup();
-				},
-				Math.max(0, cleanupDelay),
-			);
-		}
+		setTimeout(
+			() => {
+				noiseNode.port.postMessage("stop");
+				noiseNode.disconnect();
+				cleanup();
+			},
+			Math.max(0, cleanupDelay),
+		);
 	}
 }
 

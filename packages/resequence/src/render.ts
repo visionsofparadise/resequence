@@ -1,7 +1,7 @@
 import type { Event, NoteEvent as PatternNoteEvent, TempoMap } from "@resequence/patterns";
 import { beatsToSeconds, collectMetadata } from "@resequence/patterns";
 import type { MidiUnit, NoteEvent, UnitContext } from "@resequence/web-au";
-import { createUnitContext } from "@resequence/web-au";
+import { computeMaxLatency, createUnitContext } from "@resequence/web-au";
 import type { AudioEvent } from "./constructs/audio";
 import { isAudioEvent, isPreloadAudioEvent } from "./constructs/audio";
 import type { AutomationEvent } from "./constructs/automate";
@@ -116,7 +116,9 @@ async function renderPort(
 	const sampleRate = options.sampleRate ?? 44100;
 	const portNotes = noteEvents.filter((ev) => ev.port === portKey);
 
-	const length = Math.max(1, Math.ceil(totalDurationSeconds * sampleRate));
+	const latencyBudget = computeMaxLatency(unit);
+	const totalLength = totalDurationSeconds + latencyBudget / sampleRate;
+	const length = Math.max(1, Math.ceil(totalLength * sampleRate));
 	const offlineCtx = new OfflineAudioContext(2, length, sampleRate);
 
 	const unitContext = createUnitContext(
@@ -129,6 +131,7 @@ async function renderPort(
 			return Promise.reject(new Error(`Sample not found in cache: ${path}`));
 		},
 		(url: string) => offlineCtx.audioWorklet.addModule(url),
+		latencyBudget,
 	);
 
 	await unit.setup(unitContext);

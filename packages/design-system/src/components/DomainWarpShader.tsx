@@ -1,6 +1,8 @@
-import { useRef, useEffect, useState, useMemo } from 'react';
+import { useRef, useEffect, useMemo } from 'react';
+import { cn } from '../cn';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { Color, Vector2, Vector3, type Mesh } from 'three';
+import { useThemeColors } from './three-utils';
 
 const vertexShader = /* glsl */ `
   varying vec2 vUv;
@@ -110,38 +112,6 @@ const DEFAULT_WARP = 0.2;
 const DEFAULT_COLOR_MIX = 0.65;
 const DEFAULT_COLOR_AMP = 2.5;
 
-function useThemeShaderColors() {
-  const [colors, setColors] = useState({
-    surface: new Color('#1C1A17'),
-    accent1: new Color('#E05A47'),
-    accent2: new Color('#47A5A5'),
-  });
-
-  useEffect(() => {
-    const update = () => {
-      const style = getComputedStyle(document.documentElement);
-      const surface = style.getPropertyValue('--color-surface').trim() || '#1C1A17';
-      const a1 = style.getPropertyValue('--color-accent-primary').trim() || '#E05A47';
-      const a2 = style.getPropertyValue('--color-accent-secondary').trim() || '#47A5A5';
-
-      setColors({
-        surface: new Color(surface),
-        accent1: new Color(a1),
-        accent2: new Color(a2),
-      });
-    };
-
-    update();
-    const observer = new MutationObserver(update);
-
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
-
-    return () => observer.disconnect();
-  }, []);
-
-  return colors;
-}
-
 interface WarpPlaneProps {
   scale: number;
   speed: number;
@@ -153,7 +123,7 @@ interface WarpPlaneProps {
 
 function WarpPlane({ scale, speed, octaves, warp, colorMix, colorAmp }: WarpPlaneProps) {
   const meshRef = useRef<Mesh>(null);
-  const colors = useThemeShaderColors();
+  const themeColors = useThemeColors();
 
   const uniforms = useMemo(() => ({
     uTime: { value: 0 },
@@ -170,14 +140,14 @@ function WarpPlane({ scale, speed, octaves, warp, colorMix, colorAmp }: WarpPlan
   }), []);
 
   useEffect(() => {
-    const surfaceC = colors.surface;
-    const accent1C = colors.accent1;
-    const accent2C = colors.accent2;
+    const surface = new Color(themeColors.surface);
+    const accent1 = new Color(themeColors.accentPrimary);
+    const accent2 = new Color(themeColors.accentSecondary);
 
-    uniforms.uSurface.value.set(surfaceC.r, surfaceC.g, surfaceC.b);
-    uniforms.uAccent1.value.set(accent1C.r, accent1C.g, accent1C.b);
-    uniforms.uAccent2.value.set(accent2C.r, accent2C.g, accent2C.b);
-  }, [colors, uniforms]);
+    uniforms.uSurface.value.set(surface.r, surface.g, surface.b);
+    uniforms.uAccent1.value.set(accent1.r, accent1.g, accent1.b);
+    uniforms.uAccent2.value.set(accent2.r, accent2.g, accent2.b);
+  }, [themeColors, uniforms]);
 
   useEffect(() => {
     uniforms.uScale.value = scale;
@@ -215,17 +185,19 @@ export default function DomainWarpShader({
   colorMix = DEFAULT_COLOR_MIX,
   colorAmp = DEFAULT_COLOR_AMP,
   className,
-}: {
+  style,
+  ref,
+  ...rest
+}: React.ComponentPropsWithRef<'div'> & {
   scale?: number;
   speed?: number;
   octaves?: number;
   warp?: number;
   colorMix?: number;
   colorAmp?: number;
-  className?: string;
-} = {}) {
+}) {
   return (
-    <div style={{ width: '100%', height: '100%' }} className={className}>
+    <div ref={ref} style={{ width: '100%', height: '100%', ...style }} className={cn(className)} {...rest}>
       <Canvas
         orthographic
         camera={{ position: [0, 0, 1], zoom: 1, left: -1, right: 1, top: 1, bottom: -1, near: 0, far: 2 }}

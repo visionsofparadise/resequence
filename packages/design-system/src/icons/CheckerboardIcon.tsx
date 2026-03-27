@@ -1,17 +1,21 @@
+import { cn } from '../cn'
 import type { IconProps } from './PrimaryIcon'
 
-const CheckerboardIcon = ({ color, size = 32, className }: IconProps) => {
+const CheckerboardIcon = ({ color, size = 32, className, ref, style, ...rest }: IconProps) => {
   const cellSize = size / 4
 
   return (
     <div
-      className={`grid${className ? ` ${className}` : ''}`}
+      ref={ref}
+      className={cn('grid', className)}
       style={{
         width: size,
         height: size,
         gridTemplateColumns: `repeat(4, ${cellSize}px)`,
         gridTemplateRows: `repeat(4, ${cellSize}px)`,
+        ...style,
       }}
+      {...rest}
     >
       {Array.from({ length: 16 }, (_, ix) => (
         <div

@@ -3,7 +3,13 @@ import { useThree } from '@react-three/fiber'
 import { Color } from 'three'
 
 export function useThemeColors() {
-  const [colors, setColors] = useState({ primary: '#E8E3DB', muted: '#B5AFA5', surface: '#1C1A17' })
+  const [colors, setColors] = useState({
+    primary: '#E8E3DB',
+    muted: '#B5AFA5',
+    surface: '#1C1A17',
+    accentPrimary: '#E05A47',
+    accentSecondary: '#47A5A5',
+  })
 
   useEffect(() => {
     const update = () => {
@@ -13,6 +19,8 @@ export function useThemeColors() {
         primary: style.getPropertyValue('--color-text-primary').trim() || '#E8E3DB',
         muted: style.getPropertyValue('--color-text-secondary').trim() || '#B5AFA5',
         surface: style.getPropertyValue('--color-surface').trim() || '#1C1A17',
+        accentPrimary: style.getPropertyValue('--color-accent-primary').trim() || '#E05A47',
+        accentSecondary: style.getPropertyValue('--color-accent-secondary').trim() || '#47A5A5',
       })
     }
 

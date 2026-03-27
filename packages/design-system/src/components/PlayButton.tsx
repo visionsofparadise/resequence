@@ -2,12 +2,11 @@ import { useRef, useMemo } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { ConeGeometry, DoubleSide, MathUtils, type Group } from 'three'
 import { useThemeColors, SceneBackground } from './three-utils'
+import { cn } from '../cn'
 
-export interface PlayButtonProps {
+export interface PlayButtonProps extends React.ComponentPropsWithRef<'button'> {
   size?: number
   hovered?: boolean
-  onClick?: () => void
-  className?: string
 }
 
 const BASE_ROT_X = 0.4
@@ -63,18 +62,20 @@ function Pyramid({ hovered, colors }: { hovered: boolean; colors: { primary: str
 const PlayButton = ({
   size = 48,
   hovered = false,
-  onClick,
   className,
+  ref,
+  ...rest
 }: PlayButtonProps) => {
   const colors = useThemeColors()
 
   return (
     <button
+      ref={ref}
       type="button"
       aria-label="Play"
-      onClick={onClick}
       style={{ width: size, height: size, padding: 0, border: 'none', background: 'transparent', cursor: 'pointer' }}
-      className={`focus-visible:ring-1 focus-visible:ring-text-secondary focus-visible:outline-none${className ? ` ${className}` : ''}`}
+      className={cn('focus-visible:ring-1 focus-visible:ring-text-secondary focus-visible:outline-none', className)}
+      {...rest}
     >
       <Canvas
         camera={{ position: [0, 0, 3.5], fov: 40 }}

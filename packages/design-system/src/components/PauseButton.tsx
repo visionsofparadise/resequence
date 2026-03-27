@@ -2,12 +2,11 @@ import { useRef, useMemo } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { BoxGeometry, MathUtils, type Mesh } from 'three'
 import { useThemeColors, SceneBackground } from './three-utils'
+import { cn } from '../cn'
 
-export interface PauseButtonProps {
+export interface PauseButtonProps extends React.ComponentPropsWithRef<'button'> {
   size?: number
   hovered?: boolean
-  onClick?: () => void
-  className?: string
 }
 
 function PauseBar({ position, hovered, colors }: { position: [number, number, number]; hovered: boolean; colors: { primary: string; muted: string } }) {
@@ -50,18 +49,20 @@ function PauseBars({ hovered, colors }: { hovered: boolean; colors: { primary: s
 const PauseButton = ({
   size = 48,
   hovered = false,
-  onClick,
   className,
+  ref,
+  ...rest
 }: PauseButtonProps) => {
   const colors = useThemeColors()
 
   return (
     <button
+      ref={ref}
       type="button"
       aria-label="Pause"
-      onClick={onClick}
       style={{ width: size, height: size, padding: 0, border: 'none', background: 'transparent', cursor: 'pointer' }}
-      className={`focus-visible:ring-1 focus-visible:ring-text-secondary focus-visible:outline-none${className ? ` ${className}` : ''}`}
+      className={cn('focus-visible:ring-1 focus-visible:ring-text-secondary focus-visible:outline-none', className)}
+      {...rest}
     >
       <Canvas
         camera={{ position: [0, 0, 3.5], fov: 40 }}

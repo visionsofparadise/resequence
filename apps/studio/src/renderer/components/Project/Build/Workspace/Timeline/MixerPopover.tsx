@@ -17,7 +17,7 @@ export const MixerPopover: React.FC<MixerPopoverProps> = ({ channels }) => (
 		{channels.map((ch) => (
 			<div key={ch.name} className="flex flex-col items-center gap-2" style={{ width: 36 }}>
 				<div className="flex items-center gap-1" style={{ height: 80 }}>
-					<Meter level={0.4} height={80} animated />
+					<Meter level={0.4} height={80} />
 					<Fader value={0.75} label="" height={80} />
 				</div>
 				<div

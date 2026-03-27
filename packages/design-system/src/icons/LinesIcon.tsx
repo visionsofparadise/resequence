@@ -1,7 +1,8 @@
+import { cn } from '../cn'
 import type { IconProps } from './PrimaryIcon'
 
-const LinesIcon = ({ color, size = 32, className }: IconProps) => (
-  <div className={`flex flex-col justify-between${className ? ` ${className}` : ''}`} style={{ width: size, height: size }}>
+const LinesIcon = ({ color, size = 32, className, ref, style, ...rest }: IconProps) => (
+  <div ref={ref} className={cn('flex flex-col justify-between', className)} style={{ width: size, height: size, ...style }} {...rest}>
     {Array.from({ length: 8 }, (_, ix) => (
       <div
         key={ix}

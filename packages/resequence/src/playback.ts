@@ -1,7 +1,7 @@
 import type { Event, NoteEvent as PatternNoteEvent, TempoMap } from "@resequence/patterns";
 import { collectMetadata } from "@resequence/patterns";
 import type { DriverEntry, UnitContext } from "@resequence/web-au";
-import { createUnitContext } from "@resequence/web-au";
+import { computeMaxLatency, createUnitContext } from "@resequence/web-au";
 import type { AudioEvent } from "./constructs/audio";
 import { isAudioEvent, isPreloadAudioEvent } from "./constructs/audio";
 import type { AutomationEvent } from "./constructs/automate";
@@ -116,6 +116,14 @@ export class Playback {
 		this.markers = metadata.markers;
 		this.patternEndBeat = pattern.endBeat - pattern.startBeat;
 
+		let latencyBudget = 0;
+
+		for (const [, portUnit] of this.source.ports) {
+			const portLatency = computeMaxLatency(portUnit);
+
+			if (portLatency > latencyBudget) latencyBudget = portLatency;
+		}
+
 		const unitContext = createUnitContext(
 			this.audioContext,
 			async (path: string) => {
@@ -131,6 +139,7 @@ export class Playback {
 			async (url: string) => {
 				await this.audioContext.audioWorklet.addModule(url);
 			},
+			latencyBudget,
 		);
 
 		for (const [, portUnit] of this.source.ports) {

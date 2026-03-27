@@ -4,6 +4,7 @@ import { pitchToMidi } from "../pitch";
 import { evaluateSlideCents } from "../utils/slide";
 import type { MidiNote, MidiPitchBend } from "./encode-midi";
 import { encodeMidi } from "./encode-midi";
+import { collectMetadata } from "./tempo-map";
 
 const DEFAULT_PPQ = 480;
 
@@ -11,6 +12,7 @@ export function renderMidi(pattern: Pattern, options?: { ppq?: number }): Map<st
 	const ppq = options?.ppq ?? DEFAULT_PPQ;
 
 	const allEvents = pattern.schedule(0, -Infinity, Infinity);
+	const metadata = collectMetadata(allEvents);
 
 	const noteEvents = allEvents.filter((ev): ev is NoteEvent => ev.type === "note");
 
@@ -63,7 +65,7 @@ export function renderMidi(pattern: Pattern, options?: { ppq?: number }): Map<st
 	for (const [portKey, notes] of grouped) {
 		const singleTrack = new Map([[portKey, notes]]);
 
-		result.set(portKey, encodeMidi(singleTrack, { ppq }));
+		result.set(portKey, encodeMidi(singleTrack, { ppq, tempoChanges: metadata.tempoMap, markers: metadata.markers, timeSignatureChanges: metadata.timeSignatures }));
 	}
 
 	return result;

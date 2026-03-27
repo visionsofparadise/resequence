@@ -62,6 +62,14 @@ export abstract class GeneratorUnit extends MidiUnit {
 		this.mergeUnit = undefined;
 	}
 
+	protected offsetNote(noteEvent: NoteEvent, context: UnitContext): NoteEvent {
+		if (context.latencyBudget === 0) return noteEvent;
+
+		const offsetMs = (context.latencyBudget / context.audioContext.sampleRate) * 1000;
+
+		return { ...noteEvent, startMs: noteEvent.startMs + offsetMs, stopMs: noteEvent.stopMs + offsetMs, cleanupMs: noteEvent.cleanupMs + offsetMs };
+	}
+
 	protected scheduleVoice(exits: Array<AudioNode>, noteEvent: NoteEvent, context: UnitContext): () => void {
 		if (!this.mergeUnit) return () => {};
 

@@ -34,5 +34,9 @@
     "three": "^0.183.2",
     "tsup": "^8.0.0",
     "typescript": "*"
+  },
+  "dependencies": {
+    "clsx": "^2.1.1",
+    "tailwind-merge": "^3.5.0"
   }
 }

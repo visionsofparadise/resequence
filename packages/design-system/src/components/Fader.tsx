@@ -1,4 +1,13 @@
 import { useState, useCallback, useRef } from 'react';
+import { cn } from '../cn';
+
+interface FaderProps extends Omit<React.ComponentPropsWithRef<'div'>, 'onChange'> {
+  value: number;
+  label: string;
+  height?: number;
+  width?: number;
+  onChange?: (v: number) => void;
+}
 
 const Fader = ({
   value,
@@ -7,14 +16,9 @@ const Fader = ({
   width = 24,
   onChange,
   className,
-}: {
-  value: number;
-  label: string;
-  height?: number;
-  width?: number;
-  onChange?: (v: number) => void;
-  className?: string;
-}) => {
+  ref,
+  ...rest
+}: FaderProps) => {
   const trackRef = useRef<HTMLDivElement>(null);
   const [dragging, setDragging] = useState(false);
   const startY = useRef(0);
@@ -46,7 +50,7 @@ const Fader = ({
   }, []);
 
   return (
-    <div className={`flex flex-col items-center gap-2${className ? ` ${className}` : ''}`}>
+    <div ref={ref} className={cn('flex flex-col items-center gap-2', className)} {...rest}>
       <div
         ref={trackRef}
         className="relative flex justify-center"

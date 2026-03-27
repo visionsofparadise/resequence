@@ -1,15 +1,19 @@
+import { cn } from '../cn'
 import type { IconProps } from './PrimaryIcon'
 
-const DotGridIcon = ({ color, size = 32, className }: IconProps) => (
+const DotGridIcon = ({ color, size = 32, className, ref, style, ...rest }: IconProps) => (
   <div
-    className={`grid${className ? ` ${className}` : ''}`}
+    ref={ref}
+    className={cn('grid', className)}
     style={{
       width: size,
       height: size,
       gridTemplateColumns: 'repeat(5, 1fr)',
       gridTemplateRows: 'repeat(5, 1fr)',
       placeItems: 'center',
+      ...style,
     }}
+    {...rest}
   >
     {Array.from({ length: 25 }, (_, ix) => (
       <div

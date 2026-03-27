@@ -108,8 +108,9 @@ export class SamplerUnit extends GeneratorUnit {
 	}
 
 	protected override _schedule(noteEvent: NoteEvent, context: UnitContext): void {
-		const midiNote = noteEvent.note;
-		const result = this.selectSample(midiNote, noteEvent.velocity);
+		const ne = this.offsetNote(noteEvent, context);
+		const midiNote = ne.note;
+		const result = this.selectSample(midiNote, ne.velocity);
 
 		if (!result) return;
 
@@ -118,8 +119,8 @@ export class SamplerUnit extends GeneratorUnit {
 		source.buffer = result.buffer;
 		source.playbackRate.value = result.playbackRate;
 
-		if (noteEvent.slides && noteEvent.slides.length > 0) {
-			scheduleSlideRamps(source.playbackRate, result.playbackRate, noteEvent.slides, noteEvent.startMs / 1000, (cents) => result.playbackRate * 2 ** (cents / 1200));
+		if (ne.slides && ne.slides.length > 0) {
+			scheduleSlideRamps(source.playbackRate, result.playbackRate, ne.slides, ne.startMs / 1000, (cents) => result.playbackRate * 2 ** (cents / 1200));
 		}
 
 		if (result.loopStartMs !== undefined && result.loopEndMs !== undefined) {
@@ -141,10 +142,10 @@ export class SamplerUnit extends GeneratorUnit {
 			}
 		}
 
-		source.start(noteEvent.startMs / 1000);
-		source.stop(noteEvent.cleanupMs / 1000);
+		source.start(ne.startMs / 1000);
+		source.stop(ne.cleanupMs / 1000);
 
-		const cleanup = this.scheduleVoice([source], noteEvent, context);
+		const cleanup = this.scheduleVoice([source], ne, context);
 
 		source.addEventListener("ended", cleanup);
 	}
