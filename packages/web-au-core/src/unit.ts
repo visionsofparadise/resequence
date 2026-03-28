@@ -74,14 +74,6 @@ export abstract class Unit {
 		this.properties = { ...this.properties, modDeclarations: [...this.properties.modDeclarations, { paths, transform }] };
 	}
 
-	async play(context: UnitContext): Promise<void> {
-		await this._play(context);
-
-		for (const target of this.targets) {
-			await target.play(context);
-		}
-	}
-
 	async setup(context: UnitContext): Promise<void> {
 		if (this.isSetUp) return;
 		this.isSetUp = true;
@@ -129,10 +121,6 @@ export abstract class Unit {
 
 	protected _setup(_context: UnitContext): SetupResult | Promise<SetupResult> {
 		return {};
-	}
-
-	protected _play(_context: UnitContext): void | Promise<void> {
-		return;
 	}
 
 	protected _teardown(_context: UnitContext): void {

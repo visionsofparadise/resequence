@@ -53,7 +53,7 @@ export class ReadUnit extends Unit {
 		this.buffer = undefined;
 	}
 
-	protected override _play(context: UnitContext): void {
+	start(context: UnitContext): void {
 		if (this.sourceNode) {
 			const latencyOffset = context.latencyBudget > 0 ? context.latencyBudget / context.audioContext.sampleRate : 0;
 

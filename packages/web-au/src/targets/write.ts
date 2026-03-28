@@ -55,7 +55,7 @@ export class WriteUnit extends Unit {
 		this.offlineContext = undefined;
 	}
 
-	protected override async _play(context: UnitContext): Promise<void> {
+	async render(context: UnitContext): Promise<void> {
 		if (this.offlineContext) {
 			const audioBuffer = await this.offlineContext.startRendering();
 			const outputPath = resolve(context.basePath, this.path);

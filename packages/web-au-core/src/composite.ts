@@ -1,4 +1,3 @@
-import type { UnitContext } from "./context";
 import { Unit } from "./unit";
 
 export function flattenUnits(units: ReadonlyArray<Unit>): ReadonlyArray<Unit> {
@@ -12,9 +11,5 @@ export abstract class CompositeUnit extends Unit {
 
 	static override is(value: unknown): value is CompositeUnit {
 		return Unit.is(value) && value.type[1] === "composite";
-	}
-
-	protected override _play(context: UnitContext): void | Promise<void> {
-		return this.head.play(context);
 	}
 }

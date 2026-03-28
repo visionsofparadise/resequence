@@ -57,32 +57,32 @@ describe("ReadUnit", () => {
 		expect(unit.exitNodes).toHaveLength(1);
 	});
 
-	it("play() starts the buffer source", async () => {
+	it("start() starts the buffer source", async () => {
 		const { context, sourceNode } = mockContext();
 		const unit = read({ path: "input.wav" });
 
 		await unit.setup(context);
-		await unit.play(context);
+		await unit.start(context);
 
 		expect(sourceNode.start).toHaveBeenCalledWith(0);
 	});
 
-	it("play() starts with latency offset", async () => {
+	it("start() starts with latency offset", async () => {
 		const { context, sourceNode } = mockContext();
 		(context as { latencyBudget: number }).latencyBudget = 4410;
 		const unit = read({ path: "input.wav" });
 
 		await unit.setup(context);
-		await unit.play(context);
+		await unit.start(context);
 
 		expect(sourceNode.start).toHaveBeenCalledWith(0.1);
 	});
 
-	it("play() is a no-op before setup", async () => {
+	it("start() is a no-op before setup", async () => {
 		const { context } = mockContext();
 		const unit = read({ path: "input.wav" });
 		// Should not throw
-		await unit.play(context);
+		await unit.start(context);
 	});
 
 	it("exposes duration after setup", async () => {

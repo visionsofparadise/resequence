@@ -3,7 +3,9 @@ import nodeWebAudio from "node-web-audio-api";
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
-import { computeMaxDuration, computeMaxLatency, createUnitContext, MidiUnit, Unit } from "@resequence/web-au-core";
+import { collectUnits, computeMaxDuration, computeMaxLatency, createUnitContext, MidiUnit, Unit } from "@resequence/web-au-core";
+import { ReadUnit } from "./sources/read";
+import { WriteUnit } from "./targets/write";
 import { encodeWav, parseMidiFile, type WavBitDepth } from "@resequence/web-au-utils";
 
 const { OfflineAudioContext: NodeOfflineAudioContext } = nodeWebAudio;
@@ -162,7 +164,16 @@ program
 			const context = createUnitContext(offlineContext as unknown as BaseAudioContext, getSample, loadModule, latencyBudget, basePath);
 
 			await unit.setup(context);
-			await unit.play(context);
+
+			const graphUnits = collectUnits(unit);
+
+			for (const graphUnit of graphUnits) {
+				if (ReadUnit.is(graphUnit)) graphUnit.start(context);
+			}
+
+			for (const graphUnit of graphUnits) {
+				if (WriteUnit.is(graphUnit)) await graphUnit.render(context);
+			}
 
 			process.stdout.write("Done.\n");
 		} finally {

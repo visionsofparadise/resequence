@@ -87,26 +87,26 @@ describe("WriteUnit", () => {
 		expect(gainNode.connect).not.toHaveBeenCalled();
 	});
 
-	it("play() renders and writes file on offline context", async () => {
+	it("render() renders and writes file on offline context", async () => {
 		const { context } = mockContext(true);
 		const unit = write({ path: "out.wav" });
 
 		await unit.setup(context);
-		await unit.play(context);
+		await unit.render(context);
 
 		const { mkdirSync, writeFileSync } = await import("node:fs");
 		expect(mkdirSync).toHaveBeenCalled();
 		expect(writeFileSync).toHaveBeenCalled();
 	});
 
-	it("play() is a no-op on live context", async () => {
+	it("render() is a no-op on live context", async () => {
 		const { context } = mockContext(false);
 		const unit = write({ path: "out.wav" });
 
 		await unit.setup(context);
 
 		vi.clearAllMocks();
-		await unit.play(context);
+		await unit.render(context);
 
 		const { writeFileSync } = await import("node:fs");
 		expect(writeFileSync).not.toHaveBeenCalled();
