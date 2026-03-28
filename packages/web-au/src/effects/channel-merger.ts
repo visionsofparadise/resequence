@@ -5,7 +5,6 @@ import { type GainEffectUnit, linearGain } from "./gain";
 
 export interface ChannelMergerProperties extends UnitProperties {
 	readonly channelCount?: number;
-	readonly previousProperties?: ChannelMergerProperties;
 }
 
 export class ChannelMergerUnit extends Unit {
@@ -28,10 +27,6 @@ export class ChannelMergerUnit extends Unit {
 	}
 
 	get channelCount(): number { return this.properties.channelCount ?? 2; }
-
-	clone(overrides?: Partial<ChannelMergerProperties>): ChannelMergerUnit {
-		return new ChannelMergerUnit({ ...this.properties, ...overrides, previousProperties: this.properties });
-	}
 
 	protected override async _setup(context: UnitContext): Promise<SetupResult> {
 		const merger = context.audioContext.createChannelMerger(this.channelCount);

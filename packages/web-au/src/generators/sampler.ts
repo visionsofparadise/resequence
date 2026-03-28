@@ -28,7 +28,6 @@ interface NormalizedZone {
 
 export interface SamplerProperties extends GeneratorUnitProperties {
 	readonly config: SamplerConfig;
-	readonly previousProperties?: SamplerProperties;
 }
 
 export class SamplerUnit extends GeneratorUnit {
@@ -54,10 +53,6 @@ export class SamplerUnit extends GeneratorUnit {
 	}
 
 	get config(): SamplerConfig { return this.properties.config; }
-
-	clone(overrides?: Partial<SamplerProperties>): SamplerUnit {
-		return new SamplerUnit({ ...this.properties, ...overrides, previousProperties: this.properties });
-	}
 
 	protected override async _setup(context: UnitContext): Promise<SetupResult> {
 		const result = await super._setup(context);

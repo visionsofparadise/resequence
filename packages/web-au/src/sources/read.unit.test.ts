@@ -96,11 +96,4 @@ describe("ReadUnit", () => {
 		expect(unit.duration).toBe(2.5);
 	});
 
-	it("clones correctly", () => {
-		const unit = read({ path: "input.wav" });
-		const cloned = unit.clone();
-
-		expect(cloned).toBeInstanceOf(ReadUnit);
-		expect(cloned.path).toBe("input.wav");
-	});
 });

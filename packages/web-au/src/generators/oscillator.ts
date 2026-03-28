@@ -8,7 +8,6 @@ import { GeneratorUnit, type GeneratorUnitInput, type GeneratorUnitProperties } 
 export interface OscillatorProperties extends GeneratorUnitProperties {
 	readonly oscillatorType: WaveShape;
 	readonly detune?: number;
-	readonly previousProperties?: OscillatorProperties;
 }
 
 export class OscillatorUnit extends GeneratorUnit {
@@ -38,10 +37,6 @@ export class OscillatorUnit extends GeneratorUnit {
 	}
 	get detune(): number {
 		return this.properties.detune ?? 0;
-	}
-
-	clone(overrides?: Partial<OscillatorProperties>): OscillatorUnit {
-		return new OscillatorUnit({ ...this.properties, ...overrides, previousProperties: this.properties });
 	}
 
 	protected override async _setup(context: UnitContext): Promise<SetupResult> {

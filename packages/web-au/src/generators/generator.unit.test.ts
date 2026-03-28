@@ -8,10 +8,6 @@ class TestGenerator extends GeneratorUnit {
 
 	scheduledNotes: Array<NoteEvent> = [];
 
-	clone(): TestGenerator {
-		return new TestGenerator({ ...this.properties });
-	}
-
 	protected override _schedule(noteEvent: NoteEvent, context: UnitContext): void {
 		const ne = this.offsetNote(noteEvent, context);
 

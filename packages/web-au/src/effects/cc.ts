@@ -12,7 +12,6 @@ import { reverb } from "./reverb";
 
 export interface CCProperties extends MidiUnitProperties {
 	readonly noteEvent: NoteEvent;
-	readonly previousProperties?: CCProperties;
 }
 
 export class CCEffectUnit extends MidiUnit {
@@ -45,10 +44,6 @@ export class CCEffectUnit extends MidiUnit {
 			modDeclarations: properties.modDeclarations ?? [],
 			noteModDeclarations: properties.noteModDeclarations ?? [],
 		};
-	}
-
-	clone(overrides?: Partial<CCProperties>): CCEffectUnit {
-		return new CCEffectUnit({ ...this.properties, ...overrides, previousProperties: this.properties });
 	}
 
 	protected override _setup(_context: UnitContext): SetupResult {

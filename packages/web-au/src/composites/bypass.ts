@@ -28,10 +28,6 @@ export class BypassUnit extends MidiUnit {
 		this.inner = properties.inner;
 	}
 
-	clone(overrides?: Partial<BypassProperties>): BypassUnit {
-		return new BypassUnit({ ...this.properties, ...overrides });
-	}
-
 	protected override async _setup(context: UnitContext): Promise<SetupResult> {
 		const passthrough = linearGain({ level: 1 });
 

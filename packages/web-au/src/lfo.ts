@@ -9,7 +9,6 @@ export interface LfoProperties extends UnitProperties {
 	readonly shape: WaveShape;
 	readonly rate: number;
 	readonly depth: number;
-	readonly previousProperties?: LfoProperties;
 }
 
 export class LfoUnit extends Unit {
@@ -35,10 +34,6 @@ export class LfoUnit extends Unit {
 			targets: properties.targets ?? [],
 			modDeclarations: [{ paths: [properties.path] }],
 		};
-	}
-
-	clone(overrides?: Partial<LfoProperties>): LfoUnit {
-		return new LfoUnit({ ...this.properties, ...overrides, previousProperties: this.properties });
 	}
 
 	protected override async _setup(context: UnitContext): Promise<SetupResult> {

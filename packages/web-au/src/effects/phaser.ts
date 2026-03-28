@@ -8,7 +8,6 @@ export interface PhaserProperties extends UnitProperties {
 	readonly stages: number;
 	readonly rate: number;
 	readonly depth: number;
-	readonly previousProperties?: PhaserProperties;
 }
 
 export class PhaserEffectUnit extends Unit {
@@ -30,10 +29,6 @@ export class PhaserEffectUnit extends Unit {
 	get stages(): number { return this.properties.stages; }
 	get rate(): number { return this.properties.rate; }
 	get depth(): number { return this.properties.depth; }
-
-	clone(overrides?: Partial<PhaserProperties>): PhaserEffectUnit {
-		return new PhaserEffectUnit({ ...this.properties, ...overrides, previousProperties: this.properties });
-	}
 
 	protected override async _setup(context: UnitContext): Promise<SetupResult> {
 		const stageFilters: Array<FilterEffectUnit> = [];

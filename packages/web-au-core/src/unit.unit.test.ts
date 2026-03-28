@@ -1,24 +1,16 @@
 import { describe, expect, it } from "vitest";
 import { Unit } from "./unit";
-import type { SetupResult, UnitProperties } from "./unit";
+import type { SetupResult } from "./unit";
 import type { UnitContext } from "./context";
 
 class TestUnit extends Unit {
 	readonly type = ["unit", "test"] as const;
-
-	clone(overrides?: Partial<UnitProperties>): TestUnit {
-		return new TestUnit({ ...this.properties, ...overrides });
-	}
 }
 
 class SetupUnit extends Unit {
 	readonly type = ["unit", "setup-test"] as const;
 	setupCalled = false;
 	teardownCalled = false;
-
-	clone(overrides?: Partial<UnitProperties>): SetupUnit {
-		return new SetupUnit({ ...this.properties, ...overrides });
-	}
 
 	protected override _setup(_context: UnitContext): SetupResult {
 		this.setupCalled = true;
@@ -84,13 +76,6 @@ describe("Unit", () => {
 		expect(unit.teardownCalled).toBe(true);
 	});
 
-	it("clones with overrides", () => {
-		const original = new TestUnit({ id: "original" });
-		const cloned = original.clone({ id: "cloned" });
-		expect(cloned.id).toBe("cloned");
-		expect(original.id).toBe("original");
-	});
-
 	it("registers mod declarations", () => {
 		const unit = new TestUnit();
 		unit.mod(["path.a", "path.b"]);
@@ -98,30 +83,4 @@ describe("Unit", () => {
 		expect(unit.properties.modDeclarations[0]?.paths).toEqual(["path.a", "path.b"]);
 	});
 
-	it("to() does not mutate a clone's targets array", () => {
-		const original = new TestUnit();
-		const target = new TestUnit();
-		original.to(target);
-
-		const cloned = original.clone();
-		const newTarget = new TestUnit();
-		original.to(newTarget);
-
-		expect(original.targets).toHaveLength(2);
-		expect(cloned.targets).toHaveLength(1);
-		expect(cloned.targets).toContain(target);
-		expect(cloned.targets).not.toContain(newTarget);
-	});
-
-	it("mod() does not mutate a clone's modDeclarations array", () => {
-		const original = new TestUnit();
-		original.mod(["path.a"]);
-
-		const cloned = original.clone();
-		original.mod(["path.b"]);
-
-		expect(original.properties.modDeclarations).toHaveLength(2);
-		expect(cloned.properties.modDeclarations).toHaveLength(1);
-		expect(cloned.properties.modDeclarations[0]?.paths).toEqual(["path.a"]);
-	});
 });

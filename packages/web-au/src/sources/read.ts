@@ -4,7 +4,6 @@ import { Unit } from "@resequence/web-au-core";
 
 export interface ReadProperties extends UnitProperties {
 	readonly path: string;
-	readonly previousProperties?: ReadProperties;
 }
 
 export class ReadUnit extends Unit {
@@ -30,10 +29,6 @@ export class ReadUnit extends Unit {
 
 	get duration(): number {
 		return this.buffer?.duration ?? 0;
-	}
-
-	clone(overrides?: Partial<ReadProperties>): ReadUnit {
-		return new ReadUnit({ ...this.properties, ...overrides, previousProperties: this.properties });
 	}
 
 	protected override async _setup(context: UnitContext): Promise<SetupResult> {

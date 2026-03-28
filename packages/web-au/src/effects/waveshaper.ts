@@ -16,7 +16,6 @@ export type Oversample = "none" | "2x" | "4x";
 export interface WaveShaperProperties extends UnitProperties {
 	readonly curve: Float32Array<ArrayBuffer>;
 	readonly oversample?: Oversample;
-	readonly previousProperties?: WaveShaperProperties;
 }
 
 export class WaveShaperEffectUnit extends Unit {
@@ -36,10 +35,6 @@ export class WaveShaperEffectUnit extends Unit {
 
 	get curve(): Float32Array<ArrayBuffer> { return this.properties.curve; }
 	get oversample(): Oversample | undefined { return this.properties.oversample; }
-
-	clone(overrides?: Partial<WaveShaperProperties>): WaveShaperEffectUnit {
-		return new WaveShaperEffectUnit({ ...this.properties, ...overrides, previousProperties: this.properties });
-	}
 
 	protected override _setup(context: UnitContext): SetupResult {
 		const waveShaperNode = context.audioContext.createWaveShaper();

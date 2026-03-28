@@ -4,7 +4,6 @@ import { MidiUnit, type MidiUnitInput } from "@resequence/web-au-core";
 
 export interface NoteFilterProperties extends MidiUnitProperties {
 	readonly predicate: (noteEvent: NoteEvent) => boolean;
-	readonly previousProperties?: NoteFilterProperties;
 }
 
 export class NoteFilterMidiUnit extends MidiUnit {
@@ -27,10 +26,6 @@ export class NoteFilterMidiUnit extends MidiUnit {
 			modDeclarations: properties.modDeclarations ?? [],
 			noteModDeclarations: properties.noteModDeclarations ?? [],
 		};
-	}
-
-	clone(overrides?: Partial<NoteFilterProperties>): NoteFilterMidiUnit {
-		return new NoteFilterMidiUnit({ ...this.properties, ...overrides, previousProperties: this.properties });
 	}
 
 	override schedule(noteEvent: NoteEvent, context: UnitContext): void {

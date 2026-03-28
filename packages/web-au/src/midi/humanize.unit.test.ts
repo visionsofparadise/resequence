@@ -12,10 +12,6 @@ class CaptureMidiUnit extends MidiUnit {
 		super({ id: "capture" });
 	}
 
-	clone(): CaptureMidiUnit {
-		return new CaptureMidiUnit();
-	}
-
 	protected override _schedule(noteEvent: NoteEvent): void {
 		this.captured.push(noteEvent);
 	}

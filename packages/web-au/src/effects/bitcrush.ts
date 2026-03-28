@@ -3,7 +3,6 @@ import { Unit, driveParam } from "@resequence/web-au-core";
 
 export interface BitcrushProperties extends UnitProperties {
 	readonly bits: number;
-	readonly previousProperties?: BitcrushProperties;
 }
 
 export class BitcrushEffectUnit extends Unit {
@@ -22,10 +21,6 @@ export class BitcrushEffectUnit extends Unit {
 	}
 
 	get bits(): number { return this.properties.bits; }
-
-	clone(overrides?: Partial<BitcrushProperties>): BitcrushEffectUnit {
-		return new BitcrushEffectUnit({ ...this.properties, ...overrides, previousProperties: this.properties });
-	}
 
 	protected override async _setup(context: UnitContext): Promise<SetupResult> {
 		await context.loadModule(new URL("../processors/bitcrush-processor.js", import.meta.url).href);

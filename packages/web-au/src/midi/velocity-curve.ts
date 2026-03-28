@@ -4,7 +4,6 @@ import { MidiUnit, type MidiUnitInput } from "@resequence/web-au-core";
 
 export interface VelocityCurveProperties extends MidiUnitProperties {
 	readonly curve: (velocity: number) => number;
-	readonly previousProperties?: VelocityCurveProperties;
 }
 
 export class VelocityCurveMidiUnit extends MidiUnit {
@@ -27,10 +26,6 @@ export class VelocityCurveMidiUnit extends MidiUnit {
 			modDeclarations: properties.modDeclarations ?? [],
 			noteModDeclarations: properties.noteModDeclarations ?? [],
 		};
-	}
-
-	clone(overrides?: Partial<VelocityCurveProperties>): VelocityCurveMidiUnit {
-		return new VelocityCurveMidiUnit({ ...this.properties, ...overrides, previousProperties: this.properties });
 	}
 
 	override schedule(noteEvent: NoteEvent, context: UnitContext): void {

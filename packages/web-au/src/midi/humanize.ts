@@ -5,7 +5,6 @@ import { MidiUnit, type MidiUnitInput } from "@resequence/web-au-core";
 export interface HumanizeProperties extends MidiUnitProperties {
 	readonly timing?: number;
 	readonly velocity?: number;
-	readonly previousProperties?: HumanizeProperties;
 }
 
 export class HumanizeMidiUnit extends MidiUnit {
@@ -34,10 +33,6 @@ export class HumanizeMidiUnit extends MidiUnit {
 			modDeclarations: properties.modDeclarations ?? [],
 			noteModDeclarations: properties.noteModDeclarations ?? [],
 		};
-	}
-
-	clone(overrides?: Partial<HumanizeProperties>): HumanizeMidiUnit {
-		return new HumanizeMidiUnit({ ...this.properties, ...overrides, previousProperties: this.properties });
 	}
 
 	override schedule(noteEvent: NoteEvent, context: UnitContext): void {

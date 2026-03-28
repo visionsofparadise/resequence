@@ -5,7 +5,6 @@ import { type GainEffectUnit, linearGain } from "./gain";
 
 export interface ChannelSplitterProperties extends UnitProperties {
 	readonly channelCount?: number;
-	readonly previousProperties?: ChannelSplitterProperties;
 }
 
 export class ChannelSplitterUnit extends Unit {
@@ -28,10 +27,6 @@ export class ChannelSplitterUnit extends Unit {
 	}
 
 	get channelCount(): number { return this.properties.channelCount ?? 2; }
-
-	clone(overrides?: Partial<ChannelSplitterProperties>): ChannelSplitterUnit {
-		return new ChannelSplitterUnit({ ...this.properties, ...overrides, previousProperties: this.properties });
-	}
 
 	protected override async _setup(context: UnitContext): Promise<SetupResult> {
 		const splitter = context.audioContext.createChannelSplitter(this.channelCount);

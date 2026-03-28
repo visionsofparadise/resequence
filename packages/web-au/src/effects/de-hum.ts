@@ -7,7 +7,6 @@ export interface DeHumProperties extends UnitProperties {
 	readonly frequency: 50 | 60;
 	readonly harmonics: number;
 	readonly resonance: number;
-	readonly previousProperties?: DeHumProperties;
 }
 
 export class DeHumEffectUnit extends Unit {
@@ -29,10 +28,6 @@ export class DeHumEffectUnit extends Unit {
 	get frequency(): 50 | 60 { return this.properties.frequency; }
 	get harmonics(): number { return this.properties.harmonics; }
 	get resonance(): number { return this.properties.resonance; }
-
-	clone(overrides?: Partial<DeHumProperties>): DeHumEffectUnit {
-		return new DeHumEffectUnit({ ...this.properties, ...overrides, previousProperties: this.properties });
-	}
 
 	protected override _setup(_context: UnitContext): SetupResult {
 		const notchCount = this.harmonics + 1;

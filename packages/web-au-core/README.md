@@ -34,7 +34,7 @@ import { Unit, UnitProperties, SetupResult, UnitContext } from "@resequence/web-
 ```typescript
 import { Unit, UnitProperties, UnitInput, SetupResult, UnitContext, driveParam } from "@resequence/web-au-core";
 
-// Custom properties are readonly — units are immutable, modified via clone()
+// Custom properties for this unit
 interface BoostProperties extends UnitProperties {
 	readonly amount: number;
 }
@@ -49,11 +49,6 @@ class BoostUnit extends Unit {
 		super(properties);
 		// Default targets and modDeclarations to empty arrays — UnitInput makes these optional
 		this.properties = { ...properties, targets: properties.targets ?? [], modDeclarations: properties.modDeclarations ?? [] };
-	}
-
-	// Required — produces a new instance, preserving previousProperties for revert support
-	clone(overrides?: Partial<BoostProperties>): BoostUnit {
-		return new BoostUnit({ ...this.properties, ...overrides, previousProperties: this.properties });
 	}
 
 	protected override _setup(context: UnitContext): SetupResult {
@@ -120,10 +115,10 @@ proxyDriver("reverb", "roomSize", "reverb.comb0.feedback", context);
 ## Graph Utilities
 
 ```typescript
-import { walkUnits, collectUnits, mapUnits, descendUnit, computeMaxLatency, computeMaxDuration } from "@resequence/web-au-core";
+import { walkUnits, collectUnits, modifyUnits, descendUnit, computeMaxLatency, computeMaxDuration } from "@resequence/web-au-core";
 
 walkUnits(root, (unit, index) => { /* BFS traversal */ });
 const all = collectUnits(root);
-const transformed = mapUnits(root, (unit) => /* return new unit */);
+modifyUnits(root, (unit) => /* return replacement or undefined to keep */);
 const latency = computeMaxLatency(root);
 ```

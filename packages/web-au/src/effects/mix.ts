@@ -5,7 +5,6 @@ import { gain } from "./gain";
 export interface MixProperties extends UnitProperties {
 	readonly inner: Unit;
 	readonly amount: number;
-	readonly previousProperties?: MixProperties;
 }
 
 export class MixNode extends Unit {
@@ -25,10 +24,6 @@ export class MixNode extends Unit {
 
 	get inner(): Unit { return this.properties.inner; }
 	get amount(): number { return this.properties.amount; }
-
-	clone(overrides?: Partial<MixProperties>): MixNode {
-		return new MixNode({ ...this.properties, ...overrides, previousProperties: this.properties });
-	}
 
 	protected override _setup(_context: UnitContext): SetupResult {
 		const wetGainUnit = gain({

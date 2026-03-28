@@ -3,7 +3,6 @@ import { Unit, driveParam } from "@resequence/web-au-core";
 
 export interface DownsampleProperties extends UnitProperties {
 	readonly rate: number;
-	readonly previousProperties?: DownsampleProperties;
 }
 
 export class DownsampleEffectUnit extends Unit {
@@ -22,10 +21,6 @@ export class DownsampleEffectUnit extends Unit {
 	}
 
 	get rate(): number { return this.properties.rate; }
-
-	clone(overrides?: Partial<DownsampleProperties>): DownsampleEffectUnit {
-		return new DownsampleEffectUnit({ ...this.properties, ...overrides, previousProperties: this.properties });
-	}
 
 	protected override async _setup(context: UnitContext): Promise<SetupResult> {
 		await context.loadModule(new URL("../processors/downsample-processor.js", import.meta.url).href);

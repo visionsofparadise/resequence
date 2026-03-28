@@ -11,7 +11,6 @@ export interface DeEssProperties extends UnitProperties {
 	readonly ratio: number;
 	readonly attack?: number;
 	readonly release?: number;
-	readonly previousProperties?: DeEssProperties;
 }
 
 export class DeEssEffectUnit extends Unit {
@@ -35,10 +34,6 @@ export class DeEssEffectUnit extends Unit {
 	get ratio(): number { return this.properties.ratio; }
 	get attack(): number | undefined { return this.properties.attack; }
 	get release(): number | undefined { return this.properties.release; }
-
-	clone(overrides?: Partial<DeEssProperties>): DeEssEffectUnit {
-		return new DeEssEffectUnit({ ...this.properties, ...overrides, previousProperties: this.properties });
-	}
 
 	protected override _setup(_context: UnitContext): SetupResult {
 		const bandCompressed = chain(

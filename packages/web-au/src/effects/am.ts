@@ -3,7 +3,6 @@ import { Unit } from "@resequence/web-au-core";
 
 export interface AmProperties extends UnitProperties {
 	readonly carrier: Unit;
-	readonly previousProperties?: AmProperties;
 }
 
 export class AmEffectUnit extends Unit {
@@ -22,10 +21,6 @@ export class AmEffectUnit extends Unit {
 	}
 
 	get carrier(): Unit { return this.properties.carrier; }
-
-	clone(overrides?: Partial<AmProperties>): AmEffectUnit {
-		return new AmEffectUnit({ ...this.properties, ...overrides, previousProperties: this.properties });
-	}
 
 	protected override async _setup(context: UnitContext): Promise<SetupResult> {
 		const modulatorGain = context.audioContext.createGain();

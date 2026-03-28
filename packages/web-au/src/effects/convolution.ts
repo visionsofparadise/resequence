@@ -5,7 +5,6 @@ import { Unit } from "@resequence/web-au-core";
 export interface ConvolutionProperties extends UnitProperties {
 	readonly impulse: string;
 	readonly normalize?: boolean;
-	readonly previousProperties?: ConvolutionProperties;
 }
 
 export class ConvolutionEffectUnit extends Unit {
@@ -25,10 +24,6 @@ export class ConvolutionEffectUnit extends Unit {
 
 	get impulse(): string { return this.properties.impulse; }
 	get normalize(): boolean | undefined { return this.properties.normalize; }
-
-	clone(overrides?: Partial<ConvolutionProperties>): ConvolutionEffectUnit {
-		return new ConvolutionEffectUnit({ ...this.properties, ...overrides, previousProperties: this.properties });
-	}
 
 	protected override async _setup(context: UnitContext): Promise<SetupResult> {
 		const convolverNode = context.audioContext.createConvolver();

@@ -11,7 +11,6 @@ const ALLPASS_DELAYS = [556, 441].map((samples) => (samples / 44100) * 1000);
 export interface ReverbProperties extends UnitProperties {
 	readonly roomSize: number;
 	readonly damping: number;
-	readonly previousProperties?: ReverbProperties;
 }
 
 export class ReverbEffectUnit extends Unit {
@@ -37,10 +36,6 @@ export class ReverbEffectUnit extends Unit {
 
 	get roomSize(): number { return this.properties.roomSize; }
 	get damping(): number { return this.properties.damping; }
-
-	clone(overrides?: Partial<ReverbProperties>): ReverbEffectUnit {
-		return new ReverbEffectUnit({ ...this.properties, ...overrides, previousProperties: this.properties });
-	}
 
 	protected override async _setup(context: UnitContext): Promise<SetupResult> {
 		const inputUnit = linearGain({ level: 1 });

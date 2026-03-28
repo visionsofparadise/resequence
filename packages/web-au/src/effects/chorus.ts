@@ -9,7 +9,6 @@ export interface ChorusProperties extends UnitProperties {
 	readonly rate: number;
 	readonly depth: number;
 	readonly feedback?: number;
-	readonly previousProperties?: ChorusProperties;
 }
 
 export class ChorusEffectUnit extends Unit {
@@ -33,10 +32,6 @@ export class ChorusEffectUnit extends Unit {
 	get rate(): number { return this.properties.rate; }
 	get depth(): number { return this.properties.depth; }
 	get feedback(): number | undefined { return this.properties.feedback; }
-
-	clone(overrides?: Partial<ChorusProperties>): ChorusEffectUnit {
-		return new ChorusEffectUnit({ ...this.properties, ...overrides, previousProperties: this.properties });
-	}
 
 	protected override async _setup(context: UnitContext): Promise<SetupResult> {
 		const delayId = crypto.randomUUID();

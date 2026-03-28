@@ -4,7 +4,6 @@ import { MidiUnit, type MidiUnitInput } from "@resequence/web-au-core";
 
 export interface HarmonizeProperties extends MidiUnitProperties {
 	readonly intervals: ReadonlyArray<number>;
-	readonly previousProperties?: HarmonizeProperties;
 }
 
 export class HarmonizeMidiUnit extends MidiUnit {
@@ -27,10 +26,6 @@ export class HarmonizeMidiUnit extends MidiUnit {
 			modDeclarations: properties.modDeclarations ?? [],
 			noteModDeclarations: properties.noteModDeclarations ?? [],
 		};
-	}
-
-	clone(overrides?: Partial<HarmonizeProperties>): HarmonizeMidiUnit {
-		return new HarmonizeMidiUnit({ ...this.properties, ...overrides, previousProperties: this.properties });
 	}
 
 	override schedule(noteEvent: NoteEvent, context: UnitContext): void {

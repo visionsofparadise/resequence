@@ -3,7 +3,6 @@ import { Unit } from "@resequence/web-au-core";
 
 export interface RingModProperties extends UnitProperties {
 	readonly carrier: Unit;
-	readonly previousProperties?: RingModProperties;
 }
 
 export class RingModEffectUnit extends Unit {
@@ -20,10 +19,6 @@ export class RingModEffectUnit extends Unit {
 	}
 
 	get carrier(): Unit { return this.properties.carrier; }
-
-	clone(overrides?: Partial<RingModProperties>): RingModEffectUnit {
-		return new RingModEffectUnit({ ...this.properties, ...overrides, previousProperties: this.properties });
-	}
 
 	protected override async _setup(context: UnitContext): Promise<SetupResult> {
 		const modulatorGain = context.audioContext.createGain();

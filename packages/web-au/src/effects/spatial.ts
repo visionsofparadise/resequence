@@ -9,7 +9,6 @@ export interface SpatialProperties extends UnitProperties {
 	readonly refDistance?: number;
 	readonly maxDistance?: number;
 	readonly rolloffFactor?: number;
-	readonly previousProperties?: SpatialProperties;
 }
 
 export class SpatialEffectUnit extends Unit {
@@ -38,10 +37,6 @@ export class SpatialEffectUnit extends Unit {
 	get refDistance(): number | undefined { return this.properties.refDistance; }
 	get maxDistance(): number | undefined { return this.properties.maxDistance; }
 	get rolloffFactor(): number | undefined { return this.properties.rolloffFactor; }
-
-	clone(overrides?: Partial<SpatialProperties>): SpatialEffectUnit {
-		return new SpatialEffectUnit({ ...this.properties, ...overrides, previousProperties: this.properties });
-	}
 
 	protected override _setup(context: UnitContext): SetupResult {
 		const pannerNode = context.audioContext.createPanner();

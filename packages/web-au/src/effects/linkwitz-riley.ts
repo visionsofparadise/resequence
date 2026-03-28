@@ -6,7 +6,6 @@ import { type FilterEffectUnit, filter } from "./filter";
 export interface LinkwitzRileyProperties extends UnitProperties {
 	readonly frequency: number;
 	readonly filterType: "lowpass" | "highpass";
-	readonly previousProperties?: LinkwitzRileyProperties;
 }
 
 export class LinkwitzRileyUnit extends Unit {
@@ -26,10 +25,6 @@ export class LinkwitzRileyUnit extends Unit {
 
 	get frequency(): number { return this.properties.frequency; }
 	get filterType(): "lowpass" | "highpass" { return this.properties.filterType; }
-
-	clone(overrides?: Partial<LinkwitzRileyProperties>): LinkwitzRileyUnit {
-		return new LinkwitzRileyUnit({ ...this.properties, ...overrides, previousProperties: this.properties });
-	}
 
 	protected override _setup(): SetupResult {
 		const first = filter({ mode: this.filterType, frequency: this.frequency, resonance: 0.707 });

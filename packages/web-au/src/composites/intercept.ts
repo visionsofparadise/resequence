@@ -34,10 +34,6 @@ export class InterceptUnit extends MidiUnit {
 		this.options = properties.options;
 	}
 
-	clone(overrides?: Partial<InterceptProperties>): InterceptUnit {
-		return new InterceptUnit({ ...this.properties, ...overrides });
-	}
-
 	protected override _setup(context: UnitContext): SetupResult {
 		const { insert, override: overrides } = this.options;
 		const { inner } = this;
@@ -91,7 +87,7 @@ export class InterceptUnit extends MidiUnit {
 
 export function intercept(unit: Unit, options: InterceptOptions): InterceptUnit {
 	if (options.override && !unit.id) {
-		unit = unit.clone({ id: crypto.randomUUID() });
+		unit.properties.id = crypto.randomUUID();
 	}
 
 	const targets: Array<Unit> = [...unit.targets];

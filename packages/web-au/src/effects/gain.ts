@@ -4,7 +4,6 @@ import { Unit, driveParam } from "@resequence/web-au-core";
 
 export interface GainProperties extends UnitProperties {
 	readonly level: number;
-	readonly previousProperties?: GainProperties;
 }
 
 export class GainEffectUnit extends Unit {
@@ -25,10 +24,6 @@ export class GainEffectUnit extends Unit {
 
 	get level(): number {
 		return this.properties.level;
-	}
-
-	clone(overrides?: Partial<GainProperties>): GainEffectUnit {
-		return new GainEffectUnit({ ...this.properties, ...overrides, previousProperties: this.properties });
 	}
 
 	protected override _setup(context: UnitContext): SetupResult {

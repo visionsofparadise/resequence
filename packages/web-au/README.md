@@ -11,13 +11,11 @@ npm install @resequence/web-au
 Units are the building blocks of audio processing. Each unit declares audio entry and exit nodes and connects to other units via `.to()`. Generators produce sound from note events, effects process audio, and composites wire units into larger structures.
 
 ```typescript
-import {
-	osc, sampler, noise, chain, fan, mix,
-	lowpass, highpass, gain, reverb, delay,
-	compressor, pan, chorus, envelope, lfo,
-	speakers,
-} from "@resequence/web-au";
+import { osc, chain, mix, lowpass, gain, reverb, pan, chorus, envelope, speakers } from "@resequence/web-au";
+import { createUnitContext } from "@resequence/web-au/core";
+import type { NoteEvent } from "@resequence/web-au/core";
 
+// Build a unit graph
 const synth = chain(
 	osc({ type: "sawtooth", id: "synth" }),
 	envelope({ attack: 10, decay: 200, sustain: 0.6, release: 300 }),
@@ -28,6 +26,27 @@ const synth = chain(
 	pan({ position: 0.2 }),
 	speakers(),
 );
+
+// Create a context and set up the graph
+const context = createUnitContext(audioContext, getSample, loadModule);
+
+await synth.setup(context);
+
+// Schedule note events
+const noteEvent: NoteEvent = {
+	startMs: 0,
+	stopMs: 500,
+	cleanupMs: 1000,
+	note: 60,
+	velocity: 100,
+	bend: 0,
+	frequency: 261.63,
+};
+
+synth.schedule(noteEvent, context);
+
+// Tear down when done
+synth.teardown(context);
 ```
 
 ### Sub-packages
@@ -63,11 +82,14 @@ Sample playback with automatic pitch mapping. Single sample mode transposes via 
 sampler("samples/piano-C4.wav", { root: "C4", id: "piano" });
 
 // Multi-zone
-sampler([
-	{ sample: "samples/piano-C2.wav", root: "C2" },
-	{ sample: "samples/piano-C4.wav", root: "C4" },
-	{ sample: "samples/piano-C6.wav", root: "C6" },
-], { id: "piano" });
+sampler(
+	[
+		{ sample: "samples/piano-C2.wav", root: "C2" },
+		{ sample: "samples/piano-C4.wav", root: "C4" },
+		{ sample: "samples/piano-C6.wav", root: "C6" },
+	],
+	{ id: "piano" },
+);
 
 // WAV region extraction
 sampler("samples/drums.wav#kick", { id: "kick" });
@@ -106,9 +128,9 @@ Driven parameters: `frequency` [20–20000 Hz], `resonance` [0–30].
 ### Gain
 
 ```typescript
-gain({ level: -6, id: "vol" });     // decibels
-linearGain({ level: 0.5 });         // linear 0–2
-fader({ level: -3 });               // alias for gain
+gain({ level: -6, id: "vol" }); // decibels
+linearGain({ level: 0.5 }); // linear 0–2
+fader({ level: -3 }); // alias for gain
 ```
 
 Driven parameter: `level` [0–2].
@@ -188,8 +210,8 @@ downsample({ rate: 8000 });
 ### Ring Mod / AM
 
 ```typescript
-ringmod(osc({ type: "sine" }));   // multiplicative modulation
-am(osc({ type: "sine" }));        // amplitude modulation with DC offset
+ringmod(osc({ type: "sine" })); // multiplicative modulation
+am(osc({ type: "sine" })); // amplitude modulation with DC offset
 ```
 
 ### EQ
@@ -221,20 +243,20 @@ crossover({
 ### Stereo
 
 ```typescript
-pan({ position: -0.5 });                 // stereo panner
-stereoWidth(0.7);                         // mid/side width control
-midSide(0.5);                             // alias
-left(distortion({ curve: WaveShaperCurve.SoftClip }));  // process left channel only
-right(reverb({ roomSize: 0.3 }));         // process right channel only
-mid(compressor({ threshold: -12, ratio: 3 }));          // process mid signal
-side(chorus({ rate: 0.5, depth: 2 }));    // process side signal
-spatial({ x: 1, y: 0, z: -2 });          // 3D positioning
+pan({ position: -0.5 }); // stereo panner
+stereoWidth(0.7); // mid/side width control
+midSide(0.5); // alias
+left(distortion({ curve: WaveShaperCurve.SoftClip })); // process left channel only
+right(reverb({ roomSize: 0.3 })); // process right channel only
+mid(compressor({ threshold: -12, ratio: 3 })); // process mid signal
+side(chorus({ rate: 0.5, depth: 2 })); // process side signal
+spatial({ x: 1, y: 0, z: -2 }); // 3D positioning
 ```
 
 ### Utility
 
 ```typescript
-mix(reverb({ decay: 2 }), 0.3);          // wet/dry blend — 0=dry, 1=wet
+mix(reverb({ decay: 2 }), 0.3); // wet/dry blend — 0=dry, 1=wet
 ```
 
 ### De-processing
@@ -251,12 +273,7 @@ deHum({ frequency: 60, harmonics: 4 });
 Serial connection. Signal flows through each unit in order.
 
 ```typescript
-chain(
-	osc({ type: "sawtooth" }),
-	lowpass({ frequency: 1000 }),
-	gain({ level: -6 }),
-	speakers(),
-);
+chain(osc({ type: "sawtooth" }), lowpass({ frequency: 1000 }), gain({ level: -6 }), speakers());
 ```
 
 ### Fan
@@ -264,10 +281,7 @@ chain(
 Parallel branches. Input splits to all branches, outputs merge.
 
 ```typescript
-fan(
-	chain(lowpass({ frequency: 500 }), gain({ level: -3 })),
-	chain(highpass({ frequency: 2000 }), gain({ level: -6 })),
-);
+fan(chain(lowpass({ frequency: 500 }), gain({ level: -3 })), chain(highpass({ frequency: 2000 }), gain({ level: -6 })));
 ```
 
 ### Bypass
@@ -284,7 +298,7 @@ Wraps a unit to override parameters or insert units before it.
 
 ```typescript
 intercept(synth, {
-	override: { frequency: 0.5 },  // normalized 0–1
+	override: { frequency: 0.5 }, // normalized 0–1
 	insert: [gain({ level: -3 })],
 });
 ```
@@ -294,11 +308,7 @@ intercept(synth, {
 Assigning an `id` to a unit creates a namespace for its parameters. Automation and modulation target parameters via dot-separated paths.
 
 ```typescript
-const synth = chain(
-	osc({ type: "sawtooth", id: "osc" }),
-	lowpass({ frequency: 2000, id: "lp" }),
-	gain({ level: -6, id: "vol" }),
-);
+const synth = chain(osc({ type: "sawtooth", id: "osc" }), lowpass({ frequency: 2000, id: "lp" }), gain({ level: -6, id: "vol" }));
 
 // Parameter paths:
 // "osc.lp.frequency"   — filter cutoff
@@ -314,11 +324,7 @@ The generator's ID prefixes downstream effect IDs, giving each parameter a uniqu
 Continuous parameter modulation in the audio graph.
 
 ```typescript
-chain(
-	osc({ type: "sawtooth", id: "synth" }),
-	lowpass({ frequency: 1000, id: "filt" }),
-	lfo({ path: "synth.filt.frequency", shape: "sine", rate: 2, depth: 0.5 }),
-);
+chain(osc({ type: "sawtooth", id: "synth" }), lowpass({ frequency: 1000, id: "filt" }), lfo({ path: "synth.filt.frequency", shape: "sine", rate: 2, depth: 0.5 }));
 ```
 
 ### Macro
@@ -345,8 +351,8 @@ Units can declare note property → parameter mappings via `.noteMod()`:
 
 ```typescript
 const synth = osc({ type: "sawtooth", id: "lead" });
-synth.noteMod("velocity", ["lead.vol.level"]);    // velocity controls volume
-synth.noteMod("pitch", ["lead.filt.frequency"]);   // pitch tracks filter
+synth.noteMod("velocity", ["lead.vol.level"]); // velocity controls volume
+synth.noteMod("pitch", ["lead.filt.frequency"]); // pitch tracks filter
 ```
 
 Properties: `"velocity"` (0–1), `"pitch"` (note/127), `"gate"` (1 at start, 0 at stop).
@@ -357,11 +363,11 @@ Note transforms sit in the unit graph and modify note events before they reach g
 
 ```typescript
 chain(
-	harmonizeMidi([0, 4, 7]),                    // add major triad
-	humanizeMidi({ timing: 10, velocity: 15 }),  // subtle randomization
-	noteFilter((e) => e.velocity > 40),          // drop quiet notes
-	velocityCurve((v) => Math.pow(v / 127, 0.7) * 127),  // soften dynamics
-	portamento({ timeMs: 50 }),                  // pitch glide between notes
+	harmonizeMidi([0, 4, 7]), // add major triad
+	humanizeMidi({ timing: 10, velocity: 15 }), // subtle randomization
+	noteFilter((e) => e.velocity > 40), // drop quiet notes
+	velocityCurve((v) => Math.pow(v / 127, 0.7) * 127), // soften dynamics
+	portamento({ timeMs: 50 }), // pitch glide between notes
 	osc({ type: "sawtooth" }),
 );
 ```
@@ -381,18 +387,14 @@ chain(synth, speakers());
 File-based source and target for offline processing pipelines.
 
 ```typescript
-chain(
-	read({ path: "input.wav" }),
-	compressor({ threshold: -12, ratio: 3 }),
-	write({ path: "output.wav", bitDepth: "24" }),
-);
+chain(read({ path: "input.wav" }), compressor({ threshold: -12, ratio: 3 }), write({ path: "output.wav", bitDepth: "24" }));
 ```
 
 ## Custom Units
 
 ### Custom Effect
 
-Extend `Unit` (from `@resequence/web-au-core`), implement `_setup()` to create AudioNodes and return entry/exit points, and `clone()` for immutability. Use `driveParam()` to expose parameters for automation.
+Extend `Unit` (from `@resequence/web-au-core`), implement `_setup()` to create AudioNodes and return entry/exit points. Use `driveParam()` to expose parameters for automation.
 
 ```typescript
 import { Unit, UnitProperties, UnitInput, SetupResult, UnitContext, driveParam } from "@resequence/web-au/core";
@@ -413,10 +415,6 @@ class TremoloUnit extends Unit {
 			targets: properties.targets ?? [],
 			modDeclarations: properties.modDeclarations ?? [],
 		};
-	}
-
-	clone(overrides?: Partial<TremoloProperties>): TremoloUnit {
-		return new TremoloUnit({ ...this.properties, ...overrides, previousProperties: this.properties });
 	}
 
 	protected override _setup(context: UnitContext): SetupResult {
@@ -452,10 +450,6 @@ import { GeneratorUnit, GeneratorUnitProperties, GeneratorUnitInput, NoteEvent, 
 class PulseUnit extends GeneratorUnit {
 	readonly type = ["unit", "midi", "generator", "pulse"] as const;
 
-	clone(overrides?: Partial<GeneratorUnitProperties>): PulseUnit {
-		return new PulseUnit({ ...this.properties, ...overrides, previousProperties: this.properties });
-	}
-
 	protected override _schedule(noteEvent: NoteEvent, context: UnitContext): void {
 		const ne = this.offsetNote(noteEvent, context);
 		const osc = context.audioContext.createOscillator();
@@ -479,10 +473,6 @@ import { MidiUnit, MidiUnitProperties, NoteEvent, UnitContext } from "@resequenc
 
 class OctaveDoubler extends MidiUnit {
 	readonly type = ["unit", "midi", "octave-doubler"] as const;
-
-	clone(overrides?: Partial<MidiUnitProperties>): OctaveDoubler {
-		return new OctaveDoubler({ ...this.properties, ...overrides, previousProperties: this.properties });
-	}
 
 	protected override _schedule(noteEvent: NoteEvent, context: UnitContext): void {
 		super._schedule(noteEvent, context);

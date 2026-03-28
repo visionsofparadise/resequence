@@ -10,7 +10,7 @@ describe("walkUnits", () => {
 		root.to(a);
 		root.to(b);
 		const visited: string[] = [];
-		walkUnits(root, (unit, index) => visited.push(`${index}:${unit.type[1]}`));
+		walkUnits(root, (unit, _parent, index) => visited.push(`${index}:${unit.type[1]}`));
 		expect(visited).toEqual(["0:filter", "1:gain"]);
 	});
 
@@ -22,7 +22,7 @@ describe("walkUnits", () => {
 		root.to(wrapper);
 		const injected = new WeakSet<object>([wrapper]);
 		const visited: string[] = [];
-		walkUnits(root, (unit, index) => visited.push(`${index}:${unit.type[1]}`), new WeakSet(), injected);
+		walkUnits(root, (unit, _parent, index) => visited.push(`${index}:${unit.type[1]}`), new WeakSet(), injected);
 		expect(visited).toEqual(["0:filter"]);
 	});
 
@@ -36,7 +36,7 @@ describe("walkUnits", () => {
 		root.to(wrapper);
 		const injected = new WeakSet<object>([wrapper]);
 		const visited: [number, string][] = [];
-		walkUnits(root, (unit, index) => visited.push([index, unit.type[1] as string]), new WeakSet(), injected);
+		walkUnits(root, (unit, _parent, index) => visited.push([index, unit.type[1] as string]), new WeakSet(), injected);
 		expect(visited).toEqual([[0, "filter"], [1, "gain"]]);
 	});
 });

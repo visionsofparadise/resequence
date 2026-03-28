@@ -7,7 +7,6 @@ export interface CompressorProperties extends UnitProperties {
 	readonly ratio: number;
 	readonly attack?: number;
 	readonly release?: number;
-	readonly previousProperties?: CompressorProperties;
 }
 
 export class CompressorEffectUnit extends Unit {
@@ -30,10 +29,6 @@ export class CompressorEffectUnit extends Unit {
 	get ratio(): number { return this.properties.ratio; }
 	get attack(): number | undefined { return this.properties.attack; }
 	get release(): number | undefined { return this.properties.release; }
-
-	clone(overrides?: Partial<CompressorProperties>): CompressorEffectUnit {
-		return new CompressorEffectUnit({ ...this.properties, ...overrides, previousProperties: this.properties });
-	}
 
 	protected override _setup(context: UnitContext): SetupResult {
 		const compressorNode = context.audioContext.createDynamicsCompressor();

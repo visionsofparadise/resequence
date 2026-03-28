@@ -12,7 +12,6 @@ export interface EqBand {
 
 export interface EqProperties extends UnitProperties {
 	readonly bands: ReadonlyArray<EqBand>;
-	readonly previousProperties?: EqProperties;
 }
 
 export class EqEffectUnit extends Unit {
@@ -31,10 +30,6 @@ export class EqEffectUnit extends Unit {
 	}
 
 	get bands(): ReadonlyArray<EqBand> { return this.properties.bands; }
-
-	clone(overrides?: Partial<EqProperties>): EqEffectUnit {
-		return new EqEffectUnit({ ...this.properties, ...overrides, previousProperties: this.properties });
-	}
 
 	protected override _setup(_context: UnitContext): SetupResult {
 		const filters: Array<FilterEffectUnit> = [];

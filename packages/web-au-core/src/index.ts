@@ -8,5 +8,5 @@ export { createUnitContext } from "./context";
 export type { DriverEntry, UnitContext } from "./context";
 export type { NoteEvent, NoteSlide } from "./note-event";
 export { driveParam, getOrCreateDriver, offsetParam, proxyDriver, undriveParam } from "./driver";
-export { collectUnits, computeMaxDuration, computeMaxLatency, descendUnit, mapUnits, walkUnits } from "./graph";
+export { collectUnits, computeMaxDuration, computeMaxLatency, descendUnit, modifyUnits, walkUnits } from "./graph";
 export { buildCurve } from "./build-curve";

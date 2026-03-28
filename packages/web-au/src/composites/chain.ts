@@ -32,10 +32,6 @@ export class Chain extends CompositeUnit {
 		this.tail = last;
 	}
 
-	clone(overrides?: Partial<ChainProperties>): Chain {
-		return new Chain({ ...this.properties, ...overrides });
-	}
-
 	override to(unit: Unit): void {
 		this.tail.to(unit);
 	}

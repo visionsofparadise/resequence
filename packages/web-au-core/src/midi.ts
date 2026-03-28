@@ -39,7 +39,7 @@ export abstract class MidiUnit extends Unit {
 	}
 
 	noteMod(property: NoteProperty, paths: Array<string>, transform?: (value: number) => number): void {
-		this.properties = { ...this.properties, noteModDeclarations: [...this.properties.noteModDeclarations, { property, paths, transform }] };
+		this.properties.noteModDeclarations.push({ property, paths, transform });
 	}
 
 	schedule(noteEvent: NoteEvent, context: UnitContext): void {

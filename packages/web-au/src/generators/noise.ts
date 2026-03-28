@@ -5,7 +5,6 @@ import { GeneratorUnit, type GeneratorUnitInput, type GeneratorUnitProperties } 
 export interface NoiseProperties extends GeneratorUnitProperties {
 	readonly color?: "white" | "pink" | "brown";
 	readonly seed?: number;
-	readonly previousProperties?: NoiseProperties;
 }
 
 export class NoiseUnit extends GeneratorUnit {
@@ -31,10 +30,6 @@ export class NoiseUnit extends GeneratorUnit {
 
 	get color(): "white" | "pink" | "brown" { return this.properties.color ?? "white"; }
 	get seed(): number | undefined { return this.properties.seed; }
-
-	clone(overrides?: Partial<NoiseProperties>): NoiseUnit {
-		return new NoiseUnit({ ...this.properties, ...overrides, previousProperties: this.properties });
-	}
 
 	protected override async _setup(context: UnitContext): Promise<SetupResult> {
 		await context.loadModule(new URL("../processors/noise-processor.js", import.meta.url).href);

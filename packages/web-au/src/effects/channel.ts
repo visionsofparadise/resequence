@@ -7,7 +7,6 @@ import { linearGain } from "./gain";
 export interface ChannelProperties extends UnitProperties {
 	readonly channelIndex: number;
 	readonly inner: Unit;
-	readonly previousProperties?: ChannelProperties;
 }
 
 export class ChannelEffectUnit extends Unit {
@@ -26,10 +25,6 @@ export class ChannelEffectUnit extends Unit {
 
 	get channelIndex(): number { return this.properties.channelIndex; }
 	get inner(): Unit { return this.properties.inner; }
-
-	clone(overrides?: Partial<ChannelProperties>): ChannelEffectUnit {
-		return new ChannelEffectUnit({ ...this.properties, ...overrides, previousProperties: this.properties });
-	}
 
 	protected override async _setup(context: UnitContext): Promise<SetupResult> {
 		const split = channelSplitter(2);
@@ -66,7 +61,6 @@ export function right(inner: Unit): ChannelEffectUnit {
 
 export interface MidProperties extends UnitProperties {
 	readonly inner: Unit;
-	readonly previousProperties?: MidProperties;
 }
 
 export class MidEffectUnit extends Unit {
@@ -84,10 +78,6 @@ export class MidEffectUnit extends Unit {
 	}
 
 	get inner(): Unit { return this.properties.inner; }
-
-	clone(overrides?: Partial<MidProperties>): MidEffectUnit {
-		return new MidEffectUnit({ ...this.properties, ...overrides, previousProperties: this.properties });
-	}
 
 	protected override async _setup(context: UnitContext): Promise<SetupResult> {
 		const split = channelSplitter(2);
@@ -120,7 +110,6 @@ export function mid(inner: Unit): MidEffectUnit {
 
 export interface SideProperties extends UnitProperties {
 	readonly inner: Unit;
-	readonly previousProperties?: SideProperties;
 }
 
 export class SideEffectUnit extends Unit {
@@ -138,10 +127,6 @@ export class SideEffectUnit extends Unit {
 	}
 
 	get inner(): Unit { return this.properties.inner; }
-
-	clone(overrides?: Partial<SideProperties>): SideEffectUnit {
-		return new SideEffectUnit({ ...this.properties, ...overrides, previousProperties: this.properties });
-	}
 
 	protected override async _setup(context: UnitContext): Promise<SetupResult> {
 		const split = channelSplitter(2);

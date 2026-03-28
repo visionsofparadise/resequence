@@ -8,7 +8,6 @@ export interface FilterProperties extends UnitProperties {
 	readonly frequency: number;
 	readonly resonance?: number;
 	readonly gain?: number;
-	readonly previousProperties?: FilterProperties;
 }
 
 export class FilterEffectUnit extends Unit {
@@ -30,10 +29,6 @@ export class FilterEffectUnit extends Unit {
 	get frequency(): number { return this.properties.frequency; }
 	get resonance(): number | undefined { return this.properties.resonance; }
 	get gain(): number | undefined { return this.properties.gain; }
-
-	clone(overrides?: Partial<FilterProperties>): FilterEffectUnit {
-		return new FilterEffectUnit({ ...this.properties, ...overrides, previousProperties: this.properties });
-	}
 
 	protected override _setup(context: UnitContext): SetupResult {
 		const filterNode = context.audioContext.createBiquadFilter();

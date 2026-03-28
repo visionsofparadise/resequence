@@ -112,12 +112,4 @@ describe("WriteUnit", () => {
 		expect(writeFileSync).not.toHaveBeenCalled();
 	});
 
-	it("clones correctly", () => {
-		const unit = write({ path: "out.wav", bitDepth: "32" });
-		const cloned = unit.clone();
-
-		expect(cloned).toBeInstanceOf(WriteUnit);
-		expect(cloned.path).toBe("out.wav");
-		expect(cloned.bitDepth).toBe("32");
-	});
 });

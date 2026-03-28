@@ -3,7 +3,6 @@ import type { SetupResult, UnitContext, UnitInput, UnitProperties } from "@reseq
 import { Unit } from "@resequence/web-au-core";
 
 export interface SpeakersProperties extends UnitProperties {
-	readonly previousProperties?: SpeakersProperties;
 }
 
 export class SpeakersUnit extends Unit {
@@ -19,10 +18,6 @@ export class SpeakersUnit extends Unit {
 		super(properties);
 
 		this.properties = { ...properties, targets: properties?.targets ?? [], modDeclarations: properties?.modDeclarations ?? [] };
-	}
-
-	clone(overrides?: Partial<SpeakersProperties>): SpeakersUnit {
-		return new SpeakersUnit({ ...this.properties, ...overrides, previousProperties: this.properties });
 	}
 
 	protected override _setup(context: UnitContext): SetupResult {

@@ -4,7 +4,6 @@ import { Unit } from "@resequence/web-au-core";
 
 export interface AnalyserProperties extends UnitProperties {
 	readonly fftSize: number;
-	readonly previousProperties?: AnalyserProperties;
 }
 
 export class AnalyserUnit extends Unit {
@@ -25,10 +24,6 @@ export class AnalyserUnit extends Unit {
 
 	get fftSize(): number {
 		return this.properties.fftSize;
-	}
-
-	clone(overrides?: Partial<AnalyserProperties>): AnalyserUnit {
-		return new AnalyserUnit({ ...this.properties, ...overrides, previousProperties: this.properties });
 	}
 
 	protected override _setup(context: UnitContext): SetupResult {

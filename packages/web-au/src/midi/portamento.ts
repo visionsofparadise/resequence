@@ -10,7 +10,6 @@ interface LastPitch {
 
 export interface PortamentoProperties extends MidiUnitProperties {
 	readonly timeMs: number;
-	readonly previousProperties?: PortamentoProperties;
 }
 
 export class PortamentoUnit extends MidiUnit {
@@ -35,10 +34,6 @@ export class PortamentoUnit extends MidiUnit {
 			modDeclarations: properties.modDeclarations ?? [],
 			noteModDeclarations: properties.noteModDeclarations ?? [],
 		};
-	}
-
-	clone(overrides?: Partial<PortamentoProperties>): PortamentoUnit {
-		return new PortamentoUnit({ ...this.properties, ...overrides, previousProperties: this.properties });
 	}
 
 	override schedule(noteEvent: NoteEvent, context: UnitContext): void {

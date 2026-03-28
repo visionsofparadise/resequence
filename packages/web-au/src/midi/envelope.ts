@@ -11,7 +11,6 @@ export interface EnvelopeAdsr {
 
 export interface EnvelopeProperties extends MidiUnitProperties {
 	readonly adsr: EnvelopeAdsr;
-	readonly previousProperties?: EnvelopeProperties;
 }
 
 export class EnvelopeUnit extends MidiUnit {
@@ -37,10 +36,6 @@ export class EnvelopeUnit extends MidiUnit {
 			modDeclarations: properties.modDeclarations ?? [],
 			noteModDeclarations: properties.noteModDeclarations ?? [],
 		};
-	}
-
-	clone(overrides?: Partial<EnvelopeProperties>): EnvelopeUnit {
-		return new EnvelopeUnit({ ...this.properties, ...overrides, previousProperties: this.properties });
 	}
 
 	protected override async _setup(context: UnitContext): Promise<SetupResult> {

@@ -3,7 +3,6 @@ import { driveParam, Unit } from "@resequence/web-au-core";
 
 export interface MacroProperties extends UnitProperties {
 	readonly value: number;
-	readonly previousProperties?: MacroProperties;
 }
 
 export class MacroUnit extends Unit {
@@ -24,10 +23,6 @@ export class MacroUnit extends Unit {
 		super(properties);
 
 		this.properties = { ...properties, targets: properties.targets ?? [], modDeclarations: properties.modDeclarations ?? [] };
-	}
-
-	clone(overrides?: Partial<MacroProperties>): MacroUnit {
-		return new MacroUnit({ ...this.properties, ...overrides, previousProperties: this.properties });
 	}
 
 	protected override _setup(context: UnitContext): SetupResult {

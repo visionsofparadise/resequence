@@ -33,10 +33,6 @@ export class Fan extends CompositeUnit {
 		this.properties = { ...properties, targets: properties.targets ?? [], modDeclarations: properties.modDeclarations ?? [] };
 	}
 
-	clone(overrides?: Partial<FanProperties>): Fan {
-		return new Fan({ ...this.properties, ...overrides });
-	}
-
 	override to(unit: Unit): void {
 		for (const tail of this.tails) {
 			tail.to(unit);

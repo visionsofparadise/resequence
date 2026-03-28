@@ -37,11 +37,4 @@ describe("analyser", () => {
 		expect(g.targets).toContain(a);
 	});
 
-	it("clones with overrides and previousProperties", () => {
-		const a = analyser({ fftSize: 512, id: "meter" });
-		const cloned = a.clone({ fftSize: 1024 });
-		expect(cloned.fftSize).toBe(1024);
-		expect(cloned.id).toBe("meter");
-		expect(cloned.properties.previousProperties?.fftSize).toBe(512);
-	});
 });

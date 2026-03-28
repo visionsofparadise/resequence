@@ -34,7 +34,6 @@ function parseBands(options: CrossoverOptions): Array<ParsedBand> {
 
 export interface CrossoverProperties extends UnitProperties {
 	readonly options: CrossoverOptions;
-	readonly previousProperties?: CrossoverProperties;
 }
 
 export class CrossoverEffectUnit extends Unit {
@@ -55,10 +54,6 @@ export class CrossoverEffectUnit extends Unit {
 	}
 
 	get options(): CrossoverOptions { return this.properties.options; }
-
-	clone(overrides?: Partial<CrossoverProperties>): CrossoverEffectUnit {
-		return new CrossoverEffectUnit({ ...this.properties, ...overrides, previousProperties: this.properties });
-	}
 
 	protected override async _setup(context: UnitContext): Promise<SetupResult> {
 		const inputUnit = linearGain({ level: 1 });

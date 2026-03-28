@@ -3,7 +3,6 @@ import { Unit, driveParam } from "@resequence/web-au-core";
 
 export interface PanProperties extends UnitProperties {
 	readonly position: number;
-	readonly previousProperties?: PanProperties;
 }
 
 export class PanEffectUnit extends Unit {
@@ -22,10 +21,6 @@ export class PanEffectUnit extends Unit {
 	}
 
 	get position(): number { return this.properties.position; }
-
-	clone(overrides?: Partial<PanProperties>): PanEffectUnit {
-		return new PanEffectUnit({ ...this.properties, ...overrides, previousProperties: this.properties });
-	}
 
 	protected override _setup(context: UnitContext): SetupResult {
 		const panNode = context.audioContext.createStereoPanner();

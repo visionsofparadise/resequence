@@ -6,7 +6,6 @@ import { linearGain, type GainEffectUnit } from "./gain";
 export interface DelayProperties extends UnitProperties {
 	readonly time: number;
 	readonly feedback?: number;
-	readonly previousProperties?: DelayProperties;
 }
 
 export class DelayEffectUnit extends Unit {
@@ -27,10 +26,6 @@ export class DelayEffectUnit extends Unit {
 
 	get time(): number { return this.properties.time; }
 	get feedback(): number | undefined { return this.properties.feedback; }
-
-	clone(overrides?: Partial<DelayProperties>): DelayEffectUnit {
-		return new DelayEffectUnit({ ...this.properties, ...overrides, previousProperties: this.properties });
-	}
 
 	protected override _setup(context: UnitContext): SetupResult {
 		const timeSeconds = this.time / 1000;

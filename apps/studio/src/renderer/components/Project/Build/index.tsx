@@ -6,7 +6,7 @@ import { TransportBar } from "../../TransportBar";
 import { Workspace } from "./Workspace";
 import { useBuildArrangement } from "./hooks/useBuildArrangement";
 import { useBundleBuild } from "./hooks/useBundle";
-import { useMapGraph } from "./hooks/useMapGraph";
+import { useModifyGraph } from "./hooks/useModifyGraph";
 import { useResolveBuild } from "./hooks/useResolve";
 import { useSetupPlayback } from "./hooks/useSetup";
 
@@ -28,7 +28,7 @@ export const Build: React.FC<BuildProps> = ({ context }) => {
 	useBundleBuild(entrypoint, context);
 
 	const { router, overrides } = useResolveBuild(context);
-	const { injectedNodes, injectedUnits } = useMapGraph(router);
+	const { injectedNodes, injectedUnits } = useModifyGraph(router);
 	const { arrangement, tempoMap } = useBuildArrangement(router);
 
 	const setup = useSetupPlayback(router, main);

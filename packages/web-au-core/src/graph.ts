@@ -1,21 +1,22 @@
 import type { Unit } from "./unit";
 
-export function walkUnits(root: Unit, callback: (unit: Unit, index: number) => void): void {
+export function walkUnits(root: Unit, callback: (unit: Unit, parent: Unit | null, index: number) => void): void {
 	const visited = new Set<Unit>();
-	const queue: Array<Unit> = [root];
-	let index = 0;
+	const queue: Array<{ unit: Unit; parent: Unit | null; index: number }> = [{ unit: root, parent: null, index: -1 }];
 
 	while (queue.length > 0) {
-		const unit = queue.shift();
+		const entry = queue.shift();
 
-		if (!unit) continue;
-		if (visited.has(unit)) continue;
-		visited.add(unit);
+		if (!entry) continue;
+		if (visited.has(entry.unit)) continue;
+		visited.add(entry.unit);
 
-		callback(unit, index++);
+		callback(entry.unit, entry.parent, entry.index);
 
-		for (const target of unit.targets) {
-			if (!visited.has(target)) queue.push(target);
+		for (let ix = 0; ix < entry.unit.targets.length; ix++) {
+			const target = entry.unit.targets[ix];
+
+			if (target && !visited.has(target)) queue.push({ unit: target, parent: entry.unit, index: ix });
 		}
 	}
 }
@@ -28,30 +29,14 @@ export function collectUnits(root: Unit): Array<Unit> {
 	return result;
 }
 
-export function mapUnits(root: Unit, callback: (unit: Unit) => Unit): Unit {
-	const mapping = new Map<Unit, Unit>();
-
-	walkUnits(root, (unit) => {
+export function modifyUnits(root: Unit, callback: (unit: Unit) => Unit | undefined): void {
+	walkUnits(root, (unit, parent, index) => {
 		const replacement = callback(unit);
 
-		mapping.set(unit, replacement);
+		if (replacement !== undefined && parent !== null && index >= 0) {
+			parent.targets[index] = replacement;
+		}
 	});
-
-	for (const [original, replacement] of mapping) {
-		if (replacement !== original) {
-			replacement.targets.length = 0;
-		}
-
-		for (const target of original.targets) {
-			const mappedTarget = mapping.get(target) ?? target;
-
-			if (!replacement.targets.includes(mappedTarget)) {
-				replacement.to(mappedTarget);
-			}
-		}
-	}
-
-	return mapping.get(root) ?? root;
 }
 
 export function descendUnit(root: Unit, indexes: ReadonlyArray<number>): Unit {

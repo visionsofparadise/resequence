@@ -9,7 +9,6 @@ import { Unit } from "@resequence/web-au-core";
 export interface WriteProperties extends UnitProperties {
 	readonly path: string;
 	readonly bitDepth: WavBitDepth;
-	readonly previousProperties?: WriteProperties;
 }
 
 export class WriteUnit extends Unit {
@@ -34,10 +33,6 @@ export class WriteUnit extends Unit {
 
 	get bitDepth(): WavBitDepth {
 		return this.properties.bitDepth;
-	}
-
-	clone(overrides?: Partial<WriteProperties>): WriteUnit {
-		return new WriteUnit({ ...this.properties, ...overrides, previousProperties: this.properties });
 	}
 
 	protected override _setup(context: UnitContext): SetupResult {

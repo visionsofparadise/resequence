@@ -57,11 +57,4 @@ describe("SpeakersUnit", () => {
 		expect(gainNode.connect).not.toHaveBeenCalled();
 	});
 
-	it("clones correctly", () => {
-		const unit = speakers();
-		const cloned = unit.clone();
-
-		expect(cloned).toBeInstanceOf(SpeakersUnit);
-		expect(cloned).not.toBe(unit);
-	});
 });

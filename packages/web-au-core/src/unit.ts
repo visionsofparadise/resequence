@@ -10,11 +10,10 @@ export interface ModDeclaration {
 }
 
 export interface UnitProperties {
-	readonly id?: string;
+	id?: string;
 	readonly latency?: number;
 	readonly targets: Array<Unit>;
 	readonly modDeclarations: Array<ModDeclaration>;
-	readonly previousProperties?: UnitProperties;
 }
 
 export type UnitInput<P extends UnitProperties = UnitProperties> = OptionalProperties<P, "targets" | "modDeclarations">;
@@ -64,14 +63,12 @@ export abstract class Unit {
 		return this.properties.targets;
 	}
 
-	abstract clone(overrides?: Partial<UnitProperties>): Unit;
-
 	to(unit: Unit): void {
-		this.properties = { ...this.properties, targets: [...this.properties.targets, unit] };
+		this.targets.push(unit);
 	}
 
 	mod(paths: ReadonlyArray<string>, transform?: (value: number) => number): void {
-		this.properties = { ...this.properties, modDeclarations: [...this.properties.modDeclarations, { paths, transform }] };
+		this.properties.modDeclarations.push({ paths, transform });
 	}
 
 	async setup(context: UnitContext): Promise<void> {
