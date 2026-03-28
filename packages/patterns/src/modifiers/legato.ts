@@ -3,7 +3,7 @@ import type { ModifierProperties } from "../patterns/modifier";
 import { ModifierPattern } from "../patterns/modifier";
 import type { Pattern, PatternProperties } from "../patterns/pattern";
 import { toPattern } from "../patterns/sequence";
-import { mapNotes } from "../utils/map";
+import { modifyNotes } from "../utils/modify";
 import { walkNotes } from "../utils/walk";
 
 export interface LegatoProperties extends ModifierProperties {
@@ -21,7 +21,6 @@ export class LegatoPattern extends ModifierPattern<LegatoProperties> {
 		return new LegatoPattern({
 			...this.properties,
 			...overrides,
-			previousProperties: this.properties,
 		});
 	}
 }
@@ -51,7 +50,9 @@ export function legato(pattern: Pattern | Note, extendLast = true): LegatoPatter
 		}
 	}
 
-	const transformed = mapNotes(resolved, (note, { id, absoluteOffset }) => {
+	const cloned = resolved.clone({});
+
+	modifyNotes(cloned, (note, { id, absoluteOffset }) => {
 		const newAbsEnd = endBeatMap.get(id);
 
 		if (newAbsEnd !== undefined) {
@@ -62,10 +63,10 @@ export function legato(pattern: Pattern | Note, extendLast = true): LegatoPatter
 	});
 
 	return new LegatoPattern({
-		notes: transformed.notes,
-		children: transformed.children,
-		startBeat: transformed.startBeat,
-		endBeat: transformed.endBeat,
+		notes: cloned.notes,
+		children: cloned.children,
+		startBeat: cloned.startBeat,
+		endBeat: cloned.endBeat,
 		extendLast,
 		input: resolved,
 	});

@@ -14,7 +14,6 @@ export class LayerPattern extends MidiPattern {
 		return new LayerPattern({
 			...this.properties,
 			...overrides,
-			previousProperties: this.properties,
 		});
 	}
 }

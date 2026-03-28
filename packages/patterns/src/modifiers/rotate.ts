@@ -3,7 +3,7 @@ import type { ModifierProperties } from "../patterns/modifier";
 import { ModifierPattern } from "../patterns/modifier";
 import type { Pattern, PatternProperties } from "../patterns/pattern";
 import { toPattern } from "../patterns/sequence";
-import { mapNotes } from "../utils/map";
+import { modifyNotes } from "../utils/modify";
 import { walkNotes } from "../utils/walk";
 
 export interface RotateProperties extends ModifierProperties {
@@ -21,7 +21,6 @@ export class RotatePattern extends ModifierPattern<RotateProperties> {
 		return new RotatePattern({
 			...this.properties,
 			...overrides,
-			previousProperties: this.properties,
 		});
 	}
 }
@@ -95,7 +94,9 @@ export function rotate(pattern: Pattern | Note, steps: number): RotatePattern {
 		beat += rotatedGap;
 	}
 
-	const transformed = mapNotes(resolved, (note, { id, absoluteOffset }) => {
+	const cloned = resolved.clone({});
+
+	modifyNotes(cloned, (note, { id, absoluteOffset }) => {
 		const newAbsBeat = beatAssignment.get(id);
 
 		if (newAbsBeat !== undefined) {
@@ -112,10 +113,10 @@ export function rotate(pattern: Pattern | Note, steps: number): RotatePattern {
 	});
 
 	return new RotatePattern({
-		notes: transformed.notes,
-		children: transformed.children,
-		startBeat: transformed.startBeat,
-		endBeat: transformed.endBeat,
+		notes: cloned.notes,
+		children: cloned.children,
+		startBeat: cloned.startBeat,
+		endBeat: cloned.endBeat,
 		steps,
 		input: resolved,
 	});

@@ -49,7 +49,6 @@ export class TempoPattern extends Pattern<TempoProperties> {
 		return new TempoPattern({
 			...this.properties,
 			...overrides,
-			previousProperties: this.properties,
 		});
 	}
 }

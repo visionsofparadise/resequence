@@ -3,7 +3,7 @@ import type { ModifierProperties } from "../patterns/modifier";
 import { ModifierPattern } from "../patterns/modifier";
 import type { Pattern, PatternProperties } from "../patterns/pattern";
 import { toPattern } from "../patterns/sequence";
-import { flatMapNotes } from "../utils/map";
+import { flatModifyNotes } from "../utils/modify";
 
 export interface EchoProperties extends ModifierProperties {
 	readonly interval: number;
@@ -22,14 +22,15 @@ export class EchoPattern extends ModifierPattern<EchoProperties> {
 		return new EchoPattern({
 			...this.properties,
 			...overrides,
-			previousProperties: this.properties,
 		});
 	}
 }
 
 export function echo(pattern: Pattern | Note, interval: number, repeats: number, decay: number): EchoPattern {
 	const resolved = toPattern(pattern);
-	const transformed = flatMapNotes(resolved, (note) => {
+	const cloned = resolved.clone({});
+
+	flatModifyNotes(cloned, (note) => {
 		const result = [note];
 
 		for (let echoIndex = 1; echoIndex <= repeats; echoIndex++) {
@@ -47,10 +48,10 @@ export function echo(pattern: Pattern | Note, interval: number, repeats: number,
 	});
 
 	return new EchoPattern({
-		notes: transformed.notes,
-		children: transformed.children,
-		startBeat: transformed.startBeat,
-		endBeat: transformed.endBeat,
+		notes: cloned.notes,
+		children: cloned.children,
+		startBeat: cloned.startBeat,
+		endBeat: cloned.endBeat,
 		interval,
 		repeats,
 		decay,

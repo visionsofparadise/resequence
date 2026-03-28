@@ -4,7 +4,7 @@ import { ModifierPattern } from "../patterns/modifier";
 import type { Pattern, PatternProperties } from "../patterns/pattern";
 import { toPattern } from "../patterns/sequence";
 import { addSteps, NUM_OCTAVES } from "../pitch";
-import { flatMapNotes } from "../utils/map";
+import { flatModifyNotes } from "../utils/modify";
 
 export interface UnisonSpread {
 	readonly pitch?: number;
@@ -27,14 +27,15 @@ export class UnisonPattern extends ModifierPattern<UnisonProperties> {
 		return new UnisonPattern({
 			...this.properties,
 			...overrides,
-			previousProperties: this.properties,
 		});
 	}
 }
 
 export function unison(pattern: Pattern | Note, voices: number, spread: UnisonSpread = {}): UnisonPattern {
 	const resolved = toPattern(pattern);
-	const transformed = flatMapNotes(resolved, (note) => {
+	const cloned = resolved.clone({});
+
+	flatModifyNotes(cloned, (note) => {
 		const result = [];
 
 		for (let voiceIndex = 0; voiceIndex < voices; voiceIndex++) {
@@ -65,10 +66,10 @@ export function unison(pattern: Pattern | Note, voices: number, spread: UnisonSp
 	});
 
 	return new UnisonPattern({
-		notes: transformed.notes,
-		children: transformed.children,
-		startBeat: transformed.startBeat,
-		endBeat: transformed.endBeat,
+		notes: cloned.notes,
+		children: cloned.children,
+		startBeat: cloned.startBeat,
+		endBeat: cloned.endBeat,
 		voices,
 		spread,
 		input: resolved,

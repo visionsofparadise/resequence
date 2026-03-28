@@ -4,7 +4,7 @@ import type { ModifierProperties } from "../patterns/modifier";
 import { ModifierPattern } from "../patterns/modifier";
 import type { Pattern, PatternProperties } from "../patterns/pattern";
 import { toPattern } from "../patterns/sequence";
-import { flatMapNotes } from "../utils/map";
+import { flatModifyNotes } from "../utils/modify";
 
 export interface RepeatProperties extends ModifierProperties {
 	readonly count: number;
@@ -21,7 +21,6 @@ export class RepeatPattern extends ModifierPattern<RepeatProperties> {
 		return new RepeatPattern({
 			...this.properties,
 			...overrides,
-			previousProperties: this.properties,
 		});
 	}
 }
@@ -35,7 +34,9 @@ export function repeat(pattern: Pattern | Note, count: number): RepeatPattern {
 
 	const durationBeats = pattern.endBeat - pattern.startBeat;
 
-	const transformed = flatMapNotes(resolved, (note) => {
+	const cloned = resolved.clone({});
+
+	flatModifyNotes(cloned, (note) => {
 		const copies = [];
 
 		for (let index = 0; index < count; index++) {
@@ -46,10 +47,10 @@ export function repeat(pattern: Pattern | Note, count: number): RepeatPattern {
 	});
 
 	return new RepeatPattern({
-		notes: transformed.notes,
-		children: transformed.children,
-		startBeat: transformed.startBeat,
-		endBeat: transformed.endBeat,
+		notes: cloned.notes,
+		children: cloned.children,
+		startBeat: cloned.startBeat,
+		endBeat: cloned.endBeat,
 		count,
 		input: resolved,
 	});

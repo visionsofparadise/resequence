@@ -4,7 +4,7 @@ import { ModifierPattern } from "../patterns/modifier";
 import type { Pattern, PatternProperties } from "../patterns/pattern";
 import { toPattern } from "../patterns/sequence";
 import { pitchKey } from "../pitch";
-import { mapNotes } from "../utils/map";
+import { modifyNotes } from "../utils/modify";
 import { walkNotes } from "../utils/walk";
 
 export interface StrumOptions {
@@ -27,7 +27,6 @@ export class StrumPattern extends ModifierPattern<StrumProperties> {
 		return new StrumPattern({
 			...this.properties,
 			...overrides,
-			previousProperties: this.properties,
 		});
 	}
 }
@@ -65,7 +64,9 @@ export function strum(pattern: Pattern | Note, options: StrumOptions = {}): Stru
 		}
 	}
 
-	const transformed = mapNotes(resolved, (note, { id }) => {
+	const cloned = resolved.clone({});
+
+	modifyNotes(cloned, (note, { id }) => {
 		const shift = shiftMap.get(id);
 
 		if (shift) {
@@ -76,10 +77,10 @@ export function strum(pattern: Pattern | Note, options: StrumOptions = {}): Stru
 	});
 
 	return new StrumPattern({
-		notes: transformed.notes,
-		children: transformed.children,
-		startBeat: transformed.startBeat,
-		endBeat: transformed.endBeat,
+		notes: cloned.notes,
+		children: cloned.children,
+		startBeat: cloned.startBeat,
+		endBeat: cloned.endBeat,
 		strumOptions: options,
 		input: resolved,
 	});

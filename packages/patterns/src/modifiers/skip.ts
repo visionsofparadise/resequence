@@ -21,7 +21,6 @@ export class SkipPattern extends ModifierPattern {
 		return new SkipPattern({
 			...this.properties,
 			...overrides,
-			previousProperties: this.properties,
 		});
 	}
 }

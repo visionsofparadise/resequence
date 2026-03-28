@@ -54,7 +54,7 @@ export default router(song, {
 });
 ```
 
-Patterns are immutable trees. Notes carry `Pitch` objects and beat-based durations. Units form a directed audio graph connected with `.to()`. Automation targets unit parameters by ID path. Everything composes — patterns into larger patterns, units into larger units.
+Patterns are mutable trees. Notes carry `Pitch` objects and beat-based durations. Units form a directed audio graph connected with `.to()`. Automation targets unit parameters by ID path. Everything composes — patterns into larger patterns, units into larger units.
 
 ## Packages
 

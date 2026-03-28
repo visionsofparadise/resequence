@@ -22,7 +22,6 @@ export class GenerativePattern extends MidiPattern<GenerativeProperties> {
 		return new GenerativePattern({
 			...this.properties,
 			...overrides,
-			previousProperties: this.properties,
 		});
 	}
 }

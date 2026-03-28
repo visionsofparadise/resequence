@@ -45,7 +45,6 @@ export class AutomationPattern extends Pattern<AutomationPatternProperties> {
 		return new AutomationPattern({
 			...this.properties,
 			...overrides,
-			previousProperties: this.properties,
 		});
 	}
 }

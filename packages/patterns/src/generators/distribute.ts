@@ -35,7 +35,6 @@ export class DistributePattern extends MidiPattern<DistributeProperties> {
 		return new DistributePattern({
 			...this.properties,
 			...overrides,
-			previousProperties: this.properties,
 		});
 	}
 }

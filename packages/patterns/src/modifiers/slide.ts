@@ -4,7 +4,7 @@ import { ModifierPattern } from "../patterns/modifier";
 import type { Pattern, PatternProperties } from "../patterns/pattern";
 import { toPattern } from "../patterns/sequence";
 import { normalizePitch, pitchKey } from "../pitch";
-import { mapNotes } from "../utils/map";
+import { modifyNotes } from "../utils/modify";
 import { evaluateSlide, mergeSlides } from "../utils/slide";
 import { walkNotes } from "../utils/walk";
 
@@ -19,7 +19,6 @@ export class SlidePattern extends ModifierPattern {
 		return new SlidePattern({
 			...this.properties,
 			...overrides,
-			previousProperties: this.properties,
 		});
 	}
 }
@@ -92,7 +91,9 @@ export function slide(pattern: Pattern | Note): SlidePattern {
 		});
 	}
 
-	const transformed = mapNotes(resolved, (note, { id }) => {
+	const cloned = resolved.clone({});
+
+	modifyNotes(cloned, (note, { id }) => {
 		const newSlides = slideMap.get(id);
 
 		if (newSlides) {
@@ -103,10 +104,10 @@ export function slide(pattern: Pattern | Note): SlidePattern {
 	});
 
 	return new SlidePattern({
-		notes: transformed.notes,
-		children: transformed.children,
-		startBeat: transformed.startBeat,
-		endBeat: transformed.endBeat,
+		notes: cloned.notes,
+		children: cloned.children,
+		startBeat: cloned.startBeat,
+		endBeat: cloned.endBeat,
 		input: resolved,
 	});
 }

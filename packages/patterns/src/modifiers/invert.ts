@@ -4,7 +4,7 @@ import { ModifierPattern } from "../patterns/modifier";
 import type { Pattern, PatternProperties } from "../patterns/pattern";
 import { toPattern } from "../patterns/sequence";
 import { addSteps, NUM_OCTAVES, pitchKey } from "../pitch";
-import { mapNotes } from "../utils/map";
+import { modifyNotes } from "../utils/modify";
 import { walkNotes } from "../utils/walk";
 
 export interface InvertProperties extends ModifierProperties {
@@ -22,7 +22,6 @@ export class InvertPattern extends ModifierPattern<InvertProperties> {
 		return new InvertPattern({
 			...this.properties,
 			...overrides,
-			previousProperties: this.properties,
 		});
 	}
 }
@@ -70,7 +69,9 @@ export function invertChord(pattern: Pattern | Note, inversions: number): Invert
 		}
 	}
 
-	const transformed = mapNotes(resolved, (note, { id }) => {
+	const cloned = resolved.clone({});
+
+	modifyNotes(cloned, (note, { id }) => {
 		const shift = shiftMap.get(id);
 
 		if (shift) {
@@ -85,10 +86,10 @@ export function invertChord(pattern: Pattern | Note, inversions: number): Invert
 	});
 
 	return new InvertPattern({
-		notes: transformed.notes,
-		children: transformed.children,
-		startBeat: transformed.startBeat,
-		endBeat: transformed.endBeat,
+		notes: cloned.notes,
+		children: cloned.children,
+		startBeat: cloned.startBeat,
+		endBeat: cloned.endBeat,
 		inversions,
 		input: resolved,
 	});

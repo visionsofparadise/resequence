@@ -4,7 +4,7 @@ import { ModifierPattern } from "../patterns/modifier";
 import type { Pattern, PatternProperties } from "../patterns/pattern";
 import { toPattern } from "../patterns/sequence";
 import { addSteps, NUM_OCTAVES } from "../pitch";
-import { mapNotes } from "../utils/map";
+import { modifyNotes } from "../utils/modify";
 
 export interface TransposeProperties extends ModifierProperties {
 	readonly interval: number;
@@ -21,7 +21,6 @@ export class TransposePattern extends ModifierPattern<TransposeProperties> {
 		return new TransposePattern({
 			...this.properties,
 			...overrides,
-			previousProperties: this.properties,
 		});
 	}
 }
@@ -29,17 +28,19 @@ export class TransposePattern extends ModifierPattern<TransposeProperties> {
 export function transpose(pattern: Pattern | Note, interval: number): TransposePattern {
 	const resolved = toPattern(pattern);
 
-	const transformed = mapNotes(resolved, (note) => ({
+	const cloned = resolved.clone({});
+
+	modifyNotes(cloned, (note) => ({
 		...note,
 		pitch: addSteps(note.pitch, interval),
 		slides: note.slides?.map((sl) => ({ ...sl, value: sl.value + interval / (note.pitch.stepsPerOctave * NUM_OCTAVES) })),
 	}));
 
 	return new TransposePattern({
-		notes: transformed.notes,
-		children: transformed.children,
-		startBeat: transformed.startBeat,
-		endBeat: transformed.endBeat,
+		notes: cloned.notes,
+		children: cloned.children,
+		startBeat: cloned.startBeat,
+		endBeat: cloned.endBeat,
 		interval,
 		input: resolved,
 	});

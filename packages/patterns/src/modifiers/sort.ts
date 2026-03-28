@@ -5,7 +5,7 @@ import type { Pattern, PatternProperties } from "../patterns/pattern";
 import { toPattern } from "../patterns/sequence";
 import type { Pitch } from "../pitch";
 import { NUM_OCTAVES, pitchKey } from "../pitch";
-import { mapNotes } from "../utils/map";
+import { modifyNotes } from "../utils/modify";
 import { walkNotes } from "../utils/walk";
 
 export type SortKey = "asc" | "desc" | ((noteA: Note, noteB: Note) => number);
@@ -25,7 +25,6 @@ export class SortPattern extends ModifierPattern<SortProperties> {
 		return new SortPattern({
 			...this.properties,
 			...overrides,
-			previousProperties: this.properties,
 		});
 	}
 }
@@ -67,7 +66,9 @@ export function sort(pattern: Pattern | Note, key: SortKey = "asc"): SortPattern
 		}
 	}
 
-	const transformed = mapNotes(resolved, (note, { id }) => {
+	const cloned = resolved.clone({});
+
+	modifyNotes(cloned, (note, { id }) => {
 		const newPitch = pitchAssignment.get(id);
 
 		if (newPitch) {
@@ -84,10 +85,10 @@ export function sort(pattern: Pattern | Note, key: SortKey = "asc"): SortPattern
 	});
 
 	return new SortPattern({
-		notes: transformed.notes,
-		children: transformed.children,
-		startBeat: transformed.startBeat,
-		endBeat: transformed.endBeat,
+		notes: cloned.notes,
+		children: cloned.children,
+		startBeat: cloned.startBeat,
+		endBeat: cloned.endBeat,
 		key,
 		input: resolved,
 	});

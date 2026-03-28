@@ -35,7 +35,7 @@ const midiFiles = renderMidi(song);
 // Map<string, Uint8Array> — one MIDI file per port ("drums", "bass", "pad")
 ```
 
-Patterns are immutable trees. Notes carry `Pitch` objects and beat-based durations. Modifiers transform notes at construction time with structural sharing. Everything composes — patterns into larger patterns, modifiers on top of modifiers.
+Patterns are mutable trees. Notes carry `Pitch` objects and beat-based durations. Modifiers clone their input and transform the clone's notes at construction time, preserving the caller's original. Everything composes — patterns into larger patterns, modifiers on top of modifiers.
 
 ## Pitch
 
@@ -229,12 +229,6 @@ Modifiers wrap a pattern, transform its notes at construction time, and persist 
 
 **`skip(pattern)`** — remove from the timeline entirely. Zero duration.
 
-**`unwrap(modifier)`** — bypass a modifier, exposing its input pattern.
-
-**`override(pattern, indexes, callback)`** — targeted deep modification via index path.
-
-**`revert(pattern, indexes, steps)`** — undo modifications by walking the property history chain.
-
 ## Generators
 
 Generators produce notes procedurally. They extend `MidiPattern` — routing, modifiers, and containers all work on them.
@@ -314,12 +308,12 @@ The entry file must export a `Pattern` as its default export. One `.mid` file is
 
 ### Custom Modifier
 
-Modifiers wrap a pattern and transform its notes at construction time. Extend `ModifierPattern`, define a properties interface, and use `mapNotes()` or `flatMapNotes()` for the transformation.
+Modifiers wrap a pattern and transform its notes at construction time. Extend `ModifierPattern`, define a properties interface, and use `modifyNotes()` or `flatModifyNotes()` for the transformation. The factory clones the input before mutating.
 
 ```typescript
 import {
 	ModifierPattern, ModifierProperties, PatternProperties, Pattern, Note,
-	toPattern, mapNotes, extentOf,
+	toPattern, modifyNotes,
 } from "@resequence/patterns";
 
 interface DoubleTimeProperties extends ModifierProperties {
@@ -330,31 +324,32 @@ class DoubleTimePattern extends ModifierPattern<DoubleTimeProperties> {
 	readonly type = ["pattern", "midi", "modifier", "doubleTime"] as const;
 
 	clone(overrides: Partial<PatternProperties>): DoubleTimePattern {
-		return new DoubleTimePattern({ ...this.properties, ...overrides, previousProperties: this.properties });
+		return new DoubleTimePattern({ ...this.properties, ...overrides });
 	}
 }
 
 export function doubleTime(pattern: Pattern | Note, factor = 2): DoubleTimePattern {
 	const resolved = toPattern(pattern);
-	const transformed = mapNotes(resolved, (note) => ({
+	const cloned = resolved.clone({});
+
+	modifyNotes(cloned, (note) => ({
 		...note,
 		startBeat: note.startBeat / factor,
 		endBeat: note.endBeat / factor,
 	}));
-	const extent = extentOf(transformed.notes, transformed.children);
 
 	return new DoubleTimePattern({
-		notes: transformed.notes,
-		children: transformed.children,
-		startBeat: extent.startBeat,
-		endBeat: extent.endBeat,
+		notes: cloned.notes,
+		children: cloned.children,
+		startBeat: cloned.startBeat,
+		endBeat: cloned.endBeat,
 		input: resolved,
 		factor,
 	});
 }
 ```
 
-The factory function does the work — the class is a thin wrapper storing parameters and implementing `clone()`. The `input` field preserves the unmodified pattern for `revert()`.
+The factory function does the work — the class is a thin wrapper storing parameters and implementing `clone()`. The `input` field preserves the original unmodified pattern.
 
 ### Custom Generator
 
@@ -372,7 +367,7 @@ class WalkPattern extends MidiPattern<WalkProperties> {
 	readonly type = ["pattern", "midi", "generator", "walk"] as const;
 
 	clone(overrides: Partial<PatternProperties>): WalkPattern {
-		return new WalkPattern({ ...this.properties, ...overrides, previousProperties: this.properties });
+		return new WalkPattern({ ...this.properties, ...overrides });
 	}
 }
 
@@ -414,17 +409,17 @@ class LightCuePattern extends Pattern {
 	}
 
 	clone(overrides: Partial<PatternProperties>): LightCuePattern {
-		return new LightCuePattern({ ...this.properties, ...overrides, previousProperties: this.properties });
+		return new LightCuePattern({ ...this.properties, ...overrides });
 	}
 }
 ```
 
 ## Tree Utilities
 
-Walk, map, and manipulate pattern trees with structural sharing:
+Walk and modify pattern trees:
 
 ```typescript
-import { walkPatterns, walkNotes, collectNotes, mapNotes, flatMapNotes, mapPatterns } from "@resequence/patterns";
+import { walkPatterns, walkNotes, collectNotes, modifyNotes, flatModifyNotes, modifyPatterns } from "@resequence/patterns";
 
 // Visit every pattern node
 walkPatterns(song, (pattern, absoluteBeat) => { /* ... */ });
@@ -437,8 +432,8 @@ walkNotes(song, (note, context) => {
 // Collect all notes
 const notes = collectNotes(song);
 
-// Transform notes (structural sharing — unchanged branches keep identity)
-const louder = mapNotes(song, (note) => ({ ...note, velocity: Math.min(127, note.velocity + 20) }));
+// Modify notes in place
+modifyNotes(song, (note) => ({ ...note, velocity: Math.min(127, note.velocity + 20) }));
 ```
 
 ## Validation

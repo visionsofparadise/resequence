@@ -21,7 +21,6 @@ export class MutePattern extends ModifierPattern {
 		return new MutePattern({
 			...this.properties,
 			...overrides,
-			previousProperties: this.properties,
 		});
 	}
 }

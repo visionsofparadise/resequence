@@ -3,7 +3,7 @@ import type { ModifierProperties } from "../patterns/modifier";
 import { ModifierPattern } from "../patterns/modifier";
 import type { Pattern, PatternProperties, RelativeChild, RelativeNote } from "../patterns/pattern";
 import { toPattern } from "../patterns/sequence";
-import { flatMapNotes } from "../utils/map";
+import { flatModifyNotes } from "../utils/modify";
 import { collectNotes, walkPatterns } from "../utils/walk";
 
 export interface SpliceOptions {
@@ -33,7 +33,6 @@ export class SplicePattern extends ModifierPattern<SpliceProperties> {
 		return new SplicePattern({
 			...this.properties,
 			...overrides,
-			previousProperties: this.properties,
 		});
 	}
 }
@@ -53,7 +52,6 @@ export class InsertPattern extends ModifierPattern<InsertProperties> {
 		return new InsertPattern({
 			...this.properties,
 			...overrides,
-			previousProperties: this.properties,
 		});
 	}
 }
@@ -90,7 +88,9 @@ export function splice(pattern: Pattern | Note, options: SpliceOptions): SpliceP
 	const removeSet = new Set(removing.map((entry) => entry.note));
 	const afterSet = new Set(afterEntries.map((entry) => entry.note));
 
-	const transformed = flatMapNotes(resolved, (note) => {
+	const cloned = resolved.clone({});
+
+	flatModifyNotes(cloned, (note) => {
 		if (removeSet.has(note)) return [];
 		if (afterSet.has(note)) {
 			return [{ ...note, startBeat: note.startBeat + shift, endBeat: note.endBeat + shift }];
@@ -106,13 +106,13 @@ export function splice(pattern: Pattern | Note, options: SpliceOptions): SpliceP
 			}))
 		: [];
 
-	const notes = [...transformed.notes, ...insertedNotes];
+	const notes = [...cloned.notes, ...insertedNotes];
 
 	notes.sort((ra, rb) => ra.offsetBeats + ra.note.startBeat - (rb.offsetBeats + rb.note.startBeat));
 
 	const newDuration = totalDuration + shift;
 
-	return new SplicePattern({ notes, children: transformed.children, startBeat: 0, endBeat: newDuration, spliceOptions: options, input: resolved });
+	return new SplicePattern({ notes, children: cloned.children, startBeat: 0, endBeat: newDuration, spliceOptions: options, input: resolved });
 }
 
 export function insert(pattern: Pattern | Note, options: InsertOptions): InsertPattern {
@@ -124,7 +124,9 @@ export function insert(pattern: Pattern | Note, options: InsertOptions): InsertP
 	const shift = insertDuration - removeDuration;
 	const totalDuration = pattern.endBeat - pattern.startBeat;
 
-	const transformed = flatMapNotes(resolved, (note, { absoluteOffset }) => {
+	const cloned = resolved.clone({});
+
+	flatModifyNotes(cloned, (note, { absoluteOffset }) => {
 		const noteEnd = absoluteOffset + note.endBeat;
 
 		if (noteEnd <= atTick) return [note];
@@ -138,7 +140,7 @@ export function insert(pattern: Pattern | Note, options: InsertOptions): InsertP
 		return [];
 	});
 
-	const children: Array<RelativeChild> = [...transformed.children];
+	const children: Array<RelativeChild> = [...cloned.children];
 
 	if (options.insert) {
 		children.push({ offsetBeats: atTick, pattern: options.insert });
@@ -146,5 +148,5 @@ export function insert(pattern: Pattern | Note, options: InsertOptions): InsertP
 
 	const newDuration = totalDuration + shift;
 
-	return new InsertPattern({ notes: transformed.notes, children, startBeat: 0, endBeat: newDuration, insertOptions: options, input: resolved });
+	return new InsertPattern({ notes: cloned.notes, children, startBeat: 0, endBeat: newDuration, insertOptions: options, input: resolved });
 }

@@ -3,7 +3,7 @@ import type { ModifierProperties } from "../patterns/modifier";
 import { ModifierPattern } from "../patterns/modifier";
 import type { Pattern, PatternProperties } from "../patterns/pattern";
 import { toPattern } from "../patterns/sequence";
-import { flatMapNotes } from "../utils/map";
+import { flatModifyNotes } from "../utils/modify";
 
 export interface FlamProperties extends ModifierProperties {
 	readonly flamOffset: number;
@@ -21,14 +21,15 @@ export class FlamPattern extends ModifierPattern<FlamProperties> {
 		return new FlamPattern({
 			...this.properties,
 			...overrides,
-			previousProperties: this.properties,
 		});
 	}
 }
 
 export function flam(pattern: Pattern | Note, flamOffset: number, graceVelocity = 40): FlamPattern {
 	const resolved = toPattern(pattern);
-	const transformed = flatMapNotes(resolved, (note) => [
+	const cloned = resolved.clone({});
+
+	flatModifyNotes(cloned, (note) => [
 		{
 			...note,
 			startBeat: note.startBeat - flamOffset,
@@ -40,10 +41,10 @@ export function flam(pattern: Pattern | Note, flamOffset: number, graceVelocity 
 	]);
 
 	return new FlamPattern({
-		notes: transformed.notes,
-		children: transformed.children,
-		startBeat: transformed.startBeat,
-		endBeat: transformed.endBeat,
+		notes: cloned.notes,
+		children: cloned.children,
+		startBeat: cloned.startBeat,
+		endBeat: cloned.endBeat,
 		flamOffset,
 		graceVelocity,
 		input: resolved,

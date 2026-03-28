@@ -4,7 +4,7 @@ import { ModifierPattern } from "../patterns/modifier";
 import type { Pattern, PatternProperties } from "../patterns/pattern";
 import { sequence, toPattern } from "../patterns/sequence";
 import { N } from "../tunings/chromatic";
-import { mapNotes } from "../utils/map";
+import { modifyNotes } from "../utils/modify";
 import { collectNotes } from "../utils/walk";
 
 export interface QuantizeProperties extends ModifierProperties {
@@ -23,7 +23,6 @@ export class QuantizePattern extends ModifierPattern<QuantizeProperties> {
 		return new QuantizePattern({
 			...this.properties,
 			...overrides,
-			previousProperties: this.properties,
 		});
 	}
 }
@@ -32,10 +31,10 @@ export function quantize(pattern: Pattern | Note, subdivision: number, grooveMap
 	const resolved = toPattern(pattern);
 	const grid = subdivision;
 
-	let transformed: Pattern;
+	const cloned = resolved.clone({});
 
 	if (!grooveMap) {
-		transformed = mapNotes(resolved, (note, { absoluteOffset }) => {
+		modifyNotes(cloned, (note, { absoluteOffset }) => {
 			const absBeat = absoluteOffset + note.startBeat;
 			const remainder = absBeat % grid;
 			const snapped = absBeat - remainder + (remainder <= grid / 2 ? 0 : grid);
@@ -48,7 +47,7 @@ export function quantize(pattern: Pattern | Note, subdivision: number, grooveMap
 			.map((grooveNote) => grooveNote.absoluteBeat % grid)
 			.sort((tickA, tickB) => tickA - tickB);
 
-		transformed = mapNotes(resolved, (note, { absoluteOffset }) => {
+		modifyNotes(cloned, (note, { absoluteOffset }) => {
 			const absBeat = absoluteOffset + note.startBeat;
 			const cycle = Math.floor(absBeat / grid);
 			const remainder = absBeat % grid;
@@ -60,10 +59,10 @@ export function quantize(pattern: Pattern | Note, subdivision: number, grooveMap
 	}
 
 	return new QuantizePattern({
-		notes: transformed.notes,
-		children: transformed.children,
-		startBeat: transformed.startBeat,
-		endBeat: transformed.endBeat,
+		notes: cloned.notes,
+		children: cloned.children,
+		startBeat: cloned.startBeat,
+		endBeat: cloned.endBeat,
 		subdivision: grid,
 		grooveMap,
 		input: resolved,

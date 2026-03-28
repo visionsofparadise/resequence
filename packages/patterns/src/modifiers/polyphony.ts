@@ -3,7 +3,7 @@ import type { ModifierProperties } from "../patterns/modifier";
 import { ModifierPattern } from "../patterns/modifier";
 import type { Pattern, PatternProperties } from "../patterns/pattern";
 import { toPattern } from "../patterns/sequence";
-import { flatMapNotes } from "../utils/map";
+import { flatModifyNotes } from "../utils/modify";
 import { walkNotes } from "../utils/walk";
 
 export interface PolyphonyProperties extends ModifierProperties {
@@ -22,7 +22,6 @@ export class PolyphonyPattern extends ModifierPattern<PolyphonyProperties> {
 		return new PolyphonyPattern({
 			...this.properties,
 			...overrides,
-			previousProperties: this.properties,
 		});
 	}
 }
@@ -64,17 +63,19 @@ export function polyphony(pattern: Pattern | Note, max: number, isGreedy = false
 		}
 	}
 
-	const transformed = flatMapNotes(resolved, (note, { id }) => {
+	const cloned = resolved.clone({});
+
+	flatModifyNotes(cloned, (note, { id }) => {
 		if (kept.has(id)) return [note];
 
 		return [];
 	});
 
 	return new PolyphonyPattern({
-		notes: transformed.notes,
-		children: transformed.children,
-		startBeat: transformed.startBeat,
-		endBeat: transformed.endBeat,
+		notes: cloned.notes,
+		children: cloned.children,
+		startBeat: cloned.startBeat,
+		endBeat: cloned.endBeat,
 		max,
 		isGreedy,
 		input: resolved,

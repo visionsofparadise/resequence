@@ -3,7 +3,7 @@ import type { ModifierProperties } from "../patterns/modifier";
 import { ModifierPattern } from "../patterns/modifier";
 import type { Pattern, PatternProperties } from "../patterns/pattern";
 import { toPattern } from "../patterns/sequence";
-import { mapNotes } from "../utils/map";
+import { modifyNotes } from "../utils/modify";
 
 export interface AccentProperties extends ModifierProperties {
 	readonly positions: ReadonlyArray<number>;
@@ -21,7 +21,6 @@ export class AccentPattern extends ModifierPattern<AccentProperties> {
 		return new AccentPattern({
 			...this.properties,
 			...overrides,
-			previousProperties: this.properties,
 		});
 	}
 }
@@ -53,7 +52,9 @@ export function accent(pattern: Pattern | Note, positions: ReadonlyArray<number>
 		}
 	}
 
-	const transformed = mapNotes(resolved, (note, { absoluteOffset }) => {
+	const cloned = resolved.clone({});
+
+	modifyNotes(cloned, (note, { absoluteOffset }) => {
 		if (accentedTicks.has(absoluteOffset + note.startBeat)) {
 			return { ...note, velocity: Math.min(127, note.velocity + amount) };
 		}
@@ -62,10 +63,10 @@ export function accent(pattern: Pattern | Note, positions: ReadonlyArray<number>
 	});
 
 	return new AccentPattern({
-		notes: transformed.notes,
-		children: transformed.children,
-		startBeat: transformed.startBeat,
-		endBeat: transformed.endBeat,
+		notes: cloned.notes,
+		children: cloned.children,
+		startBeat: cloned.startBeat,
+		endBeat: cloned.endBeat,
 		positions,
 		amount,
 		input: resolved,

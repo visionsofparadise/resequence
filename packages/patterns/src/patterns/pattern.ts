@@ -14,11 +14,10 @@ export interface RelativeChild {
 }
 
 export interface PatternProperties {
-	readonly notes: ReadonlyArray<RelativeNote>;
-	readonly children: ReadonlyArray<RelativeChild>;
-	readonly startBeat: number;
-	readonly endBeat: number;
-	readonly previousProperties?: PatternProperties;
+	notes: Array<RelativeNote>;
+	children: Array<RelativeChild>;
+	startBeat: number;
+	endBeat: number;
 }
 
 export abstract class Pattern<P extends PatternProperties = PatternProperties> {
@@ -30,11 +29,11 @@ export abstract class Pattern<P extends PatternProperties = PatternProperties> {
 
 	constructor(readonly properties: P) {}
 
-	get notes(): ReadonlyArray<RelativeNote> {
+	get notes(): Array<RelativeNote> {
 		return this.properties.notes;
 	}
 
-	get children(): ReadonlyArray<RelativeChild> {
+	get children(): Array<RelativeChild> {
 		return this.properties.children;
 	}
 

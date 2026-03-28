@@ -75,7 +75,6 @@ export class AudioPattern extends Pattern<AudioPatternProperties> {
 		return new AudioPattern({
 			...this.properties,
 			...overrides,
-			previousProperties: this.properties,
 		});
 	}
 }

@@ -5,7 +5,7 @@ import type { Pattern, PatternProperties } from "../patterns/pattern";
 import { toPattern } from "../patterns/sequence";
 import type { Pitch } from "../pitch";
 import { addSteps, NUM_OCTAVES, pitchKey } from "../pitch";
-import { mapNotes } from "../utils/map";
+import { modifyNotes } from "../utils/modify";
 
 export interface FlipProperties extends ModifierProperties {
 	readonly center: Pitch;
@@ -23,7 +23,6 @@ export class FlipPattern extends ModifierPattern<FlipProperties> {
 		return new FlipPattern({
 			...this.properties,
 			...overrides,
-			previousProperties: this.properties,
 		});
 	}
 }
@@ -32,7 +31,9 @@ export function flip(pattern: Pattern | Note, center: Pitch, range?: [Pitch, Pit
 	const resolved = toPattern(pattern);
 	const centerKey = pitchKey(center);
 
-	const transformed = mapNotes(resolved, (note) => {
+	const cloned = resolved.clone({});
+
+	modifyNotes(cloned, (note) => {
 		const spo = note.pitch.stepsPerOctave;
 		const newKey = centerKey * 2 - pitchKey(note.pitch);
 		const newOctave = Math.floor(newKey / spo);
@@ -57,10 +58,10 @@ export function flip(pattern: Pattern | Note, center: Pitch, range?: [Pitch, Pit
 	});
 
 	return new FlipPattern({
-		notes: transformed.notes,
-		children: transformed.children,
-		startBeat: transformed.startBeat,
-		endBeat: transformed.endBeat,
+		notes: cloned.notes,
+		children: cloned.children,
+		startBeat: cloned.startBeat,
+		endBeat: cloned.endBeat,
 		center,
 		range,
 		input: resolved,

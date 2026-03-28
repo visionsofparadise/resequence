@@ -16,7 +16,6 @@ export class GapPattern extends Pattern<GapProperties> {
 		return new GapPattern({
 			...this.properties,
 			...overrides,
-			previousProperties: this.properties,
 		});
 	}
 }

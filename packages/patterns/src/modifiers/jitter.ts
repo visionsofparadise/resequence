@@ -3,7 +3,7 @@ import type { ModifierProperties } from "../patterns/modifier";
 import { ModifierPattern } from "../patterns/modifier";
 import type { Pattern, PatternProperties } from "../patterns/pattern";
 import { toPattern } from "../patterns/sequence";
-import { mapNotes } from "../utils/map";
+import { modifyNotes } from "../utils/modify";
 
 function mulberry32(seed: number): () => number {
 	let state = seed;
@@ -35,7 +35,6 @@ export class JitterPattern extends ModifierPattern<JitterProperties> {
 		return new JitterPattern({
 			...this.properties,
 			...overrides,
-			previousProperties: this.properties,
 		});
 	}
 }
@@ -44,7 +43,9 @@ export function jitter(pattern: Pattern | Note, amount: number, seed?: number): 
 	const resolved = toPattern(pattern);
 	const rng = seed !== undefined ? mulberry32(seed) : Math.random.bind(Math);
 
-	const transformed = mapNotes(resolved, (note) => {
+	const cloned = resolved.clone({});
+
+	modifyNotes(cloned, (note) => {
 		const shift = Math.round((rng() * 2 - 1) * amount);
 
 		return {
@@ -55,10 +56,10 @@ export function jitter(pattern: Pattern | Note, amount: number, seed?: number): 
 	});
 
 	return new JitterPattern({
-		notes: transformed.notes,
-		children: transformed.children,
-		startBeat: transformed.startBeat,
-		endBeat: transformed.endBeat,
+		notes: cloned.notes,
+		children: cloned.children,
+		startBeat: cloned.startBeat,
+		endBeat: cloned.endBeat,
 		amount,
 		seed,
 		input: resolved,

@@ -45,7 +45,6 @@ export class RandomPattern extends MidiPattern<RandomProperties> {
 		return new RandomPattern({
 			...this.properties,
 			...overrides,
-			previousProperties: this.properties,
 		});
 	}
 }

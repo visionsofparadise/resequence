@@ -3,7 +3,7 @@ import type { ModifierProperties } from "../patterns/modifier";
 import { ModifierPattern } from "../patterns/modifier";
 import type { Pattern, PatternProperties } from "../patterns/pattern";
 import { toPattern } from "../patterns/sequence";
-import { mapNotes } from "../utils/map";
+import { modifyNotes } from "../utils/modify";
 
 export interface StretchProperties extends ModifierProperties {
 	readonly factor: number;
@@ -20,14 +20,15 @@ export class StretchPattern extends ModifierPattern<StretchProperties> {
 		return new StretchPattern({
 			...this.properties,
 			...overrides,
-			previousProperties: this.properties,
 		});
 	}
 }
 
 export function stretch(pattern: Pattern | Note, factor: number): StretchPattern {
 	const resolved = toPattern(pattern);
-	const transformed = mapNotes(resolved, (note) => ({
+	const cloned = resolved.clone({});
+
+	modifyNotes(cloned, (note) => ({
 		...note,
 		startBeat: note.startBeat * factor,
 		endBeat: note.endBeat * factor,
@@ -35,10 +36,10 @@ export function stretch(pattern: Pattern | Note, factor: number): StretchPattern
 	}));
 
 	return new StretchPattern({
-		notes: transformed.notes,
-		children: transformed.children,
-		startBeat: transformed.startBeat,
-		endBeat: transformed.endBeat,
+		notes: cloned.notes,
+		children: cloned.children,
+		startBeat: cloned.startBeat,
+		endBeat: cloned.endBeat,
 		factor,
 		input: resolved,
 	});

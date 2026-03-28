@@ -71,7 +71,6 @@ export class MetadataPattern extends Pattern<MetadataProperties> {
 		return new MetadataPattern({
 			...this.properties,
 			...overrides,
-			previousProperties: this.properties,
 		});
 	}
 }

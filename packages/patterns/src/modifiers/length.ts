@@ -3,7 +3,7 @@ import type { ModifierProperties } from "../patterns/modifier";
 import { ModifierPattern } from "../patterns/modifier";
 import type { Pattern, PatternProperties } from "../patterns/pattern";
 import { toPattern } from "../patterns/sequence";
-import { mapNotes } from "../utils/map";
+import { modifyNotes } from "../utils/modify";
 
 export interface LengthProperties extends ModifierProperties {
 	readonly noteDuration: number;
@@ -20,14 +20,15 @@ export class LengthPattern extends ModifierPattern<LengthProperties> {
 		return new LengthPattern({
 			...this.properties,
 			...overrides,
-			previousProperties: this.properties,
 		});
 	}
 }
 
 export function length(pattern: Pattern | Note, duration: number): LengthPattern {
 	const resolved = toPattern(pattern);
-	const transformed = mapNotes(resolved, (note) => {
+	const cloned = resolved.clone({});
+
+	modifyNotes(cloned, (note) => {
 		const truncatedSlides = note.slides?.filter((sl) => sl.beat <= duration);
 
 		return {
@@ -38,10 +39,10 @@ export function length(pattern: Pattern | Note, duration: number): LengthPattern
 	});
 
 	return new LengthPattern({
-		notes: transformed.notes,
-		children: transformed.children,
-		startBeat: transformed.startBeat,
-		endBeat: transformed.endBeat,
+		notes: cloned.notes,
+		children: cloned.children,
+		startBeat: cloned.startBeat,
+		endBeat: cloned.endBeat,
 		noteDuration: duration,
 		input: resolved,
 	});

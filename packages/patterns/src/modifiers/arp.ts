@@ -6,7 +6,7 @@ import { sequence, toPattern } from "../patterns/sequence";
 import type { Pitch } from "../pitch";
 import { pitchKey } from "../pitch";
 import { I } from "../tunings/index-tuning";
-import { flatMapNotes } from "../utils/map";
+import { flatModifyNotes } from "../utils/modify";
 import { collectNotes, walkNotes } from "../utils/walk";
 
 function mulberry32(seed: number): () => number {
@@ -45,7 +45,6 @@ export class ArpPattern extends ModifierPattern<ArpProperties> {
 		return new ArpPattern({
 			...this.properties,
 			...overrides,
-			previousProperties: this.properties,
 		});
 	}
 }
@@ -160,7 +159,9 @@ export function arp(pattern: Pattern | Note, mappingPattern: Pattern): ArpPatter
 		}
 	}
 
-	const transformed = flatMapNotes(resolved, (_scoreNote, { id, absoluteOffset }) => {
+	const cloned = resolved.clone({});
+
+	flatModifyNotes(cloned, (_scoreNote, { id, absoluteOffset }) => {
 		const steps = stepsByNote.get(id);
 
 		if (!steps || steps.length === 0) return [];
@@ -174,10 +175,10 @@ export function arp(pattern: Pattern | Note, mappingPattern: Pattern): ArpPatter
 	});
 
 	return new ArpPattern({
-		notes: transformed.notes,
-		children: transformed.children,
-		startBeat: transformed.startBeat,
-		endBeat: transformed.endBeat,
+		notes: cloned.notes,
+		children: cloned.children,
+		startBeat: cloned.startBeat,
+		endBeat: cloned.endBeat,
 		mapping: mappingPattern,
 		input: resolved,
 	});

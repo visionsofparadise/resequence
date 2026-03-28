@@ -20,7 +20,7 @@ class TestEventPattern extends Pattern<PatternProperties & { readonly events: Re
 	}
 
 	clone(overrides: Partial<PatternProperties>): TestEventPattern {
-		return new TestEventPattern({ ...this.properties, ...overrides, previousProperties: this.properties });
+		return new TestEventPattern({ ...this.properties, ...overrides });
 	}
 }
 

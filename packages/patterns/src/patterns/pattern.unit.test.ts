@@ -13,7 +13,7 @@ class TestPattern extends Pattern {
 	readonly type = ["pattern", "test"] as const;
 
 	clone(overrides: Partial<PatternProperties>): TestPattern {
-		return new TestPattern({ ...this.properties, ...overrides, previousProperties: this.properties });
+		return new TestPattern({ ...this.properties, ...overrides });
 	}
 }
 
@@ -30,7 +30,7 @@ class TestEventPattern extends Pattern<PatternProperties & { readonly events: Re
 	}
 
 	clone(overrides: Partial<PatternProperties>): TestEventPattern {
-		return new TestEventPattern({ ...this.properties, ...overrides, previousProperties: this.properties });
+		return new TestEventPattern({ ...this.properties, ...overrides });
 	}
 }
 
@@ -83,7 +83,7 @@ describe("MidiPattern", () => {
 		readonly type = ["pattern", "midi", "test"] as const;
 
 		clone(overrides: Partial<PatternProperties>): TestMidiPattern {
-			return new TestMidiPattern({ ...this.properties, ...overrides, previousProperties: this.properties });
+			return new TestMidiPattern({ ...this.properties, ...overrides });
 		}
 	}
 

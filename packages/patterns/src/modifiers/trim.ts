@@ -3,7 +3,7 @@ import type { ModifierProperties } from "../patterns/modifier";
 import { ModifierPattern } from "../patterns/modifier";
 import type { Pattern, PatternProperties } from "../patterns/pattern";
 import { toPattern } from "../patterns/sequence";
-import { flatMapNotes } from "../utils/map";
+import { flatModifyNotes } from "../utils/modify";
 
 export interface TrimProperties extends ModifierProperties {
 	readonly fromBeats: number;
@@ -21,7 +21,6 @@ export class TrimPattern extends ModifierPattern<TrimProperties> {
 		return new TrimPattern({
 			...this.properties,
 			...overrides,
-			previousProperties: this.properties,
 		});
 	}
 }
@@ -29,7 +28,9 @@ export class TrimPattern extends ModifierPattern<TrimProperties> {
 export function trim(pattern: Pattern | Note, fromBeats: number, toBeats: number): TrimPattern {
 	const resolved = toPattern(pattern);
 
-	const transformed = flatMapNotes(resolved, (note, { absoluteOffset }) => {
+	const cloned = resolved.clone({});
+
+	flatModifyNotes(cloned, (note, { absoluteOffset }) => {
 		const noteStart = absoluteOffset + note.startBeat;
 		const noteEnd = absoluteOffset + note.endBeat;
 		const overlapStart = Math.max(noteStart, fromBeats);
@@ -50,5 +51,5 @@ export function trim(pattern: Pattern | Note, fromBeats: number, toBeats: number
 
 	const trimDuration = Math.max(0, toBeats - fromBeats);
 
-	return new TrimPattern({ notes: transformed.notes, children: transformed.children, startBeat: 0, endBeat: trimDuration, fromBeats, toBeats, input: resolved });
+	return new TrimPattern({ notes: cloned.notes, children: cloned.children, startBeat: 0, endBeat: trimDuration, fromBeats, toBeats, input: resolved });
 }

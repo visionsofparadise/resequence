@@ -4,7 +4,7 @@ import { ModifierPattern } from "../patterns/modifier";
 import type { Pattern, PatternProperties } from "../patterns/pattern";
 import { toPattern } from "../patterns/sequence";
 import { pitchKey } from "../pitch";
-import { flatMapNotes } from "../utils/map";
+import { flatModifyNotes } from "../utils/modify";
 import { walkNotes } from "../utils/walk";
 
 export interface HealProperties extends ModifierProperties {
@@ -22,7 +22,6 @@ export class HealPattern extends ModifierPattern<HealProperties> {
 		return new HealPattern({
 			...this.properties,
 			...overrides,
-			previousProperties: this.properties,
 		});
 	}
 }
@@ -58,7 +57,9 @@ export function heal(pattern: Pattern | Note, threshold?: number): HealPattern {
 		last = entry;
 	}
 
-	const transformed = flatMapNotes(resolved, (note, { id, absoluteOffset }) => {
+	const cloned = resolved.clone({});
+
+	flatModifyNotes(cloned, (note, { id, absoluteOffset }) => {
 		if (merged.has(id)) return [];
 
 		const newEndBeat = extensions.get(id);
@@ -71,10 +72,10 @@ export function heal(pattern: Pattern | Note, threshold?: number): HealPattern {
 	});
 
 	return new HealPattern({
-		notes: transformed.notes,
-		children: transformed.children,
-		startBeat: transformed.startBeat,
-		endBeat: transformed.endBeat,
+		notes: cloned.notes,
+		children: cloned.children,
+		startBeat: cloned.startBeat,
+		endBeat: cloned.endBeat,
 		threshold: resolvedThreshold,
 		input: resolved,
 	});

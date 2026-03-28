@@ -3,7 +3,7 @@ import type { ModifierProperties } from "../patterns/modifier";
 import { ModifierPattern } from "../patterns/modifier";
 import type { Pattern, PatternProperties } from "../patterns/pattern";
 import { toPattern } from "../patterns/sequence";
-import { flatMapNotes } from "../utils/map";
+import { flatModifyNotes } from "../utils/modify";
 import { walkPatterns } from "../utils/walk";
 
 export interface SliceProperties extends ModifierProperties {
@@ -22,7 +22,6 @@ export class SlicePattern extends ModifierPattern<SliceProperties> {
 		return new SlicePattern({
 			...this.properties,
 			...overrides,
-			previousProperties: this.properties,
 		});
 	}
 }
@@ -54,11 +53,13 @@ export function slice(pattern: Pattern | Note, from: number, to: number): SliceP
 	const firstStart = first.absoluteStart;
 	const durationBeats = last.absoluteEnd - firstStart;
 
-	const transformed = flatMapNotes(resolved, (note) => {
+	const cloned = resolved.clone({});
+
+	flatModifyNotes(cloned, (note) => {
 		if (!kept.has(note)) return [];
 
 		return [{ ...note, startBeat: note.startBeat - firstStart, endBeat: note.endBeat - firstStart }];
 	});
 
-	return new SlicePattern({ notes: transformed.notes, children: transformed.children, startBeat: 0, endBeat: durationBeats, from, to, input: resolved });
+	return new SlicePattern({ notes: cloned.notes, children: cloned.children, startBeat: 0, endBeat: durationBeats, from, to, input: resolved });
 }

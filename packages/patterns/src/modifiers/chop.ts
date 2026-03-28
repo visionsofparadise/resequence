@@ -5,7 +5,7 @@ import { ModifierPattern } from "../patterns/modifier";
 import type { Pattern, PatternProperties } from "../patterns/pattern";
 import { toPattern } from "../patterns/sequence";
 import type { Pitch } from "../pitch";
-import { flatMapNotes } from "../utils/map";
+import { flatModifyNotes } from "../utils/modify";
 import { evaluateSlide } from "../utils/slide";
 
 export interface ChopProperties extends ModifierProperties {
@@ -23,14 +23,15 @@ export class ChopPattern extends ModifierPattern<ChopProperties> {
 		return new ChopPattern({
 			...this.properties,
 			...overrides,
-			previousProperties: this.properties,
 		});
 	}
 }
 
 export function chop(pattern: Pattern | Note, subdivision: number): ChopPattern {
 	const resolved = toPattern(pattern);
-	const transformed = flatMapNotes(resolved, (note) => {
+	const cloned = resolved.clone({});
+
+	flatModifyNotes(cloned, (note) => {
 		const duration = note.endBeat - note.startBeat;
 		const chopCount = Math.floor(duration / subdivision);
 		const result = [];
@@ -62,10 +63,10 @@ export function chop(pattern: Pattern | Note, subdivision: number): ChopPattern 
 	});
 
 	return new ChopPattern({
-		notes: transformed.notes,
-		children: transformed.children,
-		startBeat: transformed.startBeat,
-		endBeat: transformed.endBeat,
+		notes: cloned.notes,
+		children: cloned.children,
+		startBeat: cloned.startBeat,
+		endBeat: cloned.endBeat,
 		subdivision,
 		input: resolved,
 	});

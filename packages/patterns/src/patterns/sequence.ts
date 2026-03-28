@@ -14,7 +14,6 @@ export class SequencePattern extends MidiPattern {
 		return new SequencePattern({
 			...this.properties,
 			...overrides,
-			previousProperties: this.properties,
 		});
 	}
 }

@@ -5,7 +5,7 @@ import type { Pattern, PatternProperties } from "../patterns/pattern";
 import { toPattern } from "../patterns/sequence";
 import type { Pitch } from "../pitch";
 import { addSteps, NUM_OCTAVES, pitchKey } from "../pitch";
-import { mapNotes } from "../utils/map";
+import { modifyNotes } from "../utils/modify";
 import { walkNotes } from "../utils/walk";
 
 export type VoicingStyle = "close" | "drop2" | "drop3" | "open";
@@ -25,7 +25,6 @@ export class VoicingPattern extends ModifierPattern<VoicingProperties> {
 		return new VoicingPattern({
 			...this.properties,
 			...overrides,
-			previousProperties: this.properties,
 		});
 	}
 }
@@ -124,7 +123,9 @@ export function voicing(pattern: Pattern | Note, style: VoicingStyle): VoicingPa
 		}
 	}
 
-	const transformed = mapNotes(resolved, (note, { id }) => {
+	const cloned = resolved.clone({});
+
+	modifyNotes(cloned, (note, { id }) => {
 		const newPitch = pitchChanges.get(id);
 
 		if (newPitch) {
@@ -141,10 +142,10 @@ export function voicing(pattern: Pattern | Note, style: VoicingStyle): VoicingPa
 	});
 
 	return new VoicingPattern({
-		notes: transformed.notes,
-		children: transformed.children,
-		startBeat: transformed.startBeat,
-		endBeat: transformed.endBeat,
+		notes: cloned.notes,
+		children: cloned.children,
+		startBeat: cloned.startBeat,
+		endBeat: cloned.endBeat,
 		style,
 		input: resolved,
 	});

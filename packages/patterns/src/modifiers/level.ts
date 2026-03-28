@@ -3,7 +3,7 @@ import type { ModifierProperties } from "../patterns/modifier";
 import { ModifierPattern } from "../patterns/modifier";
 import type { Pattern, PatternProperties } from "../patterns/pattern";
 import { toPattern } from "../patterns/sequence";
-import { mapNotes } from "../utils/map";
+import { modifyNotes } from "../utils/modify";
 import { collectNotes } from "../utils/walk";
 
 export interface LevelPropOptions {
@@ -87,7 +87,6 @@ export class LevelPattern extends ModifierPattern<LevelProperties> {
 		return new LevelPattern({
 			...this.properties,
 			...overrides,
-			previousProperties: this.properties,
 		});
 	}
 }
@@ -128,7 +127,9 @@ export function level(pattern: Pattern | Note, config: LevelConfig): LevelPatter
 		}
 	}
 
-	const transformed = mapNotes(resolved, (note) => {
+	const cloned = resolved.clone({});
+
+	modifyNotes(cloned, (note) => {
 		let velocity = note.velocity;
 		let cc = note.cc;
 
@@ -154,10 +155,10 @@ export function level(pattern: Pattern | Note, config: LevelConfig): LevelPatter
 	});
 
 	return new LevelPattern({
-		notes: transformed.notes,
-		children: transformed.children,
-		startBeat: transformed.startBeat,
-		endBeat: transformed.endBeat,
+		notes: cloned.notes,
+		children: cloned.children,
+		startBeat: cloned.startBeat,
+		endBeat: cloned.endBeat,
 		config,
 		input: resolved,
 	});

@@ -3,7 +3,7 @@ import type { ModifierProperties } from "../patterns/modifier";
 import { ModifierPattern } from "../patterns/modifier";
 import type { Pattern, PatternProperties } from "../patterns/pattern";
 import { toPattern } from "../patterns/sequence";
-import { flatMapNotes } from "../utils/map";
+import { flatModifyNotes } from "../utils/modify";
 import { collectNotes } from "../utils/walk";
 
 export interface GateProperties extends ModifierProperties {
@@ -21,7 +21,6 @@ export class GatePattern extends ModifierPattern<GateProperties> {
 		return new GatePattern({
 			...this.properties,
 			...overrides,
-			previousProperties: this.properties,
 		});
 	}
 }
@@ -30,7 +29,9 @@ export function gate(pattern: Pattern | Note, gatePattern: Pattern): GatePattern
 	const resolved = toPattern(pattern);
 	const gateNotes = collectNotes(gatePattern);
 
-	const transformed = flatMapNotes(resolved, (note, { absoluteOffset }) => {
+	const cloned = resolved.clone({});
+
+	flatModifyNotes(cloned, (note, { absoluteOffset }) => {
 		const noteStart = absoluteOffset + note.startBeat;
 		const noteEnd = absoluteOffset + note.endBeat;
 		const result = [];
@@ -54,10 +55,10 @@ export function gate(pattern: Pattern | Note, gatePattern: Pattern): GatePattern
 	});
 
 	return new GatePattern({
-		notes: transformed.notes,
-		children: transformed.children,
-		startBeat: transformed.startBeat,
-		endBeat: transformed.endBeat,
+		notes: cloned.notes,
+		children: cloned.children,
+		startBeat: cloned.startBeat,
+		endBeat: cloned.endBeat,
 		gateSource: gatePattern,
 		input: resolved,
 	});
