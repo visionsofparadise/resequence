@@ -1,4 +1,6 @@
 import {
+	AudioPattern,
+	AutomationPattern,
 	MetadataPattern,
 	MidiPattern,
 	SequencePattern,
@@ -6,14 +8,14 @@ import {
 	collectTempoPoints,
 	denormalizePitch,
 	type Keyframe,
+	type Lfo,
 	type Note,
 	type Pattern,
 	type Pitch,
 	type ResolvedTuning,
 	type TempoMap,
 	type TempoPoint,
-} from "@resequence/patterns";
-import { AudioPattern, AutomationPattern, type Lfo } from "resequence";
+} from "resequence";
 
 export interface MidiClipNote extends Note {
 	readonly patternId: string;

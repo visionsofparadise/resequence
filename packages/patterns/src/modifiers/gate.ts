@@ -1,11 +1,5 @@
-import type { Note } from "../note";
-import type { ModifierProperties } from "../patterns/modifier";
-import { ModifierPattern } from "../patterns/modifier";
-import type { Pattern, PatternProperties } from "../patterns/pattern";
-import { toPattern } from "../patterns/sequence";
-import { flatModifyNotes } from "../utils/modify";
-import { collectNotes } from "../utils/walk";
-
+import type { Note, ModifierProperties, Pattern, PatternProperties } from "@resequence/patterns-core";
+import { ModifierPattern, toPattern, flatModifyNotes, collectNotes } from "@resequence/patterns-core";
 export interface GateProperties extends ModifierProperties {
 	readonly gateSource: Pattern;
 }

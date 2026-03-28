@@ -11,7 +11,9 @@ npm install @resequence/patterns
 Build pattern trees from notes, sequences, layers, repeats, and modifiers. The tree produces a flat stream of typed events — notes, metadata, tempo changes — that downstream systems interpret. MIDI export is built in.
 
 ```typescript
-import { N, sequence, layer, repeat, gap, note, tempo, metadata, distribute, transpose, echo, renderMidi } from "@resequence/patterns";
+import { repeat, echo, transpose, distribute } from "@resequence/patterns";
+import { N, sequence, layer, gap, tempo } from "@resequence/patterns/core";
+import { renderMidi } from "@resequence/patterns/utils";
 
 const kick = repeat(N.C2(1), 4).route("drums");
 const snare = sequence(gap(1), N.D3(1), gap(1), N.D3(1)).route("drums");
@@ -24,7 +26,7 @@ const chords = layer(
 	sequence(N.G4(4), N.Ds4(4)),
 ).route("pad");
 
-const hats = echo(distribute(3, 8, N.Fs2(0.5)), 2, 0.25, 0.6).route("drums");
+const hats = echo(distribute(3, 8, N.C2.pitch, 0.5), 2, 0.25, 0.6).route("drums");
 
 const song = tempo(
 	layer(repeat(layer(kick, snare, hats), 4), repeat(bassline, 2), repeat(chords, 2)),
@@ -37,11 +39,23 @@ const midiFiles = renderMidi(song);
 
 Patterns are mutable trees. Notes carry `Pitch` objects and beat-based durations. Modifiers clone their input and transform the clone's notes at construction time, preserving the caller's original. Everything composes — patterns into larger patterns, modifiers on top of modifiers.
 
+### Package Structure
+
+This package provides modifiers, generators, and the CLI. It re-exports the protocol and utility layers via subpath exports:
+
+- `@resequence/patterns` — modifiers + generators
+- `@resequence/patterns/core` — protocol types, base classes, containers, pitch, tuning (re-export of `@resequence/patterns-core`)
+- `@resequence/patterns/utils` — MIDI rendering, validation, built-in tunings (re-export of `@resequence/patterns-utils`)
+
+These are also available through the `resequence` bridge package as `resequence/patterns`, `resequence/patterns/core`, and `resequence/patterns/utils`. Most users should install `resequence` and use the bridge subpaths. Depend on `@resequence/patterns-core` directly for lighter protocol-only usage (e.g., writing custom modifiers without depending on the full library).
+
 ## Pitch
 
 The `N` namespace provides typed pitch access for the chromatic scale (A4 = 440 Hz). Sharps use `s`, flats use `b`. Each entry is callable — pass a duration in beats to create a note:
 
 ```typescript
+import { N } from "@resequence/patterns/core";
+
 N.C4(1)         // quarter note middle C
 N.Cs4(0.5)      // eighth note C#4
 N.Db4(2, 80)    // half note Db4 at velocity 80
@@ -59,6 +73,8 @@ N.C4.pitch      // Pitch { class: 0, octave: 4, stepsPerOctave: 12, octaveRatio:
 `CD` builds chords from a quality string and duration:
 
 ```typescript
+import { CD, CS } from "@resequence/patterns/utils";
+
 CD("Cm7", 2);       // Cm7 chord, half note each
 CD("Gmaj9", 4);     // Gmaj9 chord, whole note
 ```
@@ -76,6 +92,8 @@ scale(2);    // Eb4
 `createTuning` produces a namespace like `N` for any tuning system:
 
 ```typescript
+import { createTuning } from "@resequence/patterns/core";
+
 // Equal temperament
 const quarterTone = createTuning({
 	classes: ["C", "C+", "Cs", "Cs+", "D", /* ... 24 classes */],
@@ -92,7 +110,7 @@ const justC = createTuning({
 });
 ```
 
-Built-in tunings: `Chromatic`, `Midi`, `A432`, `QuarterTone`, `Just`, `Pythagorean`, `Meantone`, `Werckmeister`, `Pelog`, `Slendro`, `BohlenPierce`, `Tet19`, `Tet31`, `Tet53`.
+Built-in tunings: `Chromatic` and `N` are in `@resequence/patterns/core`. All others — `Midi`, `A432`, `QuarterTone`, `Just`, `Pythagorean`, `Meantone`, `Werckmeister`, `Pelog`, `Slendro`, `BohlenPierce`, `Tet19`, `Tet31`, `Tet53` — are in `@resequence/patterns/utils`.
 
 ## Patterns
 
@@ -111,6 +129,9 @@ Built-in tunings: `Chromatic`, `Midi`, `A432`, `QuarterTone`, `Just`, `Pythagore
 **`repeat(pattern, count)`** — loop a pattern. Duration is `pattern.duration * count`.
 
 ```typescript
+import { repeat } from "@resequence/patterns";
+import { N, sequence, layer, gap } from "@resequence/patterns/core";
+
 // 4-bar drum loop
 const drums = repeat(
 	layer(
@@ -229,6 +250,8 @@ Modifiers wrap a pattern, transform its notes at construction time, and persist 
 
 **`skip(pattern)`** — remove from the timeline entirely. Zero duration.
 
+These are in `@resequence/patterns/core`.
+
 ## Generators
 
 Generators produce notes procedurally. They extend `MidiPattern` — routing, modifiers, and containers all work on them.
@@ -236,6 +259,9 @@ Generators produce notes procedurally. They extend `MidiPattern` — routing, mo
 **`distribute(hits, steps, pitch, stepDuration, rotate?)`** — Euclidean rhythm. Places `hits` evenly across `steps`. The classic Bjorklund algorithm for world rhythm patterns.
 
 ```typescript
+import { distribute } from "@resequence/patterns";
+import { N } from "@resequence/patterns/core";
+
 distribute(3, 8, N.C2.pitch, 0.5);        // tresillo
 distribute(5, 16, N.C2.pitch, 0.25, 2);   // rotated 16th pattern
 ```
@@ -249,6 +275,9 @@ random({ pitches: [N.C4.pitch, N.E4.pitch, N.G4.pitch], count: 16, stepDuration:
 **`generative(callback, count, duration?)`** — procedural generation with an accumulator. The callback receives all previously generated notes, enabling interdependent relationships.
 
 ```typescript
+import { generative } from "@resequence/patterns";
+import { note, N } from "@resequence/patterns/core";
+
 generative((acc, i) => [note(N.C4.pitch, 1)], 8);
 ```
 
@@ -257,6 +286,8 @@ generative((acc, i) => [note(N.C4.pitch, 1)], 8);
 Patterns connect to named output ports via `.route(portName, channel?)`. Port names accumulate through the tree — children inherit parent ports. Notes dispatch to every port in scope.
 
 ```typescript
+import { N, sequence, layer } from "@resequence/patterns/core";
+
 const melody = sequence(N.C4(1), N.E4(1), N.G4(2)).route("lead");
 const bass = sequence(N.C2(2), N.G2(2)).route("bass");
 
@@ -270,6 +301,9 @@ Notes without a route produce no events during scheduling.
 Wrap any pattern with metadata for tempo, time signature, tuning, markers, and regions:
 
 ```typescript
+import { metadata, tempo, timeSignature, marker, cue, region, tuning } from "@resequence/patterns/core";
+import { Just } from "@resequence/patterns/utils";
+
 // Full metadata object
 metadata(pattern, { tempo: 140, timeSignature: [3, 4] });
 
@@ -288,7 +322,7 @@ Tempo supports keyframe automation for gradual BPM changes. Values are normalize
 ## MIDI Export
 
 ```typescript
-import { renderMidi } from "@resequence/patterns";
+import { renderMidi } from "@resequence/patterns/utils";
 
 const midiFiles = renderMidi(song, { ppq: 480 });
 // Map<string, Uint8Array> — one Standard MIDI File per port
@@ -314,7 +348,7 @@ Modifiers wrap a pattern and transform its notes at construction time. Extend `M
 import {
 	ModifierPattern, ModifierProperties, PatternProperties, Pattern, Note,
 	toPattern, modifyNotes,
-} from "@resequence/patterns";
+} from "@resequence/patterns/core";
 
 interface DoubleTimeProperties extends ModifierProperties {
 	readonly factor: number;
@@ -356,7 +390,7 @@ The factory function does the work — the class is a thin wrapper storing param
 Generators extend `MidiPattern` and compute notes in their constructor. They produce notes from scratch rather than transforming existing ones.
 
 ```typescript
-import { MidiPattern, MidiPatternProperties, PatternProperties, RelativeNote, note } from "@resequence/patterns";
+import { MidiPattern, MidiPatternProperties, PatternProperties, RelativeNote, note } from "@resequence/patterns/core";
 
 interface WalkProperties extends MidiPatternProperties {
 	readonly startPitch: number;
@@ -389,7 +423,7 @@ export function walk(startPitch: number, steps: number): WalkPattern {
 Patterns can emit arbitrary events via `_setup()`, `_schedule()`, and `_teardown()`. Events are discriminated on `type` and bubble up through the tree unchanged — downstream consumers interpret them.
 
 ```typescript
-import { Pattern, PatternProperties, Event } from "@resequence/patterns";
+import { Pattern, PatternProperties, Event } from "@resequence/patterns/core";
 
 interface LightEvent {
 	readonly type: "light";
@@ -419,7 +453,7 @@ class LightCuePattern extends Pattern {
 Walk and modify pattern trees:
 
 ```typescript
-import { walkPatterns, walkNotes, collectNotes, modifyNotes, flatModifyNotes, modifyPatterns } from "@resequence/patterns";
+import { walkPatterns, walkNotes, collectNotes, modifyNotes, flatModifyNotes, modifyPatterns } from "@resequence/patterns/core";
 
 // Visit every pattern node
 walkPatterns(song, (pattern, absoluteBeat) => { /* ... */ });
@@ -439,7 +473,7 @@ modifyNotes(song, (note) => ({ ...note, velocity: Math.min(127, note.velocity + 
 ## Validation
 
 ```typescript
-import { validate } from "@resequence/patterns";
+import { validate } from "@resequence/patterns/utils";
 
 const warnings = validate(song);
 // Reports orphaned notes — notes without port routing in their ancestor chain

@@ -1,10 +1,6 @@
-import { describe, expect, it } from "vitest";
-import { pitchKey } from "../pitch";
-import { layer } from "../patterns/layer";
-import { N } from "../tunings/chromatic";
-import { collectNotes } from "../utils/walk";
 import { arp, arpUp } from "./arp";
-
+import { pitchKey, layer, N, collectNotes } from "@resequence/patterns-core";
+import { describe, expect, it } from "vitest";
 describe("arp", () => {
 	it("arpeggiates chord through mapping", () => {
 		const chord = layer(N.C4(4), N.E4(4), N.G4(4));

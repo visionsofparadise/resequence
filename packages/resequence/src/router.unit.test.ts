@@ -1,4 +1,4 @@
-import { sequence } from "@resequence/patterns";
+import { sequence } from "@resequence/patterns-core";
 import type { MidiUnit } from "@resequence/web-au-core";
 import { describe, expect, it } from "vitest";
 import { Playback } from "./playback";

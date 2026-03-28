@@ -1,10 +1,6 @@
-import { describe, expect, it } from "vitest";
-import { note } from "../note";
-import { sequence } from "../patterns/sequence";
-import { N } from "../tunings/chromatic";
-import { collectNotes } from "../utils/walk";
 import { slide } from "./slide";
-
+import { note, sequence, N, collectNotes } from "@resequence/patterns-core";
+import { describe, expect, it } from "vitest";
 describe("slide", () => {
 	it("adds slide keyframes between overlapping consecutive notes", () => {
 		const a = note(N.C4(1).pitch, 2);

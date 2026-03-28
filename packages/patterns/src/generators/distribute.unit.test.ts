@@ -1,8 +1,6 @@
-import { describe, expect, it } from "vitest";
-import { N } from "../tunings/chromatic";
-import { collectNotes } from "../utils/walk";
 import { distribute } from "./distribute";
-
+import { N, collectNotes } from "@resequence/patterns-core";
+import { describe, expect, it } from "vitest";
 describe("distribute", () => {
 	it("distributes hits as evenly as possible across steps", () => {
 		const pat = distribute(3, 8, N.C4(1).pitch, 0.5);

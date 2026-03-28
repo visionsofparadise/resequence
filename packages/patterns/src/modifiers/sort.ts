@@ -1,13 +1,5 @@
-import type { Note } from "../note";
-import type { ModifierProperties } from "../patterns/modifier";
-import { ModifierPattern } from "../patterns/modifier";
-import type { Pattern, PatternProperties } from "../patterns/pattern";
-import { toPattern } from "../patterns/sequence";
-import type { Pitch } from "../pitch";
-import { NUM_OCTAVES, pitchKey } from "../pitch";
-import { modifyNotes } from "../utils/modify";
-import { walkNotes } from "../utils/walk";
-
+import type { Note, ModifierProperties, Pattern, PatternProperties, Pitch } from "@resequence/patterns-core";
+import { ModifierPattern, toPattern, NUM_OCTAVES, pitchKey, modifyNotes, walkNotes } from "@resequence/patterns-core";
 export type SortKey = "asc" | "desc" | ((noteA: Note, noteB: Note) => number);
 
 export interface SortProperties extends ModifierProperties {

@@ -1,5 +1,6 @@
-import type { Event, Pattern, NoteEvent as PatternNoteEvent, TempoMap } from "@resequence/patterns";
-import { beatsToSeconds, collectMetadata } from "@resequence/patterns";
+import type { Event, Pattern, NoteEvent as PatternNoteEvent } from "@resequence/patterns-core";
+import type { TempoMap } from "@resequence/patterns-utils";
+import { beatsToSeconds, collectMetadata } from "@resequence/patterns-utils";
 import type { MidiUnit } from "@resequence/web-au-core";
 import { computeMaxLatency, createUnitContext } from "@resequence/web-au-core";
 import type { WavBitDepth } from "@resequence/web-au-utils";

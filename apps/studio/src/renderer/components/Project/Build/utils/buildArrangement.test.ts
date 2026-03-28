@@ -1,4 +1,4 @@
-import { layer, N, note, sequence, timeSignature, tuning } from "@resequence/patterns";
+import { layer, N, note, sequence, timeSignature, tuning } from "resequence";
 import { automate, type Lfo } from "resequence";
 import { describe, expect, it } from "vitest";
 import { buildArrangement } from "./buildArrangement";

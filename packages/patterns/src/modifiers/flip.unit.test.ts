@@ -1,10 +1,6 @@
-import { describe, expect, it } from "vitest";
-import { pitchKey } from "../pitch";
-import { layer } from "../patterns/layer";
-import { N } from "../tunings/chromatic";
-import { collectNotes } from "../utils/walk";
 import { flip } from "./flip";
-
+import { pitchKey, layer, N, collectNotes } from "@resequence/patterns-core";
+import { describe, expect, it } from "vitest";
 describe("flip", () => {
 	it("inverts pitch around center", () => {
 		const c4 = N.C4(1);

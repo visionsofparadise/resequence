@@ -1,7 +1,6 @@
-import type { Keyframe } from "@resequence/patterns";
-import { evaluateAt } from "@resequence/patterns";
-import { beatsToSeconds } from "@resequence/patterns";
-import type { TempoMap } from "@resequence/patterns";
+import type { Keyframe } from "@resequence/patterns-core";
+import type { TempoMap } from "@resequence/patterns-utils";
+import { beatsToSeconds, evaluateAt } from "@resequence/patterns-utils";
 import type { DriverEntry } from "@resequence/web-au-core";
 import type { AutomationEvent } from "../constructs/automate";
 import { lastBefore } from "../utils/sorted";

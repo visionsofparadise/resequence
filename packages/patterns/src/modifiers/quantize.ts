@@ -1,12 +1,5 @@
-import type { Note } from "../note";
-import type { ModifierProperties } from "../patterns/modifier";
-import { ModifierPattern } from "../patterns/modifier";
-import type { Pattern, PatternProperties } from "../patterns/pattern";
-import { sequence, toPattern } from "../patterns/sequence";
-import { N } from "../tunings/chromatic";
-import { modifyNotes } from "../utils/modify";
-import { collectNotes } from "../utils/walk";
-
+import type { Note, ModifierProperties, Pattern, PatternProperties } from "@resequence/patterns-core";
+import { ModifierPattern, sequence, toPattern, N, modifyNotes, collectNotes } from "@resequence/patterns-core";
 export interface QuantizeProperties extends ModifierProperties {
 	readonly subdivision: number;
 	readonly grooveMap: Pattern | undefined;

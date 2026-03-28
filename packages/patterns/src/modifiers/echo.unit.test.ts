@@ -1,8 +1,6 @@
-import { describe, expect, it } from "vitest";
-import { N } from "../tunings/chromatic";
-import { collectNotes } from "../utils/walk";
 import { echo } from "./echo";
-
+import { N, collectNotes } from "@resequence/patterns-core";
+import { describe, expect, it } from "vitest";
 describe("echo", () => {
 	it("produces original + delayed copies", () => {
 		const result = echo(N.C4(1), 0.5, 2, 0.5);

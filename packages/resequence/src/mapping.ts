@@ -1,5 +1,7 @@
-import type { Keyframe, NoteEvent as PatternNoteEvent, TempoMap } from "@resequence/patterns";
-import { beatsToSeconds, denormalizePitch, pitchToCents } from "@resequence/patterns";
+import type { Keyframe, NoteEvent as PatternNoteEvent } from "@resequence/patterns-core";
+import { denormalizePitch, pitchToCents } from "@resequence/patterns-core";
+import type { TempoMap } from "@resequence/patterns-utils";
+import { beatsToSeconds } from "@resequence/patterns-utils";
 import type { NoteSlide, NoteEvent as UnitNoteEvent } from "@resequence/web-au-core";
 import { CC } from "@resequence/web-au-utils";
 

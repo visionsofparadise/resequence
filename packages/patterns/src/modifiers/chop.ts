@@ -1,13 +1,6 @@
-import type { Keyframe } from "../events";
-import type { Note } from "../note";
-import type { ModifierProperties } from "../patterns/modifier";
-import { ModifierPattern } from "../patterns/modifier";
-import type { Pattern, PatternProperties } from "../patterns/pattern";
-import { toPattern } from "../patterns/sequence";
-import type { Pitch } from "../pitch";
-import { flatModifyNotes } from "../utils/modify";
-import { evaluateSlide } from "../utils/slide";
-
+import type { Keyframe, Note, ModifierProperties, Pattern, PatternProperties, Pitch } from "@resequence/patterns-core";
+import { ModifierPattern, toPattern, flatModifyNotes } from "@resequence/patterns-core";
+import { evaluateSlide } from "@resequence/patterns-utils";
 export interface ChopProperties extends ModifierProperties {
 	readonly subdivision: number;
 }

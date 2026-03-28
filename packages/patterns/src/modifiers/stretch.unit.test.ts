@@ -1,9 +1,6 @@
-import { describe, expect, it } from "vitest";
-import { sequence } from "../patterns/sequence";
-import { N } from "../tunings/chromatic";
-import { collectNotes } from "../utils/walk";
 import { stretch } from "./stretch";
-
+import { sequence, N, collectNotes } from "@resequence/patterns-core";
+import { describe, expect, it } from "vitest";
 describe("stretch", () => {
 	it("scales note durations", () => {
 		const result = stretch(sequence(N.C4(1), N.E4(1)), 2);

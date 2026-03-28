@@ -1,10 +1,6 @@
-import { describe, expect, it } from "vitest";
-import { pitchKey } from "../pitch";
-import { sequence } from "../patterns/sequence";
-import { N } from "../tunings/chromatic";
-import { collectNotes } from "../utils/walk";
 import { sort } from "./sort";
-
+import { pitchKey, sequence, N, collectNotes } from "@resequence/patterns-core";
+import { describe, expect, it } from "vitest";
 describe("sort", () => {
 	it("sorts notes ascending by default", () => {
 		const tree = sequence(N.G4(1), N.C4(1), N.E4(1));

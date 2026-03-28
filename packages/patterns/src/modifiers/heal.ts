@@ -1,12 +1,5 @@
-import type { Note } from "../note";
-import type { ModifierProperties } from "../patterns/modifier";
-import { ModifierPattern } from "../patterns/modifier";
-import type { Pattern, PatternProperties } from "../patterns/pattern";
-import { toPattern } from "../patterns/sequence";
-import { pitchKey } from "../pitch";
-import { flatModifyNotes } from "../utils/modify";
-import { walkNotes } from "../utils/walk";
-
+import type { Note, ModifierProperties, Pattern, PatternProperties } from "@resequence/patterns-core";
+import { ModifierPattern, toPattern, pitchKey, flatModifyNotes, walkNotes } from "@resequence/patterns-core";
 export interface HealProperties extends ModifierProperties {
 	readonly threshold: number;
 }

@@ -1,8 +1,6 @@
-import { describe, expect, it } from "vitest";
-import { N } from "../tunings/chromatic";
-import { collectNotes } from "../utils/walk";
 import { offset } from "./offset";
-
+import { N, collectNotes } from "@resequence/patterns-core";
+import { describe, expect, it } from "vitest";
 describe("offset", () => {
 	it("shifts note positions", () => {
 		const result = offset(N.C4(1), 2);

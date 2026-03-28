@@ -1,5 +1,5 @@
-import type { TempoMap } from "@resequence/patterns";
-import { beatsToSeconds } from "@resequence/patterns";
+import type { TempoMap } from "@resequence/patterns-utils";
+import { beatsToSeconds } from "@resequence/patterns-utils";
 import type { AudioEvent, PreloadAudioEvent } from "../constructs/audio";
 
 export async function dispatchAudioSetup(event: PreloadAudioEvent, getSample: (path: string) => Promise<AudioBuffer>): Promise<AudioBuffer | undefined> {

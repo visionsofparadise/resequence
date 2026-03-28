@@ -1,9 +1,6 @@
-import { describe, expect, it } from "vitest";
-import { N } from "../tunings/chromatic";
-import { collectNotes } from "../utils/walk";
-import { pitchKey } from "../pitch";
 import { random } from "./random";
-
+import { N, collectNotes, pitchKey } from "@resequence/patterns-core";
+import { describe, expect, it } from "vitest";
 describe("random", () => {
 	it("generates the specified number of notes", () => {
 		const pat = random({ pitches: [N.C4(1).pitch, N.D4(1).pitch, N.E4(1).pitch], count: 8, stepDuration: 0.5, seed: 1 });

@@ -1,12 +1,5 @@
-import type { Note } from "../note";
-import type { ModifierProperties } from "../patterns/modifier";
-import { ModifierPattern } from "../patterns/modifier";
-import type { Pattern, PatternProperties } from "../patterns/pattern";
-import { toPattern } from "../patterns/sequence";
-import { pitchKey } from "../pitch";
-import { modifyNotes } from "../utils/modify";
-import { walkNotes } from "../utils/walk";
-
+import type { Note, ModifierProperties, Pattern, PatternProperties } from "@resequence/patterns-core";
+import { ModifierPattern, toPattern, pitchKey, modifyNotes, walkNotes } from "@resequence/patterns-core";
 export interface StrumOptions {
 	readonly strumOffset?: number;
 	readonly direction?: "up" | "down";

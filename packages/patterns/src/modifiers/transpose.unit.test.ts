@@ -1,10 +1,6 @@
-import { describe, expect, it } from "vitest";
-import { pitchKey } from "../pitch";
-import { sequence } from "../patterns/sequence";
-import { N } from "../tunings/chromatic";
-import { collectNotes } from "../utils/walk";
 import { transpose } from "./transpose";
-
+import { pitchKey, sequence, N, collectNotes } from "@resequence/patterns-core";
+import { describe, expect, it } from "vitest";
 describe("transpose", () => {
 	it("shifts pitch by interval", () => {
 		const result = transpose(N.C4(1), 7);

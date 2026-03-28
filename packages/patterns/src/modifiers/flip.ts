@@ -1,12 +1,5 @@
-import type { Note } from "../note";
-import type { ModifierProperties } from "../patterns/modifier";
-import { ModifierPattern } from "../patterns/modifier";
-import type { Pattern, PatternProperties } from "../patterns/pattern";
-import { toPattern } from "../patterns/sequence";
-import type { Pitch } from "../pitch";
-import { addSteps, NUM_OCTAVES, pitchKey } from "../pitch";
-import { modifyNotes } from "../utils/modify";
-
+import type { Note, ModifierProperties, Pattern, PatternProperties, Pitch } from "@resequence/patterns-core";
+import { ModifierPattern, toPattern, addSteps, NUM_OCTAVES, pitchKey, modifyNotes } from "@resequence/patterns-core";
 export interface FlipProperties extends ModifierProperties {
 	readonly center: Pitch;
 	readonly range: [Pitch, Pitch] | undefined;

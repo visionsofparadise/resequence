@@ -1,10 +1,5 @@
-import type { Note } from "../note";
-import type { ModifierProperties } from "../patterns/modifier";
-import { ModifierPattern } from "../patterns/modifier";
-import type { Pattern, PatternProperties } from "../patterns/pattern";
-import { toPattern } from "../patterns/sequence";
-import { flatModifyNotes } from "../utils/modify";
-
+import type { Note, ModifierProperties, Pattern, PatternProperties } from "@resequence/patterns-core";
+import { ModifierPattern, toPattern, flatModifyNotes } from "@resequence/patterns-core";
 export interface EchoProperties extends ModifierProperties {
 	readonly interval: number;
 	readonly repeats: number;

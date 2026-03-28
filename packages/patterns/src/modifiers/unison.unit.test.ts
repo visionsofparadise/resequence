@@ -1,9 +1,6 @@
-import { describe, expect, it } from "vitest";
-import { pitchKey } from "../pitch";
-import { N } from "../tunings/chromatic";
-import { collectNotes } from "../utils/walk";
 import { unison } from "./unison";
-
+import { pitchKey, N, collectNotes } from "@resequence/patterns-core";
+import { describe, expect, it } from "vitest";
 describe("unison", () => {
 	it("produces correct number of voices", () => {
 		const result = unison(N.C4(1), 3);

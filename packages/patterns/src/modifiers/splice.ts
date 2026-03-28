@@ -1,11 +1,5 @@
-import type { Note } from "../note";
-import type { ModifierProperties } from "../patterns/modifier";
-import { ModifierPattern } from "../patterns/modifier";
-import type { Pattern, PatternProperties, RelativeChild, RelativeNote } from "../patterns/pattern";
-import { toPattern } from "../patterns/sequence";
-import { flatModifyNotes } from "../utils/modify";
-import { collectNotes, walkPatterns } from "../utils/walk";
-
+import type { Note, ModifierProperties, Pattern, PatternProperties, RelativeChild, RelativeNote } from "@resequence/patterns-core";
+import { ModifierPattern, toPattern, flatModifyNotes, collectNotes, walkPatterns } from "@resequence/patterns-core";
 export interface SpliceOptions {
 	readonly at: number;
 	readonly remove?: number;

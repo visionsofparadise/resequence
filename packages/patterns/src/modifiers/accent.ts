@@ -1,10 +1,5 @@
-import type { Note } from "../note";
-import type { ModifierProperties } from "../patterns/modifier";
-import { ModifierPattern } from "../patterns/modifier";
-import type { Pattern, PatternProperties } from "../patterns/pattern";
-import { toPattern } from "../patterns/sequence";
-import { modifyNotes } from "../utils/modify";
-
+import type { Note, ModifierProperties, Pattern, PatternProperties } from "@resequence/patterns-core";
+import { ModifierPattern, toPattern, modifyNotes } from "@resequence/patterns-core";
 export interface AccentProperties extends ModifierProperties {
 	readonly positions: ReadonlyArray<number>;
 	readonly amount: number;

@@ -1,5 +1,5 @@
-import type { MarkerPoint, RegionPoint, TempoMap } from "@resequence/patterns";
-import { beatsToSeconds } from "@resequence/patterns";
+import type { MarkerPoint, RegionPoint, TempoMap } from "@resequence/patterns-utils";
+import { beatsToSeconds } from "@resequence/patterns-utils";
 import type { WavBitDepth } from "@resequence/web-au-utils";
 import { WaveFile } from "wavefile";
 

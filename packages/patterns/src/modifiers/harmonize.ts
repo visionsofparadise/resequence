@@ -1,11 +1,5 @@
-import type { Note } from "../note";
-import type { ModifierProperties } from "../patterns/modifier";
-import { ModifierPattern } from "../patterns/modifier";
-import type { Pattern, PatternProperties } from "../patterns/pattern";
-import { toPattern } from "../patterns/sequence";
-import { addSteps, NUM_OCTAVES } from "../pitch";
-import { flatModifyNotes } from "../utils/modify";
-
+import type { Note, ModifierProperties, Pattern, PatternProperties } from "@resequence/patterns-core";
+import { ModifierPattern, toPattern, addSteps, NUM_OCTAVES, flatModifyNotes } from "@resequence/patterns-core";
 export interface HarmonizeProperties extends ModifierProperties {
 	readonly interval: number;
 }

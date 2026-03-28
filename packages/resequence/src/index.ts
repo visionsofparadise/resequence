@@ -1,5 +1,6 @@
 /* eslint-disable barrel-files/avoid-barrel-files, barrel-files/avoid-re-export-all */
-export * from "@resequence/patterns";
+export * from "@resequence/patterns-core";
+export * from "@resequence/patterns-utils";
 export { formula } from "./automation/formula";
 export type { FormulaOptions } from "./automation/formula";
 export { scheduleKeyframes } from "./automation/keyframe";

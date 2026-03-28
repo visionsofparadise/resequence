@@ -1,8 +1,5 @@
-import type { Note } from "../note";
-import type { MidiPatternProperties } from "../patterns/midi";
-import { MidiPattern } from "../patterns/midi";
-import type { PatternProperties, RelativeNote } from "../patterns/pattern";
-
+import type { Note, MidiPatternProperties, PatternProperties, RelativeNote } from "@resequence/patterns-core";
+import { MidiPattern } from "@resequence/patterns-core";
 export type GenerativeCallback = (accumulator: Array<Note>, index: number, total: number) => Array<Note>;
 
 export interface GenerativeProperties extends MidiPatternProperties {

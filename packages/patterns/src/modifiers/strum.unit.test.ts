@@ -1,9 +1,6 @@
-import { describe, expect, it } from "vitest";
-import { layer } from "../patterns/layer";
-import { N } from "../tunings/chromatic";
-import { collectNotes } from "../utils/walk";
 import { strum } from "./strum";
-
+import { layer, N, collectNotes } from "@resequence/patterns-core";
+import { describe, expect, it } from "vitest";
 describe("strum", () => {
 	it("spreads chord notes over time", () => {
 		const chord = layer(N.C4(1), N.E4(1), N.G4(1));

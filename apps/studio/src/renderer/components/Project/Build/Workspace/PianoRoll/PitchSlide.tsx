@@ -1,5 +1,5 @@
 import { useMemo, useRef } from "react";
-import { applyCurve, denormalizePitch, pitchKey } from "@resequence/patterns";
+import { applyCurve, denormalizePitch, pitchKey } from "resequence";
 import { useTransients } from "../../../../../hooks/useTransients";
 import type { BuildContext } from "../../../../../models/Context";
 import type { MidiClip, MidiClipNote, Sequence } from "../../utils/buildArrangement";

@@ -1,10 +1,6 @@
-import { describe, expect, it } from "vitest";
-import { note } from "../note";
-import { sequence } from "../patterns/sequence";
-import { N } from "../tunings/chromatic";
-import { collectNotes } from "../utils/walk";
 import { gate } from "./gate";
-
+import { note, sequence, N, collectNotes } from "@resequence/patterns-core";
+import { describe, expect, it } from "vitest";
 describe("gate", () => {
 	it("clips notes to gate windows", () => {
 		const tree = sequence(N.C4(4));

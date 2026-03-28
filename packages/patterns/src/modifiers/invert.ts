@@ -1,12 +1,5 @@
-import type { Note } from "../note";
-import type { ModifierProperties } from "../patterns/modifier";
-import { ModifierPattern } from "../patterns/modifier";
-import type { Pattern, PatternProperties } from "../patterns/pattern";
-import { toPattern } from "../patterns/sequence";
-import { addSteps, NUM_OCTAVES, pitchKey } from "../pitch";
-import { modifyNotes } from "../utils/modify";
-import { walkNotes } from "../utils/walk";
-
+import type { Note, ModifierProperties, Pattern, PatternProperties } from "@resequence/patterns-core";
+import { ModifierPattern, toPattern, addSteps, NUM_OCTAVES, pitchKey, modifyNotes, walkNotes } from "@resequence/patterns-core";
 export interface InvertProperties extends ModifierProperties {
 	readonly inversions: number;
 }

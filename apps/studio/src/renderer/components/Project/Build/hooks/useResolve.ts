@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
-import { sequence } from "@resequence/patterns";
-import { Router, router } from "resequence";
+import { Router, router, sequence } from "resequence";
 import type { ProjectContext } from "../../../../models/Context";
 import type { OverrideEntry } from "../../../../models/State/Override";
 

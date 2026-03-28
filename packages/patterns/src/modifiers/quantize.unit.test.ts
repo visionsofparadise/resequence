@@ -1,9 +1,6 @@
-import { describe, expect, it } from "vitest";
-import { sequence } from "../patterns/sequence";
-import { N } from "../tunings/chromatic";
-import { collectNotes } from "../utils/walk";
 import { quantize } from "./quantize";
-
+import { sequence, N, collectNotes } from "@resequence/patterns-core";
+import { describe, expect, it } from "vitest";
 describe("quantize", () => {
 	it("snaps notes to grid", () => {
 		const tree = sequence(N.C4(0.6), N.E4(0.4));

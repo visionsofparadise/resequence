@@ -1,5 +1,5 @@
 import { useMemo, useRef } from "react";
-import { beatsToSeconds } from "@resequence/patterns";
+import { beatsToSeconds } from "resequence";
 import type { WaveformBinary } from "../../../../../../../../shared/utilities/waveform/WaveformCodec";
 import { useTransients } from "../../../../../../../hooks/useTransients";
 import type { BuildContext } from "../../../../../../../models/Context";

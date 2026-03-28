@@ -1,13 +1,6 @@
-import type { Keyframe } from "../events";
-import type { Note } from "../note";
-import { ModifierPattern } from "../patterns/modifier";
-import type { Pattern, PatternProperties } from "../patterns/pattern";
-import { toPattern } from "../patterns/sequence";
-import { normalizePitch, pitchKey } from "../pitch";
-import { modifyNotes } from "../utils/modify";
-import { evaluateSlide, mergeSlides } from "../utils/slide";
-import { walkNotes } from "../utils/walk";
-
+import type { Keyframe, Note, Pattern, PatternProperties } from "@resequence/patterns-core";
+import { ModifierPattern, toPattern, normalizePitch, pitchKey, modifyNotes, walkNotes } from "@resequence/patterns-core";
+import { evaluateSlide, mergeSlides } from "@resequence/patterns-utils";
 export class SlidePattern extends ModifierPattern {
 	readonly type = ["pattern", "midi", "modifier", "slide"] as const;
 

@@ -1,8 +1,5 @@
-import type { MidiPatternProperties } from "../patterns/midi";
-import { MidiPattern } from "../patterns/midi";
-import type { PatternProperties, RelativeNote } from "../patterns/pattern";
-import type { Pitch } from "../pitch";
-
+import type { MidiPatternProperties, PatternProperties, RelativeNote, Pitch } from "@resequence/patterns-core";
+import { MidiPattern } from "@resequence/patterns-core";
 function euclidean(hits: number, steps: number, rotate: number): ReadonlyArray<boolean> {
 	if (steps === 0) return [];
 	const pattern: Array<boolean> = [];

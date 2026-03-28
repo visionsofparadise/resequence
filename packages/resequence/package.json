@@ -4,12 +4,32 @@
   "type": "module",
   "exports": {
     ".": {
-      "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./patterns": {
+      "types": "./dist/patterns.d.ts",
+      "import": "./dist/patterns.js"
+    },
+    "./patterns/core": {
+      "types": "./dist/patterns-core.d.ts",
+      "import": "./dist/patterns-core.js"
+    },
+    "./patterns/utils": {
+      "types": "./dist/patterns-utils.d.ts",
+      "import": "./dist/patterns-utils.js"
     },
     "./web-au": {
-      "import": "./dist/web-au.js",
-      "types": "./dist/web-au.d.ts"
+      "types": "./dist/web-au.d.ts",
+      "import": "./dist/web-au.js"
+    },
+    "./web-au/core": {
+      "types": "./dist/web-au-core.d.ts",
+      "import": "./dist/web-au-core.js"
+    },
+    "./web-au/utils": {
+      "types": "./dist/web-au-utils.d.ts",
+      "import": "./dist/web-au-utils.js"
     }
   },
   "bin": {
@@ -46,6 +66,8 @@
   },
   "dependencies": {
     "@resequence/patterns": "*",
+    "@resequence/patterns-core": "*",
+    "@resequence/patterns-utils": "*",
     "@resequence/web-au": "*",
     "@resequence/web-au-core": "*",
     "@resequence/web-au-utils": "*",

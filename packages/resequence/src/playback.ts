@@ -1,5 +1,6 @@
-import type { Event, NoteEvent as PatternNoteEvent, TempoMap } from "@resequence/patterns";
-import { collectMetadata } from "@resequence/patterns";
+import type { Event, NoteEvent as PatternNoteEvent } from "@resequence/patterns-core";
+import type { TempoMap } from "@resequence/patterns-utils";
+import { collectMetadata } from "@resequence/patterns-utils";
 import type { DriverEntry, UnitContext } from "@resequence/web-au-core";
 import { computeMaxLatency, createUnitContext } from "@resequence/web-au-core";
 import type { AudioEvent } from "./constructs/audio";

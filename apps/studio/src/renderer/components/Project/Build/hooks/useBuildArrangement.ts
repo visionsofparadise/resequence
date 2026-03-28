@@ -1,6 +1,5 @@
-import type { TempoMap } from "@resequence/patterns";
 import { useMemo } from "react";
-import type { Router } from "resequence";
+import type { Router, TempoMap } from "resequence";
 import type { Arrangement } from "../utils/buildArrangement";
 import { buildArrangement } from "../utils/buildArrangement";
 

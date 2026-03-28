@@ -1,10 +1,5 @@
-import type { Note } from "../note";
-import type { ModifierProperties } from "../patterns/modifier";
-import { ModifierPattern } from "../patterns/modifier";
-import type { Pattern, PatternProperties } from "../patterns/pattern";
-import { toPattern } from "../patterns/sequence";
-import { modifyNotes } from "../utils/modify";
-
+import type { Note, ModifierProperties, Pattern, PatternProperties } from "@resequence/patterns-core";
+import { ModifierPattern, toPattern, modifyNotes } from "@resequence/patterns-core";
 export interface StretchProperties extends ModifierProperties {
 	readonly factor: number;
 }

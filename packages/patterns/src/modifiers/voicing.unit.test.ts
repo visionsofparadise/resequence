@@ -1,10 +1,6 @@
-import { describe, expect, it } from "vitest";
-import { pitchKey } from "../pitch";
-import { layer } from "../patterns/layer";
-import { N } from "../tunings/chromatic";
-import { collectNotes } from "../utils/walk";
 import { voicing } from "./voicing";
-
+import { pitchKey, layer, N, collectNotes } from "@resequence/patterns-core";
+import { describe, expect, it } from "vitest";
 describe("voicing", () => {
 	it("rearranges chord to close voicing", () => {
 		const chord = layer(N.C4(1), N.E5(1), N.G5(1));

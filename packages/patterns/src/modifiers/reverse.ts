@@ -1,9 +1,5 @@
-import type { Note } from "../note";
-import { ModifierPattern } from "../patterns/modifier";
-import type { Pattern, PatternProperties } from "../patterns/pattern";
-import { toPattern } from "../patterns/sequence";
-import { modifyNotes } from "../utils/modify";
-
+import type { Note, Pattern, PatternProperties } from "@resequence/patterns-core";
+import { ModifierPattern, toPattern, modifyNotes } from "@resequence/patterns-core";
 export class ReversePattern extends ModifierPattern {
 	readonly type = ["pattern", "midi", "modifier", "reverse"] as const;
 

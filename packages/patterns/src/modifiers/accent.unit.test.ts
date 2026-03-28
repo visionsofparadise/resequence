@@ -1,9 +1,6 @@
-import { describe, expect, it } from "vitest";
-import { sequence } from "../patterns/sequence";
-import { N } from "../tunings/chromatic";
-import { collectNotes } from "../utils/walk";
 import { accent } from "./accent";
-
+import { sequence, N, collectNotes } from "@resequence/patterns-core";
+import { describe, expect, it } from "vitest";
 describe("accent", () => {
 	it("increases velocity at accent positions", () => {
 		const tree = sequence(N.C4(1), N.E4(1), N.G4(1), N.C5(1));

@@ -1,5 +1,5 @@
-import type { Event, Keyframe, PatternProperties } from "@resequence/patterns";
-import { Pattern } from "@resequence/patterns";
+import type { Event, Keyframe, PatternProperties } from "@resequence/patterns-core";
+import { Pattern } from "@resequence/patterns-core";
 import type { Lfo } from "../automation/lfo";
 
 export function isAutomationEvent(event: Event | { type: string }): event is AutomationEvent {

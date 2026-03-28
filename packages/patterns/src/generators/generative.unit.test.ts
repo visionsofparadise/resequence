@@ -1,9 +1,6 @@
-import { describe, expect, it } from "vitest";
-import { N } from "../tunings/chromatic";
-import { collectNotes } from "../utils/walk";
-import { pitchKey } from "../pitch";
 import { generative } from "./generative";
-
+import { N, collectNotes, pitchKey } from "@resequence/patterns-core";
+import { describe, expect, it } from "vitest";
 describe("generative", () => {
 	it("builds a scale run by adding a note each step", () => {
 		const scale = [N.C4(1), N.D4(1), N.E4(1), N.F4(1), N.G4(1), N.A4(1), N.B4(1), N.C5(1)];

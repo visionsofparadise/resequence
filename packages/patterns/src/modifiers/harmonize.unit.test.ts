@@ -1,9 +1,6 @@
-import { describe, expect, it } from "vitest";
-import { pitchKey } from "../pitch";
-import { N } from "../tunings/chromatic";
-import { collectNotes } from "../utils/walk";
 import { harmonize } from "./harmonize";
-
+import { pitchKey, N, collectNotes } from "@resequence/patterns-core";
+import { describe, expect, it } from "vitest";
 describe("harmonize", () => {
 	it("produces original + transposed copy", () => {
 		const result = harmonize(N.C4(1), 7);

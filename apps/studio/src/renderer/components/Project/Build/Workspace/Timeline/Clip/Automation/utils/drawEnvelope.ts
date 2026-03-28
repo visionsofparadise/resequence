@@ -1,4 +1,4 @@
-import { evaluateAt, type Keyframe } from "@resequence/patterns";
+import { evaluateAt, type Keyframe } from "resequence";
 import { textPrimary, accentPrimary } from "@resequence/design-system";
 
 export const AUTOMATION_COLOR = textPrimary;
