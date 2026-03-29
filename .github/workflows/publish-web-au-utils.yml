@@ -39,6 +39,10 @@ jobs:
         if: steps.check.outputs.skip == 'false'
         run: npm ci
 
+      - name: Build dependencies
+        if: steps.check.outputs.skip == 'false'
+        run: npm run build --workspace=packages/web-au-core
+
       - name: Type check and lint
         if: steps.check.outputs.skip == 'false'
         run: npm run check --workspace=packages/web-au-utils
