@@ -2,7 +2,7 @@ name: Publish patterns
 
 on:
   push:
-    branches: [main]
+    branches: [master]
     paths:
       - 'packages/patterns/package.json'
 

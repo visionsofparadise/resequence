@@ -2,7 +2,7 @@ name: Publish web-au
 
 on:
   push:
-    branches: [main]
+    branches: [master]
     paths:
       - 'packages/web-au/package.json'
 

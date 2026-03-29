@@ -2,7 +2,7 @@ name: Publish web-au-utils
 
 on:
   push:
-    branches: [main]
+    branches: [master]
     paths:
       - 'packages/web-au-utils/package.json'
 
