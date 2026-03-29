@@ -154,7 +154,7 @@ program
 
 		const pattern = router.pattern;
 
-		const { renderMidi } = await import("@resequence/patterns");
+		const { renderMidi } = await import("@resequence/patterns-utils");
 
 		const midiTracks = renderMidi(pattern, {});
 
