@@ -94,7 +94,7 @@ Notes without a route are orphaned and produce no sound.
 
 ### Modifier API
 
-**Pitch**: `transpose`, `harmonize`, `invertChord`, `voicing`, `flip`, `unison`, `slide`
+**Pitch**: `transpose`, `harmonize`, `invert`, `voicing`, `flip`, `unison`, `slide`
 
 **Rhythm**: `quantize`, `shuffle`, `stretch`, `length`, `legato`, `offset`, `jitter`
 
@@ -177,7 +177,7 @@ The generator's ID prefixes downstream effect IDs, giving each parameter a uniqu
 
 **Modulation units**: `lfo`, `macro`, `envelope` / `env`
 
-**MIDI transforms**: `harmonizeMidi`, `humanizeMidi`, `noteFilter`, `velocityCurve`
+**MIDI transforms**: `harmonize`, `humanize`, `noteFilter`, `velocityCurve`
 
 **Sources/Targets**: `read`, `write`, `speakers`
 

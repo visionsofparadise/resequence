@@ -363,8 +363,8 @@ Note transforms sit in the unit graph and modify note events before they reach g
 
 ```typescript
 chain(
-	harmonizeMidi([0, 4, 7]), // add major triad
-	humanizeMidi({ timing: 10, velocity: 15 }), // subtle randomization
+	harmonize([0, 4, 7]), // add major triad
+	humanize({ timing: 10, velocity: 15 }), // subtle randomization
 	noteFilter((e) => e.velocity > 40), // drop quiet notes
 	velocityCurve((v) => Math.pow(v / 127, 0.7) * 127), // soften dynamics
 	portamento({ timeMs: 50 }), // pitch glide between notes

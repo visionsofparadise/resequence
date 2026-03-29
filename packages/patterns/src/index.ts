@@ -23,7 +23,7 @@ export { harmonize, HarmonizePattern } from "./modifiers/harmonize";
 export type { HarmonizeProperties } from "./modifiers/harmonize";
 export { heal, HealPattern } from "./modifiers/heal";
 export type { HealProperties } from "./modifiers/heal";
-export { invertChord, InvertPattern } from "./modifiers/invert";
+export { invert, InvertPattern } from "./modifiers/invert";
 export type { InvertProperties } from "./modifiers/invert";
 export { jitter, JitterPattern } from "./modifiers/jitter";
 export type { JitterProperties } from "./modifiers/jitter";

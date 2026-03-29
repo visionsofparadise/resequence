@@ -19,7 +19,7 @@ export class InvertPattern extends ModifierPattern<InvertProperties> {
 	}
 }
 
-export function invertChord(pattern: Pattern | Note, inversions: number): InvertPattern {
+export function invert(pattern: Pattern | Note, inversions: number): InvertPattern {
 	const resolved = toPattern(pattern);
 	const entries: Array<{ id: string; absoluteStart: number; key: number; stepsPerOctave: number }> = [];
 

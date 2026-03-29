@@ -84,9 +84,9 @@ export type { SamplerProperties, SamplerZone } from "./generators/sampler";
 // MIDI transforms
 export { EnvelopeUnit, env, envelope } from "./midi/envelope";
 export type { EnvelopeAdsr, EnvelopeProperties } from "./midi/envelope";
-export { HarmonizeMidiUnit, harmonize as harmonizeMidi } from "./midi/harmonize";
+export { HarmonizeMidiUnit, harmonize } from "./midi/harmonize";
 export type { HarmonizeProperties } from "./midi/harmonize";
-export { HumanizeMidiUnit, humanize as humanizeMidi } from "./midi/humanize";
+export { HumanizeMidiUnit, humanize } from "./midi/humanize";
 export type { HumanizeProperties } from "./midi/humanize";
 export { NoteFilterMidiUnit, noteFilter } from "./midi/note-filter";
 export type { NoteFilterProperties } from "./midi/note-filter";

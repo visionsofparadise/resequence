@@ -154,7 +154,7 @@ Modifiers wrap a pattern, transform its notes at construction time, and persist 
 
 **`harmonize(pattern, intervals)`** — duplicate notes at multiple intervals. `harmonize(melody, [0, 4, 7])` creates a major triad from each note.
 
-**`invertChord(pattern, position)`** — chord inversion. `invertChord(chord, 1)` moves the lowest note up an octave.
+**`invert(pattern, position)`** — chord inversion. `invert(chord, 1)` moves the lowest note up an octave.
 
 **`voicing(pattern, style)`** — rearrange chord voicing. Styles: `"spread"`, `"drop2"`, `"drop3"`, `"firstInversion"`, `"secondInversion"`, etc.
 
