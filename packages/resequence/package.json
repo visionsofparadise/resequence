@@ -1,6 +1,6 @@
 {
   "name": "resequence",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "exports": {
     ".": {
@@ -33,7 +33,7 @@
     }
   },
   "bin": {
-    "resequence": "./dist/cli.js"
+    "resequence": "dist/cli.js"
   },
   "files": [
     "dist"
