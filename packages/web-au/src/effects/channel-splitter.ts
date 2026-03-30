@@ -1,13 +1,13 @@
-import type { SetupResult, UnitContext, UnitInput, UnitProperties } from "@resequence/web-au-core";
-
+import type { SetupResult, UnitContext, UnitInput } from "@resequence/web-au-core";
 import { Unit } from "@resequence/web-au-core";
+import { z } from "zod";
 import { type GainEffectUnit, linearGain } from "./gain";
 
-export interface ChannelSplitterProperties extends UnitProperties {
-	readonly channelCount?: number;
-}
+const channelSplitterSchema = z.object({
+	channelCount: z.number().min(1).max(32).default(2).describe("Channel Count"),
+});
 
-export class ChannelSplitterUnit extends Unit {
+export class ChannelSplitterUnit extends Unit<typeof channelSplitterSchema> {
 	readonly type = ["unit", "channel-splitter"] as const;
 	readonly channels: Array<GainEffectUnit> = [];
 
@@ -15,23 +15,18 @@ export class ChannelSplitterUnit extends Unit {
 		return Unit.is(value) && value.type[1] === "channel-splitter";
 	}
 
-	declare readonly properties: ChannelSplitterProperties;
+	constructor(input: z.infer<typeof channelSplitterSchema> & UnitInput = { channelCount: 2 }) {
+		super(input, channelSplitterSchema);
 
-	constructor(properties?: UnitInput<ChannelSplitterProperties>) {
-		super(properties);
-		this.properties = { ...properties, targets: properties?.targets ?? [], modDeclarations: properties?.modDeclarations ?? [], channelCount: properties?.channelCount ?? 2 };
-
-		for (let ch = 0; ch < this.channelCount; ch++) {
+		for (let ch = 0; ch < this.parameters.channelCount.value; ch++) {
 			this.channels.push(linearGain({ level: 1 }));
 		}
 	}
 
-	get channelCount(): number { return this.properties.channelCount ?? 2; }
-
 	protected override async _setup(context: UnitContext): Promise<SetupResult> {
-		const splitter = context.audioContext.createChannelSplitter(this.channelCount);
+		const splitter = context.audioContext.createChannelSplitter(this.channels.length);
 
-		for (let ch = 0; ch < this.channelCount; ch++) {
+		for (let ch = 0; ch < this.channels.length; ch++) {
 			const channel = this.channels[ch];
 
 			if (!channel) continue;
@@ -52,9 +47,9 @@ export class ChannelSplitterUnit extends Unit {
 }
 
 export function channelSplitter(channels?: number): ChannelSplitterUnit {
-	return new ChannelSplitterUnit({ channelCount: channels });
+	return new ChannelSplitterUnit({ channelCount: channels ?? 2 });
 }
 
 export function split(channels?: number): ChannelSplitterUnit {
-	return new ChannelSplitterUnit({ channelCount: channels });
+	return channelSplitter(channels);
 }

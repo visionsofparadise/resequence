@@ -1,7 +1,7 @@
+import type { z } from "zod";
 import type { UnitContext } from "./context";
 import type { NoteEvent } from "./note-event";
-import type { ModDeclaration, UnitProperties } from "./unit";
-import { Unit } from "./unit";
+import { type UnitInput, Unit } from "./unit";
 
 export type NoteProperty = "velocity" | "pitch" | "gate";
 
@@ -11,35 +11,20 @@ export interface NoteModDeclaration {
 	readonly transform?: (value: number) => number;
 }
 
-export interface MidiUnitProperties extends UnitProperties {
-	readonly noteModDeclarations: Array<NoteModDeclaration>;
-}
+export interface MidiUnitInput extends UnitInput {}
 
-type OptionalMidiKeys = "targets" | "modDeclarations" | "noteModDeclarations";
-
-export type MidiUnitInput<P extends MidiUnitProperties = MidiUnitProperties> = Omit<P, OptionalMidiKeys> & Partial<Pick<P, OptionalMidiKeys>>;
-
-export abstract class MidiUnit extends Unit {
+export abstract class MidiUnit<
+	S extends z.ZodObject = z.ZodObject,
+> extends Unit<S> {
 	abstract readonly type: readonly ["unit", "midi", ...Array<string>];
-	declare properties: MidiUnitProperties;
+	readonly noteModDeclarations: Array<NoteModDeclaration> = [];
 
 	static override is(value: unknown): value is MidiUnit {
 		return Unit.is(value) && value.type[1] === "midi";
 	}
 
-	constructor(properties?: MidiUnitInput) {
-		super(properties);
-
-		this.properties = {
-			...properties,
-			targets: properties?.targets ?? [],
-			modDeclarations: properties?.modDeclarations ?? ([] as Array<ModDeclaration>),
-			noteModDeclarations: properties?.noteModDeclarations ?? [],
-		};
-	}
-
 	noteMod(property: NoteProperty, paths: Array<string>, transform?: (value: number) => number): void {
-		this.properties.noteModDeclarations.push({ property, paths, transform });
+		this.noteModDeclarations.push({ property, paths, transform });
 	}
 
 	schedule(noteEvent: NoteEvent, context: UnitContext): void {
@@ -48,7 +33,7 @@ export abstract class MidiUnit extends Unit {
 		this.applyNoteMods(noteEvent, context);
 
 		for (const target of this.targets) {
-			if (target instanceof MidiUnit) target.schedule(noteEvent, context);
+			if (MidiUnit.is(target)) target.schedule(noteEvent, context);
 		}
 	}
 
@@ -57,7 +42,7 @@ export abstract class MidiUnit extends Unit {
 	}
 
 	private applyNoteMods(noteEvent: NoteEvent, context: UnitContext): void {
-		for (const decl of this.properties.noteModDeclarations) {
+		for (const decl of this.noteModDeclarations) {
 			let value: number;
 
 			switch (decl.property) {

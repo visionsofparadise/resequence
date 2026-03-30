@@ -1,5 +1,6 @@
-import type { SetupResult, UnitContext, UnitInput, UnitProperties } from "@resequence/web-au-core";
+import type { SetupResult, UnitContext, UnitInput } from "@resequence/web-au-core";
 import { Unit, buildCurve } from "@resequence/web-au-core";
+import { z } from "zod";
 
 export const WaveShaperCurve = {
 	SoftClip: buildCurve((x) => x / (1 + Math.abs(x))),
@@ -13,34 +14,31 @@ export const WaveShaperCurve = {
 
 export type Oversample = "none" | "2x" | "4x";
 
-export interface WaveShaperProperties extends UnitProperties {
-	readonly curve: Float32Array<ArrayBuffer>;
-	readonly oversample?: Oversample;
-}
+const waveShaperSchema = z.object({
+	oversample: z.enum(["none", "2x", "4x"]).default("none").describe("Oversample").optional(),
+});
 
-export class WaveShaperEffectUnit extends Unit {
+export class WaveShaperEffectUnit extends Unit<typeof waveShaperSchema> {
 	readonly type = ["unit", "waveshaper"] as const;
-	declare readonly properties: WaveShaperProperties;
 
 	static override is(value: unknown): value is WaveShaperEffectUnit {
 		return Unit.is(value) && value.type[1] === "waveshaper";
 	}
 
+
+	readonly curve: Float32Array<ArrayBuffer>;
 	public waveShaperNode: WaveShaperNode | undefined;
 
-	constructor(properties: UnitInput<WaveShaperProperties>) {
-		super(properties);
-		this.properties = { ...properties, targets: properties.targets ?? [], modDeclarations: properties.modDeclarations ?? [] };
+	constructor(input: z.infer<typeof waveShaperSchema> & UnitInput & { readonly curve: Float32Array<ArrayBuffer> }) {
+		super(input, waveShaperSchema);
+		this.curve = input.curve;
 	}
-
-	get curve(): Float32Array<ArrayBuffer> { return this.properties.curve; }
-	get oversample(): Oversample | undefined { return this.properties.oversample; }
 
 	protected override _setup(context: UnitContext): SetupResult {
 		const waveShaperNode = context.audioContext.createWaveShaper();
 
 		waveShaperNode.curve = this.curve;
-		if (this.oversample !== undefined) waveShaperNode.oversample = this.oversample;
+		if (this.parameters.oversample?.value !== undefined) waveShaperNode.oversample = this.parameters.oversample.value;
 
 		this.waveShaperNode = waveShaperNode;
 

@@ -52,6 +52,7 @@
     "@resequence/web-au-core": "*",
     "@resequence/web-au-utils": "*",
     "commander": "^14.0.3",
-    "tsx": "^4.21.0"
+    "tsx": "^4.21.0",
+    "zod": "^4.0.0"
   }
 }

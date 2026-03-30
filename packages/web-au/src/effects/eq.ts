@@ -1,5 +1,6 @@
-import type { SetupResult, UnitContext, UnitInput, UnitProperties } from "@resequence/web-au-core";
-import { Unit } from "@resequence/web-au-core";
+import type { SetupResult, UnitContext, UnitInput } from "@resequence/web-au-core";
+import { Unit, type Parameter } from "@resequence/web-au-core";
+import { z } from "zod";
 import { filter, type FilterEffectUnit, type FilterMode } from "./filter";
 
 export interface EqBand {
@@ -10,26 +11,39 @@ export interface EqBand {
 	readonly id?: string;
 }
 
-export interface EqProperties extends UnitProperties {
-	readonly bands: ReadonlyArray<EqBand>;
-}
+const eqSchema = z.object({
+	bands: z.array(z.object({
+		type: z.enum(["lowpass", "highpass", "bandpass", "notch", "allpass", "peaking", "lowshelf", "highshelf"]).default("peaking"),
+		frequency: z.number().min(20).max(20000).default(1000),
+		gain: z.number().min(-40).max(40).default(0).optional(),
+		resonance: z.number().min(0).max(30).default(1).optional(),
+		id: z.string().optional(),
+	})).default([]),
+});
 
-export class EqEffectUnit extends Unit {
+export class EqEffectUnit extends Unit<typeof eqSchema> {
 	readonly type = ["unit", "eq"] as const;
-	declare readonly properties: EqProperties;
 
 	static override is(value: unknown): value is EqEffectUnit {
 		return Unit.is(value) && value.type[1] === "eq";
 	}
 
+
 	private filterChain: Array<FilterEffectUnit> = [];
 
-	constructor(properties: UnitInput<EqProperties>) {
-		super(properties);
-		this.properties = { ...properties, targets: properties.targets ?? [], modDeclarations: properties.modDeclarations ?? [] };
+	constructor(input: z.infer<typeof eqSchema> & UnitInput) {
+		super(input, eqSchema);
 	}
 
-	get bands(): ReadonlyArray<EqBand> { return this.properties.bands; }
+	get bands(): ReadonlyArray<EqBand> {
+		return this.parameters.bands.map((band: { type: Parameter<FilterMode>; frequency: Parameter<number>; gain: Parameter<number> | null; resonance: Parameter<number> | null; id: Parameter<string> | null }) => ({
+			type: band.type.value,
+			frequency: band.frequency.value,
+			gain: band.gain?.value,
+			resonance: band.resonance?.value,
+			id: band.id?.value,
+		}));
+	}
 
 	protected override _setup(_context: UnitContext): SetupResult {
 		const filters: Array<FilterEffectUnit> = [];
@@ -62,5 +76,5 @@ export class EqEffectUnit extends Unit {
 }
 
 export function eq({ bands, id }: { bands: ReadonlyArray<EqBand>; id?: string }): EqEffectUnit {
-	return new EqEffectUnit({ bands, id });
+	return new EqEffectUnit({ bands: [...bands], id });
 }

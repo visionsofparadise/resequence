@@ -1,5 +1,6 @@
-import type { MidiUnitProperties, NoteEvent, SetupResult, UnitContext } from "@resequence/web-au-core";
-import { driveParam, MidiUnit, type MidiUnitInput } from "@resequence/web-au-core";
+import type { NoteEvent, SetupResult, UnitContext, MidiUnitInput } from "@resequence/web-au-core";
+import { driveParam, MidiUnit, live } from "@resequence/web-au-core";
+import { z } from "zod";
 
 export interface EnvelopeAdsr {
 	readonly attack?: number;
@@ -9,13 +10,17 @@ export interface EnvelopeAdsr {
 	readonly release?: number;
 }
 
-export interface EnvelopeProperties extends MidiUnitProperties {
-	readonly adsr: EnvelopeAdsr;
-}
+const envelopeSchema = z.object({
+	attack: live(z.number().min(0).max(10).default(0.01).describe("Attack (s)")),
+	hold: live(z.number().min(0).max(10).default(0).describe("Hold (s)")),
+	decay: live(z.number().min(0).max(10).default(0.1).describe("Decay (s)")),
+	sustain: live(z.number().min(0).max(1).default(0.7).describe("Sustain")),
+	release: live(z.number().min(0).max(10).default(0.1).describe("Release (s)")),
+});
 
-export class EnvelopeUnit extends MidiUnit {
+export class EnvelopeUnit extends MidiUnit<typeof envelopeSchema> {
 	readonly type = ["unit", "midi", "envelope"] as const;
-	declare readonly properties: EnvelopeProperties;
+
 
 	static override is(value: unknown): value is EnvelopeUnit {
 		return MidiUnit.is(value) && value.type[2] === "envelope";
@@ -24,18 +29,24 @@ export class EnvelopeUnit extends MidiUnit {
 	public envelopeNode: AudioWorkletNode | undefined;
 	private gateParam: AudioParam | undefined;
 
-	get adsr(): EnvelopeAdsr {
-		return this.properties.adsr;
-	}
+	readonly adsr: EnvelopeAdsr;
 
-	constructor(properties: MidiUnitInput<EnvelopeProperties>) {
-		super(properties);
-		this.properties = {
-			...properties,
-			targets: properties.targets ?? [],
-			modDeclarations: properties.modDeclarations ?? [],
-			noteModDeclarations: properties.noteModDeclarations ?? [],
+	constructor(input: { adsr: EnvelopeAdsr } & MidiUnitInput) {
+		const adsr = input.adsr;
+
+		// Convert ms ADSR values to seconds for schema parameters
+		const schemaInput = {
+			id: input.id,
+			attack: (adsr.attack ?? 10) / 1000,
+			hold: (adsr.hold ?? 0) / 1000,
+			decay: (adsr.decay ?? 100) / 1000,
+			sustain: adsr.sustain ?? 0.7,
+			release: (adsr.release ?? 100) / 1000,
 		};
+
+		super(schemaInput, envelopeSchema);
+
+		this.adsr = adsr;
 	}
 
 	protected override async _setup(context: UnitContext): Promise<SetupResult> {
@@ -49,19 +60,19 @@ export class EnvelopeUnit extends MidiUnit {
 					this.gateParam = param;
 					break;
 				case "attack":
-					driveParam(param, this.id ? `${this.id}.attack` : undefined, (this.adsr.attack ?? 10) / 1000, [0, 10], context);
+					driveParam(param, this.parameters.attack, undefined, context);
 					break;
 				case "hold":
-					driveParam(param, this.id ? `${this.id}.hold` : undefined, (this.adsr.hold ?? 0) / 1000, [0, 10], context);
+					driveParam(param, this.parameters.hold, undefined, context);
 					break;
 				case "decay":
-					driveParam(param, this.id ? `${this.id}.decay` : undefined, (this.adsr.decay ?? 100) / 1000, [0, 10], context);
+					driveParam(param, this.parameters.decay, undefined, context);
 					break;
 				case "sustain":
-					driveParam(param, this.id ? `${this.id}.sustain` : undefined, this.adsr.sustain ?? 0.7, [0, 1], context);
+					driveParam(param, this.parameters.sustain, undefined, context);
 					break;
 				case "release":
-					driveParam(param, this.id ? `${this.id}.release` : undefined, (this.adsr.release ?? 100) / 1000, [0, 10], context);
+					driveParam(param, this.parameters.release, undefined, context);
 					break;
 			}
 		});

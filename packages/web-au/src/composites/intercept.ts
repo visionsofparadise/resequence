@@ -1,44 +1,34 @@
-import type { MidiUnitInput, MidiUnitProperties, NoteEvent, SetupResult, Unit, UnitContext } from "@resequence/web-au-core";
-import { CompositeUnit, getOrCreateDriver, MidiUnit } from "@resequence/web-au-core";
+import type { AnyUnit, NoteEvent, SetupResult, UnitContext, UnitInput } from "@resequence/web-au-core";
+import { CompositeUnit, LiveParameter, MidiUnit } from "@resequence/web-au-core";
+import { z } from "zod";
 
 export interface InterceptOptions {
 	readonly override?: Readonly<Record<string, number>>;
-	readonly insert?: ReadonlyArray<Unit>;
-}
-
-export interface InterceptProperties extends MidiUnitProperties {
-	readonly inner: Unit;
-	readonly options: InterceptOptions;
+	readonly insert?: ReadonlyArray<AnyUnit>;
 }
 
 export class InterceptUnit extends MidiUnit {
 	readonly type = ["unit", "midi", "intercept"] as const;
-	declare readonly properties: InterceptProperties;
 
 	static override is(value: unknown): value is InterceptUnit {
 		return MidiUnit.is(value) && value.type[2] === "intercept";
 	}
 
-	readonly inner: Unit;
+	readonly inner: AnyUnit;
 	private readonly options: InterceptOptions;
 
-	constructor(properties: MidiUnitInput<InterceptProperties>) {
-		super(properties);
-		this.properties = {
-			...properties,
-			targets: properties.targets ?? [],
-			modDeclarations: properties.modDeclarations ?? [],
-			noteModDeclarations: properties.noteModDeclarations ?? [],
-		};
-		this.inner = properties.inner;
-		this.options = properties.options;
+	constructor(input: { inner: AnyUnit; options: InterceptOptions; targets?: Array<AnyUnit> } & UnitInput) {
+		super(input, z.object({}));
+		this.inner = input.inner;
+		this.options = input.options;
+		if (input.targets) this.targets.push(...input.targets);
 	}
 
-	protected override _setup(context: UnitContext): SetupResult {
+	protected override _setup(_context: UnitContext): SetupResult {
 		const { insert, override: overrides } = this.options;
 		const { inner } = this;
 
-		let entryUnit: Unit = inner;
+		let entryUnit: AnyUnit = inner;
 
 		if (insert && insert.length > 0) {
 			for (let index = 0; index < insert.length - 1; index++) {
@@ -57,11 +47,12 @@ export class InterceptUnit extends MidiUnit {
 		}
 
 		if (overrides && inner.id) {
-			for (const [paramName, value] of Object.entries(overrides)) {
-				const path = `${inner.id}.${paramName}`;
-				const entry = getOrCreateDriver(path, value, context);
+			for (const [paramName, normalizedValue] of Object.entries(overrides)) {
+				const param = (inner.parameters)[paramName];
 
-				entry.node.offset.value = value;
+				if (param instanceof LiveParameter) {
+					param.set(param.min + normalizedValue * (param.max - param.min));
+				}
 			}
 		}
 
@@ -85,17 +76,17 @@ export class InterceptUnit extends MidiUnit {
 	}
 }
 
-export function intercept(unit: Unit, options: InterceptOptions): InterceptUnit {
+export function intercept(unit: AnyUnit, options: InterceptOptions): InterceptUnit {
 	if (options.override && !unit.id) {
-		unit.properties.id = crypto.randomUUID();
+		(unit as { id: string }).id = crypto.randomUUID();
 	}
 
-	const targets: Array<Unit> = [...unit.targets];
+	const targets: Array<AnyUnit> = [...unit.targets];
 
 	unit.targets.length = 0;
 
 	if (unit instanceof CompositeUnit) {
-		const tail = "tail" in unit ? (unit as { tail: Unit }).tail : undefined;
+		const tail = "tail" in unit ? (unit as { tail: AnyUnit }).tail : undefined;
 
 		if (tail) {
 			for (const target of tail.targets) {

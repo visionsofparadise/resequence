@@ -1,16 +1,27 @@
 import { describe, expect, it } from "vitest";
+import { z } from "zod";
 import { Unit } from "./unit";
 import type { SetupResult } from "./unit";
 import type { UnitContext } from "./context";
 
+const emptySchema = z.object({});
+
 class TestUnit extends Unit {
 	readonly type = ["unit", "test"] as const;
+
+	constructor(properties?: { id?: string }) {
+		super(properties ?? {}, emptySchema);
+	}
 }
 
 class SetupUnit extends Unit {
 	readonly type = ["unit", "setup-test"] as const;
 	setupCalled = false;
 	teardownCalled = false;
+
+	constructor() {
+		super({}, emptySchema);
+	}
 
 	protected override _setup(_context: UnitContext): SetupResult {
 		this.setupCalled = true;
@@ -79,8 +90,8 @@ describe("Unit", () => {
 	it("registers mod declarations", () => {
 		const unit = new TestUnit();
 		unit.mod(["path.a", "path.b"]);
-		expect(unit.properties.modDeclarations).toHaveLength(1);
-		expect(unit.properties.modDeclarations[0]?.paths).toEqual(["path.a", "path.b"]);
+		expect(unit.modDeclarations).toHaveLength(1);
+		expect(unit.modDeclarations[0]?.paths).toEqual(["path.a", "path.b"]);
 	});
 
 });

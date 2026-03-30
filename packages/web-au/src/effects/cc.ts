@@ -1,8 +1,7 @@
-import type { MidiUnitProperties, NoteEvent, SetupResult, Unit, UnitContext } from "@resequence/web-au-core";
-
-import { MidiUnit, type MidiUnitInput } from "@resequence/web-au-core";
+import type { NoteEvent, SetupResult, UnitContext, AnyUnit, MidiUnitInput } from "@resequence/web-au-core";
+import { MidiUnit } from "@resequence/web-au-core";
+import { z } from "zod";
 import { envelope, type EnvelopeUnit } from "../midi/envelope";
-
 import { chorus } from "./chorus";
 import { lowpass, type FilterEffectUnit } from "./filter";
 import { gain, linearGain, type GainEffectUnit } from "./gain";
@@ -10,19 +9,17 @@ import { mix, type MixNode } from "./mix";
 import { pan, type PanEffectUnit } from "./pan";
 import { reverb } from "./reverb";
 
-export interface CCProperties extends MidiUnitProperties {
-	readonly noteEvent: NoteEvent;
-}
+const ccSchema = z.object({});
 
 export class CCEffectUnit extends MidiUnit {
 	readonly type = ["unit", "midi", "cc"] as const;
-	declare readonly properties: CCProperties;
 
 	static override is(value: unknown): value is CCEffectUnit {
 		return MidiUnit.is(value) && value.type[2] === "cc";
 	}
 
-	public chain: Array<Unit> = [];
+	readonly noteEvent: NoteEvent;
+	public chain: Array<AnyUnit> = [];
 	public envelopeUnit: EnvelopeUnit | undefined;
 	public filterUnit: FilterEffectUnit | undefined;
 	public volumeUnit: GainEffectUnit | undefined;
@@ -31,23 +28,13 @@ export class CCEffectUnit extends MidiUnit {
 	public reverbUnit: MixNode | undefined;
 	private gateUnit: GainEffectUnit | undefined;
 
-	get noteEvent(): NoteEvent {
-		return this.properties.noteEvent;
-	}
-
-	constructor(properties: MidiUnitInput<CCProperties>) {
-		super(properties);
-
-		this.properties = {
-			...properties,
-			targets: properties.targets ?? [],
-			modDeclarations: properties.modDeclarations ?? [],
-			noteModDeclarations: properties.noteModDeclarations ?? [],
-		};
+	constructor(input: MidiUnitInput & { readonly noteEvent: NoteEvent }) {
+		super(input, ccSchema);
+		this.noteEvent = input.noteEvent;
 	}
 
 	protected override _setup(_context: UnitContext): SetupResult {
-		const units: Array<Unit> = [];
+		const units: Array<AnyUnit> = [];
 
 		const { attack, release, sustain } = this.noteEvent;
 

@@ -1,6 +1,6 @@
-import type { SetupResult, UnitContext, UnitInput, UnitProperties } from "@resequence/web-au-core";
-import { Unit, proxyDriver } from "@resequence/web-au-core";
-
+import type { SetupResult, UnitContext, UnitInput } from "@resequence/web-au-core";
+import { Unit, proxyDriver, live } from "@resequence/web-au-core";
+import { z } from "zod";
 import { delay, type DelayEffectUnit } from "./delay";
 import { allpass, lowpass, type FilterEffectUnit } from "./filter";
 import { linearGain, type GainEffectUnit } from "./gain";
@@ -8,19 +8,18 @@ import { linearGain, type GainEffectUnit } from "./gain";
 const COMB_DELAYS = [1116, 1188, 1277, 1356].map((samples) => (samples / 44100) * 1000);
 const ALLPASS_DELAYS = [556, 441].map((samples) => (samples / 44100) * 1000);
 
-export interface ReverbProperties extends UnitProperties {
-	readonly roomSize: number;
-	readonly damping: number;
-}
+const reverbSchema = z.object({
+	roomSize: live(z.number().min(0).max(1).default(0.7).describe("Room Size")),
+	damping: live(z.number().min(0).max(1).default(0.5).describe("Damping")),
+});
 
-export class ReverbEffectUnit extends Unit {
+export class ReverbEffectUnit extends Unit<typeof reverbSchema> {
 	readonly type = ["unit", "reverb"] as const;
 
 	static override is(value: unknown): value is ReverbEffectUnit {
 		return Unit.is(value) && value.type[1] === "reverb";
 	}
 
-	declare readonly properties: ReverbProperties;
 
 	public inputUnit: GainEffectUnit | undefined;
 	public combSumUnit: GainEffectUnit | undefined;
@@ -29,21 +28,14 @@ export class ReverbEffectUnit extends Unit {
 	public combFeedback: Array<GainEffectUnit> = [];
 	public allpassFilters: Array<FilterEffectUnit> = [];
 
-	constructor(properties: UnitInput<ReverbProperties>) {
-		super(properties);
-		this.properties = { ...properties, targets: properties.targets ?? [], modDeclarations: properties.modDeclarations ?? [] };
+	constructor(input: z.infer<typeof reverbSchema> & UnitInput) {
+		super(input, reverbSchema);
 	}
-
-	get roomSize(): number { return this.properties.roomSize; }
-	get damping(): number { return this.properties.damping; }
 
 	protected override async _setup(context: UnitContext): Promise<SetupResult> {
 		const inputUnit = linearGain({ level: 1 });
 		const combSumUnit = linearGain({ level: 0.25 });
-		const lowPassCutoff = lerp(10000, 500, this.damping);
-
-		const feedbackIds: Array<string> = [];
-		const filterIds: Array<string> = [];
+		const lowPassCutoff = lerp(10000, 500, this.parameters.damping.value);
 
 		for (const delayTime of COMB_DELAYS) {
 			const filterId = crypto.randomUUID();
@@ -51,7 +43,7 @@ export class ReverbEffectUnit extends Unit {
 
 			const delayUnit = delay({ time: delayTime });
 			const lowPassUnit = lowpass({ frequency: lowPassCutoff, id: filterId });
-			const feedbackUnit = linearGain({ level: this.roomSize, id: feedbackId });
+			const feedbackUnit = linearGain({ level: this.parameters.roomSize.value, id: feedbackId });
 
 			inputUnit.to(delayUnit);
 			delayUnit.to(lowPassUnit);
@@ -59,8 +51,6 @@ export class ReverbEffectUnit extends Unit {
 			feedbackUnit.to(delayUnit);
 			delayUnit.to(combSumUnit);
 
-			feedbackIds.push(feedbackId);
-			filterIds.push(filterId);
 			this.combDelays.push(delayUnit);
 			this.combFilters.push(lowPassUnit);
 			this.combFeedback.push(feedbackUnit);
@@ -88,9 +78,13 @@ export class ReverbEffectUnit extends Unit {
 
 		await inputUnit.setup(context);
 
-		for (let index = 0; index < feedbackIds.length; index++) {
-			proxyDriver(this.id, "roomSize", `${feedbackIds[index]}.level`, context);
-			proxyDriver(this.id, "damping", `${filterIds[index]}.frequency`, context);
+		for (const [index, feedbackUnit] of this.combFeedback.entries()) {
+			const filterUnit = this.combFilters[index];
+
+			if (!filterUnit) continue;
+
+			proxyDriver(this.parameters.roomSize, feedbackUnit.parameters.level, context);
+			proxyDriver(this.parameters.damping, filterUnit.parameters.frequency, context);
 		}
 
 		this.inputUnit = inputUnit;

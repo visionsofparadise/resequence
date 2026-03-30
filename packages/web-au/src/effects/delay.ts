@@ -1,40 +1,38 @@
-import type { SetupResult, UnitContext, UnitInput, UnitProperties } from "@resequence/web-au-core";
-import { Unit, driveParam } from "@resequence/web-au-core";
-
+import type { SetupResult, UnitContext, UnitInput } from "@resequence/web-au-core";
+import { Unit, driveParam, LiveParameter, live } from "@resequence/web-au-core";
+import { z } from "zod";
 import { linearGain, type GainEffectUnit } from "./gain";
 
-export interface DelayProperties extends UnitProperties {
-	readonly time: number;
-	readonly feedback?: number;
-}
+const delaySchema = z.object({
+	time: z.number().min(0).max(5000).default(250).describe("Time (ms)"),
+	feedback: live(z.number().min(0).max(1).default(0).describe("Feedback")).optional(),
+});
 
-export class DelayEffectUnit extends Unit {
+export class DelayEffectUnit extends Unit<typeof delaySchema> {
 	readonly type = ["unit", "delay"] as const;
 
 	static override is(value: unknown): value is DelayEffectUnit {
 		return Unit.is(value) && value.type[1] === "delay";
 	}
 
-	declare readonly properties: DelayProperties;
+
 	public delayNode: DelayNode | undefined;
 	private feedbackUnit: GainEffectUnit | undefined;
 
-	constructor(properties: UnitInput<DelayProperties>) {
-		super(properties);
-		this.properties = { ...properties, targets: properties.targets ?? [], modDeclarations: properties.modDeclarations ?? [] };
+	constructor(input: z.infer<typeof delaySchema> & UnitInput) {
+		super(input, delaySchema);
 	}
 
-	get time(): number { return this.properties.time; }
-	get feedback(): number | undefined { return this.properties.feedback; }
-
 	protected override _setup(context: UnitContext): SetupResult {
-		const timeSeconds = this.time / 1000;
+		const timeSeconds = this.parameters.time.value / 1000;
 		const delayNode = context.audioContext.createDelay(timeSeconds + 1);
 
-		driveParam(delayNode.delayTime, this.id ? `${this.id}.time` : undefined, timeSeconds, [0, 5], context);
+		const timeLiveParam = new LiveParameter(this.id ? `${this.id}.time` : null, timeSeconds, 0, 5);
 
-		if (this.feedback !== undefined && this.feedback > 0) {
-			const feedbackUnit = linearGain({ level: this.feedback });
+		driveParam(delayNode.delayTime, timeLiveParam, (ms: number) => ms / 1000, context);
+
+		if (this.parameters.feedback?.value !== undefined && this.parameters.feedback.value > 0) {
+			const feedbackUnit = linearGain({ level: this.parameters.feedback.value });
 
 			void feedbackUnit.setup(context);
 

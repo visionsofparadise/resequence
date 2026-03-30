@@ -1,8 +1,15 @@
 import { describe, expect, it } from "vitest";
+import { z } from "zod";
 import { MidiUnit } from "./midi";
+
+const emptySchema = z.object({});
 
 class TestMidiUnit extends MidiUnit {
 	readonly type = ["unit", "midi", "test"] as const;
+
+	constructor() {
+		super({}, emptySchema);
+	}
 }
 
 describe("MidiUnit", () => {

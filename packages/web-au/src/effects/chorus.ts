@@ -1,59 +1,53 @@
-import type { SetupResult, UnitContext, UnitInput, UnitProperties } from "@resequence/web-au-core";
+import type { SetupResult, UnitContext, UnitInput } from "@resequence/web-au-core";
+import { Unit, proxyDriver, live } from "@resequence/web-au-core";
+import { z } from "zod";
 import { lfo, type LfoUnit } from "../lfo";
-import { Unit, proxyDriver } from "@resequence/web-au-core";
-
 import { delay, type DelayEffectUnit } from "./delay";
 
-export interface ChorusProperties extends UnitProperties {
-	readonly delay: number;
-	readonly rate: number;
-	readonly depth: number;
-	readonly feedback?: number;
-}
+const chorusSchema = z.object({
+	rate: live(z.number().min(0.01).max(100).default(1).describe("Rate (Hz)")),
+	depth: live(z.number().min(0).max(1).default(0.5).describe("Depth")),
+});
 
-export class ChorusEffectUnit extends Unit {
+export class ChorusEffectUnit extends Unit<typeof chorusSchema> {
 	readonly type = ["unit", "chorus"] as const;
 
 	static override is(value: unknown): value is ChorusEffectUnit {
 		return Unit.is(value) && value.type[1] === "chorus";
 	}
 
-	declare readonly properties: ChorusProperties;
 
+	readonly delay: number;
+	readonly feedback: number | undefined;
 	private delayUnit: DelayEffectUnit | undefined;
 	private lfoUnit: LfoUnit | undefined;
 
-	constructor(properties: UnitInput<ChorusProperties>) {
-		super(properties);
-		this.properties = { ...properties, targets: properties.targets ?? [], modDeclarations: properties.modDeclarations ?? [] };
+	constructor(input: z.infer<typeof chorusSchema> & UnitInput & { readonly delay: number; readonly feedback?: number }) {
+		super(input, chorusSchema);
+		this.delay = input.delay;
+		this.feedback = input.feedback;
 	}
-
-	get delay(): number { return this.properties.delay; }
-	get rate(): number { return this.properties.rate; }
-	get depth(): number { return this.properties.depth; }
-	get feedback(): number | undefined { return this.properties.feedback; }
 
 	protected override async _setup(context: UnitContext): Promise<SetupResult> {
 		const delayId = crypto.randomUUID();
 		const lfoId = crypto.randomUUID();
 
-		const delayUnit = delay({ time: this.delay, feedback: this.feedback, id: delayId });
+		const delayUnit = delay({ id: delayId, time: this.delay, feedback: this.feedback });
 
 		await delayUnit.setup(context);
 
 		const lfoUnit = lfo({
+			id: lfoId,
 			path: `${delayId}.time`,
 			shape: "sine",
-			rate: this.rate,
-			depth: this.depth,
-			id: lfoId,
+			rate: this.parameters.rate.value,
+			depth: this.parameters.depth.value,
 		});
 
 		await lfoUnit.setup(context);
 
-		proxyDriver(this.id, "time", `${delayId}.time`, context);
-		proxyDriver(this.id, "rate", `${lfoId}.rate`, context);
-		proxyDriver(this.id, "depth", `${lfoId}.depth`, context);
+		proxyDriver(this.parameters.rate, lfoUnit.parameters.rate, context);
+		proxyDriver(this.parameters.depth, lfoUnit.parameters.depth, context);
 
 		this.delayUnit = delayUnit;
 		this.lfoUnit = lfoUnit;

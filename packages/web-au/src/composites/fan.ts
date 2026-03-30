@@ -1,27 +1,22 @@
-import type { SetupResult, Unit, UnitContext, UnitInput, UnitProperties } from "@resequence/web-au-core";
+import type { AnyUnit, SetupResult, UnitContext, UnitInput } from "@resequence/web-au-core";
 import { linearGain } from "../effects/gain";
-
 import { CompositeUnit, flattenUnits } from "@resequence/web-au-core";
-
-export interface FanProperties extends UnitProperties {
-	readonly branches: ReadonlyArray<Unit>;
-}
+import { z } from "zod";
 
 export class Fan extends CompositeUnit {
 	readonly type = ["unit", "composite", "fan"] as const;
-	declare readonly properties: FanProperties;
 
 	static override is(value: unknown): value is Fan {
 		return CompositeUnit.is(value) && value.type[2] === "fan";
 	}
 
-	readonly head: Unit;
-	readonly tails: ReadonlyArray<Unit>;
-	readonly units: ReadonlyArray<Unit>;
+	readonly head: AnyUnit;
+	readonly tails: ReadonlyArray<AnyUnit>;
+	readonly units: ReadonlyArray<AnyUnit>;
 
-	constructor(properties: UnitInput<FanProperties>) {
-		super(properties);
-		const branches = properties.branches;
+	constructor(input: { branches: ReadonlyArray<AnyUnit> } & UnitInput) {
+		super(input, z.object({}));
+		const branches = input.branches;
 
 		this.head = linearGain({ level: 1 });
 		for (const branch of branches) {
@@ -30,10 +25,9 @@ export class Fan extends CompositeUnit {
 
 		this.tails = [...branches];
 		this.units = [this.head, ...flattenUnits(branches)];
-		this.properties = { ...properties, targets: properties.targets ?? [], modDeclarations: properties.modDeclarations ?? [] };
 	}
 
-	override to(unit: Unit): void {
+	override to(unit: AnyUnit): void {
 		for (const tail of this.tails) {
 			tail.to(unit);
 		}
@@ -48,6 +42,6 @@ export class Fan extends CompositeUnit {
 	}
 }
 
-export function fan(...units: Array<Unit>): Fan {
+export function fan(...units: Array<AnyUnit>): Fan {
 	return new Fan({ branches: units });
 }

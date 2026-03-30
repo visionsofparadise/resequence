@@ -1,26 +1,24 @@
-import type { SetupResult, UnitContext, UnitInput, UnitProperties } from "@resequence/web-au-core";
-import { Unit, driveParam } from "@resequence/web-au-core";
+import type { SetupResult, UnitContext, UnitInput } from "@resequence/web-au-core";
+import { Unit, driveParam, live } from "@resequence/web-au-core";
+import { z } from "zod";
 
-export interface DownsampleProperties extends UnitProperties {
-	readonly rate: number;
-}
+const downsampleSchema = z.object({
+	rate: live(z.number().min(100).max(44100).default(22050).describe("Target Rate")),
+});
 
-export class DownsampleEffectUnit extends Unit {
+export class DownsampleEffectUnit extends Unit<typeof downsampleSchema> {
 	readonly type = ["unit", "downsample"] as const;
-	declare readonly properties: DownsampleProperties;
 
 	static override is(value: unknown): value is DownsampleEffectUnit {
 		return Unit.is(value) && value.type[1] === "downsample";
 	}
 
+
 	public downsampleNode: AudioWorkletNode | undefined;
 
-	constructor(properties: UnitInput<DownsampleProperties>) {
-		super(properties);
-		this.properties = { ...properties, targets: properties.targets ?? [], modDeclarations: properties.modDeclarations ?? [] };
+	constructor(input: z.infer<typeof downsampleSchema> & UnitInput) {
+		super(input, downsampleSchema);
 	}
-
-	get rate(): number { return this.properties.rate; }
 
 	protected override async _setup(context: UnitContext): Promise<SetupResult> {
 		await context.loadModule(new URL("../processors/downsample-processor.js", import.meta.url).href);
@@ -28,7 +26,7 @@ export class DownsampleEffectUnit extends Unit {
 		const downsampleNode = new AudioWorkletNode(context.audioContext, "downsample-processor");
 
 		downsampleNode.parameters.forEach((param, name) => {
-			if (name === "targetRate") driveParam(param, this.id ? `${this.id}.rate` : undefined, this.rate, [100, 44100], context);
+			if (name === "targetRate") driveParam(param, this.parameters.rate, undefined, context);
 		});
 
 		this.downsampleNode = downsampleNode;

@@ -1,35 +1,29 @@
-import type { SetupResult, UnitContext, UnitInput, UnitProperties } from "@resequence/web-au-core";
+import type { SetupResult, UnitContext, UnitInput } from "@resequence/web-au-core";
+import { Unit, driveParam, live } from "@resequence/web-au-core";
+import { z } from "zod";
 
-import { Unit, driveParam } from "@resequence/web-au-core";
+const gainSchema = z.object({
+	level: live(z.number().min(0).max(2).default(1).describe("Level")),
+});
 
-export interface GainProperties extends UnitProperties {
-	readonly level: number;
-}
-
-export class GainEffectUnit extends Unit {
+export class GainEffectUnit extends Unit<typeof gainSchema> {
 	readonly type = ["unit", "gain"] as const;
 
 	static override is(value: unknown): value is GainEffectUnit {
 		return Unit.is(value) && value.type[1] === "gain";
 	}
 
-	declare readonly properties: GainProperties;
+
 	public gainNode: GainNode | undefined;
 
-	constructor(properties: UnitInput<GainProperties>) {
-		super(properties);
-
-		this.properties = { ...properties, targets: properties.targets ?? [], modDeclarations: properties.modDeclarations ?? [] };
-	}
-
-	get level(): number {
-		return this.properties.level;
+	constructor(input: z.infer<typeof gainSchema> & UnitInput) {
+		super(input, gainSchema);
 	}
 
 	protected override _setup(context: UnitContext): SetupResult {
 		this.gainNode = context.audioContext.createGain();
 
-		driveParam(this.gainNode.gain, this.id ? `${this.id}.level` : undefined, this.level, [0, 2], context);
+		driveParam(this.gainNode.gain, this.parameters.level, undefined, context);
 
 		return { entries: [this.gainNode], exits: [this.gainNode] };
 	}

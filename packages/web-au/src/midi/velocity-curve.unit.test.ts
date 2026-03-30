@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { z } from "zod";
 import type { UnitContext } from "@resequence/web-au-core";
 import { MidiUnit } from "@resequence/web-au-core";
 import type { NoteEvent } from "@resequence/web-au-core";
@@ -9,7 +10,7 @@ class CaptureMidiUnit extends MidiUnit {
 	readonly captured: Array<NoteEvent> = [];
 
 	constructor() {
-		super({ id: "capture" });
+		super({ id: "capture" }, z.object({}));
 	}
 
 	protected override _schedule(noteEvent: NoteEvent): void {

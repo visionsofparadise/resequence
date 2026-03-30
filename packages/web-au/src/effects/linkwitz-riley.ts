@@ -1,34 +1,30 @@
-import type { SetupResult, UnitContext, UnitInput, UnitProperties } from "@resequence/web-au-core";
-
+import type { SetupResult, UnitContext, UnitInput } from "@resequence/web-au-core";
 import { Unit } from "@resequence/web-au-core";
+import { z } from "zod";
 import { type FilterEffectUnit, filter } from "./filter";
 
-export interface LinkwitzRileyProperties extends UnitProperties {
-	readonly frequency: number;
-	readonly filterType: "lowpass" | "highpass";
-}
+const linkwitzRileySchema = z.object({
+	frequency: z.number().min(20).max(20000).default(1000).describe("Crossover Frequency"),
+	filterType: z.enum(["lowpass", "highpass"]).default("lowpass").describe("Filter Type"),
+});
 
-export class LinkwitzRileyUnit extends Unit {
+export class LinkwitzRileyUnit extends Unit<typeof linkwitzRileySchema> {
 	readonly type = ["unit", "linkwitz-riley"] as const;
-	declare readonly properties: LinkwitzRileyProperties;
 
 	static override is(value: unknown): value is LinkwitzRileyUnit {
 		return Unit.is(value) && value.type[1] === "linkwitz-riley";
 	}
 
+
 	private filters: Array<FilterEffectUnit> = [];
 
-	constructor(properties: UnitInput<LinkwitzRileyProperties>) {
-		super(properties);
-		this.properties = { ...properties, targets: properties.targets ?? [], modDeclarations: properties.modDeclarations ?? [] };
+	constructor(input: z.infer<typeof linkwitzRileySchema> & UnitInput) {
+		super(input, linkwitzRileySchema);
 	}
 
-	get frequency(): number { return this.properties.frequency; }
-	get filterType(): "lowpass" | "highpass" { return this.properties.filterType; }
-
 	protected override _setup(): SetupResult {
-		const first = filter({ mode: this.filterType, frequency: this.frequency, resonance: 0.707 });
-		const second = filter({ mode: this.filterType, frequency: this.frequency, resonance: 0.707 });
+		const first = filter({ mode: this.parameters.filterType.value, frequency: this.parameters.frequency.value, resonance: 0.707 });
+		const second = filter({ mode: this.parameters.filterType.value, frequency: this.parameters.frequency.value, resonance: 0.707 });
 
 		first.to(second);
 		this.filters = [first, second];

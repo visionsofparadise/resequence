@@ -1,42 +1,37 @@
-import type { SetupResult, UnitContext, UnitInput, UnitProperties } from "@resequence/web-au-core";
-import { Unit, driveParam } from "@resequence/web-au-core";
+import type { SetupResult, UnitContext, UnitInput } from "@resequence/web-au-core";
+import { Unit, driveParam, live } from "@resequence/web-au-core";
+import { z } from "zod";
 
 export type FilterMode = "lowpass" | "highpass" | "bandpass" | "peaking" | "notch" | "lowshelf" | "highshelf" | "allpass";
 
-export interface FilterProperties extends UnitProperties {
-	readonly mode: FilterMode;
-	readonly frequency: number;
-	readonly resonance?: number;
-	readonly gain?: number;
-}
+const filterSchema = z.object({
+	mode: z.enum(["lowpass", "highpass", "bandpass", "notch", "allpass", "peaking", "lowshelf", "highshelf"]).default("lowpass").describe("Mode"),
+	frequency: live(z.number().min(20).max(20000).default(1000).describe("Frequency")),
+	resonance: live(z.number().min(0).max(30).default(1).describe("Resonance").optional()),
+	gain: live(z.number().min(-40).max(40).default(0).describe("Gain").optional()),
+});
 
-export class FilterEffectUnit extends Unit {
+export class FilterEffectUnit extends Unit<typeof filterSchema> {
 	readonly type = ["unit", "filter"] as const;
 
 	static override is(value: unknown): value is FilterEffectUnit {
 		return Unit.is(value) && value.type[1] === "filter";
 	}
 
-	declare readonly properties: FilterProperties;
+
 	public filterNode: BiquadFilterNode | undefined;
 
-	constructor(properties: UnitInput<FilterProperties>) {
-		super(properties);
-		this.properties = { ...properties, targets: properties.targets ?? [], modDeclarations: properties.modDeclarations ?? [] };
+	constructor(input: z.infer<typeof filterSchema> & UnitInput) {
+		super(input, filterSchema);
 	}
-
-	get mode(): FilterMode { return this.properties.mode; }
-	get frequency(): number { return this.properties.frequency; }
-	get resonance(): number | undefined { return this.properties.resonance; }
-	get gain(): number | undefined { return this.properties.gain; }
 
 	protected override _setup(context: UnitContext): SetupResult {
 		const filterNode = context.audioContext.createBiquadFilter();
 
-		filterNode.type = this.mode;
-		driveParam(filterNode.frequency, this.id ? `${this.id}.frequency` : undefined, this.frequency, [20, 20000], context);
-		if (this.resonance !== undefined || this.id) driveParam(filterNode.Q, this.id ? `${this.id}.resonance` : undefined, this.resonance ?? 1, [0, 30], context);
-		if (this.gain !== undefined) filterNode.gain.value = this.gain;
+		filterNode.type = this.parameters.mode.value;
+		driveParam(filterNode.frequency, this.parameters.frequency, undefined, context);
+		driveParam(filterNode.Q, this.parameters.resonance, undefined, context);
+		driveParam(filterNode.gain, this.parameters.gain, undefined, context);
 
 		this.filterNode = filterNode;
 

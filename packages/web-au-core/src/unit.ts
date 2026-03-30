@@ -1,33 +1,38 @@
-import type { UnitContext } from "./context";
+import { z } from "zod";
 import { buildCurve } from "./build-curve";
+import type { UnitContext } from "./context";
 import { getOrCreateDriver } from "./driver";
-
-type OptionalProperties<D extends object, K extends keyof D> = Omit<D, K> & Partial<Pick<D, K>>;
+import { clearLiveParameters, createParameters } from "./parameter";
+import type { InferParameters } from "./schema";
 
 export interface ModDeclaration {
 	readonly paths: ReadonlyArray<string>;
 	readonly transform?: (value: number) => number;
 }
 
-export interface UnitProperties {
+export interface UnitInput {
 	id?: string;
-	readonly latency?: number;
-	readonly targets: Array<Unit>;
-	readonly modDeclarations: Array<ModDeclaration>;
 }
-
-export type UnitInput<P extends UnitProperties = UnitProperties> = OptionalProperties<P, "targets" | "modDeclarations">;
 
 export interface SetupResult {
-	entries?: Array<AudioNode | Unit>;
-	exits?: Array<AudioNode | Unit>;
+	entries?: Array<AudioNode | AnyUnit>;
+	exits?: Array<AudioNode | AnyUnit>;
 }
 
-export abstract class Unit {
-	abstract readonly type: ReadonlyArray<string>;
-	declare properties: UnitProperties;
+export type AnyUnit = Unit;
 
-	static is(value: unknown): value is Unit {
+export abstract class Unit<S extends z.ZodObject = z.ZodObject> {
+	abstract readonly type: ReadonlyArray<string>;
+
+	readonly id: string | undefined;
+	readonly schema: S;
+	latency = 0;
+	duration = 0;
+	readonly targets: Array<AnyUnit> = [];
+	readonly modDeclarations: Array<ModDeclaration> = [];
+	readonly parameters: InferParameters<S>;
+
+	static is(value: unknown): value is AnyUnit {
 		return typeof value === "object" && value !== null && "type" in value && Array.isArray(value.type) && value.type[0] === "unit";
 	}
 
@@ -38,37 +43,18 @@ export abstract class Unit {
 
 	private readonly modConnections: Array<{ exit: AudioNode; shaper?: AudioNode; param: AudioParam }> = [];
 
-	constructor(properties?: UnitInput) {
-		this.properties = {
-			...properties,
-			targets: properties?.targets ?? [],
-			modDeclarations: properties?.modDeclarations ?? [],
-		};
+	constructor(input: UnitInput, schema: S) {
+		this.id = input.id;
+		this.schema = schema;
+		this.parameters = createParameters(input, schema);
 	}
 
-	get id(): string | undefined {
-		return this.properties.id;
-	}
-
-	get latency(): number {
-		return this.properties.latency ?? 0;
-	}
-
-	// eslint-disable-next-line @typescript-eslint/class-literal-property-style
-	get duration(): number {
-		return 0;
-	}
-
-	get targets(): Array<Unit> {
-		return this.properties.targets;
-	}
-
-	to(unit: Unit): void {
+	to(unit: AnyUnit): void {
 		this.targets.push(unit);
 	}
 
 	mod(paths: ReadonlyArray<string>, transform?: (value: number) => number): void {
-		this.properties.modDeclarations.push({ paths, transform });
+		this.modDeclarations.push({ paths, transform });
 	}
 
 	async setup(context: UnitContext): Promise<void> {
@@ -80,17 +66,23 @@ export abstract class Unit {
 		const exits = result.exits ?? [];
 
 		for (const entry of entries) {
-			if (entry instanceof Unit) await entry.setup(context);
-		}
+			if (Unit.is(entry)) {
+				await entry.setup(context);
 
-		for (const entry of entries) {
-			if (entry instanceof Unit) this.entryNodes.push(...entry.entryNodes);
-			else this.entryNodes.push(entry);
+				this.entryNodes.push(...entry.entryNodes);
+			} else {
+				this.entryNodes.push(entry);
+			}
 		}
 
 		for (const exit of exits) {
-			if (exit instanceof Unit) this.exitNodes.push(...exit.exitNodes);
-			else this.exitNodes.push(exit);
+			if (Unit.is(exit)) {
+				await exit.setup(context);
+
+				this.exitNodes.push(...exit.exitNodes);
+			} else {
+				this.exitNodes.push(exit);
+			}
 		}
 
 		for (const target of this.targets) {
@@ -109,6 +101,7 @@ export abstract class Unit {
 		this.unlinkMods();
 
 		this._teardown(context);
+		clearLiveParameters(this.parameters);
 
 		this.entryNodes.length = 0;
 		this.exitNodes.length = 0;
@@ -149,7 +142,7 @@ export abstract class Unit {
 	}
 
 	private linkMods(context: UnitContext): void {
-		for (const decl of this.properties.modDeclarations) {
+		for (const decl of this.modDeclarations) {
 			for (const path of decl.paths) {
 				const entry = getOrCreateDriver(path, 0, context);
 

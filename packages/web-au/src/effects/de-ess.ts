@@ -1,48 +1,41 @@
-import type { SetupResult, UnitContext, UnitInput, UnitProperties } from "@resequence/web-au-core";
+import type { SetupResult, UnitContext, UnitInput } from "@resequence/web-au-core";
 import { Unit } from "@resequence/web-au-core";
+import { z } from "zod";
 import { filter } from "./filter";
 import { compressor } from "./compressor";
 import { mix } from "./mix";
 import { chain } from "../composites/chain";
 
-export interface DeEssProperties extends UnitProperties {
-	readonly frequency: number;
-	readonly threshold: number;
-	readonly ratio: number;
-	readonly attack?: number;
-	readonly release?: number;
-}
+const deEssSchema = z.object({
+	frequency: z.number().min(20).max(20000).default(6500).describe("Frequency"),
+	threshold: z.number().min(-100).max(0).default(-20).describe("Threshold (dB)"),
+	ratio: z.number().min(1).max(20).default(4).describe("Ratio"),
+	attack: z.number().min(0).max(1000).default(0.5).describe("Attack (ms)").optional(),
+	release: z.number().min(0).max(1000).default(50).describe("Release (ms)").optional(),
+});
 
-export class DeEssEffectUnit extends Unit {
+export class DeEssEffectUnit extends Unit<typeof deEssSchema> {
 	readonly type = ["unit", "de-ess"] as const;
 
 	static override is(value: unknown): value is DeEssEffectUnit {
 		return Unit.is(value) && value.type[1] === "de-ess";
 	}
 
-	declare readonly properties: DeEssProperties;
 
 	private bandChain: Unit | undefined;
 
-	constructor(properties: UnitInput<DeEssProperties>) {
-		super(properties);
-		this.properties = { ...properties, targets: properties.targets ?? [], modDeclarations: properties.modDeclarations ?? [] };
+	constructor(input: z.infer<typeof deEssSchema> & UnitInput) {
+		super(input, deEssSchema);
 	}
-
-	get frequency(): number { return this.properties.frequency; }
-	get threshold(): number { return this.properties.threshold; }
-	get ratio(): number { return this.properties.ratio; }
-	get attack(): number | undefined { return this.properties.attack; }
-	get release(): number | undefined { return this.properties.release; }
 
 	protected override _setup(_context: UnitContext): SetupResult {
 		const bandCompressed = chain(
-			filter({ mode: "bandpass", frequency: this.frequency, resonance: 1 }),
+			filter({ mode: "bandpass", frequency: this.parameters.frequency.value, resonance: 1 }),
 			compressor({
-				threshold: this.threshold,
-				ratio: this.ratio,
-				attack: this.attack ?? 0.5,
-				release: this.release ?? 50,
+				threshold: this.parameters.threshold.value,
+				ratio: this.parameters.ratio.value,
+				attack: this.parameters.attack?.value ?? 0.5,
+				release: this.parameters.release?.value ?? 50,
 			}),
 		);
 

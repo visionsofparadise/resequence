@@ -1,34 +1,31 @@
-import type { SetupResult, UnitContext, UnitInput, UnitProperties } from "@resequence/web-au-core";
-import { driveParam, Unit } from "@resequence/web-au-core";
+import type { SetupResult, UnitContext, UnitInput } from "@resequence/web-au-core";
+import { driveParam, Unit, live } from "@resequence/web-au-core";
+import { z } from "zod";
 
-export interface MacroProperties extends UnitProperties {
-	readonly value: number;
-}
+const macroSchema = z.object({
+	value: live(z.number().min(0).max(1).default(0).describe("Value")),
+});
 
-export class MacroUnit extends Unit {
+export class MacroUnit extends Unit<typeof macroSchema> {
 	readonly type = ["unit", "macro"] as const;
-	declare readonly properties: MacroProperties;
 
 	static override is(value: unknown): value is MacroUnit {
 		return Unit.is(value) && value.type[1] === "macro";
 	}
 
-	get value(): number { return this.properties.value; }
 
 	private constantNode: ConstantSourceNode | undefined;
 
-	constructor(properties: UnitInput<MacroProperties>) {
-		if (!properties.id) throw new Error("MacroUnit requires an id");
+	constructor(input: z.infer<typeof macroSchema> & UnitInput) {
+		if (!input.id) throw new Error("MacroUnit requires an id");
 
-		super(properties);
-
-		this.properties = { ...properties, targets: properties.targets ?? [], modDeclarations: properties.modDeclarations ?? [] };
+		super(input, macroSchema);
 	}
 
 	protected override _setup(context: UnitContext): SetupResult {
 		const constantNode = context.audioContext.createConstantSource();
 
-		driveParam(constantNode.offset, `${this.id}.value`, this.value, [0, 1], context);
+		driveParam(constantNode.offset, this.parameters.value, undefined, context);
 
 		constantNode.start();
 

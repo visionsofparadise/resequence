@@ -1,9 +1,9 @@
-import type { NoteEvent, SetupResult, UnitContext } from "@resequence/web-au-core";
+import type { NoteEvent, SetupResult, UnitContext, UnitInput } from "@resequence/web-au-core";
 import { getOrCreateDriver } from "@resequence/web-au-core";
 import type { Pitch } from "@resequence/web-au-utils";
 import { pitchToMidi, scheduleSlideRamps } from "@resequence/web-au-utils";
-
-import { GeneratorUnit, type GeneratorUnitInput, type GeneratorUnitProperties } from "./generator";
+import { z } from "zod";
+import { GeneratorUnit } from "./generator";
 
 export interface SamplerZone {
 	readonly sample: string;
@@ -26,33 +26,23 @@ interface NormalizedZone {
 	readonly loopEndMs?: number;
 }
 
-export interface SamplerProperties extends GeneratorUnitProperties {
-	readonly config: SamplerConfig;
-}
+const samplerSchema = z.object({});
 
 export class SamplerUnit extends GeneratorUnit {
 	readonly type = ["unit", "midi", "generator", "sampler"] as const;
-	declare readonly properties: SamplerProperties;
+
 
 	static override is(value: unknown): value is SamplerUnit {
 		return GeneratorUnit.is(value) && value.type[3] === "sampler";
 	}
 
 	private readonly buffers = new Map<string, AudioBuffer>();
+	readonly config: SamplerConfig;
 
-	constructor(properties: GeneratorUnitInput<SamplerProperties>) {
-		super(properties);
-		this.properties = {
-			...properties,
-			targets: properties.targets ?? [],
-			modDeclarations: properties.modDeclarations ?? [],
-			noteModDeclarations: properties.noteModDeclarations ?? [],
-			voiceToCallbacks: properties.voiceToCallbacks ?? [],
-			voiceModDeclarations: properties.voiceModDeclarations ?? [],
-		};
+	constructor(input: { config: SamplerConfig } & UnitInput) {
+		super(input, samplerSchema);
+		this.config = input.config;
 	}
-
-	get config(): SamplerConfig { return this.properties.config; }
 
 	protected override async _setup(context: UnitContext): Promise<SetupResult> {
 		const result = await super._setup(context);

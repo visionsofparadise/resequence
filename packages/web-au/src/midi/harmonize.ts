@@ -1,37 +1,27 @@
-import type { MidiUnitProperties, NoteEvent, UnitContext } from "@resequence/web-au-core";
+import type { NoteEvent, UnitContext, MidiUnitInput } from "@resequence/web-au-core";
+import { MidiUnit } from "@resequence/web-au-core";
+import { z } from "zod";
 
-import { MidiUnit, type MidiUnitInput } from "@resequence/web-au-core";
+const harmonizeSchema = z.object({
+	intervals: z.array(z.number()).default([]).describe("Intervals (semitones)"),
+});
 
-export interface HarmonizeProperties extends MidiUnitProperties {
-	readonly intervals: ReadonlyArray<number>;
-}
-
-export class HarmonizeMidiUnit extends MidiUnit {
+export class HarmonizeMidiUnit extends MidiUnit<typeof harmonizeSchema> {
 	readonly type = ["unit", "midi", "harmonize"] as const;
-	declare readonly properties: HarmonizeProperties;
+
 
 	static override is(value: unknown): value is HarmonizeMidiUnit {
 		return MidiUnit.is(value) && value.type[2] === "harmonize";
 	}
 
-	get intervals(): ReadonlyArray<number> {
-		return this.properties.intervals;
-	}
-
-	constructor(properties: MidiUnitInput<HarmonizeProperties>) {
-		super(properties);
-		this.properties = {
-			...properties,
-			targets: properties.targets ?? [],
-			modDeclarations: properties.modDeclarations ?? [],
-			noteModDeclarations: properties.noteModDeclarations ?? [],
-		};
+	constructor(input: z.infer<typeof harmonizeSchema> & MidiUnitInput) {
+		super(input, harmonizeSchema);
 	}
 
 	override schedule(noteEvent: NoteEvent, context: UnitContext): void {
 		super.schedule(noteEvent, context);
 
-		for (const interval of this.intervals) {
+		for (const interval of this.parameters.intervals.value) {
 			const transposed: NoteEvent = { ...noteEvent, note: noteEvent.note + interval };
 
 			super.schedule(transposed, context);
@@ -40,5 +30,5 @@ export class HarmonizeMidiUnit extends MidiUnit {
 }
 
 export function harmonize(intervals: ReadonlyArray<number>): HarmonizeMidiUnit {
-	return new HarmonizeMidiUnit({ intervals });
+	return new HarmonizeMidiUnit({ intervals: [...intervals] });
 }

@@ -1,47 +1,30 @@
-import type { MidiUnitProperties, ModDeclaration, NoteEvent, SetupResult, Unit, UnitContext } from "@resequence/web-au-core";
+import type { AnyUnit, ModDeclaration, NoteEvent, SetupResult, UnitContext } from "@resequence/web-au-core";
 import { MidiUnit } from "@resequence/web-au-core";
+import type { z } from "zod";
 import { CCEffectUnit } from "../effects/cc";
 import { linearGain, type GainEffectUnit } from "../effects/gain";
 
-export interface GeneratorUnitProperties extends MidiUnitProperties {
-	readonly voiceToCallbacks: Array<(noteEvent: NoteEvent) => Unit>;
-	readonly voiceModDeclarations: Array<ModDeclaration>;
-}
-
-type OptionalGeneratorKeys = "targets" | "modDeclarations" | "noteModDeclarations" | "voiceToCallbacks" | "voiceModDeclarations";
-
-export type GeneratorUnitInput<P extends GeneratorUnitProperties = GeneratorUnitProperties> = Omit<P, OptionalGeneratorKeys> & Partial<Pick<P, OptionalGeneratorKeys>>;
-
-export abstract class GeneratorUnit extends MidiUnit {
+export abstract class GeneratorUnit<
+	S extends z.ZodObject = z.ZodObject,
+> extends MidiUnit<S> {
 	abstract readonly type: readonly ["unit", "midi", "generator", ...Array<string>];
-	declare properties: GeneratorUnitProperties;
+
+	readonly voiceToCallbacks: Array<(noteEvent: NoteEvent) => AnyUnit> = [];
+	readonly voiceModDeclarations: Array<ModDeclaration> = [];
 	public mergeUnit: GainEffectUnit | undefined;
 
 	static override is(value: unknown): value is GeneratorUnit {
 		return MidiUnit.is(value) && value.type[2] === "generator";
 	}
 
-	constructor(properties?: GeneratorUnitInput) {
-		super(properties);
-
-		this.properties = {
-			...properties,
-			targets: properties?.targets ?? [],
-			modDeclarations: properties?.modDeclarations ?? [],
-			noteModDeclarations: properties?.noteModDeclarations ?? [],
-			voiceToCallbacks: properties?.voiceToCallbacks ?? [],
-			voiceModDeclarations: properties?.voiceModDeclarations ?? [],
-		};
-	}
-
-	voiceTo(callback: (noteEvent: NoteEvent) => Unit): this {
-		this.properties = { ...this.properties, voiceToCallbacks: [...this.properties.voiceToCallbacks, callback] };
+	voiceTo(callback: (noteEvent: NoteEvent) => AnyUnit): this {
+		this.voiceToCallbacks.push(callback);
 
 		return this;
 	}
 
 	voiceMod(paths: Array<string>, transform?: (value: number) => number): void {
-		this.properties = { ...this.properties, voiceModDeclarations: [...this.properties.voiceModDeclarations, { paths, transform }] };
+		this.voiceModDeclarations.push({ paths, transform });
 	}
 
 	protected override async _setup(context: UnitContext): Promise<SetupResult> {
@@ -72,11 +55,11 @@ export abstract class GeneratorUnit extends MidiUnit {
 
 		const ccEffect = new CCEffectUnit({ noteEvent });
 
-		const chainHead: Unit = ccEffect;
-		let chainTail: Unit = ccEffect;
+		const chainHead: AnyUnit = ccEffect;
+		let chainTail: AnyUnit = ccEffect;
 
-		if (this.properties.voiceToCallbacks.length > 0) {
-			for (const callback of this.properties.voiceToCallbacks) {
+		if (this.voiceToCallbacks.length > 0) {
+			for (const callback of this.voiceToCallbacks) {
 				const voiceUnit = callback(noteEvent);
 
 				chainTail.to(voiceUnit);
@@ -86,7 +69,7 @@ export abstract class GeneratorUnit extends MidiUnit {
 
 		chainTail.to(this.mergeUnit);
 
-		for (const decl of this.properties.voiceModDeclarations) {
+		for (const decl of this.voiceModDeclarations) {
 			chainTail.mod(decl.paths, decl.transform);
 		}
 

@@ -1,124 +1,86 @@
-import type { SetupResult, UnitContext, UnitInput, UnitProperties } from "@resequence/web-au-core";
-
+import type { AnyUnit, SetupResult, UnitContext, UnitInput } from "@resequence/web-au-core";
 import { Unit } from "@resequence/web-au-core";
-import { linearGain } from "./gain";
+import { z } from "zod";
+import { type GainEffectUnit, linearGain } from "./gain";
 import { linkwitzRiley } from "./linkwitz-riley";
 
-type BandSpec = [number, ...Array<Unit>] | [...Array<Unit>];
+const crossoverSchema = z.object({
+	bands: z.array(
+		z.object({
+			frequency: z.number().min(20).max(20000).describe("Crossover Frequency").optional(),
+		}),
+	),
+});
 
-export interface CrossoverOptions {
-	readonly [bandName: string]: BandSpec;
-}
-
-interface ParsedBand {
-	readonly name: string;
-	readonly frequency: number | undefined;
-	readonly units: ReadonlyArray<Unit>;
-}
-
-function parseBands(options: CrossoverOptions): Array<ParsedBand> {
-	const bands: Array<ParsedBand> = [];
-
-	for (const [name, spec] of Object.entries(options)) {
-		if (typeof spec[0] === "number") {
-			bands.push({ name, frequency: spec[0], units: spec.slice(1) as Array<Unit> });
-		} else {
-			bands.push({ name, frequency: undefined, units: spec as Array<Unit> });
-		}
-	}
-
-	bands.sort((left, right) => (left.frequency ?? Infinity) - (right.frequency ?? Infinity));
-
-	return bands;
-}
-
-export interface CrossoverProperties extends UnitProperties {
-	readonly options: CrossoverOptions;
-}
-
-export class CrossoverEffectUnit extends Unit {
+export class CrossoverEffectUnit extends Unit<typeof crossoverSchema> {
 	readonly type = ["unit", "crossover"] as const;
+	readonly bands: Array<GainEffectUnit> = [];
+	private bandNodes: Array<Array<AnyUnit>> = [];
 
 	static override is(value: unknown): value is CrossoverEffectUnit {
 		return Unit.is(value) && value.type[1] === "crossover";
 	}
 
-	declare readonly properties: CrossoverProperties;
-	public readonly parsedBands: Array<ParsedBand>;
-	public bandUnits: Array<Array<Unit>> = [];
+	constructor(input: z.infer<typeof crossoverSchema> & UnitInput) {
+		super(input, crossoverSchema);
 
-	constructor(properties: UnitInput<CrossoverProperties>) {
-		super(properties);
-		this.properties = { ...properties, targets: properties.targets ?? [], modDeclarations: properties.modDeclarations ?? [] };
-		this.parsedBands = parseBands(properties.options);
+		for (const _band of this.parameters.bands) {
+			this.bands.push(linearGain({ level: 1 }));
+		}
 	}
-
-	get options(): CrossoverOptions { return this.properties.options; }
 
 	protected override async _setup(context: UnitContext): Promise<SetupResult> {
 		const inputUnit = linearGain({ level: 1 });
 		const mergerUnit = linearGain({ level: 1 });
 
-		for (let bandIndex = 0; bandIndex < this.parsedBands.length; bandIndex++) {
-			const band = this.parsedBands[bandIndex];
+		for (let bandIndex = 0; bandIndex < this.parameters.bands.length; bandIndex++) {
+			const bandParam = this.parameters.bands[bandIndex];
+			const bandGain = this.bands[bandIndex];
 
-			if (!band) continue;
-			const bandNodes: Array<Unit> = [];
+			if (!bandParam || !bandGain) continue;
 
-			let bandHead: Unit = inputUnit;
+			const nodes: Array<AnyUnit> = [];
+			let bandHead: AnyUnit = inputUnit;
 
 			if (bandIndex > 0) {
-				const prevBand = this.parsedBands[bandIndex - 1];
+				const prevBand = this.parameters.bands[bandIndex - 1];
+				const prevFreq = prevBand?.frequency?.value;
 
-				if (prevBand?.frequency !== undefined) {
-					const hp = linkwitzRiley(prevBand.frequency, "highpass");
+				if (prevFreq !== undefined) {
+					const hp = linkwitzRiley(prevFreq, "highpass");
 
 					inputUnit.to(hp);
 					bandHead = hp;
-					bandNodes.push(hp);
+					nodes.push(hp);
 				}
 			}
 
-			if (band.frequency !== undefined) {
-				const lp = linkwitzRiley(band.frequency, "lowpass");
+			const freq = bandParam.frequency?.value;
+
+			if (freq !== undefined) {
+				const lp = linkwitzRiley(freq, "lowpass");
 
 				bandHead.to(lp);
 				bandHead = lp;
-				bandNodes.push(lp);
+				nodes.push(lp);
 			} else if (bandHead === inputUnit && bandIndex > 0) {
-				const prevBand = this.parsedBands[bandIndex - 1];
+				const prevBand = this.parameters.bands[bandIndex - 1];
+				const prevFreq = prevBand?.frequency?.value;
 
-				if (prevBand?.frequency !== undefined) {
-					const hp = linkwitzRiley(prevBand.frequency, "highpass");
+				if (prevFreq !== undefined) {
+					const hp = linkwitzRiley(prevFreq, "highpass");
 
 					inputUnit.to(hp);
 					bandHead = hp;
-					bandNodes.push(hp);
+					nodes.push(hp);
 				}
 			}
 
-			if (band.units.length > 0) {
-				for (let unitIndex = 0; unitIndex < band.units.length - 1; unitIndex++) {
-					const current = band.units[unitIndex];
-					const next = band.units[unitIndex + 1];
+			bandHead.to(bandGain);
+			bandGain.to(mergerUnit);
+			nodes.push(bandGain);
 
-					if (current && next) current.to(next);
-				}
-
-				const firstUnit = band.units[0];
-				const lastUnit = band.units[band.units.length - 1];
-
-				if (firstUnit && lastUnit) {
-					bandHead.to(firstUnit);
-					lastUnit.to(mergerUnit);
-				}
-
-				bandNodes.push(...band.units);
-			} else {
-				bandHead.to(mergerUnit);
-			}
-
-			this.bandUnits.push(bandNodes);
+			this.bandNodes.push(nodes);
 		}
 
 		await inputUnit.setup(context);
@@ -127,18 +89,16 @@ export class CrossoverEffectUnit extends Unit {
 	}
 
 	protected override _teardown(context: UnitContext): void {
-		for (const units of this.bandUnits) {
-			for (const unit of units) {
-				unit.teardown(context);
-			}
+		for (const nodes of this.bandNodes) {
+			for (const node of nodes) node.teardown(context);
 		}
 
-		this.bandUnits = [];
+		this.bandNodes = [];
 	}
 }
 
-export function crossover(options: CrossoverOptions): CrossoverEffectUnit {
-	return new CrossoverEffectUnit({ options });
+export function crossover(bands: Array<{ frequency?: number }>): CrossoverEffectUnit {
+	return new CrossoverEffectUnit({ bands: bands.map((band) => ({ frequency: band.frequency })) });
 }
 
 export const multiband = crossover;

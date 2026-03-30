@@ -1,10 +1,6 @@
-import type { SetupResult, UnitContext, UnitInput, UnitProperties } from "@resequence/web-au-core";
-
+import type { SetupResult, UnitContext, UnitInput } from "@resequence/web-au-core";
 import { Unit } from "@resequence/web-au-core";
-
-export interface AnalyserProperties extends UnitProperties {
-	readonly fftSize: number;
-}
+import { z } from "zod";
 
 export class AnalyserUnit extends Unit {
 	readonly type = ["unit", "analyser"] as const;
@@ -13,17 +9,12 @@ export class AnalyserUnit extends Unit {
 		return Unit.is(value) && value.type[1] === "analyser";
 	}
 
-	declare readonly properties: AnalyserProperties;
+	readonly fftSize: number;
 	public analyserNode: AnalyserNode | undefined;
 
-	constructor(properties: UnitInput<AnalyserProperties>) {
-		super(properties);
-
-		this.properties = { ...properties, targets: properties.targets ?? [], modDeclarations: properties.modDeclarations ?? [] };
-	}
-
-	get fftSize(): number {
-		return this.properties.fftSize;
+	constructor(input: { fftSize: number } & UnitInput) {
+		super(input, z.object({}));
+		this.fftSize = input.fftSize;
 	}
 
 	protected override _setup(context: UnitContext): SetupResult {

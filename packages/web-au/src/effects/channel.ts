@@ -1,13 +1,9 @@
-import type { SetupResult, UnitContext, UnitInput, UnitProperties } from "@resequence/web-au-core";
+import type { SetupResult, UnitContext, UnitInput, AnyUnit } from "@resequence/web-au-core";
 import { Unit } from "@resequence/web-au-core";
+import { z } from "zod";
 import { channelMerger } from "./channel-merger";
 import { channelSplitter } from "./channel-splitter";
 import { linearGain } from "./gain";
-
-export interface ChannelProperties extends UnitProperties {
-	readonly channelIndex: number;
-	readonly inner: Unit;
-}
 
 export class ChannelEffectUnit extends Unit {
 	readonly type = ["unit", "channel"] as const;
@@ -16,15 +12,14 @@ export class ChannelEffectUnit extends Unit {
 		return Unit.is(value) && value.type[1] === "channel";
 	}
 
-	declare readonly properties: ChannelProperties;
+	readonly channelIndex: number;
+	readonly inner: AnyUnit;
 
-	constructor(properties: UnitInput<ChannelProperties>) {
-		super(properties);
-		this.properties = { ...properties, targets: properties.targets ?? [], modDeclarations: properties.modDeclarations ?? [] };
+	constructor(input: UnitInput & { readonly channelIndex: number; readonly inner: AnyUnit }) {
+		super(input, z.object({}));
+		this.channelIndex = input.channelIndex;
+		this.inner = input.inner;
 	}
-
-	get channelIndex(): number { return this.properties.channelIndex; }
-	get inner(): Unit { return this.properties.inner; }
 
 	protected override async _setup(context: UnitContext): Promise<SetupResult> {
 		const split = channelSplitter(2);
@@ -59,10 +54,6 @@ export function right(inner: Unit): ChannelEffectUnit {
 	return new ChannelEffectUnit({ channelIndex: 1, inner });
 }
 
-export interface MidProperties extends UnitProperties {
-	readonly inner: Unit;
-}
-
 export class MidEffectUnit extends Unit {
 	readonly type = ["unit", "mid"] as const;
 
@@ -70,14 +61,12 @@ export class MidEffectUnit extends Unit {
 		return Unit.is(value) && value.type[1] === "mid";
 	}
 
-	declare readonly properties: MidProperties;
+	readonly inner: AnyUnit;
 
-	constructor(properties: UnitInput<MidProperties>) {
-		super(properties);
-		this.properties = { ...properties, targets: properties.targets ?? [], modDeclarations: properties.modDeclarations ?? [] };
+	constructor(input: UnitInput & { readonly inner: AnyUnit }) {
+		super(input, z.object({}));
+		this.inner = input.inner;
 	}
-
-	get inner(): Unit { return this.properties.inner; }
 
 	protected override async _setup(context: UnitContext): Promise<SetupResult> {
 		const split = channelSplitter(2);
@@ -108,10 +97,6 @@ export function mid(inner: Unit): MidEffectUnit {
 	return new MidEffectUnit({ inner });
 }
 
-export interface SideProperties extends UnitProperties {
-	readonly inner: Unit;
-}
-
 export class SideEffectUnit extends Unit {
 	readonly type = ["unit", "side"] as const;
 
@@ -119,14 +104,12 @@ export class SideEffectUnit extends Unit {
 		return Unit.is(value) && value.type[1] === "side";
 	}
 
-	declare readonly properties: SideProperties;
+	readonly inner: AnyUnit;
 
-	constructor(properties: UnitInput<SideProperties>) {
-		super(properties);
-		this.properties = { ...properties, targets: properties.targets ?? [], modDeclarations: properties.modDeclarations ?? [] };
+	constructor(input: UnitInput & { readonly inner: AnyUnit }) {
+		super(input, z.object({}));
+		this.inner = input.inner;
 	}
-
-	get inner(): Unit { return this.properties.inner; }
 
 	protected override async _setup(context: UnitContext): Promise<SetupResult> {
 		const split = channelSplitter(2);

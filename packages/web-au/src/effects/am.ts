@@ -1,26 +1,21 @@
-import type { SetupResult, UnitContext, UnitInput, UnitProperties } from "@resequence/web-au-core";
+import type { SetupResult, UnitContext, UnitInput, AnyUnit } from "@resequence/web-au-core";
 import { Unit } from "@resequence/web-au-core";
-
-export interface AmProperties extends UnitProperties {
-	readonly carrier: Unit;
-}
+import { z } from "zod";
 
 export class AmEffectUnit extends Unit {
 	readonly type = ["unit", "am"] as const;
-	declare readonly properties: AmProperties;
 
 	static override is(value: unknown): value is AmEffectUnit {
 		return Unit.is(value) && value.type[1] === "am";
 	}
 
+	readonly carrier: AnyUnit;
 	private dcOffsetNode: ConstantSourceNode | undefined;
 
-	constructor(properties: UnitInput<AmProperties>) {
-		super(properties);
-		this.properties = { ...properties, targets: properties.targets ?? [], modDeclarations: properties.modDeclarations ?? [] };
+	constructor(input: UnitInput & { readonly carrier: AnyUnit }) {
+		super(input, z.object({}));
+		this.carrier = input.carrier;
 	}
-
-	get carrier(): Unit { return this.properties.carrier; }
 
 	protected override async _setup(context: UnitContext): Promise<SetupResult> {
 		const modulatorGain = context.audioContext.createGain();

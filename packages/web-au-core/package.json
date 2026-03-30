@@ -30,6 +30,9 @@
     "build": "tsup",
     "unit": "vitest run unit"
   },
+  "dependencies": {
+    "zod": "^4.0.0"
+  },
   "devDependencies": {
     "concurrently": "*",
     "tsup": "^8.0.0",

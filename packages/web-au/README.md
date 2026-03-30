@@ -305,17 +305,40 @@ intercept(synth, {
 
 ## IDs and Parameter Paths
 
-Assigning an `id` to a unit creates a namespace for its parameters. Automation and modulation target parameters via dot-separated paths.
+Assigning an `id` to a unit creates a namespace for its parameters. Each unit with an id exposes its parameters as a typed `parameters` object — the primary API for reading and controlling parameter values.
 
 ```typescript
 const synth = chain(osc({ type: "sawtooth", id: "osc" }), lowpass({ frequency: 2000, id: "lp" }), gain({ level: -6, id: "vol" }));
 
-// Parameter paths:
-// "osc.lp.frequency"   — filter cutoff
-// "osc.vol.level"      — output gain
+// Access parameters directly on the unit:
+lp.parameters.frequency; // LiveParameter — frequency cutoff
+vol.parameters.level; // LiveParameter — output gain
+
+// Each LiveParameter carries its driver path for the modulation system:
+lp.parameters.frequency.path; // "lp.frequency"
 ```
 
-The generator's ID prefixes downstream effect IDs, giving each parameter a unique address.
+The generator's ID prefixes downstream effect IDs, giving each parameter a unique address in the driver system. The `parameters` object is the primary interface — string paths exist on `LiveParameter.path` for the driver system and modulation routing.
+
+### Live Parameter Control
+
+`LiveParameter` is the studio API for real-time parameter control. It wraps a driver-backed value with `set()` for writes and `subscribe()` for change observation.
+
+```typescript
+// Set a parameter value (updates audio immediately if the graph is set up)
+unit.parameters.frequency.set(800);
+
+// Subscribe to parameter changes
+const unsubscribe = unit.parameters.frequency.subscribe((value) => {
+	console.log("frequency changed to", value);
+});
+
+// Read current value, range, and normalized position
+unit.parameters.frequency.value; // 800
+unit.parameters.frequency.min; // 20
+unit.parameters.frequency.max; // 20000
+unit.parameters.frequency.normalized; // 0.039...
+```
 
 ## Modulation
 
@@ -394,10 +417,11 @@ chain(read({ path: "input.wav" }), compressor({ threshold: -12, ratio: 3 }), wri
 
 ### Custom Effect
 
-Extend `Unit` (from `@resequence/web-au-core`), implement `_setup()` to create AudioNodes and return entry/exit points. Use `driveParam()` to expose parameters for automation.
+Extend `Unit` (from `@resequence/web-au-core`), declare a Zod `schema` and `parameters`, implement `_setup()` to create AudioNodes and return entry/exit points. Use `driveParam()` to wire live parameters to AudioParams.
 
 ```typescript
-import { Unit, UnitProperties, UnitInput, SetupResult, UnitContext, driveParam } from "@resequence/web-au/core";
+import { Unit, UnitProperties, UnitInput, SetupResult, UnitContext, driveParam, createParameters, type LiveParameter } from "@resequence/web-au/core";
+import { z } from "zod";
 
 interface TremoloProperties extends UnitProperties {
 	readonly speed: number;
@@ -407,6 +431,16 @@ interface TremoloProperties extends UnitProperties {
 class TremoloUnit extends Unit {
 	readonly type = ["unit", "tremolo"] as const;
 	declare readonly properties: TremoloProperties;
+
+	static override readonly schema = z.object({
+		speed: z.number().min(0.1).max(20).default(4).describe("Speed (Hz)").meta({ live: true }),
+		depth: z.number().min(0).max(1).default(0.5).describe("Depth").meta({ live: true }),
+	});
+
+	readonly parameters = createParameters(TremoloUnit.schema, this.id, this.properties) as {
+		speed: LiveParameter;
+		depth: LiveParameter;
+	};
 
 	constructor(properties: UnitInput<TremoloProperties>) {
 		super(properties);
@@ -422,14 +456,13 @@ class TremoloUnit extends Unit {
 		const depthNode = context.audioContext.createGain();
 		const outputGain = context.audioContext.createGain();
 
-		lfoNode.frequency.value = this.properties.speed;
-		depthNode.gain.value = this.properties.depth;
-		outputGain.gain.value = 1 - this.properties.depth / 2;
+		depthNode.gain.value = this.parameters.depth.value;
+		outputGain.gain.value = 1 - this.parameters.depth.value / 2;
 
 		lfoNode.connect(depthNode).connect(outputGain.gain);
 		lfoNode.start();
 
-		driveParam(lfoNode.frequency, this.id ? `${this.id}.speed` : undefined, this.properties.speed, [0.1, 20], context);
+		driveParam(lfoNode.frequency, this.parameters.speed, context);
 
 		return { entries: [outputGain], exits: [outputGain] };
 	}

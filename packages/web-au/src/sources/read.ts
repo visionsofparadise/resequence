@@ -1,10 +1,6 @@
-import type { SetupResult, UnitContext, UnitInput, UnitProperties } from "@resequence/web-au-core";
-
+import type { SetupResult, UnitContext, UnitInput } from "@resequence/web-au-core";
 import { Unit } from "@resequence/web-au-core";
-
-export interface ReadProperties extends UnitProperties {
-	readonly path: string;
-}
+import { z } from "zod";
 
 export class ReadUnit extends Unit {
 	readonly type = ["unit", "source", "read"] as const;
@@ -13,26 +9,18 @@ export class ReadUnit extends Unit {
 		return Unit.is(value) && value.type[1] === "source" && value.type[2] === "read";
 	}
 
-	declare readonly properties: ReadProperties;
+	readonly path: string;
 	private sourceNode: AudioBufferSourceNode | undefined;
 	private buffer: AudioBuffer | undefined;
 
-	constructor(properties: UnitInput<ReadProperties>) {
-		super(properties);
-
-		this.properties = { ...properties, targets: properties.targets ?? [], modDeclarations: properties.modDeclarations ?? [] };
-	}
-
-	get path(): string {
-		return this.properties.path;
-	}
-
-	get duration(): number {
-		return this.buffer?.duration ?? 0;
+	constructor(input: { path: string } & UnitInput) {
+		super(input, z.object({}));
+		this.path = input.path;
 	}
 
 	protected override async _setup(context: UnitContext): Promise<SetupResult> {
 		this.buffer = await context.getSample(this.path);
+		this.duration = this.buffer.duration;
 
 		const gainNode = context.audioContext.createGain();
 

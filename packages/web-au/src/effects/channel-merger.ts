@@ -1,13 +1,13 @@
-import type { SetupResult, UnitContext, UnitInput, UnitProperties } from "@resequence/web-au-core";
-
+import type { SetupResult, UnitContext, UnitInput } from "@resequence/web-au-core";
 import { Unit } from "@resequence/web-au-core";
+import { z } from "zod";
 import { type GainEffectUnit, linearGain } from "./gain";
 
-export interface ChannelMergerProperties extends UnitProperties {
-	readonly channelCount?: number;
-}
+const channelMergerSchema = z.object({
+	channelCount: z.number().min(1).max(32).default(2).describe("Channel Count"),
+});
 
-export class ChannelMergerUnit extends Unit {
+export class ChannelMergerUnit extends Unit<typeof channelMergerSchema> {
 	readonly type = ["unit", "channel-merger"] as const;
 	readonly channels: Array<GainEffectUnit> = [];
 
@@ -15,23 +15,18 @@ export class ChannelMergerUnit extends Unit {
 		return Unit.is(value) && value.type[1] === "channel-merger";
 	}
 
-	declare readonly properties: ChannelMergerProperties;
+	constructor(input: z.infer<typeof channelMergerSchema> & UnitInput = { channelCount: 2 }) {
+		super(input, channelMergerSchema);
 
-	constructor(properties?: UnitInput<ChannelMergerProperties>) {
-		super(properties);
-		this.properties = { ...properties, targets: properties?.targets ?? [], modDeclarations: properties?.modDeclarations ?? [], channelCount: properties?.channelCount ?? 2 };
-
-		for (let ch = 0; ch < this.channelCount; ch++) {
+		for (let ch = 0; ch < this.parameters.channelCount.value; ch++) {
 			this.channels.push(linearGain({ level: 1 }));
 		}
 	}
 
-	get channelCount(): number { return this.properties.channelCount ?? 2; }
-
 	protected override async _setup(context: UnitContext): Promise<SetupResult> {
-		const merger = context.audioContext.createChannelMerger(this.channelCount);
+		const merger = context.audioContext.createChannelMerger(this.channels.length);
 
-		for (let ch = 0; ch < this.channelCount; ch++) {
+		for (let ch = 0; ch < this.channels.length; ch++) {
 			const channel = this.channels[ch];
 
 			if (!channel) continue;
@@ -52,9 +47,9 @@ export class ChannelMergerUnit extends Unit {
 }
 
 export function channelMerger(channels?: number): ChannelMergerUnit {
-	return new ChannelMergerUnit({ channelCount: channels });
+	return new ChannelMergerUnit({ channelCount: channels ?? 2 });
 }
 
 export function merge(channels?: number): ChannelMergerUnit {
-	return new ChannelMergerUnit({ channelCount: channels });
+	return channelMerger(channels);
 }

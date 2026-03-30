@@ -1,8 +1,8 @@
-import type { Unit } from "./unit";
+import type { AnyUnit } from "./unit";
 
-export function walkUnits(root: Unit, callback: (unit: Unit, parent: Unit | null, index: number) => void): void {
-	const visited = new Set<Unit>();
-	const queue: Array<{ unit: Unit; parent: Unit | null; index: number }> = [{ unit: root, parent: null, index: -1 }];
+export function walkUnits(root: AnyUnit, callback: (unit: AnyUnit, parent: AnyUnit | null, index: number) => void): void {
+	const visited = new Set<AnyUnit>();
+	const queue: Array<{ unit: AnyUnit; parent: AnyUnit | null; index: number }> = [{ unit: root, parent: null, index: -1 }];
 
 	while (queue.length > 0) {
 		const entry = queue.shift();
@@ -21,15 +21,15 @@ export function walkUnits(root: Unit, callback: (unit: Unit, parent: Unit | null
 	}
 }
 
-export function collectUnits(root: Unit): Array<Unit> {
-	const result: Array<Unit> = [];
+export function collectUnits(root: AnyUnit): Array<AnyUnit> {
+	const result: Array<AnyUnit> = [];
 
 	walkUnits(root, (unit) => { result.push(unit); });
 
 	return result;
 }
 
-export function modifyUnits(root: Unit, callback: (unit: Unit) => Unit | undefined): void {
+export function modifyUnits(root: AnyUnit, callback: (unit: AnyUnit) => AnyUnit | undefined): void {
 	walkUnits(root, (unit, parent, index) => {
 		const replacement = callback(unit);
 
@@ -39,7 +39,7 @@ export function modifyUnits(root: Unit, callback: (unit: Unit) => Unit | undefin
 	});
 }
 
-export function descendUnit(root: Unit, indexes: ReadonlyArray<number>): Unit {
+export function descendUnit(root: AnyUnit, indexes: ReadonlyArray<number>): AnyUnit {
 	let current = root;
 
 	for (const index of indexes) {
@@ -52,7 +52,7 @@ export function descendUnit(root: Unit, indexes: ReadonlyArray<number>): Unit {
 	return current;
 }
 
-export function computeMaxDuration(root: Unit): number {
+export function computeMaxDuration(root: AnyUnit): number {
 	let max = 0;
 
 	walkUnits(root, (unit) => {
@@ -62,10 +62,10 @@ export function computeMaxDuration(root: Unit): number {
 	return max;
 }
 
-export function computeMaxLatency(root: Unit): number {
+export function computeMaxLatency(root: AnyUnit): number {
 	let max = 0;
 
-	function walk(unit: Unit, cumulative: number): void {
+	function walk(unit: AnyUnit, cumulative: number): void {
 		const total = cumulative + unit.latency;
 
 		if (unit.targets.length === 0) {

@@ -1,44 +1,39 @@
-import type { SetupResult, UnitContext, UnitInput, UnitProperties } from "@resequence/web-au-core";
+import type { SetupResult, UnitContext, UnitInput } from "@resequence/web-au-core";
 import { Unit } from "@resequence/web-au-core";
+import { z } from "zod";
 import { filter, type FilterEffectUnit } from "./filter";
 import { chain } from "../composites/chain";
 
-export interface DeHumProperties extends UnitProperties {
-	readonly frequency: 50 | 60;
-	readonly harmonics: number;
-	readonly resonance: number;
-}
+const deHumSchema = z.object({
+	frequency: z.number().default(60).describe("Hum Frequency"),
+	harmonics: z.number().min(0).max(10).default(4).describe("Harmonics"),
+	resonance: z.number().min(0).max(30).default(30).describe("Resonance"),
+});
 
-export class DeHumEffectUnit extends Unit {
+export class DeHumEffectUnit extends Unit<typeof deHumSchema> {
 	readonly type = ["unit", "de-hum"] as const;
 
 	static override is(value: unknown): value is DeHumEffectUnit {
 		return Unit.is(value) && value.type[1] === "de-hum";
 	}
 
-	declare readonly properties: DeHumProperties;
 
 	private filterChain: Unit | undefined;
 
-	constructor(properties: UnitInput<DeHumProperties>) {
-		super(properties);
-		this.properties = { ...properties, targets: properties.targets ?? [], modDeclarations: properties.modDeclarations ?? [] };
+	constructor(input: z.infer<typeof deHumSchema> & UnitInput) {
+		super(input, deHumSchema);
 	}
 
-	get frequency(): 50 | 60 { return this.properties.frequency; }
-	get harmonics(): number { return this.properties.harmonics; }
-	get resonance(): number { return this.properties.resonance; }
-
 	protected override _setup(_context: UnitContext): SetupResult {
-		const notchCount = this.harmonics + 1;
+		const notchCount = this.parameters.harmonics.value + 1;
 		const notches: Array<FilterEffectUnit> = [];
 
 		for (let harmonic = 1; harmonic <= notchCount; harmonic++) {
 			notches.push(
 				filter({
 					mode: "notch",
-					frequency: this.frequency * harmonic,
-					resonance: this.resonance,
+					frequency: (this.parameters.frequency.value as 50 | 60) * harmonic,
+					resonance: this.parameters.resonance.value,
 				}),
 			);
 		}

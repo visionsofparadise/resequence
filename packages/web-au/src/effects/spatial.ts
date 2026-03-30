@@ -1,54 +1,42 @@
-import type { SetupResult, UnitContext, UnitInput, UnitProperties } from "@resequence/web-au-core";
-import { Unit, driveParam } from "@resequence/web-au-core";
+import type { SetupResult, UnitContext, UnitInput } from "@resequence/web-au-core";
+import { Unit, driveParam, live } from "@resequence/web-au-core";
+import { z } from "zod";
 
-export interface SpatialProperties extends UnitProperties {
-	readonly x: number;
-	readonly y?: number;
-	readonly z?: number;
-	readonly distanceModel?: DistanceModelType;
-	readonly refDistance?: number;
-	readonly maxDistance?: number;
-	readonly rolloffFactor?: number;
-}
+const spatialSchema = z.object({
+	x: live(z.number().min(-100).max(100).default(0).describe("X Position")),
+	y: live(z.number().min(-100).max(100).default(0).describe("Y Position").optional()),
+	z: live(z.number().min(-100).max(100).default(0).describe("Z Position").optional()),
+	distanceModel: z.enum(["linear", "inverse", "exponential"]).default("inverse").describe("Distance Model").optional(),
+	refDistance: z.number().min(0).max(1000).default(1).describe("Reference Distance").optional(),
+	maxDistance: z.number().min(0).max(10000).default(10000).describe("Max Distance").optional(),
+	rolloffFactor: z.number().min(0).max(10).default(1).describe("Rolloff Factor").optional(),
+});
 
-export class SpatialEffectUnit extends Unit {
+export class SpatialEffectUnit extends Unit<typeof spatialSchema> {
 	readonly type = ["unit", "spatial"] as const;
-	declare readonly properties: SpatialProperties;
 
 	static override is(value: unknown): value is SpatialEffectUnit {
 		return Unit.is(value) && value.type[1] === "spatial";
 	}
 
+
 	public pannerNode: PannerNode | undefined;
 
-	constructor(properties: UnitInput<SpatialProperties>) {
-		super(properties);
-		this.properties = {
-			...properties,
-			targets: properties.targets ?? [],
-			modDeclarations: properties.modDeclarations ?? [],
-		};
+	constructor(input: z.infer<typeof spatialSchema> & UnitInput) {
+		super(input, spatialSchema);
 	}
-
-	get x(): number { return this.properties.x; }
-	get y(): number { return this.properties.y ?? 0; }
-	get z(): number { return this.properties.z ?? 0; }
-	get distanceModel(): DistanceModelType | undefined { return this.properties.distanceModel; }
-	get refDistance(): number | undefined { return this.properties.refDistance; }
-	get maxDistance(): number | undefined { return this.properties.maxDistance; }
-	get rolloffFactor(): number | undefined { return this.properties.rolloffFactor; }
 
 	protected override _setup(context: UnitContext): SetupResult {
 		const pannerNode = context.audioContext.createPanner();
 
-		if (this.distanceModel) pannerNode.distanceModel = this.distanceModel;
-		if (this.refDistance !== undefined) pannerNode.refDistance = this.refDistance;
-		if (this.maxDistance !== undefined) pannerNode.maxDistance = this.maxDistance;
-		if (this.rolloffFactor !== undefined) pannerNode.rolloffFactor = this.rolloffFactor;
+		if (this.parameters.distanceModel?.value) pannerNode.distanceModel = this.parameters.distanceModel.value;
+		if (this.parameters.refDistance?.value !== undefined) pannerNode.refDistance = this.parameters.refDistance.value;
+		if (this.parameters.maxDistance?.value !== undefined) pannerNode.maxDistance = this.parameters.maxDistance.value;
+		if (this.parameters.rolloffFactor?.value !== undefined) pannerNode.rolloffFactor = this.parameters.rolloffFactor.value;
 
-		driveParam(pannerNode.positionX, this.id ? `${this.id}.x` : undefined, this.x, [-100, 100], context);
-		driveParam(pannerNode.positionY, this.id ? `${this.id}.y` : undefined, this.y, [-100, 100], context);
-		driveParam(pannerNode.positionZ, this.id ? `${this.id}.z` : undefined, this.z, [-100, 100], context);
+		driveParam(pannerNode.positionX, this.parameters.x, undefined, context);
+		driveParam(pannerNode.positionY, this.parameters.y, undefined, context);
+		driveParam(pannerNode.positionZ, this.parameters.z, undefined, context);
 
 		this.pannerNode = pannerNode;
 
@@ -60,6 +48,6 @@ export class SpatialEffectUnit extends Unit {
 	}
 }
 
-export function spatial(options: UnitInput<SpatialProperties>): SpatialEffectUnit {
+export function spatial(options: z.infer<typeof spatialSchema> & UnitInput): SpatialEffectUnit {
 	return new SpatialEffectUnit(options);
 }

@@ -1,24 +1,20 @@
-import type { SetupResult, UnitContext, UnitInput, UnitProperties } from "@resequence/web-au-core";
+import type { SetupResult, UnitContext, UnitInput, AnyUnit } from "@resequence/web-au-core";
 import { Unit } from "@resequence/web-au-core";
-
-export interface RingModProperties extends UnitProperties {
-	readonly carrier: Unit;
-}
+import { z } from "zod";
 
 export class RingModEffectUnit extends Unit {
 	readonly type = ["unit", "ringmod"] as const;
-	declare readonly properties: RingModProperties;
 
 	static override is(value: unknown): value is RingModEffectUnit {
 		return Unit.is(value) && value.type[1] === "ringmod";
 	}
 
-	constructor(properties: UnitInput<RingModProperties>) {
-		super(properties);
-		this.properties = { ...properties, targets: properties.targets ?? [], modDeclarations: properties.modDeclarations ?? [] };
-	}
+	readonly carrier: AnyUnit;
 
-	get carrier(): Unit { return this.properties.carrier; }
+	constructor(input: UnitInput & { readonly carrier: AnyUnit }) {
+		super(input, z.object({}));
+		this.carrier = input.carrier;
+	}
 
 	protected override async _setup(context: UnitContext): Promise<SetupResult> {
 		const modulatorGain = context.audioContext.createGain();

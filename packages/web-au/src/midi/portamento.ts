@@ -1,6 +1,6 @@
-import type { MidiUnitProperties, NoteEvent, NoteSlide, SetupResult, UnitContext } from "@resequence/web-au-core";
-
-import { MidiUnit, type MidiUnitInput } from "@resequence/web-au-core";
+import type { NoteEvent, NoteSlide, SetupResult, UnitContext, MidiUnitInput } from "@resequence/web-au-core";
+import { MidiUnit } from "@resequence/web-au-core";
+import { z } from "zod";
 
 interface LastPitch {
 	readonly note: number;
@@ -8,13 +8,13 @@ interface LastPitch {
 	readonly slides?: ReadonlyArray<NoteSlide>;
 }
 
-export interface PortamentoProperties extends MidiUnitProperties {
-	readonly timeMs: number;
-}
+const portamentoSchema = z.object({
+	timeMs: z.number().min(0).default(100).describe("Glide time (ms)"),
+});
 
-export class PortamentoUnit extends MidiUnit {
+export class PortamentoUnit extends MidiUnit<typeof portamentoSchema> {
 	readonly type = ["unit", "midi", "portamento"] as const;
-	declare readonly properties: PortamentoProperties;
+
 
 	static override is(value: unknown): value is PortamentoUnit {
 		return MidiUnit.is(value) && value.type[2] === "portamento";
@@ -22,18 +22,8 @@ export class PortamentoUnit extends MidiUnit {
 
 	private lastPitch: LastPitch | undefined;
 
-	get timeMs(): number {
-		return this.properties.timeMs;
-	}
-
-	constructor(properties: MidiUnitInput<PortamentoProperties>) {
-		super(properties);
-		this.properties = {
-			...properties,
-			targets: properties.targets ?? [],
-			modDeclarations: properties.modDeclarations ?? [],
-			noteModDeclarations: properties.noteModDeclarations ?? [],
-		};
+	constructor(input: z.infer<typeof portamentoSchema> & MidiUnitInput) {
+		super(input, portamentoSchema);
 	}
 
 	override schedule(noteEvent: NoteEvent, context: UnitContext): void {
@@ -74,7 +64,7 @@ export class PortamentoUnit extends MidiUnit {
 		if (Math.abs(glideStartCents) < 0.01) return noteEvent;
 
 		const noteDurationMs = noteEvent.stopMs - noteEvent.startMs;
-		const glideTimeMs = Math.min(this.timeMs, noteDurationMs);
+		const glideTimeMs = Math.min(this.parameters.timeMs.value, noteDurationMs);
 
 		const portaSlides: Array<NoteSlide> = [
 			{ timeMs: 0, cents: glideStartCents, curve: 0 },

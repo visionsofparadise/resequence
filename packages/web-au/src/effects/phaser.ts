@@ -1,34 +1,30 @@
-import type { SetupResult, UnitContext, UnitInput, UnitProperties } from "@resequence/web-au-core";
+import type { SetupResult, UnitContext, UnitInput } from "@resequence/web-au-core";
+import { Unit, proxyDriver, live } from "@resequence/web-au-core";
+import { z } from "zod";
 import { lfo, type LfoUnit } from "../lfo";
-import { Unit, proxyDriver } from "@resequence/web-au-core";
-
 import { allpass, type FilterEffectUnit } from "./filter";
 
-export interface PhaserProperties extends UnitProperties {
-	readonly stages: number;
-	readonly rate: number;
-	readonly depth: number;
-}
+const phaserSchema = z.object({
+	rate: live(z.number().min(0.01).max(100).default(1).describe("Rate (Hz)")),
+	depth: live(z.number().min(0).max(1).default(0.5).describe("Depth")),
+});
 
-export class PhaserEffectUnit extends Unit {
+export class PhaserEffectUnit extends Unit<typeof phaserSchema> {
 	readonly type = ["unit", "phaser"] as const;
-	declare readonly properties: PhaserProperties;
 
 	static override is(value: unknown): value is PhaserEffectUnit {
 		return Unit.is(value) && value.type[1] === "phaser";
 	}
 
+
+	readonly stages: number;
 	private stageChain: Array<FilterEffectUnit> = [];
 	private lfoUnit: LfoUnit | undefined;
 
-	constructor(properties: UnitInput<PhaserProperties>) {
-		super(properties);
-		this.properties = { ...properties, targets: properties.targets ?? [], modDeclarations: properties.modDeclarations ?? [] };
+	constructor(input: z.infer<typeof phaserSchema> & UnitInput & { readonly stages: number }) {
+		super(input, phaserSchema);
+		this.stages = input.stages;
 	}
-
-	get stages(): number { return this.properties.stages; }
-	get rate(): number { return this.properties.rate; }
-	get depth(): number { return this.properties.depth; }
 
 	protected override async _setup(context: UnitContext): Promise<SetupResult> {
 		const stageFilters: Array<FilterEffectUnit> = [];
@@ -58,7 +54,7 @@ export class PhaserEffectUnit extends Unit {
 		const lfoPath = crypto.randomUUID();
 		const lfoId = crypto.randomUUID();
 
-		const lfoUnit = lfo({ path: lfoPath, shape: "sine", rate: this.rate, depth: this.depth, id: lfoId });
+		const lfoUnit = lfo({ path: lfoPath, shape: "sine", rate: this.parameters.rate.value, depth: this.parameters.depth.value, id: lfoId });
 
 		await lfoUnit.setup(context);
 
@@ -72,8 +68,8 @@ export class PhaserEffectUnit extends Unit {
 			}
 		}
 
-		proxyDriver(this.id, "rate", `${lfoId}.rate`, context);
-		proxyDriver(this.id, "depth", `${lfoId}.depth`, context);
+		proxyDriver(this.parameters.rate, lfoUnit.parameters.rate, context);
+		proxyDriver(this.parameters.depth, lfoUnit.parameters.depth, context);
 
 		this.stageChain = stageFilters;
 		this.lfoUnit = lfoUnit;

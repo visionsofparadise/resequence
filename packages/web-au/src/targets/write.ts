@@ -1,15 +1,10 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
-import type { SetupResult, UnitContext, UnitInput, UnitProperties } from "@resequence/web-au-core";
+import type { SetupResult, UnitContext, UnitInput } from "@resequence/web-au-core";
 import type { WavBitDepth } from "@resequence/web-au-utils";
 import { encodeWav } from "@resequence/web-au-utils";
-
 import { Unit } from "@resequence/web-au-core";
-
-export interface WriteProperties extends UnitProperties {
-	readonly path: string;
-	readonly bitDepth: WavBitDepth;
-}
+import { z } from "zod";
 
 export class WriteUnit extends Unit {
 	readonly type = ["unit", "target", "write"] as const;
@@ -18,21 +13,14 @@ export class WriteUnit extends Unit {
 		return Unit.is(value) && value.type[1] === "target" && value.type[2] === "write";
 	}
 
-	declare readonly properties: WriteProperties;
+	readonly path: string;
+	readonly bitDepth: WavBitDepth;
 	private offlineContext: OfflineAudioContext | undefined;
 
-	constructor(properties: UnitInput<WriteProperties>) {
-		super(properties);
-
-		this.properties = { ...properties, targets: properties.targets ?? [], modDeclarations: properties.modDeclarations ?? [] };
-	}
-
-	get path(): string {
-		return this.properties.path;
-	}
-
-	get bitDepth(): WavBitDepth {
-		return this.properties.bitDepth;
+	constructor(input: { path: string; bitDepth: WavBitDepth } & UnitInput) {
+		super(input, z.object({}));
+		this.path = input.path;
+		this.bitDepth = input.bitDepth;
 	}
 
 	protected override _setup(context: UnitContext): SetupResult {

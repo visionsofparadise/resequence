@@ -1,31 +1,22 @@
-import type { MidiUnitProperties, NoteEvent, UnitContext } from "@resequence/web-au-core";
+import type { NoteEvent, UnitContext, MidiUnitInput } from "@resequence/web-au-core";
+import { MidiUnit } from "@resequence/web-au-core";
+import { z } from "zod";
 
-import { MidiUnit, type MidiUnitInput } from "@resequence/web-au-core";
-
-export interface VelocityCurveProperties extends MidiUnitProperties {
-	readonly curve: (velocity: number) => number;
-}
+const velocityCurveSchema = z.object({});
 
 export class VelocityCurveMidiUnit extends MidiUnit {
 	readonly type = ["unit", "midi", "velocity-curve"] as const;
-	declare readonly properties: VelocityCurveProperties;
+
 
 	static override is(value: unknown): value is VelocityCurveMidiUnit {
 		return MidiUnit.is(value) && value.type[2] === "velocity-curve";
 	}
 
-	get curve(): (velocity: number) => number {
-		return this.properties.curve;
-	}
+	readonly curve: (velocity: number) => number;
 
-	constructor(properties: MidiUnitInput<VelocityCurveProperties>) {
-		super(properties);
-		this.properties = {
-			...properties,
-			targets: properties.targets ?? [],
-			modDeclarations: properties.modDeclarations ?? [],
-			noteModDeclarations: properties.noteModDeclarations ?? [],
-		};
+	constructor(input: { curve: (velocity: number) => number } & MidiUnitInput) {
+		super(input, velocityCurveSchema);
+		this.curve = input.curve;
 	}
 
 	override schedule(noteEvent: NoteEvent, context: UnitContext): void {

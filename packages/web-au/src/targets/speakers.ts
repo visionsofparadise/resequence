@@ -1,9 +1,6 @@
-import type { SetupResult, UnitContext, UnitInput, UnitProperties } from "@resequence/web-au-core";
-
+import type { SetupResult, UnitContext, UnitInput } from "@resequence/web-au-core";
 import { Unit } from "@resequence/web-au-core";
-
-export interface SpeakersProperties extends UnitProperties {
-}
+import { z } from "zod";
 
 export class SpeakersUnit extends Unit {
 	readonly type = ["unit", "target", "speakers"] as const;
@@ -12,12 +9,8 @@ export class SpeakersUnit extends Unit {
 		return Unit.is(value) && value.type[1] === "target" && value.type[2] === "speakers";
 	}
 
-	declare readonly properties: SpeakersProperties;
-
-	constructor(properties?: UnitInput<SpeakersProperties>) {
-		super(properties);
-
-		this.properties = { ...properties, targets: properties?.targets ?? [], modDeclarations: properties?.modDeclarations ?? [] };
+	constructor(input?: UnitInput) {
+		super(input ?? {}, z.object({}));
 	}
 
 	protected override _setup(context: UnitContext): SetupResult {

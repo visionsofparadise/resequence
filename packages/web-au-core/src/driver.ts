@@ -1,4 +1,5 @@
 import type { DriverEntry, UnitContext } from "./context";
+import type { LiveParameter } from "./parameter";
 
 export function getOrCreateDriver(
 	path: string,
@@ -23,68 +24,82 @@ export function getOrCreateDriver(
 }
 
 export function driveParam(
-	param: AudioParam,
-	path: string | undefined,
-	value: number,
-	range: readonly [number, number],
+	audioParam: AudioParam,
+	liveParam: LiveParameter,
+	map: ((value: number) => number) | undefined,
 	context: UnitContext,
 ): void {
-	if (path) {
-		const [min, max] = range;
-		const normalized = (value - min) / (max - min);
-		const entry = getOrCreateDriver(path, normalized, context, range);
+	if (liveParam.path) {
+		const [min, max] = [liveParam.min, liveParam.max];
+		const mappedMin = map ? map(min) : min;
+		const mappedMax = map ? map(max) : max;
+		const entry = getOrCreateDriver(liveParam.path, liveParam.normalized, context, [min, max]);
 
 		const scaleGain = context.audioContext.createGain();
 
-		scaleGain.gain.value = max - min;
-		param.value = min;
+		scaleGain.gain.value = mappedMax - mappedMin;
+		audioParam.value = mappedMin;
 
 		entry.node.connect(scaleGain);
-		scaleGain.connect(param);
+		scaleGain.connect(audioParam);
+		liveParam.bind(entry.node.offset, true);
 	} else {
-		param.value = value;
+		audioParam.value = map ? map(liveParam.value) : liveParam.value;
+		liveParam.bind(audioParam, false);
 	}
 }
 
 export function offsetParam(
-	param: AudioParam,
-	path: string | undefined,
-	value: number,
-	range: readonly [number, number],
+	audioParam: AudioParam,
+	liveParam: LiveParameter,
+	map: ((value: number) => number) | undefined,
 	context: UnitContext,
 ): void {
-	param.value = value;
+	audioParam.value = map ? map(liveParam.value) : liveParam.value;
 
-	if (path) {
-		const [min, max] = range;
-		const entry = getOrCreateDriver(path, 0, context, range);
+	if (liveParam.path) {
+		const [min, max] = [liveParam.min, liveParam.max];
+		const mappedMin = map ? map(min) : min;
+		const mappedMax = map ? map(max) : max;
+		const entry = getOrCreateDriver(liveParam.path, 0, context, [min, max]);
 
 		const scaleGain = context.audioContext.createGain();
 
-		scaleGain.gain.value = max - min;
+		scaleGain.gain.value = mappedMax - mappedMin;
 
 		entry.node.connect(scaleGain);
-		scaleGain.connect(param);
+		scaleGain.connect(audioParam);
+		liveParam.bind(entry.node.offset, true);
+	} else {
+		liveParam.bind(audioParam, false);
 	}
 }
 
-export function undriveParam(path: string, param: AudioParam, context: UnitContext): void {
-	try {
-		context.driverMap.get(path)?.node.disconnect(param);
-	} catch {
-		// already disconnected
-	}
-}
+export function proxyDriver(
+	parentParam: LiveParameter,
+	childParam: LiveParameter,
+	context: UnitContext,
+): void {
+	if (!parentParam.path || !childParam.path) return;
 
-export function proxyDriver(id: string | undefined, key: string, childPath: string, context: UnitContext): void {
-	if (!id) return;
-
-	const childEntry = context.driverMap.get(childPath);
+	const childEntry = context.driverMap.get(childParam.path);
 
 	if (!childEntry) return;
 
-	const parentEntry = getOrCreateDriver(`${id}.${key}`, childEntry.node.offset.value, context, childEntry.range);
+	const parentEntry = getOrCreateDriver(parentParam.path, childEntry.node.offset.value, context, childEntry.range);
 
 	childEntry.node.offset.value = 0;
 	parentEntry.node.connect(childEntry.node.offset);
+}
+
+export function undriveParam(liveParam: LiveParameter, context: UnitContext): void {
+	if (!liveParam.path) return;
+
+	try {
+		const entry = context.driverMap.get(liveParam.path);
+
+		if (entry && liveParam.audioParam) entry.node.disconnect(liveParam.audioParam);
+	} catch {
+		// already disconnected
+	}
 }

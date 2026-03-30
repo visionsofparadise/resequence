@@ -1,50 +1,42 @@
-import type { SetupResult, UnitContext, UnitInput, UnitProperties } from "@resequence/web-au-core";
-import { driveParam, proxyDriver, Unit } from "@resequence/web-au-core";
+import type { SetupResult, UnitContext, UnitInput } from "@resequence/web-au-core";
+import { driveParam, proxyDriver, Unit, live } from "@resequence/web-au-core";
+import { z } from "zod";
 import { linearGain, type GainEffectUnit } from "./effects/gain";
 
 export type WaveShape = "sine" | "square" | "sawtooth" | "triangle";
 
-export interface LfoProperties extends UnitProperties {
-	readonly path: string;
-	readonly shape: WaveShape;
-	readonly rate: number;
-	readonly depth: number;
-}
+const lfoSchema = z.object({
+	path: z.string().describe("Target path"),
+	shape: z.enum(["sine", "square", "sawtooth", "triangle"]).default("sine").describe("Shape"),
+	rate: live(z.number().min(0.01).max(100).default(1).describe("Rate (Hz)")),
+	depth: live(z.number().min(0).max(1).default(0.5).describe("Depth")),
+});
 
-export class LfoUnit extends Unit {
+export class LfoUnit extends Unit<typeof lfoSchema> {
 	readonly type = ["unit", "lfo"] as const;
-	declare readonly properties: LfoProperties;
 
 	static override is(value: unknown): value is LfoUnit {
 		return Unit.is(value) && value.type[1] === "lfo";
 	}
 
-	get path(): string { return this.properties.path; }
-	get shape(): WaveShape { return this.properties.shape; }
-	get rate(): number { return this.properties.rate; }
-	get depth(): number { return this.properties.depth; }
 
 	private oscillatorNode: OscillatorNode | undefined;
 	private depthUnit: GainEffectUnit | undefined;
 
-	constructor(properties: UnitInput<LfoProperties>) {
-		super(properties);
-		this.properties = {
-			...properties,
-			targets: properties.targets ?? [],
-			modDeclarations: [{ paths: [properties.path] }],
-		};
+	constructor(input: z.infer<typeof lfoSchema> & UnitInput) {
+		super(input, lfoSchema);
+		this.modDeclarations.push({ paths: [this.parameters.path.value] });
 	}
 
 	protected override async _setup(context: UnitContext): Promise<SetupResult> {
 		const oscillatorNode = context.audioContext.createOscillator();
 
-		oscillatorNode.type = this.shape;
+		oscillatorNode.type = this.parameters.shape.value;
 
-		driveParam(oscillatorNode.frequency, this.id ? `${this.id}.rate` : undefined, this.rate, [0.01, 100], context);
+		driveParam(oscillatorNode.frequency, this.parameters.rate, undefined, context);
 
 		const depthId = crypto.randomUUID();
-		const depthUnit = linearGain({ level: this.depth, id: depthId });
+		const depthUnit = linearGain({ level: this.parameters.depth.value, id: depthId });
 
 		await depthUnit.setup(context);
 
@@ -53,7 +45,7 @@ export class LfoUnit extends Unit {
 		oscillatorNode.connect(depthUnit.gainNode);
 		oscillatorNode.start();
 
-		proxyDriver(this.id, "depth", `${depthId}.level`, context);
+		proxyDriver(this.parameters.depth, depthUnit.parameters.level, context);
 
 		this.oscillatorNode = oscillatorNode;
 		this.depthUnit = depthUnit;

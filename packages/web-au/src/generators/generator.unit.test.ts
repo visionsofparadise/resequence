@@ -1,12 +1,17 @@
 import { describe, expect, it } from "vitest";
+import { z } from "zod";
 import type { NoteEvent, SetupResult, UnitContext } from "@resequence/web-au-core";
 
-import { GeneratorUnit, type GeneratorUnitInput } from "./generator";
+import { GeneratorUnit } from "./generator";
 
 class TestGenerator extends GeneratorUnit {
 	readonly type = ["unit", "midi", "generator", "test"] as const;
 
 	scheduledNotes: Array<NoteEvent> = [];
+
+	constructor() {
+		super({ id: "test-generator" }, z.object({}));
+	}
 
 	protected override _schedule(noteEvent: NoteEvent, context: UnitContext): void {
 		const ne = this.offsetNote(noteEvent, context);

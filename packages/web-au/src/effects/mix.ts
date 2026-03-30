@@ -1,40 +1,38 @@
-import type { SetupResult, UnitContext, UnitInput, UnitProperties } from "@resequence/web-au-core";
+import type { SetupResult, UnitContext, UnitInput, AnyUnit } from "@resequence/web-au-core";
 import { Unit } from "@resequence/web-au-core";
+import { z } from "zod";
 import { gain } from "./gain";
 
-export interface MixProperties extends UnitProperties {
-	readonly inner: Unit;
-	readonly amount: number;
-}
+const mixSchema = z.object({
+	amount: z.number().min(0).max(1).default(0.5).describe("Amount"),
+});
 
-export class MixNode extends Unit {
+export class MixNode extends Unit<typeof mixSchema> {
 	readonly type = ["unit", "mix"] as const;
 
 	static override is(value: unknown): value is MixNode {
 		return Unit.is(value) && value.type[1] === "mix";
 	}
 
-	declare readonly properties: MixProperties;
+
+	readonly inner: AnyUnit;
 	private dryChain: Unit | undefined;
 
-	constructor(properties: UnitInput<MixProperties>) {
-		super(properties);
-		this.properties = { ...properties, targets: properties.targets ?? [], modDeclarations: properties.modDeclarations ?? [] };
+	constructor(input: z.infer<typeof mixSchema> & UnitInput & { readonly inner: AnyUnit }) {
+		super(input, mixSchema);
+		this.inner = input.inner;
 	}
-
-	get inner(): Unit { return this.properties.inner; }
-	get amount(): number { return this.properties.amount; }
 
 	protected override _setup(_context: UnitContext): SetupResult {
 		const wetGainUnit = gain({
-			level: linearToDb(this.amount),
+			level: linearToDb(this.parameters.amount.value),
 			id: this.id ? `${this.id}.wet` : undefined,
 		});
 
 		this.inner.to(wetGainUnit);
 
 		const dryChain = gain({
-			level: linearToDb(1 - this.amount),
+			level: linearToDb(1 - this.parameters.amount.value),
 			id: this.id ? `${this.id}.dry` : undefined,
 		});
 

@@ -1,44 +1,38 @@
-import type { SetupResult, UnitContext, UnitInput, UnitProperties } from "@resequence/web-au-core";
-import { Unit, driveParam } from "@resequence/web-au-core";
+import type { SetupResult, UnitContext, UnitInput } from "@resequence/web-au-core";
+import { Unit, driveParam, live } from "@resequence/web-au-core";
+import { z } from "zod";
 
-export interface CompressorProperties extends UnitProperties {
-	readonly threshold: number;
-	readonly knee?: number;
-	readonly ratio: number;
-	readonly attack?: number;
-	readonly release?: number;
-}
+const compressorSchema = z.object({
+	threshold: live(z.number().min(-100).max(0).default(-24).describe("Threshold (dB)")),
+	ratio: live(z.number().min(1).max(20).default(4).describe("Ratio")),
+	knee: live(z.number().min(0).max(40).default(30).describe("Knee")).optional(),
+	attack: live(z.number().min(0).max(1000).default(3).describe("Attack (ms)")).optional(),
+	release: live(z.number().min(0).max(1000).default(250).describe("Release (ms)")).optional(),
+});
 
-export class CompressorEffectUnit extends Unit {
+export class CompressorEffectUnit extends Unit<typeof compressorSchema> {
 	readonly type = ["unit", "compressor"] as const;
 
 	static override is(value: unknown): value is CompressorEffectUnit {
 		return Unit.is(value) && value.type[1] === "compressor";
 	}
 
-	declare readonly properties: CompressorProperties;
+
 	public compressorNode: DynamicsCompressorNode | undefined;
 
-	constructor(properties: UnitInput<CompressorProperties>) {
-		super(properties);
-		this.properties = { ...properties, targets: properties.targets ?? [], modDeclarations: properties.modDeclarations ?? [] };
+	constructor(input: z.infer<typeof compressorSchema> & UnitInput) {
+		super(input, compressorSchema);
 	}
-
-	get threshold(): number { return this.properties.threshold; }
-	get knee(): number | undefined { return this.properties.knee; }
-	get ratio(): number { return this.properties.ratio; }
-	get attack(): number | undefined { return this.properties.attack; }
-	get release(): number | undefined { return this.properties.release; }
 
 	protected override _setup(context: UnitContext): SetupResult {
 		const compressorNode = context.audioContext.createDynamicsCompressor();
 
-		driveParam(compressorNode.threshold, this.id ? `${this.id}.threshold` : undefined, this.threshold, [-100, 0], context);
-		driveParam(compressorNode.ratio, this.id ? `${this.id}.ratio` : undefined, this.ratio, [1, 20], context);
+		driveParam(compressorNode.threshold, this.parameters.threshold, undefined, context);
+		driveParam(compressorNode.ratio, this.parameters.ratio, undefined, context);
 
-		if (this.knee !== undefined) compressorNode.knee.value = this.knee;
-		if (this.attack !== undefined) compressorNode.attack.value = this.attack / 1000;
-		if (this.release !== undefined) compressorNode.release.value = this.release / 1000;
+		if (this.parameters.knee?.value !== undefined) compressorNode.knee.value = this.parameters.knee.value;
+		if (this.parameters.attack?.value !== undefined) compressorNode.attack.value = this.parameters.attack.value / 1000;
+		if (this.parameters.release?.value !== undefined) compressorNode.release.value = this.parameters.release.value / 1000;
 
 		this.compressorNode = compressorNode;
 

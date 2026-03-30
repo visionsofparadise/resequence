@@ -1,31 +1,22 @@
-import type { MidiUnitProperties, NoteEvent, UnitContext } from "@resequence/web-au-core";
+import type { NoteEvent, UnitContext, MidiUnitInput } from "@resequence/web-au-core";
+import { MidiUnit } from "@resequence/web-au-core";
+import { z } from "zod";
 
-import { MidiUnit, type MidiUnitInput } from "@resequence/web-au-core";
-
-export interface NoteFilterProperties extends MidiUnitProperties {
-	readonly predicate: (noteEvent: NoteEvent) => boolean;
-}
+const noteFilterSchema = z.object({});
 
 export class NoteFilterMidiUnit extends MidiUnit {
 	readonly type = ["unit", "midi", "note-filter"] as const;
-	declare readonly properties: NoteFilterProperties;
+
 
 	static override is(value: unknown): value is NoteFilterMidiUnit {
 		return MidiUnit.is(value) && value.type[2] === "note-filter";
 	}
 
-	get predicate(): (noteEvent: NoteEvent) => boolean {
-		return this.properties.predicate;
-	}
+	readonly predicate: (noteEvent: NoteEvent) => boolean;
 
-	constructor(properties: MidiUnitInput<NoteFilterProperties>) {
-		super(properties);
-		this.properties = {
-			...properties,
-			targets: properties.targets ?? [],
-			modDeclarations: properties.modDeclarations ?? [],
-			noteModDeclarations: properties.noteModDeclarations ?? [],
-		};
+	constructor(input: { predicate: (noteEvent: NoteEvent) => boolean } & MidiUnitInput) {
+		super(input, noteFilterSchema);
+		this.predicate = input.predicate;
 	}
 
 	override schedule(noteEvent: NoteEvent, context: UnitContext): void {

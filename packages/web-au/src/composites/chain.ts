@@ -1,38 +1,32 @@
-import type { SetupResult, Unit, UnitContext, UnitInput, UnitProperties } from "@resequence/web-au-core";
-
+import type { AnyUnit, SetupResult, UnitContext, UnitInput } from "@resequence/web-au-core";
 import { CompositeUnit, flattenUnits } from "@resequence/web-au-core";
-
-export interface ChainProperties extends UnitProperties {
-	readonly units: ReadonlyArray<Unit>;
-}
+import { z } from "zod";
 
 export class Chain extends CompositeUnit {
 	readonly type = ["unit", "composite", "chain"] as const;
-	declare readonly properties: ChainProperties;
 
 	static override is(value: unknown): value is Chain {
 		return CompositeUnit.is(value) && value.type[2] === "chain";
 	}
 
-	readonly head: Unit;
-	readonly tail: Unit;
+	readonly head: AnyUnit;
+	readonly tail: AnyUnit;
+	readonly units: ReadonlyArray<AnyUnit>;
 
-	get units(): ReadonlyArray<Unit> { return this.properties.units; }
+	constructor(input: { units: ReadonlyArray<AnyUnit> } & UnitInput) {
+		super(input, z.object({}));
+		const units = [...input.units];
 
-	constructor(properties: UnitInput<ChainProperties>) {
-		super(properties);
-		const units = [...properties.units];
-
-		this.properties = { ...properties, targets: properties.targets ?? [], modDeclarations: properties.modDeclarations ?? [], units };
 		const firstUnit = units[0];
 		const last = units[units.length - 1];
 
 		if (!firstUnit || !last) throw new Error("chain() requires at least one unit");
+		this.units = units;
 		this.head = firstUnit;
 		this.tail = last;
 	}
 
-	override to(unit: Unit): void {
+	override to(unit: AnyUnit): void {
 		this.tail.to(unit);
 	}
 
@@ -45,7 +39,7 @@ export class Chain extends CompositeUnit {
 	}
 }
 
-export function chain(...inputUnits: Array<Unit>): Chain {
+export function chain(...inputUnits: Array<AnyUnit>): Chain {
 	for (let index = 0; index < inputUnits.length - 1; index++) {
 		const current = inputUnits[index];
 		const next = inputUnits[index + 1];

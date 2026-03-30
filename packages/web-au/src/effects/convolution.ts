@@ -1,37 +1,33 @@
-import type { SetupResult, UnitContext, UnitInput, UnitProperties } from "@resequence/web-au-core";
-
+import type { SetupResult, UnitContext, UnitInput } from "@resequence/web-au-core";
 import { Unit } from "@resequence/web-au-core";
+import { z } from "zod";
 
-export interface ConvolutionProperties extends UnitProperties {
-	readonly impulse: string;
-	readonly normalize?: boolean;
-}
+const convolutionSchema = z.object({
+	impulse: z.string().describe("Impulse Response Path"),
+	normalize: z.boolean().default(true).describe("Normalize").optional(),
+});
 
-export class ConvolutionEffectUnit extends Unit {
+export class ConvolutionEffectUnit extends Unit<typeof convolutionSchema> {
 	readonly type = ["unit", "convolution"] as const;
-	declare readonly properties: ConvolutionProperties;
 
 	static override is(value: unknown): value is ConvolutionEffectUnit {
 		return Unit.is(value) && value.type[1] === "convolution";
 	}
 
+
 	public convolverNode: ConvolverNode | undefined;
 
-	constructor(properties: UnitInput<ConvolutionProperties>) {
-		super(properties);
-		this.properties = { ...properties, targets: properties.targets ?? [], modDeclarations: properties.modDeclarations ?? [] };
+	constructor(input: z.infer<typeof convolutionSchema> & UnitInput) {
+		super(input, convolutionSchema);
 	}
-
-	get impulse(): string { return this.properties.impulse; }
-	get normalize(): boolean | undefined { return this.properties.normalize; }
 
 	protected override async _setup(context: UnitContext): Promise<SetupResult> {
 		const convolverNode = context.audioContext.createConvolver();
 
-		if (this.normalize !== undefined) convolverNode.normalize = this.normalize;
+		if (this.parameters.normalize?.value !== undefined) convolverNode.normalize = this.parameters.normalize.value;
 
 		try {
-			convolverNode.buffer = await context.getSample(this.impulse);
+			convolverNode.buffer = await context.getSample(this.parameters.impulse.value);
 		} catch {
 			// impulse not loadable — skip
 		}

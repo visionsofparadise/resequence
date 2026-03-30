@@ -3,7 +3,7 @@ import nodeWebAudio from "node-web-audio-api";
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
-import { collectUnits, computeMaxDuration, computeMaxLatency, createUnitContext, MidiUnit, Unit } from "@resequence/web-au-core";
+import { collectUnits, computeMaxDuration, computeMaxLatency, createUnitContext, MidiUnit, Unit, type AnyUnit } from "@resequence/web-au-core";
 import { ReadUnit } from "./sources/read";
 import { WriteUnit } from "./targets/write";
 import { encodeWav, parseMidiFile, type WavBitDepth } from "@resequence/web-au-utils";
@@ -69,12 +69,12 @@ program
 		try {
 			const mod = (await import(chainPath)) as Record<string, unknown>;
 
-			const unit = mod.default;
-
-			if (!(unit instanceof MidiUnit)) {
+			if (!(mod.default instanceof MidiUnit)) {
 				process.stderr.write("Error: default export must be a MidiUnit\n");
 				process.exit(1);
 			}
+
+			const unit = mod.default as MidiUnit;
 
 			const sampleRate = Number(options.sampleRate);
 
@@ -131,12 +131,13 @@ program
 
 		try {
 			const mod = (await import(chainPath)) as Record<string, unknown>;
-			const unit = mod.default;
 
-			if (!(unit instanceof Unit)) {
+			if (!(mod.default instanceof Unit)) {
 				process.stderr.write("Error: default export must be a Unit\n");
 				process.exit(1);
 			}
+
+			const unit = mod.default as AnyUnit;
 
 			const sampleRate = Number(options.sampleRate);
 			const basePath = dirname(chainPath);

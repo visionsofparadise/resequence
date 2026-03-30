@@ -29,45 +29,70 @@ import { Unit, UnitProperties, SetupResult, UnitContext } from "@resequence/web-
 
 **Type discrimination:** Each unit carries a `type` tuple (e.g. `["unit", "gain"]`) with a static `is()` guard for runtime narrowing.
 
-### Example: Custom Effect
+### Schema and Parameters
+
+Every leaf unit declares a static Zod schema and an instance `parameters` object. The schema is the single source of truth for parameter definitions — the studio uses it to render control panels, and the driver system reads paths and ranges from `LiveParameter` instances.
 
 ```typescript
-import { Unit, UnitProperties, UnitInput, SetupResult, UnitContext, driveParam } from "@resequence/web-au-core";
+import { z } from "zod";
+import { Unit, UnitProperties, UnitInput, SetupResult, UnitContext, driveParam, createParameters, LiveParameter } from "@resequence/web-au-core";
 
-// Custom properties for this unit
 interface BoostProperties extends UnitProperties {
-	readonly amount: number;
+  readonly amount: number;
 }
 
 class BoostUnit extends Unit {
-	// Type tuple for runtime discrimination — each level adds specificity
-	readonly type = ["unit", "boost"] as const;
-	// Narrow the inherited properties type to include custom fields
-	declare readonly properties: BoostProperties;
+  readonly type = ["unit", "boost"] as const;
+  declare readonly properties: BoostProperties;
 
-	constructor(properties: UnitInput<BoostProperties>) {
-		super(properties);
-		// Default targets and modDeclarations to empty arrays — UnitInput makes these optional
-		this.properties = { ...properties, targets: properties.targets ?? [], modDeclarations: properties.modDeclarations ?? [] };
-	}
+  // Schema defines parameter shapes, ranges, and metadata
+  static readonly schema = z.object({
+    amount: z.number().min(0).max(4).default(1).describe("Boost Amount").meta({ live: true }),
+  });
 
-	protected override _setup(context: UnitContext): SetupResult {
-		const gainNode = context.audioContext.createGain();
+  // Parameters are created from the schema and properties
+  readonly parameters = createParameters(BoostUnit.schema, this.id, this.properties);
 
-		// driveParam connects the AudioParam to the driver system for automation
-		// Pass undefined path when there's no id — the param gets a static value instead
-		driveParam(gainNode.gain, this.id ? `${this.id}.amount` : undefined, this.properties.amount, [0, 4], context);
+  constructor(properties: UnitInput<BoostProperties>) {
+    super(properties);
+    this.properties = { ...properties, targets: properties.targets ?? [], modDeclarations: properties.modDeclarations ?? [] };
+  }
 
-		// entries = where signal flows in, exits = where it flows out
-		return { entries: [gainNode], exits: [gainNode] };
-	}
+  protected override _setup(context: UnitContext): SetupResult {
+    const gainNode = context.audioContext.createGain();
+
+    // driveParam reads path, value, and range from the LiveParameter
+    driveParam(gainNode.gain, this.parameters.amount as LiveParameter, context);
+
+    return { entries: [gainNode], exits: [gainNode] };
+  }
 }
 
-// Factory function — the public API. Users never call `new` directly.
 export function boost({ amount, id }: { amount: number; id?: string }): BoostUnit {
-	return new BoostUnit({ amount, id });
+  return new BoostUnit({ amount, id });
 }
 ```
+
+**Two parameter types:**
+
+- `meta({ live: true })` on a `z.number()` field produces a `LiveParameter` — backed by a driver, supports `set()` and `subscribe()`.
+- All other fields produce a `Parameter<T>` — value only, structural. Changing them requires teardown and rebuild.
+
+### LiveParameter
+
+```typescript
+const param = unit.parameters.amount as LiveParameter;
+
+// Update value — writes to the bound AudioParam and notifies subscribers
+param.set(0.75);
+
+// Subscribe to value changes
+const unsubscribe = param.subscribe((value) => {
+  console.log("Amount changed to", value);
+});
+```
+
+`set(value)` updates `.value`, writes to the bound AudioParam (normalized if driven through a driver, raw if bound directly), and notifies subscribers. Pre-bind calls update the value and notify — the audio write is a no-op until `bind()` is called during setup.
 
 ## MidiUnit
 
@@ -97,19 +122,19 @@ const context = createUnitContext(audioContext, getSample, loadModule, latencyBu
 
 ## Driver System
 
-Parameters are modulated through ConstantSourceNode intermediaries, decoupling producers (automation, LFOs, note properties) from consumers (AudioParams).
+Parameters are modulated through ConstantSourceNode intermediaries, decoupling producers (automation, LFOs, note properties) from consumers (AudioParams). The driver functions accept `LiveParameter` instances directly — paths, values, and ranges are read from the parameter.
 
 ```typescript
-import { driveParam, offsetParam, proxyDriver, getOrCreateDriver } from "@resequence/web-au-core";
+import { driveParam, offsetParam, proxyDriver, getOrCreateDriver, LiveParameter } from "@resequence/web-au-core";
 
-// Full control — normalized 0–1 scaled to range
-driveParam(filterNode.frequency, "synth.filter.frequency", 0.5, [20, 20000], context);
+// Full control — LiveParameter carries path, value, min, max
+driveParam(filterNode.frequency, filterParams.frequency as LiveParameter, context);
 
 // Additive — modulation adds to the base value (for pitch, vibrato)
-offsetParam(oscNode.frequency, "synth.frequency", 440, [20, 20000], context);
+offsetParam(oscNode.frequency, oscParams.frequency as LiveParameter, context);
 
 // Forwarding — expose an inner parameter under a parent namespace
-proxyDriver("reverb", "roomSize", "reverb.comb0.feedback", context);
+proxyDriver(reverbParams.roomSize as LiveParameter, innerParams.feedback as LiveParameter, context);
 ```
 
 ## Graph Utilities
