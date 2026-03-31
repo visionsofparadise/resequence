@@ -5,6 +5,7 @@ describe("strum", () => {
 	it("spreads chord notes over time", () => {
 		const chord = layer(N.C4(1), N.E4(1), N.G4(1));
 		const result = strum(chord, { strumOffset: 0.1 });
+		result.setup(0);
 		const notes = collectNotes(result);
 		const starts = notes.map((n) => n.absoluteBeat + n.note.startBeat).sort((a, b) => a - b);
 		// Notes should be staggered

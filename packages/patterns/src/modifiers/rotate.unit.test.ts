@@ -5,6 +5,7 @@ describe("rotate", () => {
 	it("circularly shifts note order", () => {
 		const tree = sequence(N.C4(1), N.E4(1), N.G4(1));
 		const result = rotate(tree, 1);
+		result.setup(0);
 		const notes = collectNotes(result);
 		// Sort by absolute position
 		const sorted = notes.sort((a, b) => (a.absoluteBeat + a.note.startBeat) - (b.absoluteBeat + b.note.startBeat));

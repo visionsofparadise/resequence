@@ -14,20 +14,11 @@ export class SkipPattern extends ModifierPattern {
 		return [];
 	}
 
-	clone(overrides: Partial<PatternProperties>): SkipPattern {
-		return new SkipPattern({
-			...this.properties,
-			...overrides,
-		});
+	clone(_overrides: Partial<PatternProperties>): SkipPattern {
+		return new SkipPattern({ input: this.properties.input, startBeat: 0, endBeat: 0 });
 	}
 }
 
 export function skip(pattern: Pattern): SkipPattern {
-	return new SkipPattern({
-		notes: [],
-		children: [],
-		startBeat: 0,
-		endBeat: 0,
-		input: pattern,
-	});
+	return new SkipPattern({ input: pattern, startBeat: 0, endBeat: 0 });
 }

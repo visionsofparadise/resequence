@@ -1,4 +1,4 @@
-import type { Note, ModifierProperties, Pattern, PatternProperties } from "@resequence/patterns-core";
+import type { Event, Note, ModifierProperties, Pattern, PatternProperties } from "@resequence/patterns-core";
 import { ModifierPattern, toPattern, addSteps, NUM_OCTAVES, modifyNotes } from "@resequence/patterns-core";
 export interface TransposeProperties extends ModifierProperties {
 	readonly interval: number;
@@ -8,31 +8,23 @@ export class TransposePattern extends ModifierPattern<TransposeProperties> {
 	readonly packageName = "@resequence/patterns";
 	readonly unitName = "transpose";
 
-	clone(overrides: Partial<PatternProperties>): TransposePattern {
-		return new TransposePattern({
-			...this.properties,
-			...overrides,
-		});
+	override _setup(): Array<Event> {
+		modifyNotes(this, (note) => ({
+			...note,
+			pitch: addSteps(note.pitch, this.properties.interval),
+			slides: note.slides?.map((sl) => ({ ...sl, value: sl.value + this.properties.interval / (note.pitch.stepsPerOctave * NUM_OCTAVES) })),
+		}));
+
+		return [];
+	}
+
+	clone(_overrides: Partial<PatternProperties>): TransposePattern {
+		return new TransposePattern({ interval: this.properties.interval, input: this.properties.input });
 	}
 }
 
 export function transpose(pattern: Pattern | Note, interval: number): TransposePattern {
 	const resolved = toPattern(pattern);
 
-	const cloned = resolved.clone({});
-
-	modifyNotes(cloned, (note) => ({
-		...note,
-		pitch: addSteps(note.pitch, interval),
-		slides: note.slides?.map((sl) => ({ ...sl, value: sl.value + interval / (note.pitch.stepsPerOctave * NUM_OCTAVES) })),
-	}));
-
-	return new TransposePattern({
-		notes: cloned.notes,
-		children: cloned.children,
-		startBeat: cloned.startBeat,
-		endBeat: cloned.endBeat,
-		interval,
-		input: resolved,
-	});
+	return new TransposePattern({ interval, input: resolved });
 }

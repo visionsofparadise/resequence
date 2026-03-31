@@ -7,6 +7,7 @@ describe("flip", () => {
 		const e4 = N.E4(1);
 		const center = N.C4(1).pitch;
 		const result = flip(layer(c4, e4), center);
+		result.setup(0);
 		const notes = collectNotes(result);
 		expect(notes).toHaveLength(2);
 		// C4 stays at C4 (center), E4 (4 steps above) becomes Ab3 (4 steps below)

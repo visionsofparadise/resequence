@@ -31,6 +31,27 @@ export class TempoPattern extends Pattern<TempoProperties> {
 	readonly packageName = "@resequence/patterns-core";
 	readonly unitName = "tempo";
 
+	constructor(properties: TempoProperties) {
+		TempoPattern.validate(properties);
+		super(properties);
+	}
+
+	private static validate(properties: TempoProperties): void {
+		if (properties.bpm <= 0) {
+			throw new PatternsError("INVALID_TEMPO", `tempo(): bpm must be greater than 0, got ${properties.bpm}`);
+		}
+
+		for (const keyframe of properties.keyframes) {
+			if (keyframe.beat < 0) {
+				throw new PatternsError("INVALID_TEMPO", `tempo(): keyframe beat must be >= 0, got ${keyframe.beat}`);
+			}
+
+			if (keyframe.value < 0) {
+				throw new PatternsError("INVALID_TEMPO", `tempo(): keyframe value must be >= 0, got ${keyframe.value}`);
+			}
+		}
+	}
+
 	override _schedule(absoluteBeat: number, _ports: ReadonlyArray<Port>, _tuning?: ResolvedTuning): Array<Event> {
 		const event: MetadataEvent = {
 			type: "metadata",
@@ -52,29 +73,13 @@ export class TempoPattern extends Pattern<TempoProperties> {
 }
 
 export function tempo(pattern: Pattern, bpm: number, options?: TempoOptions): TempoPattern {
-	if (bpm <= 0) {
-		throw new PatternsError("INVALID_TEMPO", `tempo(): bpm must be greater than 0, got ${bpm}`);
-	}
-
-	const keyframes = options?.keyframes ?? [];
-
-	for (const keyframe of keyframes) {
-		if (keyframe.beat < 0) {
-			throw new PatternsError("INVALID_TEMPO", `tempo(): keyframe beat must be >= 0, got ${keyframe.beat}`);
-		}
-
-		if (keyframe.value < 0) {
-			throw new PatternsError("INVALID_TEMPO", `tempo(): keyframe value must be >= 0, got ${keyframe.value}`);
-		}
-	}
-
 	return new TempoPattern({
 		notes: [],
 		children: [{ offsetBeats: 0, pattern }],
 		startBeat: pattern.startBeat,
 		endBeat: pattern.endBeat,
 		bpm,
-		keyframes,
+		keyframes: options?.keyframes ?? [],
 		isOverride: options?.override ?? false,
 	});
 }

@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 describe("harmonize", () => {
 	it("produces original + transposed copy", () => {
 		const result = harmonize(N.C4(1), 7);
+		result.setup(0);
 		const notes = collectNotes(result);
 		expect(notes).toHaveLength(2);
 		const keys = notes.map((n) => pitchKey(n.note.pitch)).sort((a, b) => a - b);

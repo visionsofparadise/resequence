@@ -8,6 +8,7 @@ describe("slide", () => {
 		const tree = sequence(a, b);
 		// Notes: C4 at 0-2, E4 at 2-3. They don't overlap, so no slides.
 		const result = slide(tree);
+		result.setup(0);
 		const notes = collectNotes(result);
 		expect(notes).toHaveLength(2);
 	});
@@ -15,6 +16,7 @@ describe("slide", () => {
 	it("returns unchanged pattern when fewer than 2 notes", () => {
 		const tree = sequence(N.C4(1));
 		const result = slide(tree);
-		expect(result.notes).toBe(tree.notes);
+		result.setup(0);
+		expect(result.notes).toHaveLength(tree.notes.length);
 	});
 });

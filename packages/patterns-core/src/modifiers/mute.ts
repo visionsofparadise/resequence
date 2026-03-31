@@ -14,20 +14,11 @@ export class MutePattern extends ModifierPattern {
 		return [];
 	}
 
-	clone(overrides: Partial<PatternProperties>): MutePattern {
-		return new MutePattern({
-			...this.properties,
-			...overrides,
-		});
+	clone(_overrides: Partial<PatternProperties>): MutePattern {
+		return new MutePattern({ input: this.properties.input });
 	}
 }
 
 export function mute(pattern: Pattern): MutePattern {
-	return new MutePattern({
-		notes: [],
-		children: [],
-		startBeat: pattern.startBeat,
-		endBeat: pattern.endBeat,
-		input: pattern,
-	});
+	return new MutePattern({ input: pattern });
 }

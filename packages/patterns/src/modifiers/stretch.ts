@@ -1,4 +1,4 @@
-import type { Note, ModifierProperties, Pattern, PatternProperties } from "@resequence/patterns-core";
+import type { Event, Note, ModifierProperties, Pattern, PatternProperties } from "@resequence/patterns-core";
 import { ModifierPattern, toPattern, modifyNotes } from "@resequence/patterns-core";
 export interface StretchProperties extends ModifierProperties {
 	readonly factor: number;
@@ -8,31 +8,24 @@ export class StretchPattern extends ModifierPattern<StretchProperties> {
 	readonly packageName = "@resequence/patterns";
 	readonly unitName = "stretch";
 
-	clone(overrides: Partial<PatternProperties>): StretchPattern {
-		return new StretchPattern({
-			...this.properties,
-			...overrides,
-		});
+	override _setup(): Array<Event> {
+		modifyNotes(this, (note) => ({
+			...note,
+			startBeat: note.startBeat * this.properties.factor,
+			endBeat: note.endBeat * this.properties.factor,
+			slides: note.slides?.map((sl) => ({ ...sl, beat: sl.beat * this.properties.factor })),
+		}));
+
+		return [];
+	}
+
+	clone(_overrides: Partial<PatternProperties>): StretchPattern {
+		return new StretchPattern({ factor: this.properties.factor, input: this.properties.input });
 	}
 }
 
 export function stretch(pattern: Pattern | Note, factor: number): StretchPattern {
 	const resolved = toPattern(pattern);
-	const cloned = resolved.clone({});
 
-	modifyNotes(cloned, (note) => ({
-		...note,
-		startBeat: note.startBeat * factor,
-		endBeat: note.endBeat * factor,
-		slides: note.slides?.map((sl) => ({ ...sl, beat: sl.beat * factor })),
-	}));
-
-	return new StretchPattern({
-		notes: cloned.notes,
-		children: cloned.children,
-		startBeat: cloned.startBeat,
-		endBeat: cloned.endBeat,
-		factor,
-		input: resolved,
-	});
+	return new StretchPattern({ factor, input: resolved });
 }

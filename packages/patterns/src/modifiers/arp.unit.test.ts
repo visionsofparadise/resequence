@@ -6,6 +6,7 @@ describe("arp", () => {
 		const chord = layer(N.C4(4), N.E4(4), N.G4(4));
 		const mapping = arpUp(3, 1);
 		const result = arp(chord, mapping);
+		result.setup(0);
 		const notes = collectNotes(result);
 		// Should produce arpeggiated output cycling through chord tones
 		expect(notes.length).toBeGreaterThan(0);

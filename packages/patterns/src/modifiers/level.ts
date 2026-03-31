@@ -1,4 +1,4 @@
-import type { Note, ModifierProperties, Pattern, PatternProperties } from "@resequence/patterns-core";
+import type { Event, Note, ModifierProperties, Pattern, PatternProperties } from "@resequence/patterns-core";
 import { ModifierPattern, toPattern, modifyNotes, collectNotes } from "@resequence/patterns-core";
 export interface LevelPropOptions {
 	readonly value?: number;
@@ -74,85 +74,79 @@ export class LevelPattern extends ModifierPattern<LevelProperties> {
 	readonly packageName = "@resequence/patterns";
 	readonly unitName = "level";
 
-	clone(overrides: Partial<PatternProperties>): LevelPattern {
-		return new LevelPattern({
-			...this.properties,
-			...overrides,
+	override _setup(): Array<Event> {
+		const config = this.properties.config;
+		let velocityMean = 0;
+		const ccMeans = new Map<number, number>();
+
+		const needsCollect = (config.velocity !== undefined && needsMean(config.velocity)) || (config.cc && Object.values(config.cc).some((spec) => spec !== undefined && needsMean(spec)));
+
+		if (needsCollect) {
+			const allNotes = collectNotes(this);
+
+			if (allNotes.length > 0) {
+				if (config.velocity !== undefined && needsMean(config.velocity)) {
+					velocityMean = allNotes.reduce((sum, { note }) => sum + note.velocity, 0) / allNotes.length;
+				}
+
+				if (config.cc) {
+					for (const [ccKey, ccSpec] of Object.entries(config.cc)) {
+						if (ccSpec === undefined || !needsMean(ccSpec)) continue;
+						const ccNum = Number(ccKey);
+
+						ccMeans.set(ccNum, allNotes.reduce((sum, { note }) => sum + (note.cc?.[ccNum] ?? 0), 0) / allNotes.length);
+					}
+				}
+			}
+		}
+
+		const velocityRng = config.velocity !== undefined ? createRng(config.velocity) : Math.random;
+		const ccRngs = new Map<number, () => number>();
+
+		if (config.cc) {
+			for (const [ccKey, ccSpec] of Object.entries(config.cc)) {
+				if (ccSpec === undefined) continue;
+				ccRngs.set(Number(ccKey), createRng(ccSpec));
+			}
+		}
+
+		modifyNotes(this, (note) => {
+			let velocity = note.velocity;
+			let cc = note.cc;
+
+			if (config.velocity !== undefined) {
+				velocity = applyPropToValue(note.velocity, config.velocity, velocityMean, velocityRng);
+			}
+
+			if (config.cc) {
+				const newCc: Partial<Record<number, number>> = { ...cc };
+
+				for (const [ccKey, ccSpec] of Object.entries(config.cc)) {
+					if (ccSpec === undefined) continue;
+					const ccNum = Number(ccKey);
+					const ccRng = ccRngs.get(ccNum) ?? Math.random;
+
+					newCc[ccNum] = applyPropToValue(note.cc?.[ccNum] ?? 0, ccSpec, ccMeans.get(ccNum) ?? 0, ccRng);
+				}
+
+				cc = newCc;
+			}
+
+			return { ...note, velocity, cc };
 		});
+
+		return [];
+	}
+
+	clone(_overrides: Partial<PatternProperties>): LevelPattern {
+		return new LevelPattern({ config: this.properties.config, input: this.properties.input });
 	}
 }
 
 export function level(pattern: Pattern | Note, config: LevelConfig): LevelPattern {
 	const resolved = toPattern(pattern);
-	let velocityMean = 0;
-	const ccMeans = new Map<number, number>();
 
-	const needsCollect = (config.velocity !== undefined && needsMean(config.velocity)) || (config.cc && Object.values(config.cc).some((spec) => spec !== undefined && needsMean(spec)));
-
-	if (needsCollect) {
-		const allNotes = collectNotes(resolved);
-
-		if (allNotes.length > 0) {
-			if (config.velocity !== undefined && needsMean(config.velocity)) {
-				velocityMean = allNotes.reduce((sum, { note }) => sum + note.velocity, 0) / allNotes.length;
-			}
-
-			if (config.cc) {
-				for (const [ccKey, ccSpec] of Object.entries(config.cc)) {
-					if (ccSpec === undefined || !needsMean(ccSpec)) continue;
-					const ccNum = Number(ccKey);
-
-					ccMeans.set(ccNum, allNotes.reduce((sum, { note }) => sum + (note.cc?.[ccNum] ?? 0), 0) / allNotes.length);
-				}
-			}
-		}
-	}
-
-	const velocityRng = config.velocity !== undefined ? createRng(config.velocity) : Math.random;
-	const ccRngs = new Map<number, () => number>();
-
-	if (config.cc) {
-		for (const [ccKey, ccSpec] of Object.entries(config.cc)) {
-			if (ccSpec === undefined) continue;
-			ccRngs.set(Number(ccKey), createRng(ccSpec));
-		}
-	}
-
-	const cloned = resolved.clone({});
-
-	modifyNotes(cloned, (note) => {
-		let velocity = note.velocity;
-		let cc = note.cc;
-
-		if (config.velocity !== undefined) {
-			velocity = applyPropToValue(note.velocity, config.velocity, velocityMean, velocityRng);
-		}
-
-		if (config.cc) {
-			const newCc: Partial<Record<number, number>> = { ...cc };
-
-			for (const [ccKey, ccSpec] of Object.entries(config.cc)) {
-				if (ccSpec === undefined) continue;
-				const ccNum = Number(ccKey);
-				const ccRng = ccRngs.get(ccNum) ?? Math.random;
-
-				newCc[ccNum] = applyPropToValue(note.cc?.[ccNum] ?? 0, ccSpec, ccMeans.get(ccNum) ?? 0, ccRng);
-			}
-
-			cc = newCc;
-		}
-
-		return { ...note, velocity, cc };
-	});
-
-	return new LevelPattern({
-		notes: cloned.notes,
-		children: cloned.children,
-		startBeat: cloned.startBeat,
-		endBeat: cloned.endBeat,
-		config,
-		input: resolved,
-	});
+	return new LevelPattern({ config, input: resolved });
 }
 
 export function humanize(pattern: Pattern | Note, amount: number, seed?: number): LevelPattern {

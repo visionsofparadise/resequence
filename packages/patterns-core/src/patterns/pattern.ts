@@ -48,13 +48,14 @@ export abstract class Pattern<P extends PatternProperties = PatternProperties> {
 	}
 
 	setup(absoluteBeat: number): Array<Event> {
-		if (this.properties.children.length === 0) return this._setup(absoluteBeat);
+		const childResults = this.properties.children.map(({ offsetBeats, pattern }) => pattern.setup(absoluteBeat + offsetBeats));
 
 		const ownEvents = this._setup(absoluteBeat);
 
-		const childResults = this.properties.children.map(({ offsetBeats, pattern }) => pattern.setup(absoluteBeat + offsetBeats));
+		if (childResults.length === 0) return ownEvents;
+		if (ownEvents.length === 0) return childResults.flat();
 
-		return [...ownEvents, ...childResults.flat()];
+		return [...childResults.flat(), ...ownEvents];
 	}
 
 	_setup(_absoluteBeat: number): Array<Event> {

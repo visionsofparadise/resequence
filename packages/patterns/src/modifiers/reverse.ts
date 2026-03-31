@@ -1,41 +1,35 @@
-import type { Note, Pattern, PatternProperties } from "@resequence/patterns-core";
+import type { Event, Note, Pattern, PatternProperties } from "@resequence/patterns-core";
 import { ModifierPattern, toPattern, modifyNotes } from "@resequence/patterns-core";
 export class ReversePattern extends ModifierPattern {
 	readonly packageName = "@resequence/patterns";
 	readonly unitName = "reverse";
 
-	clone(overrides: Partial<PatternProperties>): ReversePattern {
-		return new ReversePattern({
-			...this.properties,
-			...overrides,
+	override _setup(): Array<Event> {
+		const totalDuration = this.endBeat - this.startBeat;
+
+		modifyNotes(this, (note, { absoluteOffset }) => {
+			const noteDuration = note.endBeat - note.startBeat;
+			const absEnd = absoluteOffset + note.endBeat;
+			const newAbsStart = totalDuration - absEnd;
+			const newStartBeat = newAbsStart - absoluteOffset;
+
+			return {
+				...note,
+				startBeat: newStartBeat,
+				endBeat: newStartBeat + noteDuration,
+			};
 		});
+
+		return [];
+	}
+
+	clone(_overrides: Partial<PatternProperties>): ReversePattern {
+		return new ReversePattern({ input: this.properties.input });
 	}
 }
 
 export function reverse(pattern: Pattern | Note): ReversePattern {
 	const resolved = toPattern(pattern);
-	const totalDuration = pattern.endBeat - pattern.startBeat;
 
-	const cloned = resolved.clone({});
-
-	modifyNotes(cloned, (note, { absoluteOffset }) => {
-		const noteDuration = note.endBeat - note.startBeat;
-		const absEnd = absoluteOffset + note.endBeat;
-		const newAbsStart = totalDuration - absEnd;
-		const newStartBeat = newAbsStart - absoluteOffset;
-
-		return {
-			...note,
-			startBeat: newStartBeat,
-			endBeat: newStartBeat + noteDuration,
-		};
-	});
-
-	return new ReversePattern({
-		notes: cloned.notes,
-		children: cloned.children,
-		startBeat: cloned.startBeat,
-		endBeat: cloned.endBeat,
-		input: resolved,
-	});
+	return new ReversePattern({ input: resolved });
 }

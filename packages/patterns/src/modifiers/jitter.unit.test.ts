@@ -6,6 +6,8 @@ describe("jitter", () => {
 		const tree = sequence(N.C4(1), N.E4(1));
 		const result1 = jitter(tree, 10, 42);
 		const result2 = jitter(tree, 10, 42);
+		result1.setup(0);
+		result2.setup(0);
 		const notes1 = collectNotes(result1);
 		const notes2 = collectNotes(result2);
 		expect(notes1[0]!.note.startBeat).toBe(notes2[0]!.note.startBeat);

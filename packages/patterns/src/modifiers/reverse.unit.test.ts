@@ -5,6 +5,7 @@ describe("reverse", () => {
 	it("reverses note positions within duration", () => {
 		const tree = sequence(N.C4(1), N.E4(1));
 		const result = reverse(tree);
+		result.setup(0);
 		const notes = collectNotes(result);
 		// Sort by absolute position (offsetBeats + note.startBeat)
 		const sorted = notes.sort((a, b) => (a.absoluteBeat + a.note.startBeat) - (b.absoluteBeat + b.note.startBeat));

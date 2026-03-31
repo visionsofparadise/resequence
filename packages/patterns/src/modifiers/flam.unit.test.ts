@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 describe("flam", () => {
 	it("produces grace note + original", () => {
 		const result = flam(N.C4(1), 0.1);
+		result.setup(0);
 		const notes = collectNotes(result);
 		expect(notes).toHaveLength(2);
 	});

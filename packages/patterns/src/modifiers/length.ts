@@ -1,4 +1,4 @@
-import type { Note, ModifierProperties, Pattern, PatternProperties } from "@resequence/patterns-core";
+import type { Event, Note, ModifierProperties, Pattern, PatternProperties } from "@resequence/patterns-core";
 import { ModifierPattern, toPattern, modifyNotes } from "@resequence/patterns-core";
 export interface LengthProperties extends ModifierProperties {
 	readonly noteDuration: number;
@@ -8,34 +8,27 @@ export class LengthPattern extends ModifierPattern<LengthProperties> {
 	readonly packageName = "@resequence/patterns";
 	readonly unitName = "length";
 
-	clone(overrides: Partial<PatternProperties>): LengthPattern {
-		return new LengthPattern({
-			...this.properties,
-			...overrides,
+	override _setup(): Array<Event> {
+		modifyNotes(this, (note) => {
+			const truncatedSlides = note.slides?.filter((sl) => sl.beat <= this.properties.noteDuration);
+
+			return {
+				...note,
+				endBeat: note.startBeat + this.properties.noteDuration,
+				slides: truncatedSlides && truncatedSlides.length > 0 ? truncatedSlides : undefined,
+			};
 		});
+
+		return [];
+	}
+
+	clone(_overrides: Partial<PatternProperties>): LengthPattern {
+		return new LengthPattern({ noteDuration: this.properties.noteDuration, input: this.properties.input });
 	}
 }
 
 export function length(pattern: Pattern | Note, duration: number): LengthPattern {
 	const resolved = toPattern(pattern);
-	const cloned = resolved.clone({});
 
-	modifyNotes(cloned, (note) => {
-		const truncatedSlides = note.slides?.filter((sl) => sl.beat <= duration);
-
-		return {
-			...note,
-			endBeat: note.startBeat + duration,
-			slides: truncatedSlides && truncatedSlides.length > 0 ? truncatedSlides : undefined,
-		};
-	});
-
-	return new LengthPattern({
-		notes: cloned.notes,
-		children: cloned.children,
-		startBeat: cloned.startBeat,
-		endBeat: cloned.endBeat,
-		noteDuration: duration,
-		input: resolved,
-	});
+	return new LengthPattern({ noteDuration: duration, input: resolved });
 }

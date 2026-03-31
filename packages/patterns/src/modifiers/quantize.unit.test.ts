@@ -5,6 +5,7 @@ describe("quantize", () => {
 	it("snaps notes to grid", () => {
 		const tree = sequence(N.C4(0.6), N.E4(0.4));
 		const result = quantize(tree, 1);
+		result.setup(0);
 		const notes = collectNotes(result);
 		const sorted = notes.sort((a, b) => a.absoluteBeat + a.note.startBeat - (b.absoluteBeat + b.note.startBeat));
 		// First note at 0 snaps to 0, second at 0.6 snaps to 1

@@ -5,6 +5,7 @@ describe("invert", () => {
 	it("shifts lowest notes up an octave", () => {
 		const chord = layer(N.C4(1), N.E4(1), N.G4(1));
 		const result = invert(chord, 1);
+		result.setup(0);
 		const notes = collectNotes(result);
 		const keys = notes.map((n) => pitchKey(n.note.pitch)).sort((a, b) => a - b);
 		// C4 shifted up an octave to C5, E4 and G4 stay

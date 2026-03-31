@@ -1,4 +1,4 @@
-import type { Note, ModifierProperties, Pattern, PatternProperties, Pitch } from "@resequence/patterns-core";
+import type { Event, Note, ModifierProperties, Pattern, PatternProperties, Pitch } from "@resequence/patterns-core";
 import { ModifierPattern, toPattern, addSteps, NUM_OCTAVES, pitchKey, modifyNotes, walkNotes } from "@resequence/patterns-core";
 export type VoicingStyle = "close" | "drop2" | "drop3" | "open";
 
@@ -10,11 +10,57 @@ export class VoicingPattern extends ModifierPattern<VoicingProperties> {
 	readonly packageName = "@resequence/patterns";
 	readonly unitName = "voicing";
 
-	clone(overrides: Partial<PatternProperties>): VoicingPattern {
-		return new VoicingPattern({
-			...this.properties,
-			...overrides,
+	override _setup(): Array<Event> {
+		const entries: Array<{ id: string; absoluteStart: number; pitch: Pitch }> = [];
+
+		walkNotes(this, (note, { id, absoluteOffset }) => {
+			entries.push({ id, absoluteStart: absoluteOffset + note.startBeat, pitch: note.pitch });
 		});
+
+		const byBeat = new Map<number, typeof entries>();
+
+		for (const entry of entries) {
+			let group = byBeat.get(entry.absoluteStart);
+
+			if (!group) {
+				group = [];
+				byBeat.set(entry.absoluteStart, group);
+			}
+
+			group.push(entry);
+		}
+
+		const pitchChanges = new Map<string, Pitch>();
+
+		for (const group of byBeat.values()) {
+			const changes = applyVoicing(group, this.properties.style);
+
+			for (const [id, pitch] of changes) {
+				pitchChanges.set(id, pitch);
+			}
+		}
+
+		modifyNotes(this, (note, { id }) => {
+			const newPitch = pitchChanges.get(id);
+
+			if (newPitch) {
+				const shift = pitchKey(newPitch) - pitchKey(note.pitch);
+
+				return {
+					...note,
+					pitch: newPitch,
+					slides: note.slides?.map((sl) => ({ ...sl, value: sl.value + shift / (note.pitch.stepsPerOctave * NUM_OCTAVES) })),
+				};
+			}
+
+			return note;
+		});
+
+		return [];
+	}
+
+	clone(_overrides: Partial<PatternProperties>): VoicingPattern {
+		return new VoicingPattern({ style: this.properties.style, input: this.properties.input });
 	}
 }
 
@@ -83,59 +129,6 @@ function applyVoicing(group: ReadonlyArray<{ id: string; pitch: Pitch }>, style:
 
 export function voicing(pattern: Pattern | Note, style: VoicingStyle): VoicingPattern {
 	const resolved = toPattern(pattern);
-	const entries: Array<{ id: string; absoluteStart: number; pitch: Pitch }> = [];
 
-	walkNotes(resolved, (note, { id, absoluteOffset }) => {
-		entries.push({ id, absoluteStart: absoluteOffset + note.startBeat, pitch: note.pitch });
-	});
-
-	const byBeat = new Map<number, typeof entries>();
-
-	for (const entry of entries) {
-		let group = byBeat.get(entry.absoluteStart);
-
-		if (!group) {
-			group = [];
-			byBeat.set(entry.absoluteStart, group);
-		}
-
-		group.push(entry);
-	}
-
-	const pitchChanges = new Map<string, Pitch>();
-
-	for (const group of byBeat.values()) {
-		const changes = applyVoicing(group, style);
-
-		for (const [id, pitch] of changes) {
-			pitchChanges.set(id, pitch);
-		}
-	}
-
-	const cloned = resolved.clone({});
-
-	modifyNotes(cloned, (note, { id }) => {
-		const newPitch = pitchChanges.get(id);
-
-		if (newPitch) {
-			const shift = pitchKey(newPitch) - pitchKey(note.pitch);
-
-			return {
-				...note,
-				pitch: newPitch,
-				slides: note.slides?.map((sl) => ({ ...sl, value: sl.value + shift / (note.pitch.stepsPerOctave * NUM_OCTAVES) })),
-			};
-		}
-
-		return note;
-	});
-
-	return new VoicingPattern({
-		notes: cloned.notes,
-		children: cloned.children,
-		startBeat: cloned.startBeat,
-		endBeat: cloned.endBeat,
-		style,
-		input: resolved,
-	});
+	return new VoicingPattern({ style, input: resolved });
 }

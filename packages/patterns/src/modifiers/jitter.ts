@@ -1,4 +1,4 @@
-import type { Note, ModifierProperties, Pattern, PatternProperties } from "@resequence/patterns-core";
+import type { Event, Note, ModifierProperties, Pattern, PatternProperties } from "@resequence/patterns-core";
 import { ModifierPattern, toPattern, modifyNotes } from "@resequence/patterns-core";
 function mulberry32(seed: number): () => number {
 	let state = seed;
@@ -23,37 +23,29 @@ export class JitterPattern extends ModifierPattern<JitterProperties> {
 	readonly packageName = "@resequence/patterns";
 	readonly unitName = "jitter";
 
-	clone(overrides: Partial<PatternProperties>): JitterPattern {
-		return new JitterPattern({
-			...this.properties,
-			...overrides,
+	override _setup(): Array<Event> {
+		const rng = this.properties.seed !== undefined ? mulberry32(this.properties.seed) : Math.random.bind(Math);
+
+		modifyNotes(this, (note) => {
+			const shift = Math.round((rng() * 2 - 1) * this.properties.amount);
+
+			return {
+				...note,
+				startBeat: note.startBeat + shift,
+				endBeat: note.endBeat + shift,
+			};
 		});
+
+		return [];
+	}
+
+	clone(_overrides: Partial<PatternProperties>): JitterPattern {
+		return new JitterPattern({ amount: this.properties.amount, seed: this.properties.seed, input: this.properties.input });
 	}
 }
 
 export function jitter(pattern: Pattern | Note, amount: number, seed?: number): JitterPattern {
 	const resolved = toPattern(pattern);
-	const rng = seed !== undefined ? mulberry32(seed) : Math.random.bind(Math);
 
-	const cloned = resolved.clone({});
-
-	modifyNotes(cloned, (note) => {
-		const shift = Math.round((rng() * 2 - 1) * amount);
-
-		return {
-			...note,
-			startBeat: note.startBeat + shift,
-			endBeat: note.endBeat + shift,
-		};
-	});
-
-	return new JitterPattern({
-		notes: cloned.notes,
-		children: cloned.children,
-		startBeat: cloned.startBeat,
-		endBeat: cloned.endBeat,
-		amount,
-		seed,
-		input: resolved,
-	});
+	return new JitterPattern({ amount, seed, input: resolved });
 }
