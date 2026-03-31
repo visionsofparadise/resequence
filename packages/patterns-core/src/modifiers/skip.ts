@@ -3,11 +3,8 @@ import { ModifierPattern } from "../patterns/modifier";
 import type { Pattern, PatternProperties } from "../patterns/pattern";
 
 export class SkipPattern extends ModifierPattern {
-	readonly type = ["pattern", "midi", "modifier", "skip"] as const;
-
-	static override is(value: unknown): value is SkipPattern {
-		return ModifierPattern.is(value) && value.type[3] === "skip";
-	}
+	readonly packageName = "@resequence/patterns-core";
+	readonly unitName = "skip";
 
 	override setup(): Array<Event> {
 		return [];

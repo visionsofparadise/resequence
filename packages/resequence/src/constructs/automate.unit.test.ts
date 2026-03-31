@@ -46,13 +46,10 @@ describe("automate", () => {
 	});
 });
 
-describe("AutomationPattern.is", () => {
-	it("returns true for AutomationPattern instances", () => {
+describe("AutomationPattern identity", () => {
+	it("has correct packageName and unitName", () => {
 		const pattern = automate("test", "a.b", [{ beat: 0, value: 1 }]);
-		expect(AutomationPattern.is(pattern)).toBe(true);
-	});
-
-	it("returns false for non-AutomationPattern values", () => {
-		expect(AutomationPattern.is({})).toBe(false);
+		expect(pattern.packageName).toBe("resequence");
+		expect(pattern.unitName).toBe("automation");
 	});
 });

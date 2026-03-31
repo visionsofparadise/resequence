@@ -17,11 +17,8 @@ export interface SpliceProperties extends ModifierProperties {
 }
 
 export class SplicePattern extends ModifierPattern<SpliceProperties> {
-	readonly type = ["pattern", "midi", "modifier", "splice"] as const;
-
-	static override is(value: unknown): value is SplicePattern {
-		return ModifierPattern.is(value) && value.type[3] === "splice";
-	}
+	readonly packageName = "@resequence/patterns";
+	readonly unitName = "splice";
 
 	clone(overrides: Partial<PatternProperties>): SplicePattern {
 		return new SplicePattern({
@@ -36,11 +33,8 @@ export interface InsertProperties extends ModifierProperties {
 }
 
 export class InsertPattern extends ModifierPattern<InsertProperties> {
-	readonly type = ["pattern", "midi", "modifier", "insert"] as const;
-
-	static override is(value: unknown): value is InsertPattern {
-		return ModifierPattern.is(value) && value.type[3] === "insert";
-	}
+	readonly packageName = "@resequence/patterns";
+	readonly unitName = "insert";
 
 	clone(overrides: Partial<PatternProperties>): InsertPattern {
 		return new InsertPattern({

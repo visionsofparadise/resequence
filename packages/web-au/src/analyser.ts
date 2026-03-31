@@ -3,11 +3,9 @@ import { Unit } from "@resequence/web-au-core";
 import { z } from "zod";
 
 export class AnalyserUnit extends Unit {
-	readonly type = ["unit", "analyser"] as const;
-
-	static override is(value: unknown): value is AnalyserUnit {
-		return Unit.is(value) && value.type[1] === "analyser";
-	}
+	readonly type = ["unit"];
+	readonly packageName = "@resequence/web-au";
+	readonly unitName = "analyser";
 
 	readonly fftSize: number;
 	public analyserNode: AnalyserNode | undefined;

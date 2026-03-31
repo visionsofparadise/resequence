@@ -4,11 +4,9 @@ import { linearGain, type GainEffectUnit } from "../effects/gain";
 import { z } from "zod";
 
 export class BypassUnit extends MidiUnit {
-	readonly type = ["unit", "midi", "bypass"] as const;
-
-	static override is(value: unknown): value is BypassUnit {
-		return MidiUnit.is(value) && value.type[2] === "bypass";
-	}
+	readonly type = ["unit", "midi"];
+	readonly packageName = "@resequence/web-au";
+	readonly unitName = "bypass";
 
 	readonly inner: AnyUnit;
 	private passthrough: GainEffectUnit | undefined;

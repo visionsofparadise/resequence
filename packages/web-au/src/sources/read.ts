@@ -3,11 +3,9 @@ import { Unit } from "@resequence/web-au-core";
 import { z } from "zod";
 
 export class ReadUnit extends Unit {
-	readonly type = ["unit", "source", "read"] as const;
-
-	static override is(value: unknown): value is ReadUnit {
-		return Unit.is(value) && value.type[1] === "source" && value.type[2] === "read";
-	}
+	readonly type = ["unit"];
+	readonly packageName = "@resequence/web-au";
+	readonly unitName = "read";
 
 	readonly path: string;
 	private sourceNode: AudioBufferSourceNode | undefined;

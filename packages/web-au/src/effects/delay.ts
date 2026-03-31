@@ -9,12 +9,9 @@ const delaySchema = z.object({
 });
 
 export class DelayEffectUnit extends Unit<typeof delaySchema> {
-	readonly type = ["unit", "delay"] as const;
-
-	static override is(value: unknown): value is DelayEffectUnit {
-		return Unit.is(value) && value.type[1] === "delay";
-	}
-
+	readonly type = ["unit"];
+	readonly packageName = "@resequence/web-au";
+	readonly unitName = "delay";
 
 	public delayNode: DelayNode | undefined;
 	private feedbackUnit: GainEffectUnit | undefined;

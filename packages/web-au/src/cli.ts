@@ -4,8 +4,6 @@ import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { collectUnits, computeMaxDuration, computeMaxLatency, createUnitContext, MidiUnit, Unit, type AnyUnit } from "@resequence/web-au-core";
-import { ReadUnit } from "./sources/read";
-import { WriteUnit } from "./targets/write";
 import { encodeWav, parseMidiFile, type WavBitDepth } from "@resequence/web-au-utils";
 
 const { OfflineAudioContext: NodeOfflineAudioContext } = nodeWebAudio;
@@ -169,11 +167,11 @@ program
 			const graphUnits = collectUnits(unit);
 
 			for (const graphUnit of graphUnits) {
-				if (ReadUnit.is(graphUnit)) graphUnit.start(context);
+				if (graphUnit.unitName === "read" && "start" in graphUnit) (graphUnit as { start: (unitContext: typeof context) => void }).start(context);
 			}
 
 			for (const graphUnit of graphUnits) {
-				if (WriteUnit.is(graphUnit)) await graphUnit.render(context);
+				if (graphUnit.unitName === "write" && "render" in graphUnit) await (graphUnit as { render: (unitContext: typeof context) => Promise<void> }).render(context);
 			}
 
 			process.stdout.write("Done.\n");

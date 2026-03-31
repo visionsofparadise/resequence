@@ -53,13 +53,10 @@ describe("audio", () => {
 	});
 });
 
-describe("AudioPattern.is", () => {
-	it("returns true for AudioPattern instances", () => {
+describe("AudioPattern identity", () => {
+	it("has correct packageName and unitName", () => {
 		const pattern = audio("test", "./test.wav", 4);
-		expect(AudioPattern.is(pattern)).toBe(true);
-	});
-
-	it("returns false for non-AudioPattern values", () => {
-		expect(AudioPattern.is({})).toBe(false);
+		expect(pattern.packageName).toBe("resequence");
+		expect(pattern.unitName).toBe("audio");
 	});
 });

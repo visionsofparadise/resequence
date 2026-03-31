@@ -22,6 +22,8 @@ export interface PatternProperties {
 
 export abstract class Pattern<P extends PatternProperties = PatternProperties> {
 	abstract readonly type: ReadonlyArray<string>;
+	abstract readonly packageName: string;
+	abstract readonly unitName: string;
 
 	static is(value: unknown): value is Pattern {
 		return typeof value === "object" && value !== null && "type" in value && Array.isArray(value.type) && value.type[0] === "pattern";

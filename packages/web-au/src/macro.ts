@@ -7,12 +7,9 @@ const macroSchema = z.object({
 });
 
 export class MacroUnit extends Unit<typeof macroSchema> {
-	readonly type = ["unit", "macro"] as const;
-
-	static override is(value: unknown): value is MacroUnit {
-		return Unit.is(value) && value.type[1] === "macro";
-	}
-
+	readonly type = ["unit"];
+	readonly packageName = "@resequence/web-au";
+	readonly unitName = "macro";
 
 	private constantNode: ConstantSourceNode | undefined;
 

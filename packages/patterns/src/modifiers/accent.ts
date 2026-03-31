@@ -6,11 +6,8 @@ export interface AccentProperties extends ModifierProperties {
 }
 
 export class AccentPattern extends ModifierPattern<AccentProperties> {
-	readonly type = ["pattern", "midi", "modifier", "accent"] as const;
-
-	static override is(value: unknown): value is AccentPattern {
-		return ModifierPattern.is(value) && value.type[3] === "accent";
-	}
+	readonly packageName = "@resequence/patterns";
+	readonly unitName = "accent";
 
 	clone(overrides: Partial<PatternProperties>): AccentPattern {
 		return new AccentPattern({

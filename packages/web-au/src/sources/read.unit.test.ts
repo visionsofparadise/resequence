@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import type { UnitContext } from "@resequence/web-au-core";
-import { ReadUnit, read } from "./read";
+import { read } from "./read";
 
 function mockContext() {
 	const gainNode = { connect: vi.fn(), disconnect: vi.fn() } as unknown as GainNode;
@@ -29,14 +29,15 @@ function mockContext() {
 }
 
 describe("ReadUnit", () => {
-	it("is identifiable via static is()", () => {
+	it("has correct packageName and unitName", () => {
 		const unit = read({ path: "input.wav" });
-		expect(ReadUnit.is(unit)).toBe(true);
+		expect(unit.packageName).toBe("@resequence/web-au");
+		expect(unit.unitName).toBe("read");
 	});
 
-	it("has correct type discriminator", () => {
+	it("has correct type tuple", () => {
 		const unit = read({ path: "input.wav" });
-		expect(unit.type).toEqual(["unit", "source", "read"]);
+		expect(unit.type).toEqual(["unit"]);
 	});
 
 	it("stores path property", () => {

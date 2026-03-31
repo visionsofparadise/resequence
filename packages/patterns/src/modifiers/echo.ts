@@ -7,11 +7,8 @@ export interface EchoProperties extends ModifierProperties {
 }
 
 export class EchoPattern extends ModifierPattern<EchoProperties> {
-	readonly type = ["pattern", "midi", "modifier", "echo"] as const;
-
-	static override is(value: unknown): value is EchoPattern {
-		return ModifierPattern.is(value) && value.type[3] === "echo";
-	}
+	readonly packageName = "@resequence/patterns";
+	readonly unitName = "echo";
 
 	clone(overrides: Partial<PatternProperties>): EchoPattern {
 		return new EchoPattern({

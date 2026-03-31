@@ -11,12 +11,9 @@ const deHumSchema = z.object({
 });
 
 export class DeHumEffectUnit extends Unit<typeof deHumSchema> {
-	readonly type = ["unit", "de-hum"] as const;
-
-	static override is(value: unknown): value is DeHumEffectUnit {
-		return Unit.is(value) && value.type[1] === "de-hum";
-	}
-
+	readonly type = ["unit"];
+	readonly packageName = "@resequence/web-au";
+	readonly unitName = "de-hum";
 
 	private filterChain: Unit | undefined;
 

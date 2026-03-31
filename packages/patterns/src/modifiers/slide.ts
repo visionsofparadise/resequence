@@ -2,11 +2,8 @@ import type { Keyframe, Note, Pattern, PatternProperties } from "@resequence/pat
 import { ModifierPattern, toPattern, normalizePitch, pitchKey, modifyNotes, walkNotes } from "@resequence/patterns-core";
 import { evaluateSlide, mergeSlides } from "@resequence/patterns-utils";
 export class SlidePattern extends ModifierPattern {
-	readonly type = ["pattern", "midi", "modifier", "slide"] as const;
-
-	static override is(value: unknown): value is SlidePattern {
-		return ModifierPattern.is(value) && value.type[3] === "slide";
-	}
+	readonly packageName = "@resequence/patterns";
+	readonly unitName = "slide";
 
 	clone(overrides: Partial<PatternProperties>): SlidePattern {
 		return new SlidePattern({

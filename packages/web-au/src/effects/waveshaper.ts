@@ -19,12 +19,9 @@ const waveShaperSchema = z.object({
 });
 
 export class WaveShaperEffectUnit extends Unit<typeof waveShaperSchema> {
-	readonly type = ["unit", "waveshaper"] as const;
-
-	static override is(value: unknown): value is WaveShaperEffectUnit {
-		return Unit.is(value) && value.type[1] === "waveshaper";
-	}
-
+	readonly type = ["unit"];
+	readonly packageName = "@resequence/web-au";
+	readonly unitName = "waveshaper";
 
 	readonly curve: Float32Array<ArrayBuffer>;
 	public waveShaperNode: WaveShaperNode | undefined;

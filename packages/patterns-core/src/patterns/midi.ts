@@ -11,7 +11,7 @@ export interface MidiPatternProperties extends PatternProperties {
 }
 
 export abstract class MidiPattern<P extends MidiPatternProperties = MidiPatternProperties> extends Pattern<P> {
-	abstract readonly type: readonly ["pattern", "midi", ...Array<string>];
+	readonly type = ["pattern", "midi"];
 
 	static override is(value: unknown): value is MidiPattern {
 		return Pattern.is(value) && value.type[1] === "midi";

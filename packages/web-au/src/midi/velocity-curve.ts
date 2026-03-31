@@ -5,12 +5,9 @@ import { z } from "zod";
 const velocityCurveSchema = z.object({});
 
 export class VelocityCurveMidiUnit extends MidiUnit {
-	readonly type = ["unit", "midi", "velocity-curve"] as const;
-
-
-	static override is(value: unknown): value is VelocityCurveMidiUnit {
-		return MidiUnit.is(value) && value.type[2] === "velocity-curve";
-	}
+	readonly type = ["unit", "midi"];
+	readonly packageName = "@resequence/web-au";
+	readonly unitName = "velocity-curve";
 
 	readonly curve: (velocity: number) => number;
 

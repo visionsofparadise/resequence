@@ -8,12 +8,9 @@ const noiseSchema = z.object({
 });
 
 export class NoiseUnit extends GeneratorUnit<typeof noiseSchema> {
-	readonly type = ["unit", "midi", "generator", "noise"] as const;
-
-
-	static override is(value: unknown): value is NoiseUnit {
-		return GeneratorUnit.is(value) && value.type[3] === "noise";
-	}
+	readonly type = ["unit", "midi"];
+	readonly packageName = "@resequence/web-au";
+	readonly unitName = "noise";
 
 	constructor(input: z.infer<typeof noiseSchema> & UnitInput) {
 		super(input, noiseSchema);

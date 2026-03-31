@@ -5,12 +5,9 @@ import { z } from "zod";
 const noteFilterSchema = z.object({});
 
 export class NoteFilterMidiUnit extends MidiUnit {
-	readonly type = ["unit", "midi", "note-filter"] as const;
-
-
-	static override is(value: unknown): value is NoteFilterMidiUnit {
-		return MidiUnit.is(value) && value.type[2] === "note-filter";
-	}
+	readonly type = ["unit", "midi"];
+	readonly packageName = "@resequence/web-au";
+	readonly unitName = "note-filter";
 
 	readonly predicate: (noteEvent: NoteEvent) => boolean;
 

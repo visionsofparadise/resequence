@@ -16,13 +16,13 @@ describe("analyser", () => {
 
 	it("has correct type tuple", () => {
 		const a = analyser();
-		expect(a.type).toEqual(["unit", "analyser"]);
+		expect(a.type).toEqual(["unit"]);
 	});
 
-	it("type guard identifies AnalyserUnit", () => {
+	it("has correct packageName and unitName", () => {
 		const a = analyser();
-		expect(AnalyserUnit.is(a)).toBe(true);
-		expect(AnalyserUnit.is(gain({ level: 0 }))).toBe(false);
+		expect(a.packageName).toBe("@resequence/web-au");
+		expect(a.unitName).toBe("analyser");
 	});
 
 	it("analyserNode is undefined before setup", () => {

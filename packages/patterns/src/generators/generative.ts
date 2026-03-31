@@ -9,11 +9,8 @@ export interface GenerativeProperties extends MidiPatternProperties {
 }
 
 export class GenerativePattern extends MidiPattern<GenerativeProperties> {
-	readonly type = ["pattern", "midi", "generator", "generative"] as const;
-
-	static override is(value: unknown): value is GenerativePattern {
-		return MidiPattern.is(value) && value.type[2] === "generator" && value.type[3] === "generative";
-	}
+	readonly packageName = "@resequence/patterns";
+	readonly unitName = "generative";
 
 	clone(overrides: Partial<PatternProperties>): GenerativePattern {
 		return new GenerativePattern({

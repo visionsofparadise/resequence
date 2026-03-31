@@ -11,12 +11,9 @@ const compressorSchema = z.object({
 });
 
 export class CompressorEffectUnit extends Unit<typeof compressorSchema> {
-	readonly type = ["unit", "compressor"] as const;
-
-	static override is(value: unknown): value is CompressorEffectUnit {
-		return Unit.is(value) && value.type[1] === "compressor";
-	}
-
+	readonly type = ["unit"];
+	readonly packageName = "@resequence/web-au";
+	readonly unitName = "compressor";
 
 	public compressorNode: DynamicsCompressorNode | undefined;
 

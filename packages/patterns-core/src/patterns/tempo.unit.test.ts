@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { PatternsError } from "../error";
 import { N } from "../tunings/chromatic";
 import { sequence } from "./sequence";
-import { tempo, TempoPattern } from "./tempo";
+import { tempo } from "./tempo";
 
 describe("tempo", () => {
 	it("wraps a child pattern with bpm", () => {
@@ -48,8 +48,9 @@ describe("tempo", () => {
 		expect(t.properties.isOverride).toBe(true);
 	});
 
-	it("is detectable with TempoPattern.is()", () => {
+	it("has correct packageName and unitName", () => {
 		const t = tempo(sequence(N.C4(1)), 120);
-		expect(TempoPattern.is(t)).toBe(true);
+		expect(t.packageName).toBe("@resequence/patterns-core");
+		expect(t.unitName).toBe("tempo");
 	});
 });

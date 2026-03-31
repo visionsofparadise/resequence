@@ -12,11 +12,9 @@ import { reverb } from "./reverb";
 const ccSchema = z.object({});
 
 export class CCEffectUnit extends MidiUnit {
-	readonly type = ["unit", "midi", "cc"] as const;
-
-	static override is(value: unknown): value is CCEffectUnit {
-		return MidiUnit.is(value) && value.type[2] === "cc";
-	}
+	readonly type = ["unit", "midi"];
+	readonly packageName = "@resequence/web-au";
+	readonly unitName = "cc";
 
 	readonly noteEvent: NoteEvent;
 	public chain: Array<AnyUnit> = [];

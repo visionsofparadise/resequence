@@ -10,12 +10,9 @@ const chorusSchema = z.object({
 });
 
 export class ChorusEffectUnit extends Unit<typeof chorusSchema> {
-	readonly type = ["unit", "chorus"] as const;
-
-	static override is(value: unknown): value is ChorusEffectUnit {
-		return Unit.is(value) && value.type[1] === "chorus";
-	}
-
+	readonly type = ["unit"];
+	readonly packageName = "@resequence/web-au";
+	readonly unitName = "chorus";
 
 	readonly delay: number;
 	readonly feedback: number | undefined;

@@ -10,12 +10,9 @@ const phaserSchema = z.object({
 });
 
 export class PhaserEffectUnit extends Unit<typeof phaserSchema> {
-	readonly type = ["unit", "phaser"] as const;
-
-	static override is(value: unknown): value is PhaserEffectUnit {
-		return Unit.is(value) && value.type[1] === "phaser";
-	}
-
+	readonly type = ["unit"];
+	readonly packageName = "@resequence/web-au";
+	readonly unitName = "phaser";
 
 	readonly stages: number;
 	private stageChain: Array<FilterEffectUnit> = [];

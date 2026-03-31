@@ -8,11 +8,9 @@ export interface InterceptOptions {
 }
 
 export class InterceptUnit extends MidiUnit {
-	readonly type = ["unit", "midi", "intercept"] as const;
-
-	static override is(value: unknown): value is InterceptUnit {
-		return MidiUnit.is(value) && value.type[2] === "intercept";
-	}
+	readonly type = ["unit", "midi"];
+	readonly packageName = "@resequence/web-au";
+	readonly unitName = "intercept";
 
 	readonly inner: AnyUnit;
 	private readonly options: InterceptOptions;

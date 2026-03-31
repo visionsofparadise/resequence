@@ -5,11 +5,8 @@ export interface HealProperties extends ModifierProperties {
 }
 
 export class HealPattern extends ModifierPattern<HealProperties> {
-	readonly type = ["pattern", "midi", "modifier", "heal"] as const;
-
-	static override is(value: unknown): value is HealPattern {
-		return ModifierPattern.is(value) && value.type[3] === "heal";
-	}
+	readonly packageName = "@resequence/patterns";
+	readonly unitName = "heal";
 
 	clone(overrides: Partial<PatternProperties>): HealPattern {
 		return new HealPattern({

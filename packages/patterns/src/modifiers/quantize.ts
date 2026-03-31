@@ -6,11 +6,8 @@ export interface QuantizeProperties extends ModifierProperties {
 }
 
 export class QuantizePattern extends ModifierPattern<QuantizeProperties> {
-	readonly type = ["pattern", "midi", "modifier", "quantize"] as const;
-
-	static override is(value: unknown): value is QuantizePattern {
-		return ModifierPattern.is(value) && value.type[3] === "quantize";
-	}
+	readonly packageName = "@resequence/patterns";
+	readonly unitName = "quantize";
 
 	clone(overrides: Partial<PatternProperties>): QuantizePattern {
 		return new QuantizePattern({

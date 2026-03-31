@@ -4,11 +4,8 @@ import type { PatternProperties, RelativeChild, RelativeNote } from "./pattern";
 import { Pattern } from "./pattern";
 
 export class LayerPattern extends MidiPattern {
-	readonly type = ["pattern", "midi", "layer"] as const;
-
-	static override is(value: unknown): value is LayerPattern {
-		return MidiPattern.is(value) && value.type[2] === "layer";
-	}
+	readonly packageName = "@resequence/patterns-core";
+	readonly unitName = "layer";
 
 	clone(overrides: Partial<PatternProperties>): LayerPattern {
 		return new LayerPattern({

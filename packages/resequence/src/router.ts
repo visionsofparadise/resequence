@@ -44,7 +44,9 @@ export class Router {
 		return typeof value === "object" && value !== null && "type" in value && Array.isArray(value.type) && value.type[0] === "router";
 	}
 
-	readonly type = ["router"] as const;
+	readonly type = ["router"];
+	readonly packageName = "resequence";
+	readonly unitName = "router";
 
 	private readonly _pattern: Pattern;
 	private readonly _ports: ReadonlyMap<string, MidiUnit>;

@@ -6,11 +6,9 @@ import { channelSplitter } from "./channel-splitter";
 import { linearGain } from "./gain";
 
 export class ChannelEffectUnit extends Unit {
-	readonly type = ["unit", "channel"] as const;
-
-	static override is(value: unknown): value is ChannelEffectUnit {
-		return Unit.is(value) && value.type[1] === "channel";
-	}
+	readonly type = ["unit"];
+	readonly packageName = "@resequence/web-au";
+	readonly unitName = "channel";
 
 	readonly channelIndex: number;
 	readonly inner: AnyUnit;
@@ -55,11 +53,9 @@ export function right(inner: Unit): ChannelEffectUnit {
 }
 
 export class MidEffectUnit extends Unit {
-	readonly type = ["unit", "mid"] as const;
-
-	static override is(value: unknown): value is MidEffectUnit {
-		return Unit.is(value) && value.type[1] === "mid";
-	}
+	readonly type = ["unit"];
+	readonly packageName = "@resequence/web-au";
+	readonly unitName = "mid";
 
 	readonly inner: AnyUnit;
 
@@ -98,11 +94,9 @@ export function mid(inner: Unit): MidEffectUnit {
 }
 
 export class SideEffectUnit extends Unit {
-	readonly type = ["unit", "side"] as const;
-
-	static override is(value: unknown): value is SideEffectUnit {
-		return Unit.is(value) && value.type[1] === "side";
-	}
+	readonly type = ["unit"];
+	readonly packageName = "@resequence/web-au";
+	readonly unitName = "side";
 
 	readonly inner: AnyUnit;
 

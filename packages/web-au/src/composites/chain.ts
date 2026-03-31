@@ -3,11 +3,9 @@ import { CompositeUnit, flattenUnits } from "@resequence/web-au-core";
 import { z } from "zod";
 
 export class Chain extends CompositeUnit {
-	readonly type = ["unit", "composite", "chain"] as const;
-
-	static override is(value: unknown): value is Chain {
-		return CompositeUnit.is(value) && value.type[2] === "chain";
-	}
+	readonly type = ["unit", "composite"];
+	readonly packageName = "@resequence/web-au";
+	readonly unitName = "chain";
 
 	readonly head: AnyUnit;
 	readonly tail: AnyUnit;

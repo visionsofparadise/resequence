@@ -12,12 +12,9 @@ const filterSchema = z.object({
 });
 
 export class FilterEffectUnit extends Unit<typeof filterSchema> {
-	readonly type = ["unit", "filter"] as const;
-
-	static override is(value: unknown): value is FilterEffectUnit {
-		return Unit.is(value) && value.type[1] === "filter";
-	}
-
+	readonly type = ["unit"];
+	readonly packageName = "@resequence/web-au";
+	readonly unitName = "filter";
 
 	public filterNode: BiquadFilterNode | undefined;
 

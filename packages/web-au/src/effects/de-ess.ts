@@ -15,12 +15,9 @@ const deEssSchema = z.object({
 });
 
 export class DeEssEffectUnit extends Unit<typeof deEssSchema> {
-	readonly type = ["unit", "de-ess"] as const;
-
-	static override is(value: unknown): value is DeEssEffectUnit {
-		return Unit.is(value) && value.type[1] === "de-ess";
-	}
-
+	readonly type = ["unit"];
+	readonly packageName = "@resequence/web-au";
+	readonly unitName = "de-ess";
 
 	private bandChain: Unit | undefined;
 

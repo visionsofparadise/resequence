@@ -7,12 +7,9 @@ const gainSchema = z.object({
 });
 
 export class GainEffectUnit extends Unit<typeof gainSchema> {
-	readonly type = ["unit", "gain"] as const;
-
-	static override is(value: unknown): value is GainEffectUnit {
-		return Unit.is(value) && value.type[1] === "gain";
-	}
-
+	readonly type = ["unit"];
+	readonly packageName = "@resequence/web-au";
+	readonly unitName = "gain";
 
 	public gainNode: GainNode | undefined;
 

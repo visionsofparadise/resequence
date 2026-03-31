@@ -6,11 +6,8 @@ export interface FlipProperties extends ModifierProperties {
 }
 
 export class FlipPattern extends ModifierPattern<FlipProperties> {
-	readonly type = ["pattern", "midi", "modifier", "flip"] as const;
-
-	static override is(value: unknown): value is FlipPattern {
-		return ModifierPattern.is(value) && value.type[3] === "flip";
-	}
+	readonly packageName = "@resequence/patterns";
+	readonly unitName = "flip";
 
 	clone(overrides: Partial<PatternProperties>): FlipPattern {
 		return new FlipPattern({

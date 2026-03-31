@@ -11,12 +11,9 @@ const oscillatorSchema = z.object({
 });
 
 export class OscillatorUnit extends GeneratorUnit<typeof oscillatorSchema> {
-	readonly type = ["unit", "midi", "generator", "oscillator"] as const;
-
-
-	static override is(value: unknown): value is OscillatorUnit {
-		return GeneratorUnit.is(value) && value.type[3] === "oscillator";
-	}
+	readonly type = ["unit", "midi"];
+	readonly packageName = "@resequence/web-au";
+	readonly unitName = "oscillator";
 
 	constructor(input: z.infer<typeof oscillatorSchema> & UnitInput) {
 		super(input, oscillatorSchema);

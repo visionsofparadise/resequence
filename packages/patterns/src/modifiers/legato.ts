@@ -5,11 +5,8 @@ export interface LegatoProperties extends ModifierProperties {
 }
 
 export class LegatoPattern extends ModifierPattern<LegatoProperties> {
-	readonly type = ["pattern", "midi", "modifier", "legato"] as const;
-
-	static override is(value: unknown): value is LegatoPattern {
-		return ModifierPattern.is(value) && value.type[3] === "legato";
-	}
+	readonly packageName = "@resequence/patterns";
+	readonly unitName = "legato";
 
 	clone(overrides: Partial<PatternProperties>): LegatoPattern {
 		return new LegatoPattern({

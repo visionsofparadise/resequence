@@ -7,11 +7,9 @@ import { Unit } from "@resequence/web-au-core";
 import { z } from "zod";
 
 export class WriteUnit extends Unit {
-	readonly type = ["unit", "target", "write"] as const;
-
-	static override is(value: unknown): value is WriteUnit {
-		return Unit.is(value) && value.type[1] === "target" && value.type[2] === "write";
-	}
+	readonly type = ["unit"];
+	readonly packageName = "@resequence/web-au";
+	readonly unitName = "write";
 
 	readonly path: string;
 	readonly bitDepth: WavBitDepth;

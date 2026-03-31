@@ -1,6 +1,6 @@
 import type { Unit } from "@resequence/web-au/core";
 import { modifyUnits } from "@resequence/web-au/core";
-import { SpeakersUnit, analyser, linearGain } from "@resequence/web-au";
+import { analyser, linearGain } from "@resequence/web-au";
 import { useMemo } from "react";
 import type { Router } from "resequence";
 
@@ -23,7 +23,7 @@ export function useModifyGraph(router: Router): InjectResult {
 			let gainIndex = 0;
 
 			modifyUnits(unit, (node) => {
-				if (SpeakersUnit.is(node)) {
+				if (node.unitName === "speakers") {
 					const gainId = `system.${portKey}.gain.${gainIndex++}`;
 					const channelGain = linearGain({ level: 1, id: gainId });
 

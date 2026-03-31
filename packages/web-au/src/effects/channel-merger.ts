@@ -8,12 +8,10 @@ const channelMergerSchema = z.object({
 });
 
 export class ChannelMergerUnit extends Unit<typeof channelMergerSchema> {
-	readonly type = ["unit", "channel-merger"] as const;
+	readonly type = ["unit"];
+	readonly packageName = "@resequence/web-au";
+	readonly unitName = "channel-merger";
 	readonly channels: Array<GainEffectUnit> = [];
-
-	static override is(value: unknown): value is ChannelMergerUnit {
-		return Unit.is(value) && value.type[1] === "channel-merger";
-	}
 
 	constructor(input: z.infer<typeof channelMergerSchema> & UnitInput = { channelCount: 2 }) {
 		super(input, channelMergerSchema);

@@ -3,11 +3,9 @@ import { Unit } from "@resequence/web-au-core";
 import { z } from "zod";
 
 export class RingModEffectUnit extends Unit {
-	readonly type = ["unit", "ringmod"] as const;
-
-	static override is(value: unknown): value is RingModEffectUnit {
-		return Unit.is(value) && value.type[1] === "ringmod";
-	}
+	readonly type = ["unit"];
+	readonly packageName = "@resequence/web-au";
+	readonly unitName = "ringmod";
 
 	readonly carrier: AnyUnit;
 

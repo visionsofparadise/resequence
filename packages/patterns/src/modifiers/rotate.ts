@@ -5,11 +5,8 @@ export interface RotateProperties extends ModifierProperties {
 }
 
 export class RotatePattern extends ModifierPattern<RotateProperties> {
-	readonly type = ["pattern", "midi", "modifier", "rotate"] as const;
-
-	static override is(value: unknown): value is RotatePattern {
-		return ModifierPattern.is(value) && value.type[3] === "rotate";
-	}
+	readonly packageName = "@resequence/patterns";
+	readonly unitName = "rotate";
 
 	clone(overrides: Partial<PatternProperties>): RotatePattern {
 		return new RotatePattern({

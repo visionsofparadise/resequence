@@ -7,12 +7,9 @@ const downsampleSchema = z.object({
 });
 
 export class DownsampleEffectUnit extends Unit<typeof downsampleSchema> {
-	readonly type = ["unit", "downsample"] as const;
-
-	static override is(value: unknown): value is DownsampleEffectUnit {
-		return Unit.is(value) && value.type[1] === "downsample";
-	}
-
+	readonly type = ["unit"];
+	readonly packageName = "@resequence/web-au";
+	readonly unitName = "downsample";
 
 	public downsampleNode: AudioWorkletNode | undefined;
 

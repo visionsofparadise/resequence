@@ -3,11 +3,9 @@ import { Unit } from "@resequence/web-au-core";
 import { z } from "zod";
 
 export class SpeakersUnit extends Unit {
-	readonly type = ["unit", "target", "speakers"] as const;
-
-	static override is(value: unknown): value is SpeakersUnit {
-		return Unit.is(value) && value.type[1] === "target" && value.type[2] === "speakers";
-	}
+	readonly type = ["unit"];
+	readonly packageName = "@resequence/web-au";
+	readonly unitName = "speakers";
 
 	constructor(input?: UnitInput) {
 		super(input ?? {}, z.object({}));

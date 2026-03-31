@@ -6,11 +6,8 @@ export interface FlamProperties extends ModifierProperties {
 }
 
 export class FlamPattern extends ModifierPattern<FlamProperties> {
-	readonly type = ["pattern", "midi", "modifier", "flam"] as const;
-
-	static override is(value: unknown): value is FlamPattern {
-		return ModifierPattern.is(value) && value.type[3] === "flam";
-	}
+	readonly packageName = "@resequence/patterns";
+	readonly unitName = "flam";
 
 	clone(overrides: Partial<PatternProperties>): FlamPattern {
 		return new FlamPattern({

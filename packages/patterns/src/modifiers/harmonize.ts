@@ -5,11 +5,8 @@ export interface HarmonizeProperties extends ModifierProperties {
 }
 
 export class HarmonizePattern extends ModifierPattern<HarmonizeProperties> {
-	readonly type = ["pattern", "midi", "modifier", "harmonize"] as const;
-
-	static override is(value: unknown): value is HarmonizePattern {
-		return ModifierPattern.is(value) && value.type[3] === "harmonize";
-	}
+	readonly packageName = "@resequence/patterns";
+	readonly unitName = "harmonize";
 
 	clone(overrides: Partial<PatternProperties>): HarmonizePattern {
 		return new HarmonizePattern({

@@ -19,12 +19,9 @@ const envelopeSchema = z.object({
 });
 
 export class EnvelopeUnit extends MidiUnit<typeof envelopeSchema> {
-	readonly type = ["unit", "midi", "envelope"] as const;
-
-
-	static override is(value: unknown): value is EnvelopeUnit {
-		return MidiUnit.is(value) && value.type[2] === "envelope";
-	}
+	readonly type = ["unit", "midi"];
+	readonly packageName = "@resequence/web-au";
+	readonly unitName = "envelope";
 
 	public envelopeNode: AudioWorkletNode | undefined;
 	private gateParam: AudioParam | undefined;

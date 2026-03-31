@@ -29,12 +29,9 @@ interface NormalizedZone {
 const samplerSchema = z.object({});
 
 export class SamplerUnit extends GeneratorUnit {
-	readonly type = ["unit", "midi", "generator", "sampler"] as const;
-
-
-	static override is(value: unknown): value is SamplerUnit {
-		return GeneratorUnit.is(value) && value.type[3] === "sampler";
-	}
+	readonly type = ["unit", "midi"];
+	readonly packageName = "@resequence/web-au";
+	readonly unitName = "sampler";
 
 	private readonly buffers = new Map<string, AudioBuffer>();
 	readonly config: SamplerConfig;

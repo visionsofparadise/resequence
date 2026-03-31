@@ -7,15 +7,9 @@ import { linearGain, type GainEffectUnit } from "../effects/gain";
 export abstract class GeneratorUnit<
 	S extends z.ZodObject = z.ZodObject,
 > extends MidiUnit<S> {
-	abstract readonly type: readonly ["unit", "midi", "generator", ...Array<string>];
-
 	readonly voiceToCallbacks: Array<(noteEvent: NoteEvent) => AnyUnit> = [];
 	readonly voiceModDeclarations: Array<ModDeclaration> = [];
 	public mergeUnit: GainEffectUnit | undefined;
-
-	static override is(value: unknown): value is GeneratorUnit {
-		return MidiUnit.is(value) && value.type[2] === "generator";
-	}
 
 	voiceTo(callback: (noteEvent: NoteEvent) => AnyUnit): this {
 		this.voiceToCallbacks.push(callback);

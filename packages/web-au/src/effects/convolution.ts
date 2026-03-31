@@ -8,12 +8,9 @@ const convolutionSchema = z.object({
 });
 
 export class ConvolutionEffectUnit extends Unit<typeof convolutionSchema> {
-	readonly type = ["unit", "convolution"] as const;
-
-	static override is(value: unknown): value is ConvolutionEffectUnit {
-		return Unit.is(value) && value.type[1] === "convolution";
-	}
-
+	readonly type = ["unit"];
+	readonly packageName = "@resequence/web-au";
+	readonly unitName = "convolution";
 
 	public convolverNode: ConvolverNode | undefined;
 

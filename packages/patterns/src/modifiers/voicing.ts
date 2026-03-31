@@ -7,11 +7,8 @@ export interface VoicingProperties extends ModifierProperties {
 }
 
 export class VoicingPattern extends ModifierPattern<VoicingProperties> {
-	readonly type = ["pattern", "midi", "modifier", "voicing"] as const;
-
-	static override is(value: unknown): value is VoicingPattern {
-		return ModifierPattern.is(value) && value.type[3] === "voicing";
-	}
+	readonly packageName = "@resequence/patterns";
+	readonly unitName = "voicing";
 
 	clone(overrides: Partial<PatternProperties>): VoicingPattern {
 		return new VoicingPattern({

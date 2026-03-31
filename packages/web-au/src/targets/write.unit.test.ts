@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import type { UnitContext } from "@resequence/web-au-core";
-import { WriteUnit, write } from "./write";
+import { write } from "./write";
 
 vi.mock("node:fs", () => ({
 	mkdirSync: vi.fn(),
@@ -44,14 +44,15 @@ function mockContext(offline: boolean) {
 }
 
 describe("WriteUnit", () => {
-	it("is identifiable via static is()", () => {
+	it("has correct packageName and unitName", () => {
 		const unit = write({ path: "out.wav" });
-		expect(WriteUnit.is(unit)).toBe(true);
+		expect(unit.packageName).toBe("@resequence/web-au");
+		expect(unit.unitName).toBe("write");
 	});
 
-	it("has correct type discriminator", () => {
+	it("has correct type tuple", () => {
 		const unit = write({ path: "out.wav" });
-		expect(unit.type).toEqual(["unit", "target", "write"]);
+		expect(unit.type).toEqual(["unit"]);
 	});
 
 	it("stores path and bitDepth properties", () => {

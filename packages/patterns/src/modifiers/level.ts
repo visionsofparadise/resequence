@@ -71,11 +71,8 @@ export interface LevelProperties extends ModifierProperties {
 }
 
 export class LevelPattern extends ModifierPattern<LevelProperties> {
-	readonly type = ["pattern", "midi", "modifier", "level"] as const;
-
-	static override is(value: unknown): value is LevelPattern {
-		return ModifierPattern.is(value) && value.type[3] === "level";
-	}
+	readonly packageName = "@resequence/patterns";
+	readonly unitName = "level";
 
 	clone(overrides: Partial<PatternProperties>): LevelPattern {
 		return new LevelPattern({

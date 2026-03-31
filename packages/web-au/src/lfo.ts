@@ -13,12 +13,9 @@ const lfoSchema = z.object({
 });
 
 export class LfoUnit extends Unit<typeof lfoSchema> {
-	readonly type = ["unit", "lfo"] as const;
-
-	static override is(value: unknown): value is LfoUnit {
-		return Unit.is(value) && value.type[1] === "lfo";
-	}
-
+	readonly type = ["unit"];
+	readonly packageName = "@resequence/web-au";
+	readonly unitName = "lfo";
 
 	private oscillatorNode: OscillatorNode | undefined;
 	private depthUnit: GainEffectUnit | undefined;

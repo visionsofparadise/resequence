@@ -1,19 +1,18 @@
 import {
-	AudioPattern,
-	AutomationPattern,
-	MetadataPattern,
 	MidiPattern,
-	SequencePattern,
-	TempoPattern,
 	collectTempoPoints,
 	denormalizePitch,
+	type AudioPattern,
+	type AutomationPattern,
 	type Keyframe,
 	type Lfo,
+	type MetadataPattern,
 	type Note,
 	type Pattern,
 	type Pitch,
 	type ResolvedTuning,
 	type TempoMap,
+	type TempoPattern,
 	type TempoPoint,
 } from "resequence";
 
@@ -97,7 +96,7 @@ function computeClipKey(ports: ReadonlyArray<string>, tuning: ResolvedTuning | n
 }
 
 function patternTypeLabel(pattern: Pattern): string {
-	return pattern.type[pattern.type.length - 1] ?? "unknown";
+	return pattern.unitName;
 }
 
 interface MetadataContext {
@@ -152,19 +151,22 @@ function collectSubtree(
 
 	const currentPorts = isMidi && pattern.ports.length > 0 ? [...accumulatedPorts, ...pattern.ports.map((port: { key: string }) => port.key)] : accumulatedPorts;
 
-	if (TempoPattern.is(pattern)) {
-		if (!meta.ancestorHasTempo || pattern.properties.isOverride) {
-			collectTempoPoints(pattern.properties.bpm, pattern.properties.keyframes, offset, tempoPoints);
+	if (pattern.unitName === "tempo") {
+		const tempoProps = (pattern as TempoPattern).properties;
+
+		if (!meta.ancestorHasTempo || tempoProps.isOverride) {
+			collectTempoPoints(tempoProps.bpm, tempoProps.keyframes, offset, tempoPoints);
 
 			meta = { ...meta, ancestorHasTempo: true };
 		}
 	}
 
-	if (MetadataPattern.is(pattern)) {
+	if (pattern.unitName === "metadata") {
+		const metaProps = (pattern as MetadataPattern).properties;
 		const updatedMeta: MetadataContext = {
 			...meta,
-			activeTuning: pattern.properties.meta.tuning ?? meta.activeTuning,
-			activeTimeSignature: pattern.properties.meta.timeSignature ?? meta.activeTimeSignature,
+			activeTuning: metaProps.meta.tuning ?? meta.activeTuning,
+			activeTimeSignature: metaProps.meta.timeSignature ?? meta.activeTimeSignature,
 		};
 
 		for (const [childIndex, { offsetBeats, pattern: child }] of pattern.children.entries()) {
@@ -174,18 +176,19 @@ function collectSubtree(
 		return;
 	}
 
-	if (AudioPattern.is(pattern)) {
+	if (pattern.unitName === "audio") {
+		const audioProps = (pattern as AudioPattern).properties;
 		const clip: AudioClip = {
 			type: "audio",
 			patternId,
 			patternPath: [...indexes],
-			name: pattern.properties.name,
+			name: audioProps.name,
 			startBeat: offset + pattern.startBeat,
 			endBeat: offset + pattern.endBeat,
-			sampleKey: pattern.properties.sampleKey,
-			audioDurationBeats: pattern.properties.audioDurationBeats,
-			playFromBeats: pattern.properties.playFromBeats,
-			reversed: pattern.properties.reversed,
+			sampleKey: audioProps.sampleKey,
+			audioDurationBeats: audioProps.audioDurationBeats,
+			playFromBeats: audioProps.playFromBeats,
+			reversed: audioProps.reversed,
 		};
 
 		const audioIndex = state.audioClips.length;
@@ -196,14 +199,15 @@ function collectSubtree(
 		return;
 	}
 
-	if (AutomationPattern.is(pattern)) {
+	if (pattern.unitName === "automation") {
+		const autoProps = (pattern as AutomationPattern).properties;
 		const clip: AutomationClip = {
 			type: "automation",
 			patternId,
 			patternPath: [...indexes],
-			name: pattern.properties.automationName,
-			paths: pattern.properties.paths,
-			source: pattern.properties.source,
+			name: autoProps.automationName,
+			paths: autoProps.paths,
+			source: autoProps.source,
 			startBeat: offset + pattern.startBeat,
 			endBeat: offset + pattern.endBeat,
 		};
@@ -216,7 +220,7 @@ function collectSubtree(
 		return;
 	}
 
-	if (SequencePattern.is(pattern) && indexes.length > 0) {
+	if (pattern.unitName === "sequence" && indexes.length > 0) {
 		const childSequences = collectSequences(pattern, offset, indexes, meta, tempoPoints);
 
 		state.childSequences.push(...childSequences);
@@ -265,7 +269,7 @@ function collectSubtree(
 	}
 }
 
-function collectSequences(pattern: SequencePattern, offset: number, indexes: ReadonlyArray<number>, meta: MetadataContext, tempoPoints: Array<TempoPoint>): Array<Sequence> {
+function collectSequences(pattern: Pattern, offset: number, indexes: ReadonlyArray<number>, meta: MetadataContext, tempoPoints: Array<TempoPoint>): Array<Sequence> {
 	const sequences: Array<Sequence> = [];
 
 	const isMidi = MidiPattern.is(pattern);
@@ -327,7 +331,7 @@ function collectSequences(pattern: SequencePattern, offset: number, indexes: Rea
 	for (const [childIndex, { offsetBeats, pattern: child }] of pattern.children.entries()) {
 		const childIndexes = [...indexes, childIndex];
 
-		if (SequencePattern.is(child)) {
+		if (child.unitName === "sequence") {
 			sequences.push(...collectSequences(child, offset + offsetBeats, childIndexes, meta, tempoPoints));
 		} else {
 			const state = createSubtreeState();
@@ -422,7 +426,7 @@ const DEFAULT_META: MetadataContext = { activeTuning: null, activeTimeSignature:
 export function buildArrangement(rootPattern: Pattern): { arrangement: Arrangement; tempoMap: TempoMap } {
 	const tempoPoints: Array<TempoPoint> = [];
 
-	if (SequencePattern.is(rootPattern)) {
+	if (rootPattern.unitName === "sequence") {
 		const sequences = collectSequences(rootPattern, 0, [], DEFAULT_META, tempoPoints);
 
 		return {

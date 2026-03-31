@@ -16,7 +16,7 @@ export interface MidiUnitInput extends UnitInput {}
 export abstract class MidiUnit<
 	S extends z.ZodObject = z.ZodObject,
 > extends Unit<S> {
-	abstract readonly type: readonly ["unit", "midi", ...Array<string>];
+	readonly type = ["unit", "midi"];
 	readonly noteModDeclarations: Array<NoteModDeclaration> = [];
 
 	static override is(value: unknown): value is MidiUnit {

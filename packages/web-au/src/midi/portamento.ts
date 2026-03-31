@@ -13,12 +13,9 @@ const portamentoSchema = z.object({
 });
 
 export class PortamentoUnit extends MidiUnit<typeof portamentoSchema> {
-	readonly type = ["unit", "midi", "portamento"] as const;
-
-
-	static override is(value: unknown): value is PortamentoUnit {
-		return MidiUnit.is(value) && value.type[2] === "portamento";
-	}
+	readonly type = ["unit", "midi"];
+	readonly packageName = "@resequence/web-au";
+	readonly unitName = "portamento";
 
 	private lastPitch: LastPitch | undefined;
 

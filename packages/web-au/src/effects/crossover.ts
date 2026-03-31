@@ -13,13 +13,11 @@ const crossoverSchema = z.object({
 });
 
 export class CrossoverEffectUnit extends Unit<typeof crossoverSchema> {
-	readonly type = ["unit", "crossover"] as const;
+	readonly type = ["unit"];
+	readonly packageName = "@resequence/web-au";
+	readonly unitName = "crossover";
 	readonly bands: Array<GainEffectUnit> = [];
 	private bandNodes: Array<Array<AnyUnit>> = [];
-
-	static override is(value: unknown): value is CrossoverEffectUnit {
-		return Unit.is(value) && value.type[1] === "crossover";
-	}
 
 	constructor(input: z.infer<typeof crossoverSchema> & UnitInput) {
 		super(input, crossoverSchema);

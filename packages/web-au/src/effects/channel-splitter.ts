@@ -8,12 +8,10 @@ const channelSplitterSchema = z.object({
 });
 
 export class ChannelSplitterUnit extends Unit<typeof channelSplitterSchema> {
-	readonly type = ["unit", "channel-splitter"] as const;
+	readonly type = ["unit"];
+	readonly packageName = "@resequence/web-au";
+	readonly unitName = "channel-splitter";
 	readonly channels: Array<GainEffectUnit> = [];
-
-	static override is(value: unknown): value is ChannelSplitterUnit {
-		return Unit.is(value) && value.type[1] === "channel-splitter";
-	}
 
 	constructor(input: z.infer<typeof channelSplitterSchema> & UnitInput = { channelCount: 2 }) {
 		super(input, channelSplitterSchema);

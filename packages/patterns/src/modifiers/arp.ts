@@ -1,6 +1,7 @@
-import type { Note, ModifierProperties, Pattern, PatternProperties, Pitch } from "@resequence/patterns-core";
-import { ModifierPattern, sequence, toPattern, pitchKey, flatModifyNotes, collectNotes, walkNotes } from "@resequence/patterns-core";
+import type { ModifierProperties, Note, Pattern, PatternProperties, Pitch } from "@resequence/patterns-core";
+import { collectNotes, flatModifyNotes, ModifierPattern, pitchKey, sequence, toPattern, walkNotes } from "@resequence/patterns-core";
 import { I } from "@resequence/patterns-utils";
+
 function mulberry32(seed: number): () => number {
 	let state = seed;
 
@@ -27,11 +28,8 @@ export interface ArpProperties extends ModifierProperties {
 }
 
 export class ArpPattern extends ModifierPattern<ArpProperties> {
-	readonly type = ["pattern", "midi", "modifier", "arp"] as const;
-
-	static override is(value: unknown): value is ArpPattern {
-		return ModifierPattern.is(value) && value.type[3] === "arp";
-	}
+	readonly packageName = "@resequence/patterns";
+	readonly unitName = "arp";
 
 	clone(overrides: Partial<PatternProperties>): ArpPattern {
 		return new ArpPattern({

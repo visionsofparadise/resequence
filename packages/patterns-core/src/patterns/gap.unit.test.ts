@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { gap, GapPattern } from "./gap";
+import { gap } from "./gap";
 
 describe("gap", () => {
 	it("creates a pattern with correct duration", () => {
@@ -10,9 +10,10 @@ describe("gap", () => {
 		expect(g.children).toHaveLength(0);
 	});
 
-	it("is detectable with GapPattern.is()", () => {
+	it("has correct packageName and unitName", () => {
 		const g = gap(2);
-		expect(GapPattern.is(g)).toBe(true);
+		expect(g.packageName).toBe("@resequence/patterns-core");
+		expect(g.unitName).toBe("gap");
 	});
 
 	it("stores duration in properties", () => {

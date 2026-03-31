@@ -19,11 +19,9 @@ export interface MetadataProperties extends PatternProperties {
 }
 
 export class MetadataPattern extends Pattern<MetadataProperties> {
-	readonly type = ["pattern", "metadata"] as const;
-
-	static override is(value: unknown): value is MetadataPattern {
-		return Pattern.is(value) && value.type[1] === "metadata";
-	}
+	readonly type = ["pattern"];
+	readonly packageName = "@resequence/patterns-core";
+	readonly unitName = "metadata";
 
 	constructor(properties: MetadataProperties) {
 		super(properties);

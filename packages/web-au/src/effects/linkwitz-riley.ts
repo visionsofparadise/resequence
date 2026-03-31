@@ -9,12 +9,9 @@ const linkwitzRileySchema = z.object({
 });
 
 export class LinkwitzRileyUnit extends Unit<typeof linkwitzRileySchema> {
-	readonly type = ["unit", "linkwitz-riley"] as const;
-
-	static override is(value: unknown): value is LinkwitzRileyUnit {
-		return Unit.is(value) && value.type[1] === "linkwitz-riley";
-	}
-
+	readonly type = ["unit"];
+	readonly packageName = "@resequence/web-au";
+	readonly unitName = "linkwitz-riley";
 
 	private filters: Array<FilterEffectUnit> = [];
 

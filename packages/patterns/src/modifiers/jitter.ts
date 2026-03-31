@@ -20,11 +20,8 @@ export interface JitterProperties extends ModifierProperties {
 }
 
 export class JitterPattern extends ModifierPattern<JitterProperties> {
-	readonly type = ["pattern", "midi", "modifier", "jitter"] as const;
-
-	static override is(value: unknown): value is JitterPattern {
-		return ModifierPattern.is(value) && value.type[3] === "jitter";
-	}
+	readonly packageName = "@resequence/patterns";
+	readonly unitName = "jitter";
 
 	clone(overrides: Partial<PatternProperties>): JitterPattern {
 		return new JitterPattern({

@@ -13,12 +13,9 @@ const spatialSchema = z.object({
 });
 
 export class SpatialEffectUnit extends Unit<typeof spatialSchema> {
-	readonly type = ["unit", "spatial"] as const;
-
-	static override is(value: unknown): value is SpatialEffectUnit {
-		return Unit.is(value) && value.type[1] === "spatial";
-	}
-
+	readonly type = ["unit"];
+	readonly packageName = "@resequence/web-au";
+	readonly unitName = "spatial";
 
 	public pannerNode: PannerNode | undefined;
 

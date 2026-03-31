@@ -5,11 +5,8 @@ export interface OffsetProperties extends ModifierProperties {
 }
 
 export class OffsetPattern extends ModifierPattern<OffsetProperties> {
-	readonly type = ["pattern", "midi", "modifier", "offset"] as const;
-
-	static override is(value: unknown): value is OffsetPattern {
-		return ModifierPattern.is(value) && value.type[3] === "offset";
-	}
+	readonly packageName = "@resequence/patterns";
+	readonly unitName = "offset";
 
 	clone(overrides: Partial<PatternProperties>): OffsetPattern {
 		return new OffsetPattern({

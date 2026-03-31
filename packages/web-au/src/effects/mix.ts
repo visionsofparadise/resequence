@@ -8,12 +8,9 @@ const mixSchema = z.object({
 });
 
 export class MixNode extends Unit<typeof mixSchema> {
-	readonly type = ["unit", "mix"] as const;
-
-	static override is(value: unknown): value is MixNode {
-		return Unit.is(value) && value.type[1] === "mix";
-	}
-
+	readonly type = ["unit"];
+	readonly packageName = "@resequence/web-au";
+	readonly unitName = "mix";
 
 	readonly inner: AnyUnit;
 	private dryChain: Unit | undefined;

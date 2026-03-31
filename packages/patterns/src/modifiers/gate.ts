@@ -5,11 +5,8 @@ export interface GateProperties extends ModifierProperties {
 }
 
 export class GatePattern extends ModifierPattern<GateProperties> {
-	readonly type = ["pattern", "midi", "modifier", "gate"] as const;
-
-	static override is(value: unknown): value is GatePattern {
-		return ModifierPattern.is(value) && value.type[3] === "gate";
-	}
+	readonly packageName = "@resequence/patterns";
+	readonly unitName = "gate";
 
 	clone(overrides: Partial<PatternProperties>): GatePattern {
 		return new GatePattern({

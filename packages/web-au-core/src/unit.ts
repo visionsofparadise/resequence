@@ -1,4 +1,4 @@
-import { z } from "zod";
+import type { z } from "zod";
 import { buildCurve } from "./build-curve";
 import type { UnitContext } from "./context";
 import { getOrCreateDriver } from "./driver";
@@ -23,6 +23,8 @@ export type AnyUnit = Unit;
 
 export abstract class Unit<S extends z.ZodObject = z.ZodObject> {
 	abstract readonly type: ReadonlyArray<string>;
+	abstract readonly packageName: string;
+	abstract readonly unitName: string;
 
 	readonly id: string | undefined;
 	readonly schema: S;

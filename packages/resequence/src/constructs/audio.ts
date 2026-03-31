@@ -45,11 +45,9 @@ export interface AudioPatternProperties extends PatternProperties {
 }
 
 export class AudioPattern extends Pattern<AudioPatternProperties> {
-	readonly type = ["pattern", "audio"] as const;
-
-	static override is(value: unknown): value is AudioPattern {
-		return Pattern.is(value) && value.type[1] === "audio";
-	}
+	readonly type = ["pattern"];
+	readonly packageName = "resequence";
+	readonly unitName = "audio";
 
 	override _setup(): Array<Event> {
 		return [{ type: "preloadAudio", sampleKey: this.properties.sampleKey }];

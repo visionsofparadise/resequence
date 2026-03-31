@@ -7,12 +7,9 @@ const bitcrushSchema = z.object({
 });
 
 export class BitcrushEffectUnit extends Unit<typeof bitcrushSchema> {
-	readonly type = ["unit", "bitcrush"] as const;
-
-	static override is(value: unknown): value is BitcrushEffectUnit {
-		return Unit.is(value) && value.type[1] === "bitcrush";
-	}
-
+	readonly type = ["unit"];
+	readonly packageName = "@resequence/web-au";
+	readonly unitName = "bitcrush";
 
 	public bitcrushNode: AudioWorkletNode | undefined;
 

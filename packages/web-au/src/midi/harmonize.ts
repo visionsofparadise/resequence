@@ -7,12 +7,9 @@ const harmonizeSchema = z.object({
 });
 
 export class HarmonizeMidiUnit extends MidiUnit<typeof harmonizeSchema> {
-	readonly type = ["unit", "midi", "harmonize"] as const;
-
-
-	static override is(value: unknown): value is HarmonizeMidiUnit {
-		return MidiUnit.is(value) && value.type[2] === "harmonize";
-	}
+	readonly type = ["unit", "midi"];
+	readonly packageName = "@resequence/web-au";
+	readonly unitName = "harmonize";
 
 	constructor(input: z.infer<typeof harmonizeSchema> & MidiUnitInput) {
 		super(input, harmonizeSchema);

@@ -6,11 +6,8 @@ export interface ChopProperties extends ModifierProperties {
 }
 
 export class ChopPattern extends ModifierPattern<ChopProperties> {
-	readonly type = ["pattern", "midi", "modifier", "chop"] as const;
-
-	static override is(value: unknown): value is ChopPattern {
-		return ModifierPattern.is(value) && value.type[3] === "chop";
-	}
+	readonly packageName = "@resequence/patterns";
+	readonly unitName = "chop";
 
 	clone(overrides: Partial<PatternProperties>): ChopPattern {
 		return new ChopPattern({

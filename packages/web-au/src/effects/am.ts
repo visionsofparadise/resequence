@@ -3,11 +3,9 @@ import { Unit } from "@resequence/web-au-core";
 import { z } from "zod";
 
 export class AmEffectUnit extends Unit {
-	readonly type = ["unit", "am"] as const;
-
-	static override is(value: unknown): value is AmEffectUnit {
-		return Unit.is(value) && value.type[1] === "am";
-	}
+	readonly type = ["unit"];
+	readonly packageName = "@resequence/web-au";
+	readonly unitName = "am";
 
 	readonly carrier: AnyUnit;
 	private dcOffsetNode: ConstantSourceNode | undefined;

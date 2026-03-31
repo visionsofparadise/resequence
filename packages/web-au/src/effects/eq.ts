@@ -22,12 +22,9 @@ const eqSchema = z.object({
 });
 
 export class EqEffectUnit extends Unit<typeof eqSchema> {
-	readonly type = ["unit", "eq"] as const;
-
-	static override is(value: unknown): value is EqEffectUnit {
-		return Unit.is(value) && value.type[1] === "eq";
-	}
-
+	readonly type = ["unit"];
+	readonly packageName = "@resequence/web-au";
+	readonly unitName = "eq";
 
 	private filterChain: Array<FilterEffectUnit> = [];
 

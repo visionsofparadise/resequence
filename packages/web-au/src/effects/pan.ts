@@ -7,12 +7,9 @@ const panSchema = z.object({
 });
 
 export class PanEffectUnit extends Unit<typeof panSchema> {
-	readonly type = ["unit", "pan"] as const;
-
-	static override is(value: unknown): value is PanEffectUnit {
-		return Unit.is(value) && value.type[1] === "pan";
-	}
-
+	readonly type = ["unit"];
+	readonly packageName = "@resequence/web-au";
+	readonly unitName = "pan";
 
 	public panNode: StereoPannerNode | undefined;
 

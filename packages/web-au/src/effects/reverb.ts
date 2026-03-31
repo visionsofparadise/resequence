@@ -14,12 +14,9 @@ const reverbSchema = z.object({
 });
 
 export class ReverbEffectUnit extends Unit<typeof reverbSchema> {
-	readonly type = ["unit", "reverb"] as const;
-
-	static override is(value: unknown): value is ReverbEffectUnit {
-		return Unit.is(value) && value.type[1] === "reverb";
-	}
-
+	readonly type = ["unit"];
+	readonly packageName = "@resequence/web-au";
+	readonly unitName = "reverb";
 
 	public inputUnit: GainEffectUnit | undefined;
 	public combSumUnit: GainEffectUnit | undefined;

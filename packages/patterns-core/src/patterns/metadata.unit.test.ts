@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { PatternsError } from "../error";
 import { N } from "../tunings/chromatic";
 import { sequence } from "./sequence";
-import { cue, marker, metadata, MetadataPattern, region, timeSignature, tuning } from "./metadata";
+import { cue, marker, metadata, region, timeSignature, tuning } from "./metadata";
 
 describe("metadata", () => {
 	it("wraps a child with metadata", () => {
@@ -14,9 +14,10 @@ describe("metadata", () => {
 		expect(m.children).toHaveLength(1);
 	});
 
-	it("is detectable with MetadataPattern.is()", () => {
+	it("has correct packageName and unitName", () => {
 		const m = metadata(sequence(N.C4(1)), { name: "test" });
-		expect(MetadataPattern.is(m)).toBe(true);
+		expect(m.packageName).toBe("@resequence/patterns-core");
+		expect(m.unitName).toBe("metadata");
 	});
 });
 

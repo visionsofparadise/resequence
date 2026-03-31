@@ -6,11 +6,8 @@ export interface TrimProperties extends ModifierProperties {
 }
 
 export class TrimPattern extends ModifierPattern<TrimProperties> {
-	readonly type = ["pattern", "midi", "modifier", "trim"] as const;
-
-	static override is(value: unknown): value is TrimPattern {
-		return ModifierPattern.is(value) && value.type[3] === "trim";
-	}
+	readonly packageName = "@resequence/patterns";
+	readonly unitName = "trim";
 
 	clone(overrides: Partial<PatternProperties>): TrimPattern {
 		return new TrimPattern({

@@ -6,11 +6,8 @@ export interface SliceProperties extends ModifierProperties {
 }
 
 export class SlicePattern extends ModifierPattern<SliceProperties> {
-	readonly type = ["pattern", "midi", "modifier", "slice"] as const;
-
-	static override is(value: unknown): value is SlicePattern {
-		return ModifierPattern.is(value) && value.type[3] === "slice";
-	}
+	readonly packageName = "@resequence/patterns";
+	readonly unitName = "slice";
 
 	clone(overrides: Partial<PatternProperties>): SlicePattern {
 		return new SlicePattern({

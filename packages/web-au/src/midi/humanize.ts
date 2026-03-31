@@ -8,12 +8,9 @@ const humanizeSchema = z.object({
 });
 
 export class HumanizeMidiUnit extends MidiUnit<typeof humanizeSchema> {
-	readonly type = ["unit", "midi", "humanize"] as const;
-
-
-	static override is(value: unknown): value is HumanizeMidiUnit {
-		return MidiUnit.is(value) && value.type[2] === "humanize";
-	}
+	readonly type = ["unit", "midi"];
+	readonly packageName = "@resequence/web-au";
+	readonly unitName = "humanize";
 
 	private seed = 0;
 

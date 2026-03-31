@@ -22,11 +22,9 @@ export interface AutomationPatternProperties extends PatternProperties {
 }
 
 export class AutomationPattern extends Pattern<AutomationPatternProperties> {
-	readonly type = ["pattern", "automation"] as const;
-
-	static override is(value: unknown): value is AutomationPattern {
-		return Pattern.is(value) && value.type[1] === "automation";
-	}
+	readonly type = ["pattern"];
+	readonly packageName = "resequence";
+	readonly unitName = "automation";
 
 	override _schedule(absoluteBeat: number): Array<Event> {
 		const endBeat = this.properties.endBeat;

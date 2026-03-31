@@ -4,11 +4,9 @@ import { CompositeUnit, flattenUnits } from "@resequence/web-au-core";
 import { z } from "zod";
 
 export class Fan extends CompositeUnit {
-	readonly type = ["unit", "composite", "fan"] as const;
-
-	static override is(value: unknown): value is Fan {
-		return CompositeUnit.is(value) && value.type[2] === "fan";
-	}
+	readonly type = ["unit", "composite"];
+	readonly packageName = "@resequence/web-au";
+	readonly unitName = "fan";
 
 	readonly head: AnyUnit;
 	readonly tails: ReadonlyArray<AnyUnit>;

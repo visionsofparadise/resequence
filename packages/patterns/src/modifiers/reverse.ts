@@ -1,11 +1,8 @@
 import type { Note, Pattern, PatternProperties } from "@resequence/patterns-core";
 import { ModifierPattern, toPattern, modifyNotes } from "@resequence/patterns-core";
 export class ReversePattern extends ModifierPattern {
-	readonly type = ["pattern", "midi", "modifier", "reverse"] as const;
-
-	static override is(value: unknown): value is ReversePattern {
-		return ModifierPattern.is(value) && value.type[3] === "reverse";
-	}
+	readonly packageName = "@resequence/patterns";
+	readonly unitName = "reverse";
 
 	clone(overrides: Partial<PatternProperties>): ReversePattern {
 		return new ReversePattern({
