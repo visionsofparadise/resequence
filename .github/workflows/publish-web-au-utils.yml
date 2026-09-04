@@ -1,60 +1,63 @@
 name: Publish web-au-utils
 
 on:
-  workflow_dispatch:
-  push:
-    branches: [master]
-    paths:
-      - 'packages/web-au-utils/package.json'
+   workflow_dispatch:
+   push:
+      branches: [master]
+      paths:
+         - "packages/web-au-utils/package.json"
 
 jobs:
-  publish:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      id-token: write
-    steps:
-      - uses: actions/checkout@v4
+   publish:
+      runs-on: ubuntu-latest
+      permissions:
+         contents: read
+         id-token: write
+      steps:
+         - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          registry-url: 'https://registry.npmjs.org'
+         - uses: actions/setup-node@v4
+           with:
+              node-version: "24"
+              registry-url: "https://registry.npmjs.org"
 
-      - name: Upgrade npm for OIDC support
-        run: npm install -g npm@latest
+         - name: Pin npm 12
+           run: npm install -g npm@12
 
-      - name: Check if version is already published
-        id: check
-        run: |
-          PACKAGE_VERSION=$(node -p "require('./packages/web-au-utils/package.json').version")
-          PUBLISHED=$(npm view @resequence/web-au-utils@$PACKAGE_VERSION version 2>/dev/null || echo "")
-          if [ "$PUBLISHED" = "$PACKAGE_VERSION" ]; then
-            echo "skip=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "skip=false" >> "$GITHUB_OUTPUT"
-          fi
+         - name: Enforce install-script allowlist
+           run: npm config set strict-allow-scripts=true --location=project
 
-      - name: Install dependencies
-        if: steps.check.outputs.skip == 'false'
-        run: npm ci
+         - name: Check if version is already published
+           id: check
+           run: |
+              PACKAGE_VERSION=$(node -p "require('./packages/web-au-utils/package.json').version")
+              PUBLISHED=$(npm view @resequence/web-au-utils@$PACKAGE_VERSION version 2>/dev/null || echo "")
+              if [ "$PUBLISHED" = "$PACKAGE_VERSION" ]; then
+                echo "skip=true" >> "$GITHUB_OUTPUT"
+              else
+                echo "skip=false" >> "$GITHUB_OUTPUT"
+              fi
 
-      - name: Build dependencies
-        if: steps.check.outputs.skip == 'false'
-        run: npm run build --workspace=packages/web-au-core
+         - name: Install dependencies
+           if: steps.check.outputs.skip == 'false'
+           run: npm ci
 
-      - name: Type check and lint
-        if: steps.check.outputs.skip == 'false'
-        run: npm run check --workspace=packages/web-au-utils
+         - name: Build dependencies
+           if: steps.check.outputs.skip == 'false'
+           run: npm run build --workspace=packages/web-au-core
 
-      - name: Run unit tests
-        if: steps.check.outputs.skip == 'false'
-        run: npm run unit --workspace=packages/web-au-utils
+         - name: Type check and lint
+           if: steps.check.outputs.skip == 'false'
+           run: npm run check --workspace=packages/web-au-utils
 
-      - name: Build
-        if: steps.check.outputs.skip == 'false'
-        run: npm run build
+         - name: Run unit tests
+           if: steps.check.outputs.skip == 'false'
+           run: npm run unit --workspace=packages/web-au-utils
 
-      - name: Publish to npm
-        if: steps.check.outputs.skip == 'false'
-        run: npm publish --workspace=packages/web-au-utils --access public
+         - name: Build
+           if: steps.check.outputs.skip == 'false'
+           run: npm run build
+
+         - name: Publish to npm
+           if: steps.check.outputs.skip == 'false'
+           run: npm publish --workspace=packages/web-au-utils --access public
