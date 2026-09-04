@@ -1,8 +1,8 @@
-import type { SetupResult, UnitContext, UnitInput } from "@resequence/web-au-core";
 import { Unit, proxyDriver, live } from "@resequence/web-au-core";
 import { z } from "zod";
 import { lfo, type LfoUnit } from "../lfo";
 import { allpass, type FilterEffectUnit } from "./filter";
+import type { SetupResult, UnitContext, UnitInput } from "@resequence/web-au-core";
 
 const phaserSchema = z.object({
 	rate: live(z.number().min(0.01).max(100).default(1).describe("Rate (Hz)")),
@@ -51,7 +51,13 @@ export class PhaserEffectUnit extends Unit<typeof phaserSchema> {
 		const lfoPath = crypto.randomUUID();
 		const lfoId = crypto.randomUUID();
 
-		const lfoUnit = lfo({ path: lfoPath, shape: "sine", rate: this.parameters.rate.value, depth: this.parameters.depth.value, id: lfoId });
+		const lfoUnit = lfo({
+			path: lfoPath,
+			shape: "sine",
+			rate: this.parameters.rate.value,
+			depth: this.parameters.depth.value,
+			id: lfoId,
+		});
 
 		await lfoUnit.setup(context);
 
@@ -82,6 +88,16 @@ export class PhaserEffectUnit extends Unit<typeof phaserSchema> {
 	}
 }
 
-export function phaser({ stages, rate, depth, id }: { stages: number; rate: number; depth: number; id?: string }): PhaserEffectUnit {
+export function phaser({
+	stages,
+	rate,
+	depth,
+	id,
+}: {
+	stages: number;
+	rate: number;
+	depth: number;
+	id?: string;
+}): PhaserEffectUnit {
 	return new PhaserEffectUnit({ stages, rate, depth, id });
 }

@@ -1,4 +1,3 @@
-/* eslint-disable barrel-files/avoid-barrel-files */
 export { PatternsError } from "./error";
 export type { BaseEvent, Event, Keyframe, MetadataEvent, NoteEvent } from "./events";
 export { frequencyToNoteAndBend, pitchToFrequency } from "./frequency";

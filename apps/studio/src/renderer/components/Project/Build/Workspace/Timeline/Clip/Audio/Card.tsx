@@ -1,9 +1,9 @@
 import { useMemo, useRef } from "react";
 import { useTransients } from "../../../../../../../hooks/useTransients";
-import type { BuildContext } from "../../../../../../../models/Context";
-import type { AudioClip, Sequence } from "../../../../utils/buildArrangement";
 import { AudioCanvas } from "./Canvas";
 import { useWaveformData } from "./hooks/useWaveformData";
+import type { BuildContext } from "../../../../../../../models/Context";
+import type { AudioClip, Sequence } from "../../../../utils/buildArrangement";
 
 const AUDIO_LANE_HEIGHT = 48;
 
@@ -32,10 +32,7 @@ export const AudioClipCard: React.FC<AudioClipCardProps> = ({ clip, sequence, co
 	});
 
 	return (
-		<div
-			className="relative border-b border-border"
-			style={{ height: AUDIO_LANE_HEIGHT }}
-		>
+		<div className="relative border-b border-border" style={{ height: AUDIO_LANE_HEIGHT }}>
 			<div
 				ref={innerRef}
 				className="absolute top-0 overflow-hidden border border-border bg-surface"

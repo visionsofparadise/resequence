@@ -37,6 +37,9 @@ describe("walkUnits", () => {
 		const injected = new WeakSet<object>([wrapper]);
 		const visited: [number, string][] = [];
 		walkUnits(root, (unit, _parent, index) => visited.push([index, unit.type[1] as string]), new WeakSet(), injected);
-		expect(visited).toEqual([[0, "filter"], [1, "gain"]]);
+		expect(visited).toEqual([
+			[0, "filter"],
+			[1, "gain"],
+		]);
 	});
 });

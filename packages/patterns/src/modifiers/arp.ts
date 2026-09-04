@@ -1,12 +1,21 @@
-import type { Event, ModifierProperties, Note, Pattern, PatternProperties, Pitch } from "@resequence/patterns-core";
-import { collectNotes, flatModifyNotes, ModifierPattern, pitchKey, sequence, toPattern, walkNotes } from "@resequence/patterns-core";
+import {
+	collectNotes,
+	flatModifyNotes,
+	ModifierPattern,
+	pitchKey,
+	sequence,
+	toPattern,
+	walkNotes,
+} from "@resequence/patterns-core";
 import { I } from "@resequence/patterns-utils";
+import type { Event, ModifierProperties, Note, Pattern, PatternProperties, Pitch } from "@resequence/patterns-core";
 
 function mulberry32(seed: number): () => number {
 	let state = seed;
 
 	return function (): number {
 		state += 0x6d2b79f5;
+
 		let value = state;
 
 		value = Math.imul(value ^ (value >>> 15), value | 1);
@@ -35,8 +44,14 @@ export class ArpPattern extends ModifierPattern<ArpProperties> {
 		const sourceEntries: Array<{ id: string; absoluteStart: number; absoluteEnd: number; pitch: Pitch }> = [];
 
 		walkNotes(this, (note, { id, absoluteOffset }) => {
-			sourceEntries.push({ id, absoluteStart: absoluteOffset + note.startBeat, absoluteEnd: absoluteOffset + note.endBeat, pitch: note.pitch });
+			sourceEntries.push({
+				id,
+				absoluteStart: absoluteOffset + note.startBeat,
+				absoluteEnd: absoluteOffset + note.endBeat,
+				pitch: note.pitch,
+			});
 		});
+
 		const mappingPattern = this.properties.mapping;
 		const mappingNotes = collectNotes(mappingPattern).sort((noteA, noteB) => noteA.absoluteBeat - noteB.absoluteBeat);
 
@@ -46,7 +61,9 @@ export class ArpPattern extends ModifierPattern<ArpProperties> {
 			return [];
 		}
 
-		const mappingPitchKeys = [...new Set(mappingNotes.map((mappingNote) => pitchKey(mappingNote.note.pitch)))].sort((keyA, keyB) => keyA - keyB);
+		const mappingPitchKeys = [...new Set(mappingNotes.map((mappingNote) => pitchKey(mappingNote.note.pitch)))].sort(
+			(keyA, keyB) => keyA - keyB,
+		);
 		const mappingPitchRank = new Map(mappingPitchKeys.map((key, index) => [key, index]));
 
 		const events: Array<{ beat: number; delta: number }> = [];
@@ -80,6 +97,7 @@ export class ArpPattern extends ModifierPattern<ArpProperties> {
 				const mappingNote = mappingNotes[stepIndex % mappingNotes.length];
 
 				if (!mappingNote) break;
+
 				const absoluteBeat = segment.start + cycle * mappingDuration + mappingNote.absoluteBeat;
 
 				if (absoluteBeat >= segment.end) break;
@@ -95,7 +113,9 @@ export class ArpPattern extends ModifierPattern<ArpProperties> {
 				}
 
 				if (heldPitches.size > 0) {
-					const pool = [...heldPitches.entries()].sort((entryA, entryB) => entryA[0] - entryB[0]).map(([, pitch]) => pitch);
+					const pool = [...heldPitches.entries()]
+						.sort((entryA, entryB) => entryA[0] - entryB[0])
+						.map(([, pitch]) => pitch);
 
 					const lowestPitch = pool[0];
 
@@ -113,7 +133,11 @@ export class ArpPattern extends ModifierPattern<ArpProperties> {
 					const stepDuration = mappingNote.note.endBeat - mappingNote.note.startBeat;
 
 					for (const source of sourceEntries) {
-						if (pitchKey(source.pitch) === selectedKey && source.absoluteStart <= absoluteBeat && source.absoluteEnd > absoluteBeat) {
+						if (
+							pitchKey(source.pitch) === selectedKey &&
+							source.absoluteStart <= absoluteBeat &&
+							source.absoluteEnd > absoluteBeat
+						) {
 							let steps = stepsByNote.get(source.id);
 
 							if (!steps) {
@@ -121,7 +145,12 @@ export class ArpPattern extends ModifierPattern<ArpProperties> {
 								stepsByNote.set(source.id, steps);
 							}
 
-							steps.push({ absoluteBeat, pitch: selectedPitch, velocity: mappingNote.note.velocity, duration: stepDuration });
+							steps.push({
+								absoluteBeat,
+								pitch: selectedPitch,
+								velocity: mappingNote.note.velocity,
+								duration: stepDuration,
+							});
 
 							break;
 						}

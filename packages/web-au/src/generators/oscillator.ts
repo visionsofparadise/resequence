@@ -1,9 +1,9 @@
-import type { NoteEvent, SetupResult, UnitContext, UnitInput } from "@resequence/web-au-core";
-import type { WaveShape } from "../lfo";
 import { LiveParameter, driveParam, getOrCreateDriver, live, offsetParam } from "@resequence/web-au-core";
 import { scheduleSlideRamps } from "@resequence/web-au-utils";
 import { z } from "zod";
 import { GeneratorUnit } from "./generator";
+import type { WaveShape } from "../lfo";
+import type { NoteEvent, SetupResult, UnitContext, UnitInput } from "@resequence/web-au-core";
 
 const oscillatorSchema = z.object({
 	oscillatorType: z.enum(["sine", "square", "sawtooth", "triangle"]).default("sine").describe("Waveform"),
@@ -47,7 +47,13 @@ export class OscillatorUnit extends GeneratorUnit<typeof oscillatorSchema> {
 		driveParam(oscillator.detune, this.parameters.detune, undefined, context);
 
 		if (ne.slides && ne.slides.length > 0) {
-			scheduleSlideRamps(oscillator.detune, this.parameters.detune.value, ne.slides, ne.startMs / 1000, (cents) => this.parameters.detune.value + cents);
+			scheduleSlideRamps(
+				oscillator.detune,
+				this.parameters.detune.value,
+				ne.slides,
+				ne.startMs / 1000,
+				(cents) => this.parameters.detune.value + cents,
+			);
 		}
 
 		oscillator.start(ne.startMs / 1000);
@@ -63,7 +69,15 @@ function noteToFrequency(note: number, bend: number): number {
 	return 440 * 2 ** ((note - 69 + bend / 100) / 12);
 }
 
-export function oscillator({ type, detune = 0, id }: { type: WaveShape; detune?: number; id?: string }): OscillatorUnit {
+export function oscillator({
+	type,
+	detune = 0,
+	id,
+}: {
+	type: WaveShape;
+	detune?: number;
+	id?: string;
+}): OscillatorUnit {
 	return new OscillatorUnit({ oscillatorType: type, detune, id });
 }
 

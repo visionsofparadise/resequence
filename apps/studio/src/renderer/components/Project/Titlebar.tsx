@@ -1,14 +1,7 @@
-import {
-	Content,
-	Item,
-	Portal,
-	Root,
-	Separator,
-	Trigger,
-} from "@radix-ui/react-dropdown-menu";
-import type { ProjectContext } from "../../models/Context";
+import { Content, Item, Portal, Root, Separator, Trigger } from "@radix-ui/react-dropdown-menu";
 import { useProjectLoader } from "../../utils/projectLoader";
 import { useTheme } from "../ThemeProvider";
+import type { ProjectContext } from "../../models/Context";
 
 interface TitlebarProps {
 	readonly context: ProjectContext;

@@ -63,7 +63,9 @@ describe("buildArrangement", () => {
 		const tree = sequence(aa, bb);
 		const { arrangement } = buildArrangement(tree);
 
-		const allSpans = arrangement.sequences.flatMap((ss) => ss.clips.filter((cl) => cl.type === "midi").flatMap((cl) => (cl.type === "midi" ? cl.spans : [])));
+		const allSpans = arrangement.sequences.flatMap((ss) =>
+			ss.clips.filter((cl) => cl.type === "midi").flatMap((cl) => (cl.type === "midi" ? cl.spans : [])),
+		);
 		expect(allSpans.length).toBeGreaterThan(0);
 	});
 

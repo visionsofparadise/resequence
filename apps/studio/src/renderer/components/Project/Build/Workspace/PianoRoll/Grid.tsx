@@ -13,7 +13,15 @@ interface PianoRollGridProps {
 	readonly context: BuildContext;
 }
 
-export const PianoRollGrid: React.FC<PianoRollGridProps> = ({ minPitchKey, maxPitchKey, stepsPerOctave, timeSignature, startBeat, endBeat, context }) => {
+export const PianoRollGrid: React.FC<PianoRollGridProps> = ({
+	minPitchKey,
+	maxPitchKey,
+	stepsPerOctave,
+	timeSignature,
+	startBeat,
+	endBeat,
+	context,
+}) => {
 	const { project } = context;
 	const pxPerBeat = project.timelineZoom.value;
 	const pitchZoom = project.pitchZoom.value;
@@ -71,10 +79,7 @@ export const PianoRollGrid: React.FC<PianoRollGridProps> = ({ minPitchKey, maxPi
 	}
 
 	return (
-		<div
-			className="pointer-events-none absolute inset-0"
-			style={{ width, height }}
-		>
+		<div className="pointer-events-none absolute inset-0" style={{ width, height }}>
 			{rows}
 			{beatLines}
 		</div>

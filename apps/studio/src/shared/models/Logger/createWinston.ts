@@ -1,5 +1,5 @@
-import { app } from "electron";
 import { existsSync, mkdirSync } from "fs";
+import { app } from "electron";
 import winston from "winston";
 import DailyRotateFile from "winston-daily-rotate-file";
 
@@ -13,7 +13,9 @@ const reset = "\x1b[0m";
 
 const stringify = (value: unknown): string => {
 	if (value === null || value === undefined) return "";
+
 	if (typeof value === "string") return value;
+
 	if (typeof value === "number" || typeof value === "boolean") return String(value);
 
 	return JSON.stringify(value);

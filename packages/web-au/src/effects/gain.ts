@@ -1,6 +1,6 @@
-import type { SetupResult, UnitContext, UnitInput } from "@resequence/web-au-core";
 import { Unit, driveParam, live } from "@resequence/web-au-core";
 import { z } from "zod";
+import type { SetupResult, UnitContext, UnitInput } from "@resequence/web-au-core";
 
 const gainSchema = z.object({
 	level: live(z.number().min(0).max(2).default(1).describe("Level")),

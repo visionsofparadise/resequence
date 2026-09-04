@@ -1,12 +1,10 @@
-import type { AnyUnit, ModDeclaration, NoteEvent, SetupResult, UnitContext } from "@resequence/web-au-core";
 import { MidiUnit } from "@resequence/web-au-core";
-import type { z } from "zod";
 import { CCEffectUnit } from "../effects/cc";
 import { linearGain, type GainEffectUnit } from "../effects/gain";
+import type { AnyUnit, ModDeclaration, NoteEvent, SetupResult, UnitContext } from "@resequence/web-au-core";
+import type { z } from "zod";
 
-export abstract class GeneratorUnit<
-	S extends z.ZodObject = z.ZodObject,
-> extends MidiUnit<S> {
+export abstract class GeneratorUnit<S extends z.ZodObject = z.ZodObject> extends MidiUnit<S> {
 	readonly voiceToCallbacks: Array<(noteEvent: NoteEvent) => AnyUnit> = [];
 	readonly voiceModDeclarations: Array<ModDeclaration> = [];
 	public mergeUnit: GainEffectUnit | undefined;
@@ -41,7 +39,12 @@ export abstract class GeneratorUnit<
 
 		const offsetMs = (context.latencyBudget / context.audioContext.sampleRate) * 1000;
 
-		return { ...noteEvent, startMs: noteEvent.startMs + offsetMs, stopMs: noteEvent.stopMs + offsetMs, cleanupMs: noteEvent.cleanupMs + offsetMs };
+		return {
+			...noteEvent,
+			startMs: noteEvent.startMs + offsetMs,
+			stopMs: noteEvent.stopMs + offsetMs,
+			cleanupMs: noteEvent.cleanupMs + offsetMs,
+		};
 	}
 
 	protected scheduleVoice(exits: Array<AudioNode>, noteEvent: NoteEvent, context: UnitContext): () => void {

@@ -1,8 +1,8 @@
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { Command } from "commander";
 import { Pattern } from "@resequence/patterns-core";
 import { renderMidi } from "@resequence/patterns-utils";
+import { Command } from "commander";
 
 const program = new Command();
 

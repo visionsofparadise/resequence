@@ -1,7 +1,7 @@
+import { Logger } from "./Logger/Logger";
+import type { LogContext } from "./LogContext";
 import type { BrowserWindow } from "electron";
 import type winston from "winston";
-import type { LogContext } from "./LogContext";
-import { Logger } from "./Logger/Logger";
 
 export interface IpcHandlerDependencies {
 	readonly browserWindow: BrowserWindow;
@@ -48,6 +48,7 @@ export abstract class AsyncMainIpc<P extends Array<unknown>, R> {
 					transactionId,
 					action: this.action,
 				});
+
 				throw error;
 			}
 		});

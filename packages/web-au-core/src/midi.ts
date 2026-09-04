@@ -1,7 +1,7 @@
-import type { z } from "zod";
+import { type UnitInput, Unit } from "./unit";
 import type { UnitContext } from "./context";
 import type { NoteEvent } from "./note-event";
-import { type UnitInput, Unit } from "./unit";
+import type { z } from "zod";
 
 export type NoteProperty = "velocity" | "pitch" | "gate";
 
@@ -13,9 +13,7 @@ export interface NoteModDeclaration {
 
 export interface MidiUnitInput extends UnitInput {}
 
-export abstract class MidiUnit<
-	S extends z.ZodObject = z.ZodObject,
-> extends Unit<S> {
+export abstract class MidiUnit<S extends z.ZodObject = z.ZodObject> extends Unit<S> {
 	readonly type = ["unit", "midi"];
 	readonly noteModDeclarations: Array<NoteModDeclaration> = [];
 
@@ -48,12 +46,15 @@ export abstract class MidiUnit<
 			switch (decl.property) {
 				case "velocity":
 					value = noteEvent.velocity / 127;
+
 					break;
 				case "pitch":
 					value = noteEvent.note / 127;
+
 					break;
 				case "gate":
 					value = 1;
+
 					break;
 			}
 

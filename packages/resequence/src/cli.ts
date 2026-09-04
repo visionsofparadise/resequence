@@ -44,10 +44,7 @@ function makeFetchBuffer(entrypoint: string): (path: string) => Promise<ArrayBuf
 
 const program = new Command();
 
-program
-	.name("resequence")
-	.description("Resequence — music composition toolkit")
-	.version("0.1.0");
+program.name("resequence").description("Resequence — music composition toolkit").version("0.1.0");
 
 program
 	.command("render")
@@ -69,8 +66,10 @@ program
 
 		process.stdout.write(`Rendering ${resolve(entrypoint)}...\n`);
 
-		const include = typeof options.include === "string" ? options.include.split(",").map((name) => name.trim()) : undefined;
-		const exclude = typeof options.exclude === "string" ? options.exclude.split(",").map((name) => name.trim()) : undefined;
+		const include =
+			typeof options.include === "string" ? options.include.split(",").map((name) => name.trim()) : undefined;
+		const exclude =
+			typeof options.exclude === "string" ? options.exclude.split(",").map((name) => name.trim()) : undefined;
 
 		const result = await router.render(makeFetchBuffer(entrypoint), {
 			output: outDir,
@@ -108,8 +107,10 @@ program
 	.action(async (entrypoint: string, options: Record<string, string>) => {
 		const router = await loadRouter(entrypoint);
 
-		const { default: nodeWebAudio } = (await import("node-web-audio-api")) as { default: { AudioContext: typeof AudioContext } };
-		const audioContext = new nodeWebAudio.AudioContext() as unknown as AudioContext;
+		const { default: nodeWebAudio } = (await import("node-web-audio-api")) as {
+			default: { AudioContext: typeof AudioContext };
+		};
+		const audioContext = new nodeWebAudio.AudioContext();
 
 		const playback = router.play(audioContext);
 

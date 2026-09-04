@@ -1,5 +1,6 @@
-import type { Event, Note, ModifierProperties, Pattern, PatternProperties } from "@resequence/patterns-core";
 import { ModifierPattern, toPattern, flatModifyNotes } from "@resequence/patterns-core";
+import type { Event, Note, ModifierProperties, Pattern, PatternProperties } from "@resequence/patterns-core";
+
 export interface TrimProperties extends ModifierProperties {
 	readonly fromBeats: number;
 	readonly toBeats: number;
@@ -35,7 +36,13 @@ export class TrimPattern extends ModifierPattern<TrimProperties> {
 	clone(_overrides: Partial<PatternProperties>): TrimPattern {
 		const trimDuration = Math.max(0, this.properties.toBeats - this.properties.fromBeats);
 
-		return new TrimPattern({ fromBeats: this.properties.fromBeats, toBeats: this.properties.toBeats, input: this.properties.input, startBeat: 0, endBeat: trimDuration });
+		return new TrimPattern({
+			fromBeats: this.properties.fromBeats,
+			toBeats: this.properties.toBeats,
+			input: this.properties.input,
+			startBeat: 0,
+			endBeat: trimDuration,
+		});
 	}
 }
 

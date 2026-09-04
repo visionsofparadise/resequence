@@ -1,5 +1,14 @@
+import {
+	ModifierPattern,
+	toPattern,
+	addSteps,
+	NUM_OCTAVES,
+	pitchKey,
+	modifyNotes,
+	walkNotes,
+} from "@resequence/patterns-core";
 import type { Event, Note, ModifierProperties, Pattern, PatternProperties } from "@resequence/patterns-core";
-import { ModifierPattern, toPattern, addSteps, NUM_OCTAVES, pitchKey, modifyNotes, walkNotes } from "@resequence/patterns-core";
+
 export interface InvertProperties extends ModifierProperties {
 	readonly inversions: number;
 }
@@ -12,7 +21,12 @@ export class InvertPattern extends ModifierPattern<InvertProperties> {
 		const entries: Array<{ id: string; absoluteStart: number; key: number; stepsPerOctave: number }> = [];
 
 		walkNotes(this, (note, { id, absoluteOffset }) => {
-			entries.push({ id, absoluteStart: absoluteOffset + note.startBeat, key: pitchKey(note.pitch), stepsPerOctave: note.pitch.stepsPerOctave });
+			entries.push({
+				id,
+				absoluteStart: absoluteOffset + note.startBeat,
+				key: pitchKey(note.pitch),
+				stepsPerOctave: note.pitch.stepsPerOctave,
+			});
 		});
 
 		const byBeat = new Map<number, typeof entries>();
@@ -57,7 +71,10 @@ export class InvertPattern extends ModifierPattern<InvertProperties> {
 				return {
 					...note,
 					pitch: addSteps(note.pitch, shift),
-					slides: note.slides?.map((sl) => ({ ...sl, value: sl.value + shift / (note.pitch.stepsPerOctave * NUM_OCTAVES) })),
+					slides: note.slides?.map((sl) => ({
+						...sl,
+						value: sl.value + shift / (note.pitch.stepsPerOctave * NUM_OCTAVES),
+					})),
 				};
 			}
 

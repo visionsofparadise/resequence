@@ -1,5 +1,6 @@
-import type { Event, Note, ModifierProperties, Pattern, PatternProperties } from "@resequence/patterns-core";
 import { ModifierPattern, toPattern, modifyNotes } from "@resequence/patterns-core";
+import type { Event, Note, ModifierProperties, Pattern, PatternProperties } from "@resequence/patterns-core";
+
 export interface StretchProperties extends ModifierProperties {
 	readonly factor: number;
 }

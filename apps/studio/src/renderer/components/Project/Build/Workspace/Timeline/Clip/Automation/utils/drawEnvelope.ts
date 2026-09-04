@@ -1,9 +1,16 @@
-import { evaluateAt, type Keyframe } from "resequence";
 import { textPrimary, accentPrimary } from "@resequence/design-system";
+import { evaluateAt, type Keyframe } from "resequence";
 
 export const AUTOMATION_COLOR = textPrimary;
 
-export function drawEnvelope(canvasCtx: CanvasRenderingContext2D, keyframes: ReadonlyArray<Keyframe>, width: number, height: number, startBeat: number, pxPerBeat: number): void {
+export function drawEnvelope(
+	canvasCtx: CanvasRenderingContext2D,
+	keyframes: ReadonlyArray<Keyframe>,
+	width: number,
+	height: number,
+	startBeat: number,
+	pxPerBeat: number,
+): void {
 	const padding = 2;
 	const drawHeight = height - padding * 2;
 

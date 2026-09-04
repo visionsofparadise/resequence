@@ -1,9 +1,15 @@
-import type { MarkerPoint, RegionPoint, TempoMap } from "@resequence/patterns-utils";
 import { beatsToSeconds } from "@resequence/patterns-utils";
-import type { WavBitDepth } from "@resequence/web-au-utils";
 import { WaveFile } from "wavefile";
+import type { MarkerPoint, RegionPoint, TempoMap } from "@resequence/patterns-utils";
+import type { WavBitDepth } from "@resequence/web-au-utils";
 
-export function encodeWav(buffer: AudioBuffer, markers?: ReadonlyArray<MarkerPoint>, tempoMap?: TempoMap, regions?: ReadonlyArray<RegionPoint>, bitDepth?: WavBitDepth): ArrayBuffer {
+export function encodeWav(
+	buffer: AudioBuffer,
+	markers?: ReadonlyArray<MarkerPoint>,
+	tempoMap?: TempoMap,
+	regions?: ReadonlyArray<RegionPoint>,
+	bitDepth?: WavBitDepth,
+): ArrayBuffer {
 	const channels: Array<Float32Array> = [];
 
 	for (let channel = 0; channel < buffer.numberOfChannels; channel++) {

@@ -1,4 +1,3 @@
-/* eslint-disable barrel-files/avoid-barrel-files */
 export { Unit } from "./unit";
 export type { AnyUnit, ModDeclaration, SetupResult, UnitInput } from "./unit";
 export { MidiUnit } from "./midi";

@@ -12,7 +12,11 @@ function buildNoteId(indexes: ReadonlyArray<number>, noteIndex: number): string 
 	return `${indexes.join("-")}-n${noteIndex}`;
 }
 
-export function walkPatterns(pattern: Pattern, callback: (pattern: Pattern, absoluteBeat: number) => void, parentOffset = 0): void {
+export function walkPatterns(
+	pattern: Pattern,
+	callback: (pattern: Pattern, absoluteBeat: number) => void,
+	parentOffset = 0,
+): void {
 	callback(pattern, parentOffset);
 
 	for (const { offsetBeats, pattern: child } of pattern.children) {
@@ -20,7 +24,12 @@ export function walkPatterns(pattern: Pattern, callback: (pattern: Pattern, abso
 	}
 }
 
-export function walkNotes(pattern: Pattern, callback: (note: Note, context: NoteContext) => void, parentOffset = 0, parentIndexes: ReadonlyArray<number> = []): void {
+export function walkNotes(
+	pattern: Pattern,
+	callback: (note: Note, context: NoteContext) => void,
+	parentOffset = 0,
+	parentIndexes: ReadonlyArray<number> = [],
+): void {
 	for (const [noteIndex, { offsetBeats, note }] of pattern.notes.entries()) {
 		const id = buildNoteId(parentIndexes, noteIndex);
 

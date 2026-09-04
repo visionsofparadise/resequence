@@ -1,7 +1,7 @@
 import { useCallback, useEffect } from "react";
+import { ActiveView } from "./ActiveView";
 import type { BuildContext } from "../../../../models/Context";
 import type { ProjectState } from "../../../../models/State/Project";
-import { ActiveView } from "./ActiveView";
 
 interface WorkspaceProps {
 	readonly context: BuildContext;
@@ -35,10 +35,7 @@ export const Workspace: React.FC<WorkspaceProps> = ({ context }) => {
 
 	return (
 		<div className="h-full">
-			<ActiveView
-				context={context}
-				goBack={goBack}
-			/>
+			<ActiveView context={context} goBack={goBack} />
 		</div>
 	);
 };

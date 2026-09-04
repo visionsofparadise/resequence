@@ -3,52 +3,52 @@
 @import "@resequence/design-system/css/utilities.css";
 
 html {
-  font-family: "Azeret Mono", monospace;
-  background-color: var(--color-surface);
-  color: var(--color-text-primary);
-  color-scheme: dark;
+	font-family: "Azeret Mono", monospace;
+	background-color: var(--color-surface);
+	color: var(--color-text-primary);
+	color-scheme: dark;
 }
 
 .theme-light {
-  color-scheme: light;
+	color-scheme: light;
 }
 
 /* Electron drag region */
 .titlebar {
-  -webkit-app-region: drag;
+	-webkit-app-region: drag;
 }
 
 .titlebar button,
 .titlebar [data-radix-popper-content-wrapper] {
-  -webkit-app-region: no-drag;
+	-webkit-app-region: no-drag;
 }
 
 .react-flow__edge path {
-  stroke: var(--color-border);
-  stroke-width: 1.5;
+	stroke: var(--color-border);
+	stroke-width: 1.5;
 }
 
 .react-flow__node {
-  background: none;
-  border: none;
-  box-shadow: none;
-  padding: 0;
-  border-radius: 0;
+	background: none;
+	border: none;
+	box-shadow: none;
+	padding: 0;
+	border-radius: 0;
 }
 
 .react-flow__controls {
-  background: var(--color-elevated);
-  border: 1px solid var(--color-border);
-  border-radius: 0;
-  box-shadow: none;
+	background: var(--color-elevated);
+	border: 1px solid var(--color-border);
+	border-radius: 0;
+	box-shadow: none;
 }
 
 .react-flow__controls-button {
-  background: var(--color-elevated);
-  border-color: var(--color-border);
-  fill: var(--color-text-secondary);
+	background: var(--color-elevated);
+	border-color: var(--color-border);
+	fill: var(--color-text-secondary);
 }
 
 .react-flow__controls-button:hover {
-  background: var(--color-surface);
+	background: var(--color-surface);
 }

@@ -1,7 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { useSetAppSettings } from "../utils/appSettings";
 import type { Theme } from "../../shared/models/AppSettings";
 import type { AppContext } from "../models/Context";
-import { useSetAppSettings } from "../utils/appSettings";
 
 interface ThemeContextValue {
 	theme: Theme;
@@ -30,7 +30,9 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children, context 
 
 	const setAppSettings = useSetAppSettings(main);
 
-	const [systemPrefersLight, setSystemPrefersLight] = useState(() => window.matchMedia("(prefers-color-scheme: light)").matches);
+	const [systemPrefersLight, setSystemPrefersLight] = useState(
+		() => window.matchMedia("(prefers-color-scheme: light)").matches,
+	);
 
 	useEffect(() => {
 		const media = window.matchMedia("(prefers-color-scheme: light)");

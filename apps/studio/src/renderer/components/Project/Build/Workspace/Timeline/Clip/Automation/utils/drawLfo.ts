@@ -1,5 +1,5 @@
-import type { Lfo } from "resequence";
 import { AUTOMATION_COLOR } from "./drawEnvelope";
+import type { Lfo } from "resequence";
 
 function sampleLfoWaveform(shape: Lfo["shape"], phase: number): number {
 	const normalized = ((phase % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
@@ -18,7 +18,14 @@ function sampleLfoWaveform(shape: Lfo["shape"], phase: number): number {
 	}
 }
 
-export function drawLfo(canvasCtx: CanvasRenderingContext2D, lfo: Lfo, width: number, height: number, startBeat: number, totalBeats: number): void {
+export function drawLfo(
+	canvasCtx: CanvasRenderingContext2D,
+	lfo: Lfo,
+	width: number,
+	height: number,
+	startBeat: number,
+	totalBeats: number,
+): void {
 	const padding = 2;
 	const drawHeight = height - padding * 2;
 	const pxPerBeat = width / totalBeats;

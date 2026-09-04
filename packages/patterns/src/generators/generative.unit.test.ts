@@ -24,7 +24,12 @@ describe("generative", () => {
 		generative(
 			(acc, stepIndex) => {
 				accSizes.push(acc.length);
-				acc.push({ pitch: N.C4(1).pitch, startBeat: stepIndex * 0.5, endBeat: stepIndex * 0.5 + 0.5, velocity: 100 });
+				acc.push({
+					pitch: N.C4(1).pitch,
+					startBeat: stepIndex * 0.5,
+					endBeat: stepIndex * 0.5 + 0.5,
+					velocity: 100,
+				});
 				return acc;
 			},
 			3,

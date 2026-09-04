@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { type Router, Playback } from "resequence";
-import type { MainWithEvents } from "../../../../models/Main";
 import { ValueScheduler } from "../models/ValueScheduler";
 import { type DerivedDriverMap, hijackDrivers } from "../utils/hijackDrivers";
+import type { MainWithEvents } from "../../../../models/Main";
 
 export interface SetupResult {
 	readonly audioContext: AudioContext;
@@ -21,7 +21,7 @@ export function useSetupPlayback(router: Router, main: MainWithEvents): SetupRes
 		let cancelled = false;
 
 		void playbackEngine
-			.setup((filePath) => main.readFileBuffer(filePath).then((arr) => arr.buffer as ArrayBuffer))
+			.setup((filePath) => main.readFileBuffer(filePath).then((array) => array.buffer as ArrayBuffer))
 			.then(() => {
 				if (cancelled) return;
 

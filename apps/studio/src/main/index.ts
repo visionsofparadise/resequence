@@ -1,5 +1,5 @@
-import { app, BrowserWindow } from "electron";
 import path from "path";
+import { app, BrowserWindow } from "electron";
 import { createWinston } from "../shared/models/Logger/createWinston";
 import { Logger } from "../shared/models/Logger/Logger";
 import { createWindow } from "./createWindow";

@@ -1,7 +1,7 @@
-import type { AnyUnit, SetupResult, UnitContext, UnitInput } from "@resequence/web-au-core";
 import { CompositeUnit, MidiUnit } from "@resequence/web-au-core";
-import { linearGain, type GainEffectUnit } from "../effects/gain";
 import { z } from "zod";
+import { linearGain, type GainEffectUnit } from "../effects/gain";
+import type { AnyUnit, SetupResult, UnitContext, UnitInput } from "@resequence/web-au-core";
 
 export class BypassUnit extends MidiUnit {
 	readonly type = ["unit", "midi"];
@@ -14,6 +14,7 @@ export class BypassUnit extends MidiUnit {
 	constructor(input: { inner: AnyUnit; targets?: Array<AnyUnit> } & UnitInput) {
 		super(input, z.object({}));
 		this.inner = input.inner;
+
 		if (input.targets) this.targets.push(...input.targets);
 	}
 

@@ -1,8 +1,8 @@
-import type { SetupResult, UnitContext, UnitInput } from "@resequence/web-au-core";
 import { Unit, proxyDriver, live } from "@resequence/web-au-core";
 import { z } from "zod";
 import { lfo, type LfoUnit } from "../lfo";
 import { delay, type DelayEffectUnit } from "./delay";
+import type { SetupResult, UnitContext, UnitInput } from "@resequence/web-au-core";
 
 const chorusSchema = z.object({
 	rate: live(z.number().min(0.01).max(100).default(1).describe("Rate (Hz)")),
@@ -19,7 +19,9 @@ export class ChorusEffectUnit extends Unit<typeof chorusSchema> {
 	private delayUnit: DelayEffectUnit | undefined;
 	private lfoUnit: LfoUnit | undefined;
 
-	constructor(input: z.infer<typeof chorusSchema> & UnitInput & { readonly delay: number; readonly feedback?: number }) {
+	constructor(
+		input: z.infer<typeof chorusSchema> & UnitInput & { readonly delay: number; readonly feedback?: number },
+	) {
 		super(input, chorusSchema);
 		this.delay = input.delay;
 		this.feedback = input.feedback;
@@ -60,10 +62,30 @@ export class ChorusEffectUnit extends Unit<typeof chorusSchema> {
 	}
 }
 
-export function chorus({ rate, depth, feedback, id }: { rate: number; depth: number; feedback?: number; id?: string }): ChorusEffectUnit {
+export function chorus({
+	rate,
+	depth,
+	feedback,
+	id,
+}: {
+	rate: number;
+	depth: number;
+	feedback?: number;
+	id?: string;
+}): ChorusEffectUnit {
 	return new ChorusEffectUnit({ delay: 25, rate, depth, feedback, id });
 }
 
-export function flanger({ rate, depth, feedback, id }: { rate: number; depth: number; feedback?: number; id?: string }): ChorusEffectUnit {
+export function flanger({
+	rate,
+	depth,
+	feedback,
+	id,
+}: {
+	rate: number;
+	depth: number;
+	feedback?: number;
+	id?: string;
+}): ChorusEffectUnit {
 	return new ChorusEffectUnit({ delay: 5, rate, depth, feedback, id });
 }

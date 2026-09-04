@@ -1,6 +1,6 @@
-import type { Keyframe, Pitch, ResolvedTuning } from "@resequence/patterns-core";
 import { denormalizePitch, normalizePitch, pitchToCents } from "@resequence/patterns-core";
 import { evaluateAt } from "./keyframe";
+import type { Keyframe, Pitch, ResolvedTuning } from "@resequence/patterns-core";
 
 export function evaluateSlide(noteStartPitch: Pitch, slides: ReadonlyArray<Keyframe>, beatOffset: number): Pitch {
 	if (slides.length === 0 || beatOffset <= 0) return noteStartPitch;
@@ -20,7 +20,10 @@ export function evaluateSlide(noteStartPitch: Pitch, slides: ReadonlyArray<Keyfr
 	return denormalizePitch(value, noteStartPitch.stepsPerOctave, noteStartPitch.octaveRatio);
 }
 
-export function mergeSlides(existing: ReadonlyArray<Keyframe>, incoming: ReadonlyArray<Keyframe>): ReadonlyArray<Keyframe> {
+export function mergeSlides(
+	existing: ReadonlyArray<Keyframe>,
+	incoming: ReadonlyArray<Keyframe>,
+): ReadonlyArray<Keyframe> {
 	const beatMap = new Map<number, Keyframe>();
 
 	for (const slide of existing) {
@@ -34,7 +37,12 @@ export function mergeSlides(existing: ReadonlyArray<Keyframe>, incoming: Readonl
 	return Array.from(beatMap.values()).sort((s1, s2) => s1.beat - s2.beat);
 }
 
-export function evaluateSlideCents(noteRootPitch: Pitch, slides: ReadonlyArray<Keyframe>, beatOffset: number, tuning?: ResolvedTuning): number {
+export function evaluateSlideCents(
+	noteRootPitch: Pitch,
+	slides: ReadonlyArray<Keyframe>,
+	beatOffset: number,
+	tuning?: ResolvedTuning,
+): number {
 	if (slides.length === 0 || beatOffset <= 0) return 0;
 
 	const last = slides[slides.length - 1];

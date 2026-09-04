@@ -1,5 +1,6 @@
-import type { Event, Note, ModifierProperties, Pattern, PatternProperties } from "@resequence/patterns-core";
 import { ModifierPattern, toPattern, modifyNotes, walkNotes } from "@resequence/patterns-core";
+import type { Event, Note, ModifierProperties, Pattern, PatternProperties } from "@resequence/patterns-core";
+
 export interface RotateProperties extends ModifierProperties {
 	readonly steps: number;
 }
@@ -27,17 +28,18 @@ export class RotatePattern extends ModifierPattern<RotateProperties> {
 		const gaps: Array<number> = [];
 
 		for (let gapIndex = 0; gapIndex < noteCount; gapIndex++) {
-			const curr = entries[gapIndex];
+			const current = entries[gapIndex];
 
-			if (!curr) continue;
+			if (!current) continue;
 
 			if (gapIndex < noteCount - 1) {
 				const next = entries[gapIndex + 1];
 
 				if (!next) continue;
-				gaps.push(next.absoluteStart - curr.absoluteStart);
+
+				gaps.push(next.absoluteStart - current.absoluteStart);
 			} else {
-				gaps.push(totalDuration - curr.absoluteStart + firstEntry.absoluteStart);
+				gaps.push(totalDuration - current.absoluteStart + firstEntry.absoluteStart);
 			}
 		}
 

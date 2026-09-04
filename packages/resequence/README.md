@@ -12,13 +12,36 @@ A resequence program builds a pattern tree — notes, sequences, layers, repeats
 
 ```typescript
 import { N, sequence, layer, repeat, gap, metadata, automate, formula, resolveLfo, audio, router } from "resequence";
-import { osc, sampler, noise, chain, fan, mix, lowpass, highpass, gain, reverb, delay, compressor, pan, eq, chorus, envelope, lfo, speakers } from "resequence/web-au";
+import {
+	osc,
+	sampler,
+	noise,
+	chain,
+	fan,
+	mix,
+	lowpass,
+	highpass,
+	gain,
+	reverb,
+	delay,
+	compressor,
+	pan,
+	eq,
+	chorus,
+	envelope,
+	lfo,
+	speakers,
+} from "resequence/web-au";
 
 // --- Instruments ---
 
 const kick = sampler({ url: "samples/kick.wav", id: "kick" });
 const snare = sampler({ url: "samples/snare.wav", id: "snare" });
-const bass = chain(osc({ type: "sawtooth", id: "bass" }), lowpass({ frequency: 800, resonance: 4, id: "bassLp" }), gain({ level: -6 }));
+const bass = chain(
+	osc({ type: "sawtooth", id: "bass" }),
+	lowpass({ frequency: 800, resonance: 4, id: "bassLp" }),
+	gain({ level: -6 }),
+);
 const pad = chain(osc({ type: "triangle", id: "pad" }), mix(reverb({ decay: 2.5 }), 0.4), pan({ angle: -0.3 }));
 
 // --- Patterns ---
@@ -42,7 +65,10 @@ const filterSweep = automate(
 
 const drums = layer(kickPat.route("kick"), snarePat.route("snare"));
 
-const song = metadata(layer(repeat(drums, 4), repeat(bassline, 2).route("bass"), repeat(chords, 2).route("pad"), repeat(filterSweep, 2)), { tempo: 128 });
+const song = metadata(
+	layer(repeat(drums, 4), repeat(bassline, 2).route("bass"), repeat(chords, 2).route("pad"), repeat(filterSweep, 2)),
+	{ tempo: 128 },
+);
 
 // --- Routing ---
 
@@ -146,7 +172,11 @@ Assigning an `id` to a unit creates a namespace for its parameters. Automation a
 ```typescript
 import { chain, osc, lowpass, gain } from "resequence/web-au";
 
-const synth = chain(osc({ type: "sawtooth", id: "osc" }), lowpass({ frequency: 2000, id: "lp" }), gain({ level: -6, id: "vol" }));
+const synth = chain(
+	osc({ type: "sawtooth", id: "osc" }),
+	lowpass({ frequency: 2000, id: "lp" }),
+	gain({ level: -6, id: "vol" }),
+);
 
 // Parameter paths:
 // "osc.lp.frequency"   — filter cutoff
@@ -226,7 +256,11 @@ The `lfo` unit provides real-time parameter modulation in the audio graph, indep
 ```typescript
 import { chain, osc, lowpass, lfo } from "resequence/web-au";
 
-chain(osc({ type: "sawtooth", id: "synth" }), lowpass({ frequency: 1000, id: "filt" }), lfo({ path: "synth.filt.frequency", shape: "sine", rate: 2, depth: 0.5 }));
+chain(
+	osc({ type: "sawtooth", id: "synth" }),
+	lowpass({ frequency: 1000, id: "filt" }),
+	lfo({ path: "synth.filt.frequency", shape: "sine", rate: 2, depth: 0.5 }),
+);
 ```
 
 ## Audio Patterns

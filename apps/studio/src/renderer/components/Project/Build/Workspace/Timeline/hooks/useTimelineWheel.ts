@@ -1,7 +1,8 @@
 import { useWheel } from "@use-gesture/react";
-import type { ReactDOMAttributes } from "@use-gesture/react/dist/declarations/src/types";
 import type { ProjectContext } from "../../../../../../models/Context";
 import type { ProjectState } from "../../../../../../models/State/Project";
+import type { ReactDOMAttributes } from "@use-gesture/react/dist/declarations/src/types";
+
 const MIN_PX_PER_BEAT = 5;
 const MAX_PX_PER_BEAT = 200;
 const ZOOM_SENSITIVITY = 0.002;
@@ -12,7 +13,11 @@ interface UseTimelineWheelProps {
 	readonly totalBeats: number;
 }
 
-export function useTimelineWheel({ context, containerRef, totalBeats }: UseTimelineWheelProps): () => ReactDOMAttributes {
+export function useTimelineWheel({
+	context,
+	containerRef,
+	totalBeats,
+}: UseTimelineWheelProps): () => ReactDOMAttributes {
 	const { project, projectStore } = context;
 
 	return useWheel(

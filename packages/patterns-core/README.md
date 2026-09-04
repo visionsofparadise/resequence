@@ -41,9 +41,9 @@ import { Pattern, MidiPattern, ModifierPattern } from "@resequence/patterns-core
 Each pattern carries a `type` tuple for runtime identification:
 
 ```typescript
-Pattern.is(p)           // ["pattern", ...]
-MidiPattern.is(p)       // ["pattern", "midi", ...]
-ModifierPattern.is(p)   // ["pattern", "midi", "modifier", ...]
+Pattern.is(p); // ["pattern", ...]
+MidiPattern.is(p); // ["pattern", "midi", ...]
+ModifierPattern.is(p); // ["pattern", "midi", "modifier", ...]
 ```
 
 ## Containers
@@ -51,10 +51,10 @@ ModifierPattern.is(p)   // ["pattern", "midi", "modifier", ...]
 ```typescript
 import { sequence, layer, gap, toPattern } from "@resequence/patterns-core";
 
-sequence(N.C4(1), N.E4(1), N.G4(2))     // serial — children play one after another
-layer(kick, snare, hihat)                 // parallel — children play simultaneously
-gap(2)                                    // silence with duration
-toPattern(noteOrPattern)                  // normalize Note | Pattern → Pattern
+sequence(N.C4(1), N.E4(1), N.G4(2)); // serial — children play one after another
+layer(kick, snare, hihat); // parallel — children play simultaneously
+gap(2); // silence with duration
+toPattern(noteOrPattern); // normalize Note | Pattern → Pattern
 ```
 
 ## Metadata and Tempo
@@ -63,7 +63,12 @@ toPattern(noteOrPattern)                  // normalize Note | Pattern → Patter
 import { tempo, metadata, timeSignature, marker, cue, region, tuning } from "@resequence/patterns-core";
 
 tempo(pattern, 128);
-tempo(pattern, 120, { keyframes: [{ beat: 0, value: 0.5 }, { beat: 16, value: 1.0 }] });
+tempo(pattern, 120, {
+	keyframes: [
+		{ beat: 0, value: 0.5 },
+		{ beat: 16, value: 1.0 },
+	],
+});
 timeSignature(pattern, [3, 4]);
 marker(pattern, "chorus");
 region(pattern, "verse");
@@ -78,10 +83,10 @@ Abstract pitch system supporting arbitrary tuning systems.
 import { addSteps, pitchToMidi, pitchKey, pitchToCents } from "@resequence/patterns-core";
 import type { Pitch } from "@resequence/patterns-core";
 
-addSteps(pitch, 7)              // shift by 7 steps with octave wrapping
-pitchToMidi(pitch, tuning)      // { note, bend } for MIDI output
-pitchKey(pitch)                 // single integer key
-pitchToCents(a, b)              // distance in cents
+addSteps(pitch, 7); // shift by 7 steps with octave wrapping
+pitchToMidi(pitch, tuning); // { note, bend } for MIDI output
+pitchKey(pitch); // single integer key
+pitchToCents(a, b); // distance in cents
 ```
 
 ## Notes
@@ -89,9 +94,9 @@ pitchToCents(a, b)              // distance in cents
 ```typescript
 import { note, N, Chromatic } from "@resequence/patterns-core";
 
-N.C4(1)         // quarter note middle C (Chromatic tuning)
-N.Fs3(0.5)      // eighth note F#3
-note(pitch, 2)  // note from any Pitch object
+N.C4(1); // quarter note middle C (Chromatic tuning)
+N.Fs3(0.5); // eighth note F#3
+note(pitch, 2); // note from any Pitch object
 ```
 
 `Chromatic` is the built-in 12-TET A=440 tuning. Other tuning presets are in `@resequence/patterns-utils`.
@@ -121,10 +126,22 @@ const indexed = createIndexTuning(12);
 ## Tree Utilities
 
 ```typescript
-import { walkPatterns, walkNotes, collectNotes, modifyNotes, flatModifyNotes, modifyPatterns, extentOf } from "@resequence/patterns-core";
+import {
+	walkPatterns,
+	walkNotes,
+	collectNotes,
+	modifyNotes,
+	flatModifyNotes,
+	modifyPatterns,
+	extentOf,
+} from "@resequence/patterns-core";
 
-walkPatterns(pattern, (p, absoluteBeat) => { /* depth-first */ });
-walkNotes(pattern, (note, context) => { /* context.id, context.absoluteBeat */ });
+walkPatterns(pattern, (p, absoluteBeat) => {
+	/* depth-first */
+});
+walkNotes(pattern, (note, context) => {
+	/* context.id, context.absoluteBeat */
+});
 const notes = collectNotes(pattern);
 modifyNotes(pattern, (note) => ({ ...note, velocity: 100 }));
 ```
@@ -134,8 +151,8 @@ modifyNotes(pattern, (note) => ({ ...note, velocity: 100 }));
 ```typescript
 import { mute, skip } from "@resequence/patterns-core";
 
-mute(pattern)   // silence without changing duration
-skip(pattern)   // zero duration, removed from timeline
+mute(pattern); // silence without changing duration
+skip(pattern); // zero duration, removed from timeline
 ```
 
 ## Frequency Conversion
@@ -155,8 +172,13 @@ Depend on this package to write modifiers without depending on the full library:
 
 ```typescript
 import {
-	ModifierPattern, ModifierProperties, PatternProperties, Pattern, Note,
-	toPattern, modifyNotes,
+	ModifierPattern,
+	ModifierProperties,
+	PatternProperties,
+	Pattern,
+	Note,
+	toPattern,
+	modifyNotes,
 } from "@resequence/patterns-core";
 
 interface MyModProperties extends ModifierProperties {
@@ -176,9 +198,12 @@ export function myMod(pattern: Pattern | Note, amount: number): MyModPattern {
 	const cloned = resolved.clone({});
 	modifyNotes(cloned, (n) => ({ ...n, velocity: n.velocity * amount }));
 	return new MyModPattern({
-		notes: cloned.notes, children: cloned.children,
-		startBeat: cloned.startBeat, endBeat: cloned.endBeat,
-		input: resolved, amount,
+		notes: cloned.notes,
+		children: cloned.children,
+		startBeat: cloned.startBeat,
+		endBeat: cloned.endBeat,
+		input: resolved,
+		amount,
 	});
 }
 ```

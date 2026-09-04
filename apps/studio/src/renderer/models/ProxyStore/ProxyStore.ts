@@ -1,7 +1,7 @@
-import type { INTERNAL_Op, Snapshot } from "valtio/vanilla";
 import { subscribe, unstable_enableOp } from "valtio/vanilla";
 import type { Mutable } from "../State";
 import type { MutateOptions } from "../State/History";
+import type { INTERNAL_Op, Snapshot } from "valtio/vanilla";
 
 type ValtioOp = INTERNAL_Op;
 
@@ -18,7 +18,11 @@ export class ProxyStore {
 		this._map.set(key, value);
 	}
 
-	mutate<T extends { _key: symbol }>(snapshot: Snapshot<T>, callback: (proxy: Mutable<T>) => void, options?: MutateOptions): void {
+	mutate<T extends { _key: symbol }>(
+		snapshot: Snapshot<T>,
+		callback: (proxy: Mutable<T>) => void,
+		options?: MutateOptions,
+	): void {
 		const proxy = this._map.get(snapshot._key);
 
 		if (!proxy) return;

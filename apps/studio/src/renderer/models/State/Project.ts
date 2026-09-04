@@ -1,7 +1,7 @@
-import type { State } from ".";
 import { useCreateState } from "../ProxyStore/hooks/useCreateState";
-import type { ProxyStore } from "../ProxyStore/ProxyStore";
 import { Transient } from "../Transient";
+import type { State } from ".";
+import type { ProxyStore } from "../ProxyStore/ProxyStore";
 
 export interface OutputGraphViewport {
 	x: number;
@@ -85,7 +85,8 @@ function isPianoRollTarget(value: unknown): value is PianoRollTarget {
 
 	const record = value as Record<string, unknown>;
 
-	if (!Array.isArray(record.sequencePath) || !record.sequencePath.every((item: unknown) => typeof item === "number")) return false;
+	if (!Array.isArray(record.sequencePath) || !record.sequencePath.every((item: unknown) => typeof item === "number"))
+		return false;
 
 	if (typeof record.index !== "number") return false;
 
@@ -100,7 +101,8 @@ function isOutputGraphViewports(value: unknown): value is Record<string, OutputG
 
 		const viewport = entry as Record<string, unknown>;
 
-		if (typeof viewport.x !== "number" || typeof viewport.y !== "number" || typeof viewport.zoom !== "number") return false;
+		if (typeof viewport.x !== "number" || typeof viewport.y !== "number" || typeof viewport.zoom !== "number")
+			return false;
 	}
 
 	return true;

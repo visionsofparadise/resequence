@@ -12,7 +12,13 @@ export interface UnitContext {
 	readonly basePath: string;
 }
 
-export function createUnitContext(audioContext: BaseAudioContext, getSample: (path: string) => Promise<AudioBuffer>, loadModule: (url: string) => Promise<void>, latencyBudget = 0, basePath = "."): UnitContext {
+export function createUnitContext(
+	audioContext: BaseAudioContext,
+	getSample: (path: string) => Promise<AudioBuffer>,
+	loadModule: (url: string) => Promise<void>,
+	latencyBudget = 0,
+	basePath = ".",
+): UnitContext {
 	return {
 		audioContext,
 		driverMap: new Map(),

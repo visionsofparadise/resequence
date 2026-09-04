@@ -5,7 +5,11 @@ interface CuePoint {
 	readonly dwSampleOffset: number;
 }
 
-export async function loadSample(key: string, audioContext: BaseAudioContext, fetchBuffer: (path: string) => Promise<ArrayBuffer>): Promise<AudioBuffer> {
+export async function loadSample(
+	key: string,
+	audioContext: BaseAudioContext,
+	fetchBuffer: (path: string) => Promise<ArrayBuffer>,
+): Promise<AudioBuffer> {
 	const hashIndex = key.indexOf("#");
 
 	if (hashIndex === -1) {

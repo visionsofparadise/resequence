@@ -1,5 +1,6 @@
-import type { Event, Note, ModifierProperties, Pattern, PatternProperties } from "@resequence/patterns-core";
 import { ModifierPattern, toPattern, flatModifyNotes } from "@resequence/patterns-core";
+import type { Event, Note, ModifierProperties, Pattern, PatternProperties } from "@resequence/patterns-core";
+
 export interface EchoProperties extends ModifierProperties {
 	readonly interval: number;
 	readonly repeats: number;
@@ -32,7 +33,12 @@ export class EchoPattern extends ModifierPattern<EchoProperties> {
 	}
 
 	clone(_overrides: Partial<PatternProperties>): EchoPattern {
-		return new EchoPattern({ interval: this.properties.interval, repeats: this.properties.repeats, decay: this.properties.decay, input: this.properties.input });
+		return new EchoPattern({
+			interval: this.properties.interval,
+			repeats: this.properties.repeats,
+			decay: this.properties.decay,
+			input: this.properties.input,
+		});
 	}
 }
 

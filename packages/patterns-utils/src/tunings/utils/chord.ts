@@ -1,6 +1,6 @@
+import { addSteps, layer, N, note, pitchKey } from "@resequence/patterns-core";
 import { Chord } from "tonal";
 import type { LayerPattern, Pitch, TuningNote } from "@resequence/patterns-core";
-import { addSteps, layer, N, note, pitchKey } from "@resequence/patterns-core";
 
 const TONAL_TO_KEY: Record<string, string> = {
 	C: "C",
@@ -46,6 +46,7 @@ export function CD(root: Pitch, quality: string, duration: number): LayerPattern
 		const resolved = resolveTonalNote(pitchClass, root.octave);
 
 		if (!resolved) throw new Error(`Cannot resolve tonal note: ${pitchClass}${root.octave}`);
+
 		const adjusted = pitchKey(resolved) < pitchKey(root) ? addSteps(resolved, resolved.stepsPerOctave) : resolved;
 
 		return note(adjusted, duration);

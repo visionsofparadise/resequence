@@ -1,7 +1,7 @@
-import type { SetupResult, UnitContext, UnitInput } from "@resequence/web-au-core";
 import { Unit } from "@resequence/web-au-core";
 import { z } from "zod";
 import { type FilterEffectUnit, filter } from "./filter";
+import type { SetupResult, UnitContext, UnitInput } from "@resequence/web-au-core";
 
 const linkwitzRileySchema = z.object({
 	frequency: z.number().min(20).max(20000).default(1000).describe("Crossover Frequency"),
@@ -20,8 +20,16 @@ export class LinkwitzRileyUnit extends Unit<typeof linkwitzRileySchema> {
 	}
 
 	protected override _setup(): SetupResult {
-		const first = filter({ mode: this.parameters.filterType.value, frequency: this.parameters.frequency.value, resonance: 0.707 });
-		const second = filter({ mode: this.parameters.filterType.value, frequency: this.parameters.frequency.value, resonance: 0.707 });
+		const first = filter({
+			mode: this.parameters.filterType.value,
+			frequency: this.parameters.frequency.value,
+			resonance: 0.707,
+		});
+		const second = filter({
+			mode: this.parameters.filterType.value,
+			frequency: this.parameters.frequency.value,
+			resonance: 0.707,
+		});
 
 		first.to(second);
 		this.filters = [first, second];
@@ -31,6 +39,7 @@ export class LinkwitzRileyUnit extends Unit<typeof linkwitzRileySchema> {
 
 	protected override _teardown(context: UnitContext): void {
 		for (const unit of this.filters) unit.teardown(context);
+
 		this.filters = [];
 	}
 }

@@ -1,9 +1,30 @@
 import { createTuning } from "@resequence/patterns-core";
 
 const CLASSES = [
-	"C", "Cq", "Cs", "Csq", "D", "Dq", "Ds", "Dsq",
-	"E", "Eq", "F", "Fq", "Fs", "Fsq", "G", "Gq",
-	"Gs", "Gsq", "A", "Aq", "As", "Asq", "B", "Bq",
+	"C",
+	"Cq",
+	"Cs",
+	"Csq",
+	"D",
+	"Dq",
+	"Ds",
+	"Dsq",
+	"E",
+	"Eq",
+	"F",
+	"Fq",
+	"Fs",
+	"Fsq",
+	"G",
+	"Gq",
+	"Gs",
+	"Gsq",
+	"A",
+	"Aq",
+	"As",
+	"Asq",
+	"B",
+	"Bq",
 ] as const;
 
 export const QuarterTone = createTuning({

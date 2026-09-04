@@ -1,5 +1,6 @@
-import type { Event, Note, ModifierProperties, Pattern, PatternProperties } from "@resequence/patterns-core";
 import { ModifierPattern, toPattern, modifyNotes, walkNotes } from "@resequence/patterns-core";
+import type { Event, Note, ModifierProperties, Pattern, PatternProperties } from "@resequence/patterns-core";
+
 export interface LegatoProperties extends ModifierProperties {
 	readonly extendLast: boolean;
 }
@@ -15,6 +16,7 @@ export class LegatoPattern extends ModifierPattern<LegatoProperties> {
 			entries.push({ id, absoluteStart: absoluteOffset + note.startBeat });
 		});
 		entries.sort((ea, eb) => ea.absoluteStart - eb.absoluteStart);
+
 		const totalDuration = this.endBeat - this.startBeat;
 
 		const endBeatMap = new Map<string, number>();
@@ -23,6 +25,7 @@ export class LegatoPattern extends ModifierPattern<LegatoProperties> {
 			const entry = entries[noteIndex];
 
 			if (!entry) continue;
+
 			const nextEntry = entries[noteIndex + 1];
 
 			if (nextEntry) {

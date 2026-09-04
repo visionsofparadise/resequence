@@ -1,4 +1,3 @@
-import type { IpcHandlerAction, IpcHandlerParameters, IpcHandlerReturn } from "../models/AsyncRendererIpc";
 import { ShowOpenDialogRendererIpc } from "./Dialog/showOpenDialog/Renderer";
 import { EnsureDirectoryRendererIpc } from "./FileSystem/ensureDirectory/Renderer";
 import { ReadDirectoryRendererIpc } from "./FileSystem/readDirectory/Renderer";
@@ -14,6 +13,7 @@ import { GetAppVersionRendererIpc } from "./System/getAppVersion/Renderer";
 import { GetUserDataPathRendererIpc } from "./System/getUserDataPath/Renderer";
 import { GetWindowIdRendererIpc } from "./System/getWindowId/Renderer";
 import { GenerateWaveformRendererIpc } from "./Waveform/generateWaveform/Renderer";
+import type { IpcHandlerAction, IpcHandlerParameters, IpcHandlerReturn } from "../models/AsyncRendererIpc";
 
 export const ASYNC_RENDERER_IPCS = [
 	EnsureDirectoryRendererIpc,
@@ -34,5 +34,9 @@ export const ASYNC_RENDERER_IPCS = [
 ];
 
 export type AsyncIpcAction = IpcHandlerAction<InstanceType<(typeof ASYNC_RENDERER_IPCS)[number]>>;
-export type AsyncIpcParameters<A extends AsyncIpcAction> = IpcHandlerParameters<Extract<InstanceType<(typeof ASYNC_RENDERER_IPCS)[number]>, { action: A }>>;
-export type AsyncIpcReturn<A extends AsyncIpcAction> = IpcHandlerReturn<Extract<InstanceType<(typeof ASYNC_RENDERER_IPCS)[number]>, { action: A }>>;
+export type AsyncIpcParameters<A extends AsyncIpcAction> = IpcHandlerParameters<
+	Extract<InstanceType<(typeof ASYNC_RENDERER_IPCS)[number]>, { action: A }>
+>;
+export type AsyncIpcReturn<A extends AsyncIpcAction> = IpcHandlerReturn<
+	Extract<InstanceType<(typeof ASYNC_RENDERER_IPCS)[number]>, { action: A }>
+>;

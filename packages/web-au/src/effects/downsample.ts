@@ -1,6 +1,6 @@
-import type { SetupResult, UnitContext, UnitInput } from "@resequence/web-au-core";
 import { Unit, driveParam, live } from "@resequence/web-au-core";
 import { z } from "zod";
+import type { SetupResult, UnitContext, UnitInput } from "@resequence/web-au-core";
 
 const downsampleSchema = z.object({
 	rate: live(z.number().min(100).max(44100).default(22050).describe("Target Rate")),

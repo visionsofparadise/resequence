@@ -3,14 +3,20 @@ import { automate, AutomationPattern, isAutomationEvent } from "./automate";
 
 describe("automate", () => {
 	it("returns an AutomationPattern", () => {
-		const keyframes = [{ beat: 0, value: 0 }, { beat: 4, value: 1 }];
+		const keyframes = [
+			{ beat: 0, value: 0 },
+			{ beat: 4, value: 1 },
+		];
 		const pattern = automate("filter", "synth.filter.cutoff", keyframes);
 		expect(pattern).toBeInstanceOf(AutomationPattern);
 		expect(pattern.endBeat).toBe(4);
 	});
 
 	it("emits automation event on schedule", () => {
-		const keyframes = [{ beat: 0, value: 0 }, { beat: 4, value: 1 }];
+		const keyframes = [
+			{ beat: 0, value: 0 },
+			{ beat: 4, value: 1 },
+		];
 		const pattern = automate("filter", "synth.filter.cutoff", keyframes);
 		const events = pattern.schedule(0, 0, 4);
 		const automationEvents = events.filter(isAutomationEvent);

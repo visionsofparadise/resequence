@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { subscribe } from "valtio/vanilla";
-import type { ProjectContext } from "../../../models/Context";
 import { type ProjectState, serializeProjectState } from "../../../models/State/Project";
+import type { ProjectContext } from "../../../models/Context";
 
 function hashProjectPath(projectPath: string): string {
 	let hash = 0;

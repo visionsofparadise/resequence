@@ -7,7 +7,7 @@ describe("legato", () => {
 		const result = legato(tree);
 		result.setup(0);
 		const notes = collectNotes(result);
-		const sorted = notes.sort((a, b) => (a.absoluteBeat + a.note.startBeat) - (b.absoluteBeat + b.note.startBeat));
+		const sorted = notes.sort((a, b) => a.absoluteBeat + a.note.startBeat - (b.absoluteBeat + b.note.startBeat));
 		// First note should extend to meet second note at beat 0.5
 		expect(sorted[0]!.note.endBeat).toBe(0.5);
 	});

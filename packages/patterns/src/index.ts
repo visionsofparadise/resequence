@@ -1,4 +1,3 @@
-/* eslint-disable barrel-files/avoid-barrel-files */
 export { distribute, DistributePattern } from "./generators/distribute";
 export type { DistributeProperties } from "./generators/distribute";
 export { generative, GenerativePattern } from "./generators/generative";

@@ -1,5 +1,5 @@
-import type { PatternProperties } from "./pattern";
 import { Pattern } from "./pattern";
+import type { PatternProperties } from "./pattern";
 
 export interface GapProperties extends PatternProperties {
 	readonly duration: number;

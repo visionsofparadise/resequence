@@ -1,8 +1,8 @@
-import type { Edge, Node } from "@xyflow/react";
-import type { Unit } from "@resequence/web-au/core";
-import type { Snapshot } from "valtio";
 import type { DerivedDriverMap } from "../../../utils/hijackDrivers";
 import type { UnitNodeData } from "../UnitNode";
+import type { Unit } from "@resequence/web-au/core";
+import type { Edge, Node } from "@xyflow/react";
+import type { Snapshot } from "valtio";
 
 export interface GraphResult {
 	nodes: Array<Node>;

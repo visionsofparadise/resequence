@@ -1,42 +1,43 @@
 {
-  "name": "@resequence/design-system",
-  "type": "module",
-  "exports": {
-    ".": {
-      "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
-    },
-    "./css/tokens.css": "./src/css/tokens.css",
-    "./css/utilities.css": "./src/css/utilities.css"
-  },
-  "files": [
-    "dist",
-    "src/css"
-  ],
-  "sideEffects": false,
-  "scripts": {
-    "build": "tsup",
-    "check": "concurrently \"eslint . --fix --cache --format ../../agent-eslint.js\" \"tsc --noEmit --pretty false 2>&1 | node ../../agent-tsc.js\""
-  },
-  "peerDependencies": {
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0"
-  },
-  "devDependencies": {
-    "@react-three/drei": "^10.7.7",
-    "@react-three/fiber": "^9.5.0",
-    "@types/react": "^19.0.0",
-    "@types/react-dom": "^19.0.0",
-    "@types/three": "^0.183.1",
-    "concurrently": "*",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "three": "^0.183.2",
-    "tsup": "^8.0.0",
-    "typescript": "*"
-  },
-  "dependencies": {
-    "clsx": "^2.1.1",
-    "tailwind-merge": "^3.5.0"
-  }
+	"name": "@resequence/design-system",
+	"type": "module",
+	"exports": {
+		".": {
+			"import": "./dist/index.js",
+			"types": "./dist/index.d.ts"
+		},
+		"./css/tokens.css": "./src/css/tokens.css",
+		"./css/utilities.css": "./src/css/utilities.css"
+	},
+	"files": [
+		"dist",
+		"src/css"
+	],
+	"sideEffects": false,
+	"scripts": {
+		"fix": "eslint . --fix --cache",
+		"check": "concurrently --group \"eslint . --no-cache -f unix\" \"tsc --noEmit --pretty false\"",
+		"build": "tsup"
+	},
+	"peerDependencies": {
+		"react": "^19.0.0",
+		"react-dom": "^19.0.0"
+	},
+	"devDependencies": {
+		"@react-three/drei": "^10.7.7",
+		"@react-three/fiber": "^9.5.0",
+		"@types/react": "^19.0.0",
+		"@types/react-dom": "^19.0.0",
+		"@types/three": "^0.183.1",
+		"concurrently": "*",
+		"react": "^19.0.0",
+		"react-dom": "^19.0.0",
+		"three": "^0.183.2",
+		"tsup": "^8.0.0",
+		"typescript": "*"
+	},
+	"dependencies": {
+		"clsx": "^2.1.1",
+		"tailwind-merge": "^3.5.0"
+	}
 }

@@ -17,7 +17,12 @@ export function addSteps(pitch: Pitch, steps: number): Pitch {
 	const newClass = ((total % spo) + spo) % spo;
 	const octaveShift = Math.floor(total / spo);
 
-	return { class: newClass, stepsPerOctave: pitch.stepsPerOctave, octave: pitch.octave + octaveShift, octaveRatio: pitch.octaveRatio };
+	return {
+		class: newClass,
+		stepsPerOctave: pitch.stepsPerOctave,
+		octave: pitch.octave + octaveShift,
+		octaveRatio: pitch.octaveRatio,
+	};
 }
 
 export function pitchToMidi(pitch: Pitch, tuning?: ResolvedTuning): { note: number; bend: number } {
@@ -58,7 +63,10 @@ export function pitchToCents(from: Pitch, to: Pitch, tuning?: ResolvedTuning): n
 		}
 	}
 
-	return (to.class / to.stepsPerOctave - from.class / from.stepsPerOctave) * 1200 * Math.log2(to.octaveRatio) + (to.octave - from.octave) * 1200;
+	return (
+		(to.class / to.stepsPerOctave - from.class / from.stepsPerOctave) * 1200 * Math.log2(to.octaveRatio) +
+		(to.octave - from.octave) * 1200
+	);
 }
 
 export const NUM_OCTAVES = 11;

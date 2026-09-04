@@ -1,5 +1,14 @@
+import {
+	ModifierPattern,
+	toPattern,
+	addSteps,
+	NUM_OCTAVES,
+	pitchKey,
+	modifyNotes,
+	walkNotes,
+} from "@resequence/patterns-core";
 import type { Event, Note, ModifierProperties, Pattern, PatternProperties, Pitch } from "@resequence/patterns-core";
-import { ModifierPattern, toPattern, addSteps, NUM_OCTAVES, pitchKey, modifyNotes, walkNotes } from "@resequence/patterns-core";
+
 export type VoicingStyle = "close" | "drop2" | "drop3" | "open";
 
 export interface VoicingProperties extends ModifierProperties {
@@ -49,7 +58,10 @@ export class VoicingPattern extends ModifierPattern<VoicingProperties> {
 				return {
 					...note,
 					pitch: newPitch,
-					slides: note.slides?.map((sl) => ({ ...sl, value: sl.value + shift / (note.pitch.stepsPerOctave * NUM_OCTAVES) })),
+					slides: note.slides?.map((sl) => ({
+						...sl,
+						value: sl.value + shift / (note.pitch.stepsPerOctave * NUM_OCTAVES),
+					})),
 				};
 			}
 
@@ -79,9 +91,11 @@ function applyVoicing(group: ReadonlyArray<{ id: string; pitch: Pitch }>, style:
 
 	const close = sorted.map((entry, groupIndex) => {
 		if (groupIndex === 0) return entry.pitch;
+
 		let pitch = entry.pitch;
 
 		while (pitchKey(pitch) > baseKey + spo) pitch = addSteps(pitch, -spo);
+
 		while (pitchKey(pitch) <= baseKey) pitch = addSteps(pitch, spo);
 
 		return pitch;
@@ -91,6 +105,7 @@ function applyVoicing(group: ReadonlyArray<{ id: string; pitch: Pitch }>, style:
 
 	if (style === "drop2") {
 		voiced = close.slice();
+
 		const dropIndex = voiced.length - 2;
 		const secondFromTop = voiced[dropIndex];
 
@@ -99,6 +114,7 @@ function applyVoicing(group: ReadonlyArray<{ id: string; pitch: Pitch }>, style:
 		}
 	} else if (style === "drop3") {
 		voiced = close.slice();
+
 		const dropIndex = voiced.length - 3;
 		const thirdFromTop = voiced[dropIndex];
 
@@ -107,6 +123,7 @@ function applyVoicing(group: ReadonlyArray<{ id: string; pitch: Pitch }>, style:
 		}
 	} else if (style === "open") {
 		voiced = close.slice();
+
 		for (let noteIndex = voiced.length - 1; noteIndex >= 0; noteIndex -= 2) {
 			const pitch = voiced[noteIndex];
 

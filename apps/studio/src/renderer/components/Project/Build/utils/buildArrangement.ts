@@ -87,7 +87,11 @@ function computePortKey(ports: ReadonlyArray<string>): string {
 	return [...ports].sort().join("|");
 }
 
-function computeClipKey(ports: ReadonlyArray<string>, tuning: ResolvedTuning | null, timeSignature: readonly [number, number]): string {
+function computeClipKey(
+	ports: ReadonlyArray<string>,
+	tuning: ResolvedTuning | null,
+	timeSignature: readonly [number, number],
+): string {
 	const portPart = computePortKey(ports);
 	const tuningPart = tuning ? tuning.classes.join(",") : "null";
 	const tsPart = `${timeSignature[0]}/${timeSignature[1]}`;
@@ -149,7 +153,10 @@ function collectSubtree(
 	const patternId = buildPatternId(indexes);
 	const isMidi = MidiPattern.is(pattern);
 
-	const currentPorts = isMidi && pattern.ports.length > 0 ? [...accumulatedPorts, ...pattern.ports.map((port: { key: string }) => port.key)] : accumulatedPorts;
+	const currentPorts =
+		isMidi && pattern.ports.length > 0
+			? [...accumulatedPorts, ...pattern.ports.map((port: { key: string }) => port.key)]
+			: accumulatedPorts;
 
 	if (pattern.unitName === "tempo") {
 		const tempoProps = (pattern as TempoPattern).properties;
@@ -170,7 +177,15 @@ function collectSubtree(
 		};
 
 		for (const [childIndex, { offsetBeats, pattern: child }] of pattern.children.entries()) {
-			collectSubtree(child, offset + offsetBeats, currentPorts, state, [...indexes, childIndex], updatedMeta, tempoPoints);
+			collectSubtree(
+				child,
+				offset + offsetBeats,
+				currentPorts,
+				state,
+				[...indexes, childIndex],
+				updatedMeta,
+				tempoPoints,
+			);
 		}
 
 		return;
@@ -269,11 +284,18 @@ function collectSubtree(
 	}
 }
 
-function collectSequences(pattern: Pattern, offset: number, indexes: ReadonlyArray<number>, meta: MetadataContext, tempoPoints: Array<TempoPoint>): Array<Sequence> {
+function collectSequences(
+	pattern: Pattern,
+	offset: number,
+	indexes: ReadonlyArray<number>,
+	meta: MetadataContext,
+	tempoPoints: Array<TempoPoint>,
+): Array<Sequence> {
 	const sequences: Array<Sequence> = [];
 
 	const isMidi = MidiPattern.is(pattern);
-	const currentPorts: ReadonlyArray<string> = isMidi && pattern.ports.length > 0 ? pattern.ports.map((port: { key: string }) => port.key) : [];
+	const currentPorts: ReadonlyArray<string> =
+		isMidi && pattern.ports.length > 0 ? pattern.ports.map((port: { key: string }) => port.key) : [];
 
 	if (pattern.notes.length > 0) {
 		const state = createSubtreeState();
@@ -373,6 +395,7 @@ function buildClips(state: SubtreeState, endBeat?: number): Array<Clip> {
 				const semitone = pitchToSemitone(note.pitch);
 
 				if (semitone < minPitch) minPitch = semitone;
+
 				if (semitone > maxPitch) maxPitch = semitone;
 
 				if (note.slides) {
@@ -381,6 +404,7 @@ function buildClips(state: SubtreeState, endBeat?: number): Array<Clip> {
 						const slideSemitone = pitchToSemitone(slidePitch);
 
 						if (slideSemitone < minPitch) minPitch = slideSemitone;
+
 						if (slideSemitone > maxPitch) maxPitch = slideSemitone;
 					}
 				}

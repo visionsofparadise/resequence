@@ -1,7 +1,7 @@
-import type { SetupResult, UnitContext, UnitInput, AnyUnit } from "@resequence/web-au-core";
 import { Unit } from "@resequence/web-au-core";
 import { z } from "zod";
 import { gain } from "./gain";
+import type { SetupResult, UnitContext, UnitInput, AnyUnit } from "@resequence/web-au-core";
 
 const mixSchema = z.object({
 	amount: z.number().min(0).max(1).default(0.5).describe("Amount"),

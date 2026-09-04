@@ -1,10 +1,10 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
+import { Unit } from "@resequence/web-au-core";
+import { encodeWav } from "@resequence/web-au-utils";
+import { z } from "zod";
 import type { SetupResult, UnitContext, UnitInput } from "@resequence/web-au-core";
 import type { WavBitDepth } from "@resequence/web-au-utils";
-import { encodeWav } from "@resequence/web-au-utils";
-import { Unit } from "@resequence/web-au-core";
-import { z } from "zod";
 
 export class WriteUnit extends Unit {
 	readonly type = ["unit"];

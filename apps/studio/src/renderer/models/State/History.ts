@@ -1,8 +1,8 @@
-import type { INTERNAL_Op } from "valtio/vanilla";
 import { proxy, ref } from "valtio/vanilla";
+import { useCreateState } from "../ProxyStore/hooks/useCreateState";
 import type { State } from ".";
 import type { ProxyStore } from "../ProxyStore/ProxyStore";
-import { useCreateState } from "../ProxyStore/hooks/useCreateState";
+import type { INTERNAL_Op } from "valtio/vanilla";
 
 type ValtioOp = INTERNAL_Op;
 
@@ -18,7 +18,7 @@ interface HistoryEntry {
 }
 
 function applyOp(targetProxy: object, op: ValtioOp, reverse: boolean): void {
-	const path = op[1] as Array<string | symbol>;
+	const path = op[1];
 	let target = targetProxy as Record<string | symbol, unknown>;
 
 	for (const segment of path.slice(0, -1)) {
@@ -44,7 +44,9 @@ export interface HistoryState extends State {
 	readonly canUndo: boolean;
 	readonly canRedo: boolean;
 	record(targetProxy: object, ops: Array<ValtioOp>, options?: MutateOptions): void;
+
 	undo(): void;
+
 	redo(): void;
 }
 
@@ -102,6 +104,7 @@ export function useHistoryState(store: ProxyStore): HistoryState {
 			if (this._index >= this._stack.length - 1) return;
 
 			this._index++;
+
 			const stackKey = this._stack[this._index];
 
 			if (stackKey === undefined) return;

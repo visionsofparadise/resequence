@@ -1,12 +1,12 @@
 class EnvelopeProcessor extends AudioWorkletProcessor {
 	static get parameterDescriptors() {
 		return [
-			{ name: "gate",    defaultValue: 0,    minValue: 0, maxValue: 1,   automationRate: "a-rate" },
-			{ name: "attack",  defaultValue: 0.01, minValue: 0, maxValue: 100, automationRate: "k-rate" },
-			{ name: "hold",    defaultValue: 0,    minValue: 0, maxValue: 100, automationRate: "k-rate" },
-			{ name: "decay",   defaultValue: 0.1,  minValue: 0, maxValue: 100, automationRate: "k-rate" },
-			{ name: "sustain", defaultValue: 0.7,  minValue: 0, maxValue: 1,   automationRate: "k-rate" },
-			{ name: "release", defaultValue: 0.1,  minValue: 0, maxValue: 100, automationRate: "k-rate" },
+			{ name: "gate", defaultValue: 0, minValue: 0, maxValue: 1, automationRate: "a-rate" },
+			{ name: "attack", defaultValue: 0.01, minValue: 0, maxValue: 100, automationRate: "k-rate" },
+			{ name: "hold", defaultValue: 0, minValue: 0, maxValue: 100, automationRate: "k-rate" },
+			{ name: "decay", defaultValue: 0.1, minValue: 0, maxValue: 100, automationRate: "k-rate" },
+			{ name: "sustain", defaultValue: 0.7, minValue: 0, maxValue: 1, automationRate: "k-rate" },
+			{ name: "release", defaultValue: 0.1, minValue: 0, maxValue: 100, automationRate: "k-rate" },
 		];
 	}
 
@@ -33,7 +33,7 @@ class EnvelopeProcessor extends AudioWorkletProcessor {
 
 		for (let sample = 0; sample < blockSize; sample++) {
 			const gateValue = gate.length > 1 ? gate[sample] : gate[0];
-			const prevGate = sample === 0 ? this._prevGate : (gate.length > 1 ? gate[sample - 1] : gate[0]);
+			const prevGate = sample === 0 ? this._prevGate : gate.length > 1 ? gate[sample - 1] : gate[0];
 
 			if (prevGate < 0.5 && gateValue >= 0.5) {
 				this._state = "attack";
@@ -114,7 +114,7 @@ class EnvelopeProcessor extends AudioWorkletProcessor {
 			for (let channel = 0; channel < output.length; channel++) {
 				const inputChannel = input?.[channel];
 				const outputChannel = output[channel];
-				
+
 				if (outputChannel) {
 					outputChannel[sample] = (inputChannel?.[sample] ?? 0) * this._envValue;
 				}

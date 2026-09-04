@@ -1,5 +1,5 @@
-import type { State } from ".";
 import { useCreateState } from "../ProxyStore/hooks/useCreateState";
+import type { State } from ".";
 import type { ProxyStore } from "../ProxyStore/ProxyStore";
 
 export interface AppState extends State {

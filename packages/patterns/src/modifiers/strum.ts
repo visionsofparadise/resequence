@@ -1,5 +1,6 @@
-import type { Event, Note, ModifierProperties, Pattern, PatternProperties } from "@resequence/patterns-core";
 import { ModifierPattern, toPattern, pitchKey, modifyNotes, walkNotes } from "@resequence/patterns-core";
+import type { Event, Note, ModifierProperties, Pattern, PatternProperties } from "@resequence/patterns-core";
+
 export interface StrumOptions {
 	readonly strumOffset?: number;
 	readonly direction?: "up" | "down";
@@ -38,7 +39,10 @@ export class StrumPattern extends ModifierPattern<StrumProperties> {
 		const shiftMap = new Map<string, number>();
 
 		for (const group of byBeat.values()) {
-			const sorted = direction === "up" ? group.slice().sort((ea, eb) => ea.key - eb.key) : group.slice().sort((ea, eb) => eb.key - ea.key);
+			const sorted =
+				direction === "up"
+					? group.slice().sort((ea, eb) => ea.key - eb.key)
+					: group.slice().sort((ea, eb) => eb.key - ea.key);
 
 			for (const [voiceIndex, entry] of sorted.entries()) {
 				shiftMap.set(entry.id, voiceIndex * strumOffset);

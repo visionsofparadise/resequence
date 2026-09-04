@@ -1,10 +1,10 @@
 import { useMemo, useRef } from "react";
 import { beatsToSeconds } from "resequence";
-import type { WaveformBinary } from "../../../../../../../../shared/utilities/waveform/WaveformCodec";
 import { useTransients } from "../../../../../../../hooks/useTransients";
+import { drawWaveform } from "./utils/drawWaveform";
+import type { WaveformBinary } from "../../../../../../../../shared/utilities/waveform/WaveformCodec";
 import type { BuildContext } from "../../../../../../../models/Context";
 import type { AudioClip } from "../../../../utils/buildArrangement";
-import { drawWaveform } from "./utils/drawWaveform";
 
 const AUDIO_LANE_HEIGHT = 48;
 
@@ -46,7 +46,15 @@ export const AudioCanvas: React.FC<AudioCanvasProps> = ({ clip, context, wavefor
 		const laneEndSeconds = beatsToSeconds(clip.endBeat, tempoMap);
 		const displaySeconds = laneEndSeconds - laneStartSeconds;
 
-		drawWaveform(context2d, waveform, displayWidth, AUDIO_LANE_HEIGHT, playFromSeconds * 1000, displaySeconds * 1000, clip.reversed);
+		drawWaveform(
+			context2d,
+			waveform,
+			displayWidth,
+			AUDIO_LANE_HEIGHT,
+			playFromSeconds * 1000,
+			displaySeconds * 1000,
+			clip.reversed,
+		);
 	});
 
 	return <canvas ref={canvasRef} className="absolute inset-0" />;

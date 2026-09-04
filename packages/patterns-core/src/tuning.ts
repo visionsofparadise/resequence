@@ -1,11 +1,21 @@
+import { note } from "./note";
+import { pitchToMidi } from "./pitch";
 import type { Keyframe } from "./events";
 import type { Note } from "./note";
-import { note } from "./note";
 import type { Pitch } from "./pitch";
-import { pitchToMidi } from "./pitch";
 
 export interface TuningNote extends Pitch {
-	(duration: number, velocityOrOptions?: number | { velocity?: number; lyric?: string; cc?: Partial<Record<number, number>>; slides?: ReadonlyArray<Keyframe> }): Note;
+	(
+		duration: number,
+		velocityOrOptions?:
+			| number
+			| {
+					velocity?: number;
+					lyric?: string;
+					cc?: Partial<Record<number, number>>;
+					slides?: ReadonlyArray<Keyframe>;
+			  },
+	): Note;
 	readonly hz: number;
 	readonly name: string;
 	readonly midi: { readonly note: number; readonly bend: number };
@@ -14,7 +24,14 @@ export interface TuningNote extends Pitch {
 function createTuningNote(pitch: Pitch, hz: number, name: string): TuningNote {
 	const callable = function tuningNote(
 		duration: number,
-		optionsOrVelocity?: number | { velocity?: number; lyric?: string; cc?: Partial<Record<number, number>>; slides?: ReadonlyArray<Keyframe> },
+		optionsOrVelocity?:
+			| number
+			| {
+					velocity?: number;
+					lyric?: string;
+					cc?: Partial<Record<number, number>>;
+					slides?: ReadonlyArray<Keyframe>;
+			  },
 	): Note {
 		const options = typeof optionsOrVelocity === "number" ? { velocity: optionsOrVelocity } : optionsOrVelocity;
 
@@ -64,7 +81,9 @@ export type Tuning<C extends string> = {
 };
 
 export function createTuning<const C extends ReadonlyArray<string>>(config: EqualTuningInput<C>): Tuning<C[number]>;
-export function createTuning<const F extends Record<string, number>>(config: FrequencyTuningInput<F>): Tuning<Extract<keyof F, string>>;
+export function createTuning<const F extends Record<string, number>>(
+	config: FrequencyTuningInput<F>,
+): Tuning<Extract<keyof F, string>>;
 export function createTuning(config: EqualTuningInput | FrequencyTuningInput): Tuning<string> {
 	if ("classes" in config) {
 		return createEqualTuning(config);
@@ -108,7 +127,7 @@ function createEqualTuning(config: EqualTuningInput): Tuning<string> {
 		}
 	}
 
-	return Object.assign(namespace, { config: resolved }) as Tuning<string>;
+	return Object.assign(namespace, { config: resolved });
 }
 
 function createFrequencyTuning(config: FrequencyTuningInput): Tuning<string> {
@@ -143,10 +162,13 @@ function createFrequencyTuning(config: FrequencyTuningInput): Tuning<string> {
 		}
 	}
 
-	return Object.assign(namespace, { config: resolved }) as Tuning<string>;
+	return Object.assign(namespace, { config: resolved });
 }
 
-export function addAliases<C extends string, A extends string>(tuning: Tuning<C>, aliases: { readonly [K in A]: string | readonly [target: string, octaveOffset: number] }): Tuning<C | A> {
+export function addAliases<C extends string, A extends string>(
+	tuning: Tuning<C>,
+	aliases: { readonly [K in A]: string | readonly [target: string, octaveOffset: number] },
+): Tuning<C | A> {
 	const ns = tuning as unknown as Record<string, TuningNote>;
 	const [minOctave, maxOctave] = getOctaveRange(ns);
 
@@ -193,6 +215,7 @@ function getOctaveRange(ns: Record<string, unknown>): [number, number] {
 			const oct = parseInt(match[1] ?? "", 10);
 
 			if (oct < min) min = oct;
+
 			if (oct > max) max = oct;
 		}
 	}

@@ -1,6 +1,6 @@
-import type { SetupResult, UnitContext, UnitInput } from "@resequence/web-au-core";
 import { Unit } from "@resequence/web-au-core";
 import { z } from "zod";
+import type { SetupResult, UnitContext, UnitInput } from "@resequence/web-au-core";
 
 const convolutionSchema = z.object({
 	impulse: z.string().describe("Impulse Response Path"),

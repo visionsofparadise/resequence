@@ -1,11 +1,11 @@
 import { useMemo, useRef, useState } from "react";
 import { useTransients } from "../../../../../hooks/useTransients";
-import type { BuildContext } from "../../../../../models/Context";
-import type { Sequence } from "../../utils/buildArrangement";
 import { AudioClipCard } from "./Clip/Audio/Card";
 import { AutomationClipCard } from "./Clip/Automation/Card";
 import { MidiClipCard } from "./Clip/Midi/Card";
 import { MixerPopover } from "./MixerPopover";
+import type { BuildContext } from "../../../../../models/Context";
+import type { Sequence } from "../../utils/buildArrangement";
 
 interface SequenceCardProps {
 	readonly sequence: Sequence;
@@ -35,7 +35,9 @@ export const SequenceCard: React.FC<SequenceCardProps> = ({ sequence, sequencePa
 
 		for (const clip of sequence.clips) {
 			if (clip.type !== "midi") continue;
+
 			if (seen.has(clip.port)) continue;
+
 			seen.add(clip.port);
 			result.push({
 				name: clip.port,
@@ -47,10 +49,7 @@ export const SequenceCard: React.FC<SequenceCardProps> = ({ sequence, sequencePa
 	}, [sequence.clips, context.portColorMap]);
 
 	return (
-		<div
-			ref={containerRef}
-			className="absolute top-0 border-r border-border diagonal-stripes"
-		>
+		<div ref={containerRef} className="absolute top-0 border-r border-border diagonal-stripes">
 			<div
 				className="relative flex flex-col"
 				onMouseEnter={() => setHovered(true)}

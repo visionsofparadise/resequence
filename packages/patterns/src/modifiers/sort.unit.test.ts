@@ -7,7 +7,7 @@ describe("sort", () => {
 		const result = sort(tree);
 		result.setup(0);
 		const notes = collectNotes(result);
-		const sorted = notes.sort((a, b) => (a.absoluteBeat + a.note.startBeat) - (b.absoluteBeat + b.note.startBeat));
+		const sorted = notes.sort((a, b) => a.absoluteBeat + a.note.startBeat - (b.absoluteBeat + b.note.startBeat));
 		expect(pitchKey(sorted[0]!.note.pitch)).toBeLessThanOrEqual(pitchKey(sorted[1]!.note.pitch));
 		expect(pitchKey(sorted[1]!.note.pitch)).toBeLessThanOrEqual(pitchKey(sorted[2]!.note.pitch));
 	});

@@ -1,5 +1,6 @@
-import type { Event, Note, ModifierProperties, Pattern, PatternProperties } from "@resequence/patterns-core";
 import { ModifierPattern, toPattern, addSteps, NUM_OCTAVES, flatModifyNotes } from "@resequence/patterns-core";
+import type { Event, Note, ModifierProperties, Pattern, PatternProperties } from "@resequence/patterns-core";
+
 export interface HarmonizeProperties extends ModifierProperties {
 	readonly interval: number;
 }
@@ -14,7 +15,10 @@ export class HarmonizePattern extends ModifierPattern<HarmonizeProperties> {
 			{
 				...note,
 				pitch: addSteps(note.pitch, this.properties.interval),
-				slides: note.slides?.map((sl) => ({ ...sl, value: sl.value + this.properties.interval / (note.pitch.stepsPerOctave * NUM_OCTAVES) })),
+				slides: note.slides?.map((sl) => ({
+					...sl,
+					value: sl.value + this.properties.interval / (note.pitch.stepsPerOctave * NUM_OCTAVES),
+				})),
 			},
 		]);
 

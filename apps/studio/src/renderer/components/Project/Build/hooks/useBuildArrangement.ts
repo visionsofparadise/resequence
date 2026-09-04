@@ -1,7 +1,7 @@
 import { useMemo } from "react";
-import type { Router, TempoMap } from "resequence";
-import type { Arrangement } from "../utils/buildArrangement";
 import { buildArrangement } from "../utils/buildArrangement";
+import type { Arrangement } from "../utils/buildArrangement";
+import type { Router, TempoMap } from "resequence";
 
 export function useBuildArrangement(router: Router): {
 	readonly arrangement: Arrangement;

@@ -1,6 +1,6 @@
-import type { NoteEvent, UnitContext, MidiUnitInput } from "@resequence/web-au-core";
 import { MidiUnit } from "@resequence/web-au-core";
 import { z } from "zod";
+import type { NoteEvent, UnitContext, MidiUnitInput } from "@resequence/web-au-core";
 
 const velocityCurveSchema = z.object({});
 

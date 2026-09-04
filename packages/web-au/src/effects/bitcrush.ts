@@ -1,6 +1,6 @@
-import type { SetupResult, UnitContext, UnitInput } from "@resequence/web-au-core";
 import { Unit, driveParam, live } from "@resequence/web-au-core";
 import { z } from "zod";
+import type { SetupResult, UnitContext, UnitInput } from "@resequence/web-au-core";
 
 const bitcrushSchema = z.object({
 	bits: live(z.number().min(1).max(16).default(8).describe("Bit Depth")),

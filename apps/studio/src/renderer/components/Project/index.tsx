@@ -1,13 +1,13 @@
 import React, { useMemo } from "react";
-import type { AppContext, ProjectContext } from "../../models/Context";
 import { ProxyStore } from "../../models/ProxyStore/ProxyStore";
 import { useBuildState } from "../../models/State/Build";
 import { useHistoryState } from "../../models/State/History";
 import { useOverrideState } from "../../models/State/Override";
 import { usePlaybackState } from "../../models/State/Playback";
 import { useProjectState, type ProjectStateInitial } from "../../models/State/Project";
-import { Layout } from "./Layout";
 import { useProjectAutosave } from "./hooks/useAutosave";
+import { Layout } from "./Layout";
+import type { AppContext, ProjectContext } from "../../models/Context";
 
 interface ProjectProps {
 	readonly currentProjectPath: string;

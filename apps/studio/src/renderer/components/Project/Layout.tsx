@@ -1,6 +1,6 @@
-import type { ProjectContext } from "../../models/Context";
 import { Build } from "./Build";
 import { Titlebar } from "./Titlebar";
+import type { ProjectContext } from "../../models/Context";
 
 interface LayoutProps {
 	readonly context: ProjectContext;

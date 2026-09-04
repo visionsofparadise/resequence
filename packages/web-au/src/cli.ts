@@ -1,10 +1,18 @@
-import { Command } from "commander";
-import nodeWebAudio from "node-web-audio-api";
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
-import { collectUnits, computeMaxDuration, computeMaxLatency, createUnitContext, MidiUnit, Unit, type AnyUnit } from "@resequence/web-au-core";
+import {
+	collectUnits,
+	computeMaxDuration,
+	computeMaxLatency,
+	createUnitContext,
+	MidiUnit,
+	Unit,
+	type AnyUnit,
+} from "@resequence/web-au-core";
 import { encodeWav, parseMidiFile, type WavBitDepth } from "@resequence/web-au-utils";
+import { Command } from "commander";
+import nodeWebAudio from "node-web-audio-api";
 
 const { OfflineAudioContext: NodeOfflineAudioContext } = nodeWebAudio;
 
@@ -17,7 +25,7 @@ function createSampleLoader(projectDir: string): (path: string) => Promise<Audio
 
 		const offlineCtx = new NodeOfflineAudioContext(1, 1, 44100);
 
-		return (offlineCtx as unknown as OfflineAudioContext).decodeAudioData(copy);
+		return offlineCtx.decodeAudioData(copy);
 	};
 }
 
@@ -26,6 +34,7 @@ function createModuleLoader(): (url: string) => Promise<void> {
 
 	return (url: string): Promise<void> => {
 		if (loaded.has(url)) return Promise.resolve();
+
 		loaded.add(url);
 
 		return Promise.resolve();
@@ -82,12 +91,18 @@ program
 
 			const maxCleanupMs = notes.length > 0 ? Math.max(...notes.map((note) => note.cleanupMs)) : 0;
 			const durationSeconds = maxCleanupMs / 1000 + 0.5;
-			const offlineContext = new NodeOfflineAudioContext(2, Math.ceil(durationSeconds * sampleRate), sampleRate) as unknown as OfflineAudioContext;
+			const offlineContext = new NodeOfflineAudioContext(2, Math.ceil(durationSeconds * sampleRate), sampleRate);
 
 			process.stdout.write(`Rendering MIDI: ${inputPath}\n`);
 
 			const latencyBudget = computeMaxLatency(unit);
-			const context = createUnitContext(offlineContext as unknown as BaseAudioContext, createSampleLoader(dirname(chainPath)), createModuleLoader(), latencyBudget, dirname(chainPath));
+			const context = createUnitContext(
+				offlineContext,
+				createSampleLoader(dirname(chainPath)),
+				createModuleLoader(),
+				latencyBudget,
+				dirname(chainPath),
+			);
 
 			await unit.setup(context);
 
@@ -98,7 +113,7 @@ program
 
 				const audioBuffer = await offlineContext.startRendering();
 
-				const wav = encodeWav(audioBuffer as unknown as AudioBuffer, options.bitDepth as WavBitDepth);
+				const wav = encodeWav(audioBuffer, options.bitDepth as WavBitDepth);
 
 				writeFileSync(outputPath, Buffer.from(wav));
 
@@ -143,7 +158,13 @@ program
 			const loadModule = createModuleLoader();
 
 			// Probe setup to determine duration from the graph
-			const probeContext = createUnitContext(new NodeOfflineAudioContext(2, 1, sampleRate) as unknown as BaseAudioContext, getSample, loadModule, 0, basePath);
+			const probeContext = createUnitContext(
+				new NodeOfflineAudioContext(2, 1, sampleRate),
+				getSample,
+				loadModule,
+				0,
+				basePath,
+			);
 
 			await unit.setup(probeContext);
 
@@ -158,20 +179,22 @@ program
 
 			// Run with correctly-sized offline context
 			const totalSamples = Math.ceil(duration * sampleRate);
-			const offlineContext = new NodeOfflineAudioContext(2, totalSamples, sampleRate) as unknown as OfflineAudioContext;
+			const offlineContext = new NodeOfflineAudioContext(2, totalSamples, sampleRate);
 			const latencyBudget = computeMaxLatency(unit);
-			const context = createUnitContext(offlineContext as unknown as BaseAudioContext, getSample, loadModule, latencyBudget, basePath);
+			const context = createUnitContext(offlineContext, getSample, loadModule, latencyBudget, basePath);
 
 			await unit.setup(context);
 
 			const graphUnits = collectUnits(unit);
 
 			for (const graphUnit of graphUnits) {
-				if (graphUnit.unitName === "read" && "start" in graphUnit) (graphUnit as { start: (unitContext: typeof context) => void }).start(context);
+				if (graphUnit.unitName === "read" && "start" in graphUnit)
+					(graphUnit as { start: (unitContext: typeof context) => void }).start(context);
 			}
 
 			for (const graphUnit of graphUnits) {
-				if (graphUnit.unitName === "write" && "render" in graphUnit) await (graphUnit as { render: (unitContext: typeof context) => Promise<void> }).render(context);
+				if (graphUnit.unitName === "write" && "render" in graphUnit)
+					await (graphUnit as { render: (unitContext: typeof context) => Promise<void> }).render(context);
 			}
 
 			process.stdout.write("Done.\n");

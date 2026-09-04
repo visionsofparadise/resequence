@@ -1,7 +1,7 @@
-import type { SetupResult, UnitContext, UnitInput } from "@resequence/web-au-core";
 import { driveParam, proxyDriver, Unit, live } from "@resequence/web-au-core";
 import { z } from "zod";
 import { linearGain, type GainEffectUnit } from "./effects/gain";
+import type { SetupResult, UnitContext, UnitInput } from "@resequence/web-au-core";
 
 export type WaveShape = "sine" | "square" | "sawtooth" | "triangle";
 
@@ -60,6 +60,18 @@ export class LfoUnit extends Unit<typeof lfoSchema> {
 	}
 }
 
-export function lfo({ path, shape, rate, depth, id }: { path: string; shape: WaveShape; rate: number; depth: number; id?: string }): LfoUnit {
+export function lfo({
+	path,
+	shape,
+	rate,
+	depth,
+	id,
+}: {
+	path: string;
+	shape: WaveShape;
+	rate: number;
+	depth: number;
+	id?: string;
+}): LfoUnit {
 	return new LfoUnit({ path, shape, rate, depth, id });
 }

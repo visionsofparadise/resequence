@@ -1,5 +1,6 @@
-import type { Event, Note, ModifierProperties, Pattern, PatternProperties } from "@resequence/patterns-core";
 import { ModifierPattern, sequence, toPattern, N, modifyNotes, collectNotes } from "@resequence/patterns-core";
+import type { Event, Note, ModifierProperties, Pattern, PatternProperties } from "@resequence/patterns-core";
+
 export interface QuantizeProperties extends ModifierProperties {
 	readonly subdivision: number;
 	readonly grooveMap: Pattern | undefined;
@@ -30,7 +31,11 @@ export class QuantizePattern extends ModifierPattern<QuantizeProperties> {
 				const absBeat = absoluteOffset + note.startBeat;
 				const cycle = Math.floor(absBeat / grid);
 				const remainder = absBeat % grid;
-				const nearest = groovePositions.reduce((best, grooveTick) => (Math.abs(grooveTick - remainder) < Math.abs(best - remainder) ? grooveTick : best), groovePositions[0] ?? 0);
+				const nearest = groovePositions.reduce(
+					(best, grooveTick) =>
+						Math.abs(grooveTick - remainder) < Math.abs(best - remainder) ? grooveTick : best,
+					groovePositions[0] ?? 0,
+				);
 				const shift = cycle * grid + nearest - absBeat;
 
 				return { ...note, startBeat: note.startBeat + shift, endBeat: note.endBeat + shift };
@@ -41,7 +46,11 @@ export class QuantizePattern extends ModifierPattern<QuantizeProperties> {
 	}
 
 	clone(_overrides: Partial<PatternProperties>): QuantizePattern {
-		return new QuantizePattern({ subdivision: this.properties.subdivision, grooveMap: this.properties.grooveMap, input: this.properties.input });
+		return new QuantizePattern({
+			subdivision: this.properties.subdivision,
+			grooveMap: this.properties.grooveMap,
+			input: this.properties.input,
+		});
 	}
 }
 

@@ -1,5 +1,5 @@
-import type { z } from "zod";
 import type { InferParameters } from "./schema";
+import type { z } from "zod";
 
 export class Parameter<T> {
 	value: T;
@@ -40,7 +40,9 @@ export class LiveParameter {
 
 	set(value: number): void {
 		this.value = value;
+
 		if (this.boundParam) this.boundParam.value = this.driven ? this.normalized : value;
+
 		for (const listener of this.listeners) listener(value);
 	}
 
@@ -98,17 +100,14 @@ function getShape(field: z.ZodType): Record<string, z.ZodType> {
 	return (field as unknown as { shape: Record<string, z.ZodType> }).shape;
 }
 
-export function createParameters<S extends z.ZodObject>(
-	input: object,
-	schema: S,
-): InferParameters<S> {
+export function createParameters<S extends z.ZodObject>(input: object, schema: S): InferParameters<S> {
 	const result: Record<string, unknown> = {};
 
 	const id = (input as { id?: string }).id ?? null;
 	const props = input as Record<string, unknown>;
 
 	for (const [key, field] of Object.entries(getShape(schema))) {
-		const meta = ((field as unknown as { meta(): Record<string, unknown> | undefined }).meta() ?? {});
+		const meta = (field as unknown as { meta(): Record<string, unknown> | undefined }).meta() ?? {};
 		const { inner, defaultValue } = unwrapField(field);
 		const innerType = getDefType(inner);
 		const propValue = props[key];
@@ -137,7 +136,10 @@ export function createParameters<S extends z.ZodObject>(
 				result[key] = items.map((item, index) => {
 					const nestedId = id ? `${id}.${key}.${index}` : null;
 
-					return createParameters({ ...((item ?? {}) as Record<string, unknown>), id: nestedId }, elementSchema as z.ZodObject);
+					return createParameters(
+						{ ...((item ?? {}) as Record<string, unknown>), id: nestedId },
+						elementSchema as z.ZodObject,
+					);
 				});
 			} else {
 				result[key] = new Parameter(propValue ?? defaultValue ?? []);

@@ -1,6 +1,6 @@
+import { N } from "@resequence/patterns-core";
 import { Scale } from "tonal";
 import type { TuningNote } from "@resequence/patterns-core";
-import { N } from "@resequence/patterns-core";
 
 const TONAL_TO_KEY: Record<string, string> = {
 	C: "C",
@@ -53,10 +53,10 @@ export function CS(name: string): ScaleAccessor {
 	const pitchClasses = scaleData.notes;
 
 	return (degree: number, octave?: number): TuningNote => {
-		const len = pitchClasses.length;
+		const length = pitchClasses.length;
 		const zeroBased = degree > 0 ? degree - 1 : degree;
-		const index = ((zeroBased % len) + len) % len;
-		const octaveOffset = Math.floor(zeroBased / len);
+		const index = ((zeroBased % length) + length) % length;
+		const octaveOffset = Math.floor(zeroBased / length);
 
 		const pitchClass = pitchClasses[index] ?? "C";
 		const resolvedOctave = octave ?? rootOctave + octaveOffset;

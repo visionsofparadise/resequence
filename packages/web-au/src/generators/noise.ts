@@ -1,6 +1,6 @@
-import type { NoteEvent, SetupResult, UnitContext, UnitInput } from "@resequence/web-au-core";
 import { z } from "zod";
 import { GeneratorUnit } from "./generator";
+import type { NoteEvent, SetupResult, UnitContext, UnitInput } from "@resequence/web-au-core";
 
 const noiseSchema = z.object({
 	color: z.enum(["white", "pink", "brown"]).default("white").describe("Color"),
@@ -51,6 +51,9 @@ export class NoiseUnit extends GeneratorUnit<typeof noiseSchema> {
 	}
 }
 
-export function noise({ color = "white", seed }: { color?: "white" | "pink" | "brown"; seed?: number } = {}): NoiseUnit {
+export function noise({
+	color = "white",
+	seed,
+}: { color?: "white" | "pink" | "brown"; seed?: number } = {}): NoiseUnit {
 	return new NoiseUnit({ color, seed });
 }

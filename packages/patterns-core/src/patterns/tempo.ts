@@ -1,9 +1,9 @@
-import type { Event, Keyframe, MetadataEvent } from "../events";
 import { PatternsError } from "../error";
+import { Pattern } from "./pattern";
+import type { Event, Keyframe, MetadataEvent } from "../events";
 import type { Port } from "../port";
 import type { ResolvedTuning } from "../tuning";
 import type { PatternProperties } from "./pattern";
-import { Pattern } from "./pattern";
 
 const BPM_RANGE = 1000;
 

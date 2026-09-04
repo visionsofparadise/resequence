@@ -31,10 +31,10 @@ class NoiseProcessor extends AudioWorkletProcessor {
 		if (this._color === "pink") {
 			this._b0 = 0.99886 * this._b0 + white * 0.0555179;
 			this._b1 = 0.99332 * this._b1 + white * 0.0750759;
-			this._b2 = 0.96900 * this._b2 + white * 0.1538520;
-			this._b3 = 0.86650 * this._b3 + white * 0.3104856;
-			this._b4 = 0.55000 * this._b4 + white * 0.5329522;
-			this._b5 = -0.7616 * this._b5 - white * 0.0168980;
+			this._b2 = 0.969 * this._b2 + white * 0.153852;
+			this._b3 = 0.8665 * this._b3 + white * 0.3104856;
+			this._b4 = 0.55 * this._b4 + white * 0.5329522;
+			this._b5 = -0.7616 * this._b5 - white * 0.016898;
 			const pink = this._b0 + this._b1 + this._b2 + this._b3 + this._b4 + this._b5 + this._b6 + white * 0.5362;
 			this._b6 = white * 0.115926;
 			return pink * 0.11;
@@ -63,9 +63,9 @@ class NoiseProcessor extends AudioWorkletProcessor {
 function mulberry32(seed) {
 	let s = seed;
 	return () => {
-		s = (s + 0x6D2B79F5) | 0;
+		s = (s + 0x6d2b79f5) | 0;
 		let t = Math.imul(s ^ (s >>> 15), 1 | s);
-		t = t + Math.imul(t ^ (t >>> 7), 61 | t) ^ t;
+		t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
 		return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
 	};
 }

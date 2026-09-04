@@ -37,26 +37,56 @@ export class StudioDriver {
 	}
 
 	// AudioNode pass-throughs
-	get channelCount(): number { return this._real.channelCount; }
-	set channelCount(value: number) { this._real.channelCount = value; }
-	get channelCountMode(): ChannelCountMode { return this._real.channelCountMode; }
-	set channelCountMode(value: ChannelCountMode) { this._real.channelCountMode = value; }
-	get channelInterpretation(): ChannelInterpretation { return this._real.channelInterpretation; }
-	set channelInterpretation(value: ChannelInterpretation) { this._real.channelInterpretation = value; }
-	get context(): BaseAudioContext { return this._real.context; }
-	get numberOfInputs(): number { return this._real.numberOfInputs; }
-	get numberOfOutputs(): number { return this._real.numberOfOutputs; }
+	get channelCount(): number {
+		return this._real.channelCount;
+	}
+	set channelCount(value: number) {
+		this._real.channelCount = value;
+	}
+	get channelCountMode(): ChannelCountMode {
+		return this._real.channelCountMode;
+	}
+	set channelCountMode(value: ChannelCountMode) {
+		this._real.channelCountMode = value;
+	}
+	get channelInterpretation(): ChannelInterpretation {
+		return this._real.channelInterpretation;
+	}
+	set channelInterpretation(value: ChannelInterpretation) {
+		this._real.channelInterpretation = value;
+	}
+	get context(): BaseAudioContext {
+		return this._real.context;
+	}
+	get numberOfInputs(): number {
+		return this._real.numberOfInputs;
+	}
+	get numberOfOutputs(): number {
+		return this._real.numberOfOutputs;
+	}
 
 	// AudioScheduledSourceNode pass-throughs
-	get onended(): ((this: AudioScheduledSourceNode, ev: Event) => unknown) | null { return this._real.onended; }
-	set onended(value: ((this: AudioScheduledSourceNode, ev: Event) => unknown) | null) { this._real.onended = value; }
+	get onended(): ((this: AudioScheduledSourceNode, ev: Event) => unknown) | null {
+		return this._real.onended;
+	}
+	set onended(value: ((this: AudioScheduledSourceNode, ev: Event) => unknown) | null) {
+		this._real.onended = value;
+	}
 
 	// EventTarget pass-throughs
-	addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void {
+	addEventListener(
+		type: string,
+		listener: EventListenerOrEventListenerObject,
+		options?: boolean | AddEventListenerOptions,
+	): void {
 		this._real.addEventListener(type, listener, options);
 	}
 
-	removeEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | EventListenerOptions): void {
+	removeEventListener(
+		type: string,
+		listener: EventListenerOrEventListenerObject,
+		options?: boolean | EventListenerOptions,
+	): void {
 		this._real.removeEventListener(type, listener, options);
 	}
 
@@ -122,11 +152,21 @@ export class StudioDriverOffset {
 	}
 
 	// AudioParam pass-throughs
-	get defaultValue(): number { return this._driver.realNode.offset.defaultValue; }
-	get minValue(): number { return this._driver.realNode.offset.minValue; }
-	get maxValue(): number { return this._driver.realNode.offset.maxValue; }
-	get automationRate(): AutomationRate { return this._driver.realNode.offset.automationRate; }
-	set automationRate(value: AutomationRate) { this._driver.realNode.offset.automationRate = value; }
+	get defaultValue(): number {
+		return this._driver.realNode.offset.defaultValue;
+	}
+	get minValue(): number {
+		return this._driver.realNode.offset.minValue;
+	}
+	get maxValue(): number {
+		return this._driver.realNode.offset.maxValue;
+	}
+	get automationRate(): AutomationRate {
+		return this._driver.realNode.offset.automationRate;
+	}
+	set automationRate(value: AutomationRate) {
+		this._driver.realNode.offset.automationRate = value;
+	}
 
 	setValueAtTime(value: number, startTime: number): AudioParam {
 		this._driver.scheduler.schedule(this._driver, "setValueAtTime", value, startTime);

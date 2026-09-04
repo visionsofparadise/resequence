@@ -1,7 +1,7 @@
-import type { Unit } from "@resequence/web-au/core";
-import { modifyUnits } from "@resequence/web-au/core";
 import { analyser, linearGain } from "@resequence/web-au";
+import { modifyUnits } from "@resequence/web-au/core";
 import { useMemo } from "react";
+import type { Unit } from "@resequence/web-au/core";
 import type { Router } from "resequence";
 
 export interface InjectResult {

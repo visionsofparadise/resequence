@@ -1,20 +1,20 @@
-import type { Event, Pattern, NoteEvent as PatternNoteEvent } from "@resequence/patterns-core";
-import type { TempoMap } from "@resequence/patterns-utils";
 import { beatsToSeconds, collectMetadata } from "@resequence/patterns-utils";
-import type { MidiUnit } from "@resequence/web-au-core";
 import { computeMaxLatency, createUnitContext } from "@resequence/web-au-core";
-import type { WavBitDepth } from "@resequence/web-au-utils";
-import type { AudioEvent } from "./constructs/audio";
 import { isAudioEvent, isPreloadAudioEvent } from "./constructs/audio";
-import type { AutomationEvent } from "./constructs/automate";
 import { isAutomationEvent } from "./constructs/automate";
 import { dispatchAudioCue, dispatchAudioSetup } from "./dispatch/audio";
 import { dispatchAutomation } from "./dispatch/automation";
 import { mapNoteEvent } from "./mapping";
-import type { PlaybackOptions } from "./playback";
 import { Playback } from "./playback";
 import { encodeWav } from "./rendering/encode-wav";
 import { loadSample } from "./rendering/load-sample";
+import type { AudioEvent } from "./constructs/audio";
+import type { AutomationEvent } from "./constructs/automate";
+import type { PlaybackOptions } from "./playback";
+import type { Event, Pattern, NoteEvent as PatternNoteEvent } from "@resequence/patterns-core";
+import type { TempoMap } from "@resequence/patterns-utils";
+import type { MidiUnit } from "@resequence/web-au-core";
+import type { WavBitDepth } from "@resequence/web-au-utils";
 
 export interface RenderOptions {
 	readonly output: string;
@@ -41,7 +41,13 @@ export interface RenderResult {
 
 export class Router {
 	static is(value: unknown): value is Router {
-		return typeof value === "object" && value !== null && "type" in value && Array.isArray(value.type) && value.type[0] === "router";
+		return (
+			typeof value === "object" &&
+			value !== null &&
+			"type" in value &&
+			Array.isArray(value.type) &&
+			value.type[0] === "router"
+		);
 	}
 
 	readonly type = ["router"];
@@ -81,11 +87,12 @@ export class Router {
 				const cached = sampleCache.get(path);
 
 				if (cached) return cached;
-				const buf = await loadSample(path, dummyCtx, getSample);
 
-				sampleCache.set(path, buf);
+				const loadedSample = await loadSample(path, dummyCtx, getSample);
 
-				return buf;
+				sampleCache.set(path, loadedSample);
+
+				return loadedSample;
 			});
 
 			if (buffer) sampleCache.set(event.sampleKey, buffer);
@@ -114,7 +121,17 @@ export class Router {
 
 			if (!unit) continue;
 
-			const stem = await renderPort(portKey, unit, noteEvents, automationEvents, audioEvents, tempoMap, totalDurationSeconds, sampleCache, options);
+			const stem = await renderPort(
+				portKey,
+				unit,
+				noteEvents,
+				automationEvents,
+				audioEvents,
+				tempoMap,
+				totalDurationSeconds,
+				sampleCache,
+				options,
+			);
 
 			stems.push(stem);
 		}
@@ -197,7 +214,11 @@ function isNoteEvent(event: Event): event is PatternNoteEvent {
 	return event.type === "note";
 }
 
-function filterPorts(keys: ReadonlyArray<string>, include?: ReadonlyArray<string>, exclude?: ReadonlyArray<string>): ReadonlyArray<string> {
+function filterPorts(
+	keys: ReadonlyArray<string>,
+	include?: ReadonlyArray<string>,
+	exclude?: ReadonlyArray<string>,
+): ReadonlyArray<string> {
 	let filtered = [...keys];
 
 	if (include && include.length > 0) {

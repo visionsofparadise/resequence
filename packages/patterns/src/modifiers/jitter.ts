@@ -1,10 +1,12 @@
-import type { Event, Note, ModifierProperties, Pattern, PatternProperties } from "@resequence/patterns-core";
 import { ModifierPattern, toPattern, modifyNotes } from "@resequence/patterns-core";
+import type { Event, Note, ModifierProperties, Pattern, PatternProperties } from "@resequence/patterns-core";
+
 function mulberry32(seed: number): () => number {
 	let state = seed;
 
 	return function (): number {
 		state += 0x6d2b79f5;
+
 		let value = state;
 
 		value = Math.imul(value ^ (value >>> 15), value | 1);
@@ -40,7 +42,11 @@ export class JitterPattern extends ModifierPattern<JitterProperties> {
 	}
 
 	clone(_overrides: Partial<PatternProperties>): JitterPattern {
-		return new JitterPattern({ amount: this.properties.amount, seed: this.properties.seed, input: this.properties.input });
+		return new JitterPattern({
+			amount: this.properties.amount,
+			seed: this.properties.seed,
+			input: this.properties.input,
+		});
 	}
 }
 

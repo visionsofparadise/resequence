@@ -1,5 +1,5 @@
-import type { Tuning } from "@resequence/patterns-core";
 import { addAliases, createTuning } from "@resequence/patterns-core";
+import type { Tuning } from "@resequence/patterns-core";
 
 const CLASSES = ["C", "Cs", "D", "Ds", "E", "F", "Fs", "G", "Gs", "A", "As", "B"] as const;
 

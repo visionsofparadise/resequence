@@ -1,7 +1,7 @@
-import type { Note } from "../note";
-import type { Pattern, RelativeNote } from "../patterns/pattern";
 import { extentOf } from "./extent";
+import type { Note } from "../note";
 import type { NoteContext } from "./walk";
+import type { Pattern, RelativeNote } from "../patterns/pattern";
 
 function buildNoteId(indexes: ReadonlyArray<number>, noteIndex: number): string {
 	if (indexes.length === 0) return `n${noteIndex}`;
@@ -9,7 +9,11 @@ function buildNoteId(indexes: ReadonlyArray<number>, noteIndex: number): string 
 	return `${indexes.join("-")}-n${noteIndex}`;
 }
 
-export function modifyPatterns(pattern: Pattern, callback: (pattern: Pattern, absoluteBeat: number) => void, parentOffset = 0): void {
+export function modifyPatterns(
+	pattern: Pattern,
+	callback: (pattern: Pattern, absoluteBeat: number) => void,
+	parentOffset = 0,
+): void {
 	for (const { offsetBeats, pattern: child } of pattern.children) {
 		modifyPatterns(child, callback, parentOffset + offsetBeats);
 	}
@@ -22,7 +26,12 @@ export function modifyPatterns(pattern: Pattern, callback: (pattern: Pattern, ab
 	callback(pattern, parentOffset);
 }
 
-function modifyNotesInternal(pattern: Pattern, callback: (note: Note, context: NoteContext) => Note, parentOffset: number, parentIndexes: ReadonlyArray<number>): void {
+function modifyNotesInternal(
+	pattern: Pattern,
+	callback: (note: Note, context: NoteContext) => Note,
+	parentOffset: number,
+	parentIndexes: ReadonlyArray<number>,
+): void {
 	for (const [childIndex, { offsetBeats, pattern: child }] of pattern.children.entries()) {
 		modifyNotesInternal(child, callback, parentOffset + offsetBeats, [...parentIndexes, childIndex]);
 	}
@@ -44,11 +53,20 @@ function modifyNotesInternal(pattern: Pattern, callback: (note: Note, context: N
 	pattern.properties.endBeat = endBeat;
 }
 
-export function modifyNotes(pattern: Pattern, callback: (note: Note, context: NoteContext) => Note, parentOffset = 0): void {
+export function modifyNotes(
+	pattern: Pattern,
+	callback: (note: Note, context: NoteContext) => Note,
+	parentOffset = 0,
+): void {
 	modifyNotesInternal(pattern, callback, parentOffset, []);
 }
 
-function flatModifyNotesInternal(pattern: Pattern, callback: (note: Note, context: NoteContext) => ReadonlyArray<Note>, parentOffset: number, parentIndexes: ReadonlyArray<number>): void {
+function flatModifyNotesInternal(
+	pattern: Pattern,
+	callback: (note: Note, context: NoteContext) => ReadonlyArray<Note>,
+	parentOffset: number,
+	parentIndexes: ReadonlyArray<number>,
+): void {
 	for (const [childIndex, { offsetBeats, pattern: child }] of pattern.children.entries()) {
 		flatModifyNotesInternal(child, callback, parentOffset + offsetBeats, [...parentIndexes, childIndex]);
 	}
@@ -72,6 +90,10 @@ function flatModifyNotesInternal(pattern: Pattern, callback: (note: Note, contex
 	pattern.properties.endBeat = endBeat;
 }
 
-export function flatModifyNotes(pattern: Pattern, callback: (note: Note, context: NoteContext) => ReadonlyArray<Note>, parentOffset = 0): void {
+export function flatModifyNotes(
+	pattern: Pattern,
+	callback: (note: Note, context: NoteContext) => ReadonlyArray<Note>,
+	parentOffset = 0,
+): void {
 	flatModifyNotesInternal(pattern, callback, parentOffset, []);
 }

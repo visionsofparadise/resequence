@@ -1,9 +1,9 @@
-import type { Keyframe, NoteEvent as PatternNoteEvent } from "@resequence/patterns-core";
 import { denormalizePitch, pitchToCents } from "@resequence/patterns-core";
-import type { TempoMap } from "@resequence/patterns-utils";
 import { beatsToSeconds } from "@resequence/patterns-utils";
-import type { NoteSlide, NoteEvent as UnitNoteEvent } from "@resequence/web-au-core";
 import { CC } from "@resequence/web-au-utils";
+import type { Keyframe, NoteEvent as PatternNoteEvent } from "@resequence/patterns-core";
+import type { TempoMap } from "@resequence/patterns-utils";
+import type { NoteSlide, NoteEvent as UnitNoteEvent } from "@resequence/web-au-core";
 
 export function mapNoteEvent(event: PatternNoteEvent, tempoMap: TempoMap): UnitNoteEvent {
 	const startMs = beatsToSeconds(event.startBeat, tempoMap) * 1000;
@@ -44,7 +44,12 @@ export function mapNoteEvent(event: PatternNoteEvent, tempoMap: TempoMap): UnitN
 	};
 }
 
-function mapSlides(slides: ReadonlyArray<Keyframe>, event: PatternNoteEvent, startMs: number, tempoMap: TempoMap): ReadonlyArray<NoteSlide> {
+function mapSlides(
+	slides: ReadonlyArray<Keyframe>,
+	event: PatternNoteEvent,
+	startMs: number,
+	tempoMap: TempoMap,
+): ReadonlyArray<NoteSlide> {
 	return slides.map((slide) => {
 		const slideAbsoluteBeat = event.startBeat + slide.beat;
 		const slideTimeMs = beatsToSeconds(slideAbsoluteBeat, tempoMap) * 1000;

@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
+import { deserializeProjectState, type ProjectStateInitial } from "../../models/State/Project";
 import { Project } from ".";
 import type { AppContext } from "../../models/Context";
-import { deserializeProjectState, type ProjectStateInitial } from "../../models/State/Project";
 
 interface ProjectLoaderProps {
 	readonly currentProjectPath: string;
@@ -43,10 +43,6 @@ export const ProjectLoader: React.FC<ProjectLoaderProps> = ({ currentProjectPath
 	if (isLoading) return null;
 
 	return (
-		<Project
-			currentProjectPath={currentProjectPath}
-			initialProjectState={initialProjectState}
-			context={context}
-		/>
+		<Project currentProjectPath={currentProjectPath} initialProjectState={initialProjectState} context={context} />
 	);
 };

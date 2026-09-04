@@ -1,4 +1,3 @@
-import type { NoteEvent, SetupResult, UnitContext, AnyUnit, MidiUnitInput } from "@resequence/web-au-core";
 import { MidiUnit } from "@resequence/web-au-core";
 import { z } from "zod";
 import { envelope, type EnvelopeUnit } from "../midi/envelope";
@@ -8,6 +7,7 @@ import { gain, linearGain, type GainEffectUnit } from "./gain";
 import { mix, type MixNode } from "./mix";
 import { pan, type PanEffectUnit } from "./pan";
 import { reverb } from "./reverb";
+import type { NoteEvent, SetupResult, UnitContext, AnyUnit, MidiUnitInput } from "@resequence/web-au-core";
 
 const ccSchema = z.object({});
 

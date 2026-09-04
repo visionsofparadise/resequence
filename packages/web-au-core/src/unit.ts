@@ -1,9 +1,9 @@
-import type { z } from "zod";
 import { buildCurve } from "./build-curve";
-import type { UnitContext } from "./context";
 import { getOrCreateDriver } from "./driver";
 import { clearLiveParameters, createParameters } from "./parameter";
+import type { UnitContext } from "./context";
 import type { InferParameters } from "./schema";
+import type { z } from "zod";
 
 export interface ModDeclaration {
 	readonly paths: ReadonlyArray<string>;
@@ -35,7 +35,13 @@ export abstract class Unit<S extends z.ZodObject = z.ZodObject> {
 	readonly parameters: InferParameters<S>;
 
 	static is(value: unknown): value is AnyUnit {
-		return typeof value === "object" && value !== null && "type" in value && Array.isArray(value.type) && value.type[0] === "unit";
+		return (
+			typeof value === "object" &&
+			value !== null &&
+			"type" in value &&
+			Array.isArray(value.type) &&
+			value.type[0] === "unit"
+		);
 	}
 
 	readonly entryNodes: Array<AudioNode> = [];
@@ -61,6 +67,7 @@ export abstract class Unit<S extends z.ZodObject = z.ZodObject> {
 
 	async setup(context: UnitContext): Promise<void> {
 		if (this.isSetUp) return;
+
 		this.isSetUp = true;
 
 		const result = await this._setup(context);
@@ -97,6 +104,7 @@ export abstract class Unit<S extends z.ZodObject = z.ZodObject> {
 
 	teardown(context: UnitContext): void {
 		if (!this.isSetUp) return;
+
 		this.isSetUp = false;
 
 		this.unlink();

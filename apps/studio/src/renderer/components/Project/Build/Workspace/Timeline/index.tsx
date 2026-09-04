@@ -1,12 +1,12 @@
-import { useEffect, useMemo, useRef, useState } from "react";
 import { Barcode } from "@resequence/design-system";
-import type { BuildContext } from "../../../../../models/Context";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTransients } from "../../../../../hooks/useTransients";
+import { useTimelinePan } from "./hooks/useTimelinePan";
+import { useTimelineWheel } from "./hooks/useTimelineWheel";
 import { Playhead } from "./Playhead";
 import { Ruler, RULER_HEIGHT } from "./Ruler";
 import { SequenceCard } from "./Sequence";
-import { useTimelinePan } from "./hooks/useTimelinePan";
-import { useTimelineWheel } from "./hooks/useTimelineWheel";
+import type { BuildContext } from "../../../../../models/Context";
 
 interface TimelineProps {
 	readonly context: BuildContext;
@@ -41,7 +41,10 @@ export const Timeline: React.FC<TimelineProps> = ({ context }) => {
 		return () => observer.disconnect();
 	}, []);
 
-	const contentTransients = useMemo(() => [project.timelineScrollX, project.timelineScrollY, project.timelineZoom], [project.timelineScrollX, project.timelineScrollY, project.timelineZoom]);
+	const contentTransients = useMemo(
+		() => [project.timelineScrollX, project.timelineScrollY, project.timelineZoom],
+		[project.timelineScrollX, project.timelineScrollY, project.timelineZoom],
+	);
 
 	useTransients(contentTransients, () => {
 		if (!contentRef.current) return;
@@ -68,9 +71,7 @@ export const Timeline: React.FC<TimelineProps> = ({ context }) => {
 		>
 			<div className="absolute inset-0 z-0 pointer-events-none select-none">
 				<div className="absolute top-4 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1">
-					<span className="type-label text-border leading-none">
-						{totalBars} BARS
-					</span>
+					<span className="type-label text-border leading-none">{totalBars} BARS</span>
 				</div>
 				<div
 					className="absolute top-4 left-4 flex flex-col gap-1"
@@ -78,13 +79,8 @@ export const Timeline: React.FC<TimelineProps> = ({ context }) => {
 				>
 					<Barcode height={40} color="var(--color-border)" />
 				</div>
-				<div
-					className="absolute top-4 right-6"
-					style={{ writingMode: "vertical-rl" }}
-				>
-					<span className="type-display text-[56px] leading-none text-border block">
-						RESEQUENCE
-					</span>
+				<div className="absolute top-4 right-6" style={{ writingMode: "vertical-rl" }}>
+					<span className="type-display text-[56px] leading-none text-border block">RESEQUENCE</span>
 				</div>
 			</div>
 			<Ruler context={context} />

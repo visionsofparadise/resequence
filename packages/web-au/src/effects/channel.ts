@@ -1,9 +1,9 @@
-import type { SetupResult, UnitContext, UnitInput, AnyUnit } from "@resequence/web-au-core";
 import { Unit } from "@resequence/web-au-core";
 import { z } from "zod";
 import { channelMerger } from "./channel-merger";
 import { channelSplitter } from "./channel-splitter";
 import { linearGain } from "./gain";
+import type { SetupResult, UnitContext, UnitInput, AnyUnit } from "@resequence/web-au-core";
 
 export class ChannelEffectUnit extends Unit {
 	readonly type = ["unit"];

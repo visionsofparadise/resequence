@@ -1,8 +1,8 @@
+import { MidiPattern } from "./midi";
+import { Pattern } from "./pattern";
 import type { Note } from "../note";
 import type { MidiPatternProperties } from "./midi";
-import { MidiPattern } from "./midi";
 import type { PatternProperties, RelativeChild, RelativeNote } from "./pattern";
-import { Pattern } from "./pattern";
 
 export interface SequenceProperties extends MidiPatternProperties {
 	readonly inputs?: ReadonlyArray<Pattern | Note>;

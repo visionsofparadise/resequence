@@ -6,11 +6,11 @@ import { Home } from "./components/Home";
 import { ProjectLoader } from "./components/Project/Loader";
 import { ThemeProvider } from "./components/ThemeProvider";
 import { useWindowState } from "./hooks/useWindowState";
-import type { AppContext } from "./models/Context";
 import { MainEvents } from "./models/MainEvents";
 import { ProxyStore } from "./models/ProxyStore/ProxyStore";
 import { useAppState } from "./models/State/App";
 import { APP_SETTINGS_QUERY_KEY, getAppSettings } from "./utils/appSettings";
+import type { AppContext } from "./models/Context";
 
 const logger = new Logger("renderer");
 
@@ -78,7 +78,20 @@ export const App: React.FC = () => {
 	);
 
 	const context = useMemo(
-		(): AppContext | undefined => (appSettings && windowId ? { appSettings, app, appStore, currentProjectPath, setCurrentProjectPath, logger, main, queryClient, windowId } : undefined),
+		(): AppContext | undefined =>
+			appSettings && windowId
+				? {
+						appSettings,
+						app,
+						appStore,
+						currentProjectPath,
+						setCurrentProjectPath,
+						logger,
+						main,
+						queryClient,
+						windowId,
+					}
+				: undefined,
 		[appSettings, app, appStore, currentProjectPath, main, windowId],
 	);
 
@@ -95,14 +108,11 @@ export const App: React.FC = () => {
 			<ThemeProvider context={context}>
 				<ErrorBoundary>
 					{currentProjectPath ? (
-						<ProjectLoader
-							currentProjectPath={currentProjectPath}
-							context={context}
-						/>
+						<ProjectLoader currentProjectPath={currentProjectPath} context={context} />
 					) : (
 						<Home context={context} />
 					)}
-					</ErrorBoundary>
+				</ErrorBoundary>
 			</ThemeProvider>
 		</QueryClientProvider>
 	);

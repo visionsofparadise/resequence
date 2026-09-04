@@ -1,4 +1,3 @@
-/* eslint-disable barrel-files/avoid-barrel-files */
 export { pitchToMidi } from "./pitch";
 export type { Pitch } from "./pitch";
 export { scheduleSlideRamps } from "./schedule-slides";

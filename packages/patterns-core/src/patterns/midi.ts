@@ -1,10 +1,10 @@
-import type { Event, NoteEvent } from "../events";
 import { frequencyToNoteAndBend, pitchToFrequency } from "../frequency";
+import { N } from "../tunings/chromatic";
+import { Pattern } from "./pattern";
+import type { Event, NoteEvent } from "../events";
 import type { Port } from "../port";
 import type { ResolvedTuning } from "../tuning";
-import { N } from "../tunings/chromatic";
 import type { PatternProperties } from "./pattern";
-import { Pattern } from "./pattern";
 
 export interface MidiPatternProperties extends PatternProperties {
 	readonly ports?: ReadonlyArray<Port>;
@@ -30,8 +30,15 @@ export abstract class MidiPattern<P extends MidiPatternProperties = MidiPatternP
 		return this;
 	}
 
-	override schedule(absoluteBeat: number, fromBeats: number, toBeats: number, parentPorts: ReadonlyArray<Port> = [], tuning?: ResolvedTuning): Array<Event> {
-		if (absoluteBeat + this.properties.endBeat <= fromBeats || absoluteBeat + this.properties.startBeat >= toBeats) return [];
+	override schedule(
+		absoluteBeat: number,
+		fromBeats: number,
+		toBeats: number,
+		parentPorts: ReadonlyArray<Port> = [],
+		tuning?: ResolvedTuning,
+	): Array<Event> {
+		if (absoluteBeat + this.properties.endBeat <= fromBeats || absoluteBeat + this.properties.startBeat >= toBeats)
+			return [];
 
 		const effectivePorts = this.ports.length > 0 ? [...parentPorts, ...this.ports] : parentPorts;
 
@@ -45,6 +52,7 @@ export abstract class MidiPattern<P extends MidiPatternProperties = MidiPatternP
 		}
 
 		if (ownEvents.length === 0) return childEvents;
+
 		if (childEvents.length === 0) return ownEvents;
 
 		return [...ownEvents, ...childEvents];

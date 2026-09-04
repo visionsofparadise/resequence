@@ -14,9 +14,22 @@ export interface Note {
 export function note(
 	pitch: Pitch,
 	durationBeats: number,
-	options?: { velocity?: number; lyric?: string; cc?: Partial<Record<number, number>>; slides?: ReadonlyArray<Keyframe> },
+	options?: {
+		velocity?: number;
+		lyric?: string;
+		cc?: Partial<Record<number, number>>;
+		slides?: ReadonlyArray<Keyframe>;
+	},
 ): Note {
 	const velocity = options?.velocity ?? 100;
 
-	return { pitch, startBeat: 0, endBeat: durationBeats, velocity, lyric: options?.lyric, cc: options?.cc, slides: options?.slides };
+	return {
+		pitch,
+		startBeat: 0,
+		endBeat: durationBeats,
+		velocity,
+		lyric: options?.lyric,
+		cc: options?.cc,
+		slides: options?.slides,
+	};
 }

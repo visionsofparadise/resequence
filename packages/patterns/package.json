@@ -1,56 +1,53 @@
 {
-  "name": "@resequence/patterns",
-  "version": "0.1.1",
-  "type": "module",
-  "exports": {
-    ".": {
-      "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
-    },
-    "./core": {
-      "import": "./dist/core.js",
-      "types": "./dist/core.d.ts"
-    },
-    "./utils": {
-      "import": "./dist/utils.js",
-      "types": "./dist/utils.d.ts"
-    }
-  },
-  "bin": {
-    "resequence-patterns": "dist/cli.js"
-  },
-  "files": [
-    "dist"
-  ],
-  "sideEffects": false,
-  "publishConfig": {
-    "access": "public"
-  },
-  "author": "Matt Cavender",
-  "license": "ISC",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/visionsofparadise/resequence.git"
-  },
-  "scripts": {
-    "check": "concurrently \"eslint . --fix --cache --format ../../agent-eslint.js\" \"tsc --noEmit --pretty false 2>&1 | node ../../agent-tsc.js\"",
-    "check:verbose": "concurrently \"eslint .\" \"tsc --noEmit\"",
-    "lint": "eslint . --fix --cache --format ../../agent-eslint.js",
-    "lint:verbose": "eslint .",
-    "lint:fix": "eslint . --fix",
-    "build": "tsup",
-    "unit": "vitest run unit"
-  },
-  "devDependencies": {
-    "concurrently": "*",
-    "tsup": "^8.0.0",
-    "typescript": "*",
-    "vitest": "^3.0.0"
-  },
-  "dependencies": {
-    "@resequence/patterns-core": "*",
-    "@resequence/patterns-utils": "*",
-    "commander": "^14.0.3",
-    "tsx": "^4.21.0"
-  }
+	"name": "@resequence/patterns",
+	"version": "0.1.1",
+	"type": "module",
+	"exports": {
+		".": {
+			"import": "./dist/index.js",
+			"types": "./dist/index.d.ts"
+		},
+		"./core": {
+			"import": "./dist/core.js",
+			"types": "./dist/core.d.ts"
+		},
+		"./utils": {
+			"import": "./dist/utils.js",
+			"types": "./dist/utils.d.ts"
+		}
+	},
+	"bin": {
+		"resequence-patterns": "dist/cli.js"
+	},
+	"files": [
+		"dist"
+	],
+	"sideEffects": false,
+	"publishConfig": {
+		"access": "public"
+	},
+	"author": "Matt Cavender",
+	"license": "ISC",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/visionsofparadise/resequence.git"
+	},
+	"scripts": {
+		"fix": "eslint . --fix --cache",
+		"check": "concurrently --group \"eslint . --no-cache -f unix\" \"tsc --noEmit --pretty false\"",
+		"build": "tsup",
+		"unit": "vitest run unit"
+	},
+	"devDependencies": {
+		"concurrently": "*",
+		"tsup": "^8.0.0",
+		"typescript": "*",
+		"vitest": "^3.0.0"
+	},
+	"dependencies": {
+		"@resequence/patterns-core": "*",
+		"@resequence/patterns-utils": "*",
+		"commander": "^14.0.3",
+		"tsx": "^4.21.0"
+	}
 }

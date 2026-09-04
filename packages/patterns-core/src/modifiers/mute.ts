@@ -1,5 +1,5 @@
-import type { Event } from "../events";
 import { ModifierPattern } from "../patterns/modifier";
+import type { Event } from "../events";
 import type { Pattern, PatternProperties } from "../patterns/pattern";
 
 export class MutePattern extends ModifierPattern {

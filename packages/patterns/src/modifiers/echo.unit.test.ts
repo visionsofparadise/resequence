@@ -13,7 +13,7 @@ describe("echo", () => {
 		const result = echo(N.C4(1), 0.5, 2, 0.5);
 		result.setup(0);
 		const notes = collectNotes(result);
-		const sorted = notes.sort((a, b) => (a.absoluteBeat + a.note.startBeat) - (b.absoluteBeat + b.note.startBeat));
+		const sorted = notes.sort((a, b) => a.absoluteBeat + a.note.startBeat - (b.absoluteBeat + b.note.startBeat));
 		expect(sorted[1]!.note.velocity).toBe(50); // 100 * 0.5
 		expect(sorted[2]!.note.velocity).toBe(25); // 100 * 0.5^2
 	});

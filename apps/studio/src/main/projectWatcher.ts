@@ -1,6 +1,6 @@
-import type { BrowserWindow } from "electron";
 import chokidar, { type FSWatcher } from "chokidar";
 import { emitToRenderer } from "../shared/utilities/emitToRenderer";
+import type { BrowserWindow } from "electron";
 
 let watcher: FSWatcher | null = null;
 
@@ -11,6 +11,7 @@ export const openProjectWatcher = async (dirPath: string, browserWindow: Browser
 
 	const emit = (): void => {
 		if (debounceTimer) clearTimeout(debounceTimer);
+
 		debounceTimer = setTimeout(() => {
 			emitToRenderer(browserWindow, "change");
 		}, 200);

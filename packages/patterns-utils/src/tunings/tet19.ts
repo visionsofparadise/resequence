@@ -1,8 +1,25 @@
 import { createTuning } from "@resequence/patterns-core";
 
 const CLASSES = [
-	"C", "Cs", "Db", "D", "Ds", "Eb", "E", "Es", "F", "Fs",
-	"Gb", "G", "Gs", "Ab", "A", "As", "Bb", "B", "Bs",
+	"C",
+	"Cs",
+	"Db",
+	"D",
+	"Ds",
+	"Eb",
+	"E",
+	"Es",
+	"F",
+	"Fs",
+	"Gb",
+	"G",
+	"Gs",
+	"Ab",
+	"A",
+	"As",
+	"Bb",
+	"B",
+	"Bs",
 ] as const;
 
 export const Tet19 = createTuning({

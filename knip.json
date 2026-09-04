@@ -1,0 +1,24 @@
+{
+	"$schema": "https://unpkg.com/knip@6/schema.json",
+	"ignore": [".githooks/pre-push.mjs"],
+	"ignoreDependencies": [
+		"prettier",
+		"@commitlint/cli",
+		"eslint-formatter-unix",
+		"textlint-filter-rule-comments",
+		"textlint-rule-no-dead-link"
+	],
+	"workspaces": {
+		".": {},
+		"apps/*": {
+			"project": ["src/**/*.{ts,tsx}"]
+		},
+		"packages/*": {
+			"project": ["src/**/*.{ts,tsx}"]
+		},
+		"apps/studio": {
+			"project": ["src/**/*.{ts,tsx}"],
+			"entry": ["src/main/index.ts", "src/preload/index.ts", "forge.config.ts"]
+		}
+	}
+}

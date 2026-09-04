@@ -7,3 +7,6 @@ out/
 .turbo/
 test-output/
 binaries/
+.tools/
+tsconfig.tsbuildinfo
+.stylelintcache

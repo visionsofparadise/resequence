@@ -1,9 +1,9 @@
-import type { SetupResult, UnitContext, UnitInput } from "@resequence/web-au-core";
 import { Unit, proxyDriver, live } from "@resequence/web-au-core";
 import { z } from "zod";
 import { delay, type DelayEffectUnit } from "./delay";
 import { allpass, lowpass, type FilterEffectUnit } from "./filter";
 import { linearGain, type GainEffectUnit } from "./gain";
+import type { SetupResult, UnitContext, UnitInput } from "@resequence/web-au-core";
 
 const COMB_DELAYS = [1116, 1188, 1277, 1356].map((samples) => (samples / 44100) * 1000);
 const ALLPASS_DELAYS = [556, 441].map((samples) => (samples / 44100) * 1000);
@@ -102,7 +102,15 @@ export class ReverbEffectUnit extends Unit<typeof reverbSchema> {
 	}
 }
 
-export function reverb({ roomSize, damping, id }: { roomSize: number; damping: number; id?: string }): ReverbEffectUnit {
+export function reverb({
+	roomSize,
+	damping,
+	id,
+}: {
+	roomSize: number;
+	damping: number;
+	id?: string;
+}): ReverbEffectUnit {
 	return new ReverbEffectUnit({ roomSize, damping, id });
 }
 

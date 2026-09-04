@@ -1,13 +1,13 @@
 import { useMemo, useRef } from "react";
 import { useTransients } from "../../../../../../../hooks/useTransients";
-import type { BuildContext } from "../../../../../../../models/Context";
-import type { ProjectState } from "../../../../../../../models/State/Project";
-import type { MidiClip, Sequence } from "../../../../utils/buildArrangement";
 import { PianoRollGrid } from "../../../PianoRoll/Grid";
 import { PianoRollNote } from "../../../PianoRoll/Note";
 import { PianoRollPitchSlide } from "../../../PianoRoll/PitchSlide";
 import { computeClipHeight } from "../../layout";
 import { PatternBoundary } from "./PatternBoundary";
+import type { BuildContext } from "../../../../../../../models/Context";
+import type { ProjectState } from "../../../../../../../models/State/Project";
+import type { MidiClip, Sequence } from "../../../../utils/buildArrangement";
 
 const MIN_PITCH_RANGE = 12;
 const CLICK_THRESHOLD = 4;
@@ -85,23 +85,12 @@ export const MidiClipCard: React.FC<MidiClipCardProps> = ({ clip, sequence, sequ
 			/>
 
 			{clip.notes.map((note, index) => (
-				<PianoRollNote
-					key={`n-${index}`}
-					note={note}
-					clip={clip}
-					context={context}
-				/>
+				<PianoRollNote key={`n-${index}`} note={note} clip={clip} context={context} />
 			))}
 
 			{clip.notes.map((note, ni) =>
 				note.slides && note.slides.length > 0 ? (
-					<PianoRollPitchSlide
-						key={`s-${ni}`}
-						note={note}
-						clip={clip}
-						sequence={sequence}
-						context={context}
-					/>
+					<PianoRollPitchSlide key={`s-${ni}`} note={note} clip={clip} sequence={sequence} context={context} />
 				) : null,
 			)}
 
@@ -116,9 +105,9 @@ export const MidiClipCard: React.FC<MidiClipCardProps> = ({ clip, sequence, sequ
 			))}
 
 			<div className="pointer-events-none absolute left-1 top-0.5 z-10 flex items-center gap-1">
-			<div className="size-1.5 shrink-0 rounded-full" style={{ backgroundColor: color }} />
-			<span className="type-label">{clip.port}</span>
-		</div>
+				<div className="size-1.5 shrink-0 rounded-full" style={{ backgroundColor: color }} />
+				<span className="type-label">{clip.port}</span>
+			</div>
 		</div>
 	);
 };

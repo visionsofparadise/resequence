@@ -1,5 +1,5 @@
-import type { IpcHandlerDependencies } from "../AsyncMainIpc";
 import { Logger } from "./Logger";
+import type { IpcHandlerDependencies } from "../AsyncMainIpc";
 
 type ConsoleMessageLevel = 0 | 1 | 2 | 3;
 
@@ -10,7 +10,10 @@ const levelMap: Record<ConsoleMessageLevel, Logger.Level> = {
 	3: "error",
 };
 
-export const interceptRendererLogs = (transactionId: string, dependencies: Pick<IpcHandlerDependencies, "browserWindow" | "winston">) => {
+export const interceptRendererLogs = (
+	transactionId: string,
+	dependencies: Pick<IpcHandlerDependencies, "browserWindow" | "winston">,
+) => {
 	const { browserWindow, winston } = dependencies;
 
 	const logger = new Logger("renderer", winston);

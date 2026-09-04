@@ -18,7 +18,10 @@ export const PianoRollNote: React.FC<PianoRollNoteProps> = ({ note, clip, contex
 	const baseOpacity = 0.4 + (note.velocity / 127) * 0.6;
 	const unitColor = context.portColorMap.get(clip.port) ?? "var(--color-text-secondary)";
 
-	const transients = useMemo(() => [project.timelineZoom, project.pitchZoom], [project.timelineZoom, project.pitchZoom]);
+	const transients = useMemo(
+		() => [project.timelineZoom, project.pitchZoom],
+		[project.timelineZoom, project.pitchZoom],
+	);
 
 	useTransients(transients, () => {
 		if (!ref.current) return;

@@ -1,9 +1,9 @@
-import type { NoteEvent, SetupResult, UnitContext, UnitInput } from "@resequence/web-au-core";
 import { getOrCreateDriver } from "@resequence/web-au-core";
-import type { Pitch } from "@resequence/web-au-utils";
 import { pitchToMidi, scheduleSlideRamps } from "@resequence/web-au-utils";
 import { z } from "zod";
 import { GeneratorUnit } from "./generator";
+import type { NoteEvent, SetupResult, UnitContext, UnitInput } from "@resequence/web-au-core";
+import type { Pitch } from "@resequence/web-au-utils";
 
 export interface SamplerZone {
 	readonly sample: string;
@@ -15,7 +15,13 @@ export interface SamplerZone {
 }
 
 type SamplerConfig =
-	| { readonly kind: "single"; readonly path: string; readonly rootMidi?: number; readonly loopStartMs?: number; readonly loopEndMs?: number }
+	| {
+			readonly kind: "single";
+			readonly path: string;
+			readonly rootMidi?: number;
+			readonly loopStartMs?: number;
+			readonly loopEndMs?: number;
+	  }
 	| { readonly kind: "zones"; readonly zones: ReadonlyArray<NormalizedZone> };
 
 interface NormalizedZone {
@@ -100,7 +106,13 @@ export class SamplerUnit extends GeneratorUnit {
 		source.playbackRate.value = result.playbackRate;
 
 		if (ne.slides && ne.slides.length > 0) {
-			scheduleSlideRamps(source.playbackRate, result.playbackRate, ne.slides, ne.startMs / 1000, (cents) => result.playbackRate * 2 ** (cents / 1200));
+			scheduleSlideRamps(
+				source.playbackRate,
+				result.playbackRate,
+				ne.slides,
+				ne.startMs / 1000,
+				(cents) => result.playbackRate * 2 ** (cents / 1200),
+			);
 		}
 
 		if (result.loopStartMs !== undefined && result.loopEndMs !== undefined) {
@@ -152,10 +164,17 @@ interface ResolvedSample {
 	readonly loopEndMs?: number;
 }
 
-function resolveFromZones(zones: ReadonlyArray<NormalizedZone>, midiNote: number, velocity: number, sampleMap: ReadonlyMap<string, AudioBuffer>): ResolvedSample | null {
+function resolveFromZones(
+	zones: ReadonlyArray<NormalizedZone>,
+	midiNote: number,
+	velocity: number,
+	sampleMap: ReadonlyMap<string, AudioBuffer>,
+): ResolvedSample | null {
 	if (zones.length === 0) return null;
 
-	const anchored = zones.filter((zone): zone is NormalizedZone & { root: Pitch } => zone.root !== undefined).sort((left, right) => pitchToMidi(left.root).note - pitchToMidi(right.root).note);
+	const anchored = zones
+		.filter((zone): zone is NormalizedZone & { root: Pitch } => zone.root !== undefined)
+		.sort((left, right) => pitchToMidi(left.root).note - pitchToMidi(right.root).note);
 
 	if (anchored.length === 0) {
 		const zone = selectVelocityLayer(zones, velocity);
@@ -191,7 +210,10 @@ function resolveFromZones(zones: ReadonlyArray<NormalizedZone>, midiNote: number
 	return buffer ? { buffer, playbackRate, loopStartMs: zone.loopStartMs, loopEndMs: zone.loopEndMs } : null;
 }
 
-function selectVelocityLayer<T extends { velocity?: number }>(layers: ReadonlyArray<T>, velocity: number): T | undefined {
+function selectVelocityLayer<T extends { velocity?: number }>(
+	layers: ReadonlyArray<T>,
+	velocity: number,
+): T | undefined {
 	if (layers.length === 0) return undefined;
 
 	const sorted = [...layers].sort((left, right) => (left.velocity ?? 0) - (right.velocity ?? 0));
@@ -213,18 +235,39 @@ function selectVelocityLayer<T extends { velocity?: number }>(layers: ReadonlyAr
 function normalizeZone(zone: SamplerZone): NormalizedZone {
 	const sample = zone.region && !zone.sample.includes("#") ? `${zone.sample}#${zone.region}` : zone.sample;
 
-	return { sample, root: zone.root, velocity: zone.velocity, loopStartMs: zone.loopStartMs, loopEndMs: zone.loopEndMs };
+	return {
+		sample,
+		root: zone.root,
+		velocity: zone.velocity,
+		loopStartMs: zone.loopStartMs,
+		loopEndMs: zone.loopEndMs,
+	};
 }
 
-export function sampler(source: string, options?: { root?: Pitch; loopStartMs?: number; loopEndMs?: number; id?: string }): SamplerUnit;
+export function sampler(
+	source: string,
+	options?: { root?: Pitch; loopStartMs?: number; loopEndMs?: number; id?: string },
+): SamplerUnit;
 export function sampler(source: ReadonlyArray<SamplerZone>, options?: { id?: string }): SamplerUnit;
-export function sampler(source: string | ReadonlyArray<SamplerZone>, options?: { root?: Pitch; loopStartMs?: number; loopEndMs?: number; id?: string }): SamplerUnit {
+export function sampler(
+	source: string | ReadonlyArray<SamplerZone>,
+	options?: { root?: Pitch; loopStartMs?: number; loopEndMs?: number; id?: string },
+): SamplerUnit {
 	const id = options?.id;
 
 	if (typeof source === "string") {
 		const rootMidi = options?.root !== undefined ? pitchToMidi(options.root).note : undefined;
 
-		return new SamplerUnit({ id, config: { kind: "single", path: source, rootMidi, loopStartMs: options?.loopStartMs, loopEndMs: options?.loopEndMs } });
+		return new SamplerUnit({
+			id,
+			config: {
+				kind: "single",
+				path: source,
+				rootMidi,
+				loopStartMs: options?.loopStartMs,
+				loopEndMs: options?.loopEndMs,
+			},
+		});
 	}
 
 	if (source.length === 0) throw new Error("sampler(): zones array must not be empty");

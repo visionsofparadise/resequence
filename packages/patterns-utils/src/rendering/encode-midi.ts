@@ -1,5 +1,5 @@
-import type { MidiData, MidiEvent } from "midi-file";
 import { writeMidi } from "midi-file";
+import type { MidiData, MidiEvent } from "midi-file";
 
 export interface MidiPitchBend {
 	readonly tick: number;
@@ -25,13 +25,17 @@ export interface EncodeMidiOptions {
 }
 
 export function encodeMidi(tracks: Map<string, ReadonlyArray<MidiNote>>, options: EncodeMidiOptions): Uint8Array {
-	const tempoChanges = options.tempoChanges && options.tempoChanges.length > 0 ? [...options.tempoChanges] : [{ beat: 0, bpm: 120 }];
+	const tempoChanges =
+		options.tempoChanges && options.tempoChanges.length > 0 ? [...options.tempoChanges] : [{ beat: 0, bpm: 120 }];
 
 	if ((tempoChanges[0]?.beat ?? 0) !== 0) {
 		tempoChanges.unshift({ beat: 0, bpm: 120 });
 	}
 
-	const timeSigChanges = options.timeSignatureChanges && options.timeSignatureChanges.length > 0 ? [...options.timeSignatureChanges] : [{ beat: 0, timeSignature: [4, 4] as const }];
+	const timeSigChanges =
+		options.timeSignatureChanges && options.timeSignatureChanges.length > 0
+			? [...options.timeSignatureChanges]
+			: [{ beat: 0, timeSignature: [4, 4] as const }];
 
 	if ((timeSigChanges[0]?.beat ?? 0) !== 0) {
 		timeSigChanges.unshift({ beat: 0, timeSignature: [4, 4] as const });
@@ -40,11 +44,17 @@ export function encodeMidi(tracks: Map<string, ReadonlyArray<MidiNote>>, options
 	const tempoTimeEvents: Array<{ tick: number; event: MidiEvent }> = [];
 
 	for (const point of tempoChanges) {
-		tempoTimeEvents.push({ tick: Math.round(point.beat * options.ppq), event: { deltaTime: 0, type: "setTempo", microsecondsPerBeat: Math.round(60_000_000 / point.bpm), meta: true } });
+		tempoTimeEvents.push({
+			tick: Math.round(point.beat * options.ppq),
+			event: { deltaTime: 0, type: "setTempo", microsecondsPerBeat: Math.round(60_000_000 / point.bpm), meta: true },
+		});
 	}
 
 	for (const marker of options.markers ?? []) {
-		tempoTimeEvents.push({ tick: Math.round(marker.beat * options.ppq), event: { deltaTime: 0, type: "marker", text: marker.name, meta: true } });
+		tempoTimeEvents.push({
+			tick: Math.round(marker.beat * options.ppq),
+			event: { deltaTime: 0, type: "marker", text: marker.name, meta: true },
+		});
 	}
 
 	for (const point of timeSigChanges) {
@@ -53,7 +63,15 @@ export function encodeMidi(tracks: Map<string, ReadonlyArray<MidiNote>>, options
 
 		tempoTimeEvents.push({
 			tick: Math.round(point.beat * options.ppq),
-			event: { deltaTime: 0, type: "timeSignature", numerator, denominator: denominatorPower, metronome: 24, thirtyseconds: 8, meta: true },
+			event: {
+				deltaTime: 0,
+				type: "timeSignature",
+				numerator,
+				denominator: denominatorPower,
+				metronome: 24,
+				thirtyseconds: 8,
+				meta: true,
+			},
 		});
 	}
 
@@ -102,12 +120,30 @@ function buildTrackEvents(name: string, notes: ReadonlyArray<MidiNote>): Array<M
 
 	for (const [channel, bendRange] of bendRanges) {
 		if (bendRange > 2) {
-			timeEvents.push({ tick: 0, event: { deltaTime: 0, type: "controller", channel, controllerType: 101, value: 0 } });
-			timeEvents.push({ tick: 0, event: { deltaTime: 0, type: "controller", channel, controllerType: 100, value: 0 } });
-			timeEvents.push({ tick: 0, event: { deltaTime: 0, type: "controller", channel, controllerType: 6, value: bendRange } });
-			timeEvents.push({ tick: 0, event: { deltaTime: 0, type: "controller", channel, controllerType: 38, value: 0 } });
-			timeEvents.push({ tick: 0, event: { deltaTime: 0, type: "controller", channel, controllerType: 101, value: 127 } });
-			timeEvents.push({ tick: 0, event: { deltaTime: 0, type: "controller", channel, controllerType: 100, value: 127 } });
+			timeEvents.push({
+				tick: 0,
+				event: { deltaTime: 0, type: "controller", channel, controllerType: 101, value: 0 },
+			});
+			timeEvents.push({
+				tick: 0,
+				event: { deltaTime: 0, type: "controller", channel, controllerType: 100, value: 0 },
+			});
+			timeEvents.push({
+				tick: 0,
+				event: { deltaTime: 0, type: "controller", channel, controllerType: 6, value: bendRange },
+			});
+			timeEvents.push({
+				tick: 0,
+				event: { deltaTime: 0, type: "controller", channel, controllerType: 38, value: 0 },
+			});
+			timeEvents.push({
+				tick: 0,
+				event: { deltaTime: 0, type: "controller", channel, controllerType: 101, value: 127 },
+			});
+			timeEvents.push({
+				tick: 0,
+				event: { deltaTime: 0, type: "controller", channel, controllerType: 100, value: 127 },
+			});
 		}
 	}
 
@@ -138,13 +174,22 @@ function buildTrackEvents(name: string, notes: ReadonlyArray<MidiNote>): Array<M
 		if (mn.cc) {
 			for (const [ccKey, ccValue] of Object.entries(mn.cc)) {
 				if (ccValue !== undefined) {
-					timeEvents.push({ tick: mn.tick, event: { deltaTime: 0, type: "controller", channel, controllerType: Number(ccKey), value: ccValue } });
+					timeEvents.push({
+						tick: mn.tick,
+						event: { deltaTime: 0, type: "controller", channel, controllerType: Number(ccKey), value: ccValue },
+					});
 				}
 			}
 		}
 
-		timeEvents.push({ tick: mn.tick, event: { deltaTime: 0, type: "noteOn", channel, noteNumber: mn.note, velocity: mn.velocity } });
-		timeEvents.push({ tick: mn.tick + mn.durationTicks, event: { deltaTime: 0, type: "noteOff", channel, noteNumber: mn.note, velocity: 0 } });
+		timeEvents.push({
+			tick: mn.tick,
+			event: { deltaTime: 0, type: "noteOn", channel, noteNumber: mn.note, velocity: mn.velocity },
+		});
+		timeEvents.push({
+			tick: mn.tick + mn.durationTicks,
+			event: { deltaTime: 0, type: "noteOff", channel, noteNumber: mn.note, velocity: 0 },
+		});
 	}
 
 	timeEvents.sort((left, right) => left.tick - right.tick);
@@ -173,6 +218,7 @@ function hasOverlappingSlides(notes: ReadonlyArray<MidiNote>): boolean {
 		const noteA = sliding[ni];
 
 		if (!noteA) continue;
+
 		const aEnd = noteA.tick + noteA.durationTicks;
 
 		for (let nj = ni + 1; nj < sliding.length; nj++) {
@@ -196,15 +242,18 @@ function allocateChannels(notes: ReadonlyArray<MidiNote>): Map<number, number> {
 	for (const { mn, originalIndex } of sorted) {
 		if (!mn.pitchBends || mn.pitchBends.length === 0) {
 			assignments.set(originalIndex, 0);
+
 			continue;
 		}
 
 		let assignedChannel = 0;
 
-		for (let ch = 0; ch < 16; ch++) {
-			if (ch === 9) continue;
-			if ((channelFreeAt[ch] ?? 0) <= mn.tick) {
-				assignedChannel = ch;
+		for (let channelIndex = 0; channelIndex < 16; channelIndex++) {
+			if (channelIndex === 9) continue;
+
+			if ((channelFreeAt[channelIndex] ?? 0) <= mn.tick) {
+				assignedChannel = channelIndex;
+
 				break;
 			}
 		}
@@ -216,7 +265,10 @@ function allocateChannels(notes: ReadonlyArray<MidiNote>): Map<number, number> {
 	return assignments;
 }
 
-function calculateBendRanges(notes: ReadonlyArray<MidiNote>, channelAssignments?: Map<number, number>): Map<number, number> {
+function calculateBendRanges(
+	notes: ReadonlyArray<MidiNote>,
+	channelAssignments?: Map<number, number>,
+): Map<number, number> {
 	const maxCentsPerChannel = new Map<number, number>();
 
 	for (const [noteIndex, mn] of notes.entries()) {

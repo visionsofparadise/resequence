@@ -1,5 +1,5 @@
-import type { Tuning } from "../tuning";
 import { addAliases, createTuning } from "../tuning";
+import type { Tuning } from "../tuning";
 
 const CHROMATIC_CLASSES = ["C", "Cs", "D", "Ds", "E", "F", "Fs", "G", "Gs", "A", "As", "B"] as const;
 

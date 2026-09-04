@@ -1,5 +1,6 @@
-import type { Event, Note, ModifierProperties, Pattern, PatternProperties } from "@resequence/patterns-core";
 import { ModifierPattern, toPattern, addSteps, NUM_OCTAVES, flatModifyNotes } from "@resequence/patterns-core";
+import type { Event, Note, ModifierProperties, Pattern, PatternProperties } from "@resequence/patterns-core";
+
 export interface UnisonSpread {
 	readonly pitch?: number;
 	readonly cc?: Partial<Record<number, number>>;
@@ -19,11 +20,16 @@ export class UnisonPattern extends ModifierPattern<UnisonProperties> {
 			const result = [];
 
 			for (let voiceIndex = 0; voiceIndex < this.properties.voices; voiceIndex++) {
-				const pitchOffset = Math.round((voiceIndex - (this.properties.voices - 1) / 2) * (this.properties.spread.pitch ?? 0));
+				const pitchOffset = Math.round(
+					(voiceIndex - (this.properties.voices - 1) / 2) * (this.properties.spread.pitch ?? 0),
+				);
 				let voiceNote = {
 					...note,
 					pitch: addSteps(note.pitch, pitchOffset),
-					slides: note.slides?.map((sl) => ({ ...sl, value: sl.value + pitchOffset / (note.pitch.stepsPerOctave * NUM_OCTAVES) })),
+					slides: note.slides?.map((sl) => ({
+						...sl,
+						value: sl.value + pitchOffset / (note.pitch.stepsPerOctave * NUM_OCTAVES),
+					})),
 				};
 
 				if (this.properties.spread.cc) {
@@ -33,7 +39,9 @@ export class UnisonPattern extends ModifierPattern<UnisonProperties> {
 						const ccNum = Number(ccKey);
 						const baseVal = note.cc?.[ccNum] ?? 64;
 
-						mergedCc[ccNum] = Math.round(baseVal + (voiceIndex - (this.properties.voices - 1) / 2) * (ccSpread ?? 0));
+						mergedCc[ccNum] = Math.round(
+							baseVal + (voiceIndex - (this.properties.voices - 1) / 2) * (ccSpread ?? 0),
+						);
 					}
 
 					voiceNote = { ...voiceNote, cc: mergedCc };
@@ -49,7 +57,11 @@ export class UnisonPattern extends ModifierPattern<UnisonProperties> {
 	}
 
 	clone(_overrides: Partial<PatternProperties>): UnisonPattern {
-		return new UnisonPattern({ voices: this.properties.voices, spread: this.properties.spread, input: this.properties.input });
+		return new UnisonPattern({
+			voices: this.properties.voices,
+			spread: this.properties.spread,
+			input: this.properties.input,
+		});
 	}
 }
 

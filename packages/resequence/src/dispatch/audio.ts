@@ -1,8 +1,11 @@
-import type { TempoMap } from "@resequence/patterns-utils";
 import { beatsToSeconds } from "@resequence/patterns-utils";
 import type { AudioEvent, PreloadAudioEvent } from "../constructs/audio";
+import type { TempoMap } from "@resequence/patterns-utils";
 
-export async function dispatchAudioSetup(event: PreloadAudioEvent, getSample: (path: string) => Promise<AudioBuffer>): Promise<AudioBuffer | undefined> {
+export async function dispatchAudioSetup(
+	event: PreloadAudioEvent,
+	getSample: (path: string) => Promise<AudioBuffer>,
+): Promise<AudioBuffer | undefined> {
 	try {
 		return await getSample(event.sampleKey);
 	} catch {
@@ -10,7 +13,13 @@ export async function dispatchAudioSetup(event: PreloadAudioEvent, getSample: (p
 	}
 }
 
-export function dispatchAudioCue(event: AudioEvent, buffer: AudioBuffer, audioContext: BaseAudioContext, tempoMap: TempoMap, destination: AudioNode): void {
+export function dispatchAudioCue(
+	event: AudioEvent,
+	buffer: AudioBuffer,
+	audioContext: BaseAudioContext,
+	tempoMap: TempoMap,
+	destination: AudioNode,
+): void {
 	const source = audioContext.createBufferSource();
 
 	if (event.reversed) {

@@ -20,18 +20,13 @@ const snare = sequence(gap(1), N.D3(1), gap(1), N.D3(1)).route("drums");
 
 const bassline = sequence(N.C2(2), N.Ds2(1), N.F2(1), N.G2(2), N.As2(1), N.G2(1)).route("bass");
 
-const chords = layer(
-	sequence(N.C4(4), N.Gs3(4)),
-	sequence(N.Ds4(4), N.As3(4)),
-	sequence(N.G4(4), N.Ds4(4)),
-).route("pad");
+const chords = layer(sequence(N.C4(4), N.Gs3(4)), sequence(N.Ds4(4), N.As3(4)), sequence(N.G4(4), N.Ds4(4))).route(
+	"pad",
+);
 
 const hats = echo(distribute(3, 8, N.C2.pitch, 0.5), 2, 0.25, 0.6).route("drums");
 
-const song = tempo(
-	layer(repeat(layer(kick, snare, hats), 4), repeat(bassline, 2), repeat(chords, 2)),
-	128,
-);
+const song = tempo(layer(repeat(layer(kick, snare, hats), 4), repeat(bassline, 2), repeat(chords, 2)), 128);
 
 const midiFiles = renderMidi(song);
 // Map<string, Uint8Array> — one MIDI file per port ("drums", "bass", "pad")
@@ -56,16 +51,16 @@ The `N` namespace provides typed pitch access for the chromatic scale (A4 = 440 
 ```typescript
 import { N } from "@resequence/patterns/core";
 
-N.C4(1)         // quarter note middle C
-N.Cs4(0.5)      // eighth note C#4
-N.Db4(2, 80)    // half note Db4 at velocity 80
-N.Fs3(1)        // quarter note F#3
+N.C4(1); // quarter note middle C
+N.Cs4(0.5); // eighth note C#4
+N.Db4(2, 80); // half note Db4 at velocity 80
+N.Fs3(1); // quarter note F#3
 ```
 
 Access the `Pitch` object via the `.pitch` property when you need the pitch without creating a note:
 
 ```typescript
-N.C4.pitch      // Pitch { class: 0, octave: 4, stepsPerOctave: 12, octaveRatio: 2 }
+N.C4.pitch; // Pitch { class: 0, octave: 4, stepsPerOctave: 12, octaveRatio: 2 }
 ```
 
 ### Chords and Scales
@@ -75,16 +70,16 @@ N.C4.pitch      // Pitch { class: 0, octave: 4, stepsPerOctave: 12, octaveRatio:
 ```typescript
 import { CD, CS } from "@resequence/patterns/utils";
 
-CD("Cm7", 2);       // Cm7 chord, half note each
-CD("Gmaj9", 4);     // Gmaj9 chord, whole note
+CD("Cm7", 2); // Cm7 chord, half note each
+CD("Gmaj9", 4); // Gmaj9 chord, whole note
 ```
 
 `CS` creates a scale accessor — call it with degree and octave to get notes:
 
 ```typescript
 const scale = CS("C4 minor");
-scale(0);    // C4
-scale(2);    // Eb4
+scale(0); // C4
+scale(2); // Eb4
 ```
 
 ### Custom Tunings
@@ -96,16 +91,16 @@ import { createTuning } from "@resequence/patterns/core";
 
 // Equal temperament
 const quarterTone = createTuning({
-	classes: ["C", "C+", "Cs", "Cs+", "D", /* ... 24 classes */],
+	classes: ["C", "C+", "Cs", "Cs+", "D" /* ... 24 classes */],
 	reference: { class: "A", octave: 4, hz: 440 },
 });
 
 quarterTone.C4(1);
-quarterTone["C+4"](1);    // quarter-tone between C and C#
+quarterTone["C+4"](1); // quarter-tone between C and C#
 
 // Frequency-based (just intonation, custom scales)
 const justC = createTuning({
-	frequencies: { C: 261.63, D: 294.33, E: 327.03, /* ... */ },
+	frequencies: { C: 261.63, D: 294.33, E: 327.03 /* ... */ },
 	referenceOctave: 4,
 });
 ```
@@ -135,8 +130,8 @@ import { N, sequence, layer, gap } from "@resequence/patterns/core";
 // 4-bar drum loop
 const drums = repeat(
 	layer(
-		repeat(N.C2(1), 4),                              // kick on every beat
-		sequence(gap(1), N.D3(1), gap(1), N.D3(1)),      // snare on 2 and 4
+		repeat(N.C2(1), 4), // kick on every beat
+		sequence(gap(1), N.D3(1), gap(1), N.D3(1)), // snare on 2 and 4
 	),
 	4,
 );
@@ -262,8 +257,8 @@ Generators produce notes procedurally. They extend `MidiPattern` — routing, mo
 import { distribute } from "@resequence/patterns";
 import { N } from "@resequence/patterns/core";
 
-distribute(3, 8, N.C2.pitch, 0.5);        // tresillo
-distribute(5, 16, N.C2.pitch, 0.25, 2);   // rotated 16th pattern
+distribute(3, 8, N.C2.pitch, 0.5); // tresillo
+distribute(5, 16, N.C2.pitch, 0.25, 2); // rotated 16th pattern
 ```
 
 **`random(options)`** — random notes with configurable pitch set, velocity range, count, step duration, and deterministic seed.
@@ -309,10 +304,15 @@ metadata(pattern, { tempo: 140, timeSignature: [3, 4] });
 
 // Individual helpers — each wraps a pattern
 tempo(pattern, 128);
-tempo(pattern, 120, { keyframes: [{ beat: 0, value: 0.5 }, { beat: 16, value: 1.0 }] });
+tempo(pattern, 120, {
+	keyframes: [
+		{ beat: 0, value: 0.5 },
+		{ beat: 16, value: 1.0 },
+	],
+});
 timeSignature(pattern, [3, 4]);
 marker(pattern, "chorus");
-cue(pattern, "drop");        // alias for marker
+cue(pattern, "drop"); // alias for marker
 region(pattern, "verse");
 tuning(pattern, Just.config);
 ```
@@ -346,8 +346,13 @@ Modifiers wrap a pattern and transform its notes at construction time. Extend `M
 
 ```typescript
 import {
-	ModifierPattern, ModifierProperties, PatternProperties, Pattern, Note,
-	toPattern, modifyNotes,
+	ModifierPattern,
+	ModifierProperties,
+	PatternProperties,
+	Pattern,
+	Note,
+	toPattern,
+	modifyNotes,
 } from "@resequence/patterns/core";
 
 interface DoubleTimeProperties extends ModifierProperties {
@@ -410,7 +415,10 @@ export function walk(startPitch: number, steps: number): WalkPattern {
 	let pitch = startPitch;
 
 	for (let i = 0; i < steps; i++) {
-		notes.push({ offsetBeats: i, note: note({ class: pitch % 12, octave: Math.floor(pitch / 12), stepsPerOctave: 12, octaveRatio: 2 }, 1) });
+		notes.push({
+			offsetBeats: i,
+			note: note({ class: pitch % 12, octave: Math.floor(pitch / 12), stepsPerOctave: 12, octaveRatio: 2 }, 1),
+		});
 		pitch += Math.random() > 0.5 ? 1 : -1;
 	}
 
@@ -453,10 +461,19 @@ class LightCuePattern extends Pattern {
 Walk and modify pattern trees:
 
 ```typescript
-import { walkPatterns, walkNotes, collectNotes, modifyNotes, flatModifyNotes, modifyPatterns } from "@resequence/patterns/core";
+import {
+	walkPatterns,
+	walkNotes,
+	collectNotes,
+	modifyNotes,
+	flatModifyNotes,
+	modifyPatterns,
+} from "@resequence/patterns/core";
 
 // Visit every pattern node
-walkPatterns(song, (pattern, absoluteBeat) => { /* ... */ });
+walkPatterns(song, (pattern, absoluteBeat) => {
+	/* ... */
+});
 
 // Visit every note with a unique ID and absolute timing
 walkNotes(song, (note, context) => {

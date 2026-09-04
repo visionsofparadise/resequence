@@ -1,6 +1,15 @@
-import type { Event, Keyframe, Note, ModifierProperties, Pattern, PatternProperties, Pitch } from "@resequence/patterns-core";
 import { ModifierPattern, toPattern, flatModifyNotes } from "@resequence/patterns-core";
 import { evaluateSlide } from "@resequence/patterns-utils";
+import type {
+	Event,
+	Keyframe,
+	Note,
+	ModifierProperties,
+	Pattern,
+	PatternProperties,
+	Pitch,
+} from "@resequence/patterns-core";
+
 export interface ChopProperties extends ModifierProperties {
 	readonly subdivision: number;
 }
@@ -24,7 +33,10 @@ export class ChopPattern extends ModifierPattern<ChopProperties> {
 
 				if (note.slides && note.slides.length > 0) {
 					pitch = evaluateSlide(note.pitch, note.slides, chopStart);
-					const segmentSlides = note.slides.filter((sl) => sl.beat > chopStart && sl.beat <= chopEnd).map((sl) => ({ ...sl, beat: sl.beat - chopStart }));
+
+					const segmentSlides = note.slides
+						.filter((sl) => sl.beat > chopStart && sl.beat <= chopEnd)
+						.map((sl) => ({ ...sl, beat: sl.beat - chopStart }));
 
 					slides = segmentSlides.length > 0 ? segmentSlides : undefined;
 				}

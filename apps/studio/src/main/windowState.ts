@@ -1,9 +1,9 @@
-import type { BrowserWindow } from "electron";
-import { screen } from "electron";
 import fs from "node:fs/promises";
 import path from "node:path";
-import type { AppSettings } from "../shared/models/AppSettings";
+import { screen } from "electron";
 import { DEFAULT_APP_SETTINGS } from "../shared/models/AppSettings";
+import type { AppSettings } from "../shared/models/AppSettings";
+import type { BrowserWindow } from "electron";
 
 export async function readSettings(userData: string): Promise<AppSettings> {
 	const settingsPath = path.join(userData, "settings.json");

@@ -1,5 +1,6 @@
-import type { Event, Note, ModifierProperties, Pattern, PatternProperties } from "@resequence/patterns-core";
 import { ModifierPattern, toPattern, modifyNotes, collectNotes } from "@resequence/patterns-core";
+import type { Event, Note, ModifierProperties, Pattern, PatternProperties } from "@resequence/patterns-core";
+
 export interface LevelPropOptions {
 	readonly value?: number;
 	readonly randomize?: number;
@@ -22,6 +23,7 @@ function mulberry32(seed: number): () => number {
 
 	return function (): number {
 		state += 0x6d2b79f5;
+
 		let value = state;
 
 		value = Math.imul(value ^ (value >>> 15), value | 1);
@@ -49,6 +51,7 @@ function applyPropToValue(value: number, spec: LevelProp, mean: number, rng: () 
 	computed = Math.round(computed);
 
 	if (spec.min !== undefined) computed = Math.max(spec.min, computed);
+
 	if (spec.max !== undefined) computed = Math.min(spec.max, computed);
 
 	return computed;
@@ -79,7 +82,9 @@ export class LevelPattern extends ModifierPattern<LevelProperties> {
 		let velocityMean = 0;
 		const ccMeans = new Map<number, number>();
 
-		const needsCollect = (config.velocity !== undefined && needsMean(config.velocity)) || (config.cc && Object.values(config.cc).some((spec) => spec !== undefined && needsMean(spec)));
+		const needsCollect =
+			(config.velocity !== undefined && needsMean(config.velocity)) ||
+			(config.cc && Object.values(config.cc).some((spec) => spec !== undefined && needsMean(spec)));
 
 		if (needsCollect) {
 			const allNotes = collectNotes(this);
@@ -92,9 +97,13 @@ export class LevelPattern extends ModifierPattern<LevelProperties> {
 				if (config.cc) {
 					for (const [ccKey, ccSpec] of Object.entries(config.cc)) {
 						if (ccSpec === undefined || !needsMean(ccSpec)) continue;
+
 						const ccNum = Number(ccKey);
 
-						ccMeans.set(ccNum, allNotes.reduce((sum, { note }) => sum + (note.cc?.[ccNum] ?? 0), 0) / allNotes.length);
+						ccMeans.set(
+							ccNum,
+							allNotes.reduce((sum, { note }) => sum + (note.cc?.[ccNum] ?? 0), 0) / allNotes.length,
+						);
 					}
 				}
 			}
@@ -106,6 +115,7 @@ export class LevelPattern extends ModifierPattern<LevelProperties> {
 		if (config.cc) {
 			for (const [ccKey, ccSpec] of Object.entries(config.cc)) {
 				if (ccSpec === undefined) continue;
+
 				ccRngs.set(Number(ccKey), createRng(ccSpec));
 			}
 		}
@@ -123,6 +133,7 @@ export class LevelPattern extends ModifierPattern<LevelProperties> {
 
 				for (const [ccKey, ccSpec] of Object.entries(config.cc)) {
 					if (ccSpec === undefined) continue;
+
 					const ccNum = Number(ccKey);
 					const ccRng = ccRngs.get(ccNum) ?? Math.random;
 

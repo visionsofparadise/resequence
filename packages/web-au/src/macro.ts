@@ -1,6 +1,6 @@
-import type { SetupResult, UnitContext, UnitInput } from "@resequence/web-au-core";
 import { driveParam, Unit, live } from "@resequence/web-au-core";
 import { z } from "zod";
+import type { SetupResult, UnitContext, UnitInput } from "@resequence/web-au-core";
 
 const macroSchema = z.object({
 	value: live(z.number().min(0).max(1).default(0).describe("Value")),

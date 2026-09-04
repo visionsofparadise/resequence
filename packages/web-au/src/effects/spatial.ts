@@ -1,6 +1,6 @@
-import type { SetupResult, UnitContext, UnitInput } from "@resequence/web-au-core";
 import { Unit, driveParam, live } from "@resequence/web-au-core";
 import { z } from "zod";
+import type { SetupResult, UnitContext, UnitInput } from "@resequence/web-au-core";
 
 const spatialSchema = z.object({
 	x: live(z.number().min(-100).max(100).default(0).describe("X Position")),
@@ -27,9 +27,13 @@ export class SpatialEffectUnit extends Unit<typeof spatialSchema> {
 		const pannerNode = context.audioContext.createPanner();
 
 		if (this.parameters.distanceModel?.value) pannerNode.distanceModel = this.parameters.distanceModel.value;
+
 		if (this.parameters.refDistance?.value !== undefined) pannerNode.refDistance = this.parameters.refDistance.value;
+
 		if (this.parameters.maxDistance?.value !== undefined) pannerNode.maxDistance = this.parameters.maxDistance.value;
-		if (this.parameters.rolloffFactor?.value !== undefined) pannerNode.rolloffFactor = this.parameters.rolloffFactor.value;
+
+		if (this.parameters.rolloffFactor?.value !== undefined)
+			pannerNode.rolloffFactor = this.parameters.rolloffFactor.value;
 
 		driveParam(pannerNode.positionX, this.parameters.x, undefined, context);
 		driveParam(pannerNode.positionY, this.parameters.y, undefined, context);

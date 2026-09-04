@@ -1,5 +1,5 @@
-import type { Event, ModifierProperties, Note, Pattern, PatternProperties } from "@resequence/patterns-core";
 import { ModifierPattern, modifyNotes, toPattern } from "@resequence/patterns-core";
+import type { Event, ModifierProperties, Note, Pattern, PatternProperties } from "@resequence/patterns-core";
 
 export interface AccentProperties extends ModifierProperties {
 	readonly positions: ReadonlyArray<number>;
@@ -48,7 +48,11 @@ export class AccentPattern extends ModifierPattern<AccentProperties> {
 	}
 
 	clone(_overrides: Partial<PatternProperties>): AccentPattern {
-		return new AccentPattern({ positions: this.properties.positions, amount: this.properties.amount, input: this.properties.input });
+		return new AccentPattern({
+			positions: this.properties.positions,
+			amount: this.properties.amount,
+			input: this.properties.input,
+		});
 	}
 }
 

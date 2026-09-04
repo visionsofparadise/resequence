@@ -26,7 +26,13 @@ export abstract class Pattern<P extends PatternProperties = PatternProperties> {
 	abstract readonly unitName: string;
 
 	static is(value: unknown): value is Pattern {
-		return typeof value === "object" && value !== null && "type" in value && Array.isArray(value.type) && value.type[0] === "pattern";
+		return (
+			typeof value === "object" &&
+			value !== null &&
+			"type" in value &&
+			Array.isArray(value.type) &&
+			value.type[0] === "pattern"
+		);
 	}
 
 	constructor(readonly properties: P) {}
@@ -48,11 +54,14 @@ export abstract class Pattern<P extends PatternProperties = PatternProperties> {
 	}
 
 	setup(absoluteBeat: number): Array<Event> {
-		const childResults = this.properties.children.map(({ offsetBeats, pattern }) => pattern.setup(absoluteBeat + offsetBeats));
+		const childResults = this.properties.children.map(({ offsetBeats, pattern }) =>
+			pattern.setup(absoluteBeat + offsetBeats),
+		);
 
 		const ownEvents = this._setup(absoluteBeat);
 
 		if (childResults.length === 0) return ownEvents;
+
 		if (ownEvents.length === 0) return childResults.flat();
 
 		return [...childResults.flat(), ...ownEvents];
@@ -62,8 +71,15 @@ export abstract class Pattern<P extends PatternProperties = PatternProperties> {
 		return [];
 	}
 
-	schedule(absoluteBeat: number, fromBeats: number, toBeats: number, ports: ReadonlyArray<Port> = [], tuning?: ResolvedTuning): Array<Event> {
-		if (absoluteBeat + this.properties.endBeat <= fromBeats || absoluteBeat + this.properties.startBeat >= toBeats) return [];
+	schedule(
+		absoluteBeat: number,
+		fromBeats: number,
+		toBeats: number,
+		ports: ReadonlyArray<Port> = [],
+		tuning?: ResolvedTuning,
+	): Array<Event> {
+		if (absoluteBeat + this.properties.endBeat <= fromBeats || absoluteBeat + this.properties.startBeat >= toBeats)
+			return [];
 
 		const ownEvents = this._schedule(absoluteBeat, ports, tuning);
 		const childEvents: Array<Event> = [];
@@ -75,6 +91,7 @@ export abstract class Pattern<P extends PatternProperties = PatternProperties> {
 		}
 
 		if (ownEvents.length === 0) return childEvents;
+
 		if (childEvents.length === 0) return ownEvents;
 
 		return [...ownEvents, ...childEvents];
@@ -89,7 +106,9 @@ export abstract class Pattern<P extends PatternProperties = PatternProperties> {
 
 		const ownEvents = this._teardown(absoluteBeat);
 
-		const childResults = this.properties.children.map(({ offsetBeats, pattern }) => pattern.teardown(absoluteBeat + offsetBeats));
+		const childResults = this.properties.children.map(({ offsetBeats, pattern }) =>
+			pattern.teardown(absoluteBeat + offsetBeats),
+		);
 
 		return [...ownEvents, ...childResults.flat()];
 	}

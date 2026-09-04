@@ -1,7 +1,9 @@
-import type { MidiPatternProperties, PatternProperties, RelativeNote, Pitch } from "@resequence/patterns-core";
 import { MidiPattern } from "@resequence/patterns-core";
+import type { MidiPatternProperties, PatternProperties, RelativeNote, Pitch } from "@resequence/patterns-core";
+
 function euclidean(hits: number, steps: number, rotate: number): ReadonlyArray<boolean> {
 	if (steps === 0) return [];
+
 	const pattern: Array<boolean> = [];
 
 	for (let stepIndex = 0; stepIndex < steps; stepIndex++) {
@@ -33,7 +35,13 @@ export class DistributePattern extends MidiPattern<DistributeProperties> {
 	}
 }
 
-export function distribute(hits: number, steps: number, pitch: Pitch, stepDuration: number, rotate = 0): DistributePattern {
+export function distribute(
+	hits: number,
+	steps: number,
+	pitch: Pitch,
+	stepDuration: number,
+	rotate = 0,
+): DistributePattern {
 	const durationBeats = steps * stepDuration;
 	const pattern = euclidean(hits, steps, rotate);
 	const notes: Array<RelativeNote> = [];
@@ -47,5 +55,15 @@ export function distribute(hits: number, steps: number, pitch: Pitch, stepDurati
 		}
 	}
 
-	return new DistributePattern({ notes, children: [], startBeat: 0, endBeat: durationBeats, hits, steps, pitch, stepDuration, rotate });
+	return new DistributePattern({
+		notes,
+		children: [],
+		startBeat: 0,
+		endBeat: durationBeats,
+		hits,
+		steps,
+		pitch,
+		stepDuration,
+		rotate,
+	});
 }

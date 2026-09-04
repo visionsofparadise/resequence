@@ -75,11 +75,7 @@ export function offsetParam(
 	}
 }
 
-export function proxyDriver(
-	parentParam: LiveParameter,
-	childParam: LiveParameter,
-	context: UnitContext,
-): void {
+export function proxyDriver(parentParam: LiveParameter, childParam: LiveParameter, context: UnitContext): void {
 	if (!parentParam.path || !childParam.path) return;
 
 	const childEntry = context.driverMap.get(childParam.path);

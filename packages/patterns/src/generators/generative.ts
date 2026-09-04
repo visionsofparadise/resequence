@@ -1,5 +1,6 @@
-import type { Note, MidiPatternProperties, PatternProperties, RelativeNote } from "@resequence/patterns-core";
 import { MidiPattern } from "@resequence/patterns-core";
+import type { Note, MidiPatternProperties, PatternProperties, RelativeNote } from "@resequence/patterns-core";
+
 export type GenerativeCallback = (accumulator: Array<Note>, index: number, total: number) => Array<Note>;
 
 export interface GenerativeProperties extends MidiPatternProperties {
@@ -37,5 +38,13 @@ export function generative(callback: GenerativeCallback, count: number, duration
 		notes.push({ offsetBeats: 0, note: clipped });
 	}
 
-	return new GenerativePattern({ notes, children: [], startBeat: 0, endBeat: durationBeats, callback, count, durationBeats });
+	return new GenerativePattern({
+		notes,
+		children: [],
+		startBeat: 0,
+		endBeat: durationBeats,
+		callback,
+		count,
+		durationBeats,
+	});
 }

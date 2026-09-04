@@ -1,8 +1,6 @@
 class BitcrushProcessor extends AudioWorkletProcessor {
 	static get parameterDescriptors() {
-		return [
-			{ name: "bits", defaultValue: 8, minValue: 1, maxValue: 32, automationRate: "k-rate" },
-		];
+		return [{ name: "bits", defaultValue: 8, minValue: 1, maxValue: 32, automationRate: "k-rate" }];
 	}
 
 	process(inputs, outputs, parameters) {
@@ -18,7 +16,7 @@ class BitcrushProcessor extends AudioWorkletProcessor {
 			if (outputChannel) {
 				for (let sample = 0; sample < outputChannel.length; sample++) {
 					const inputSample = inputChannel?.[sample] ?? 0;
-					
+
 					outputChannel[sample] = Math.round(inputSample / step) * step;
 				}
 			}

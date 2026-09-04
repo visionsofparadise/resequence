@@ -1,9 +1,9 @@
+import { beatsToSeconds, evaluateAt } from "@resequence/patterns-utils";
+import { lastBefore } from "../utils/sorted";
+import type { AutomationEvent } from "../constructs/automate";
 import type { Keyframe } from "@resequence/patterns-core";
 import type { TempoMap } from "@resequence/patterns-utils";
-import { beatsToSeconds, evaluateAt } from "@resequence/patterns-utils";
 import type { DriverEntry } from "@resequence/web-au-core";
-import type { AutomationEvent } from "../constructs/automate";
-import { lastBefore } from "../utils/sorted";
 
 interface AutomationClip {
 	readonly endBeat: number;

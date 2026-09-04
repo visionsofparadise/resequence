@@ -1,14 +1,14 @@
+import { surface, border } from "@resequence/design-system";
 import { ReactFlow, ReactFlowProvider, type OnMove, type OnMoveEnd } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { useCallback, useMemo } from "react";
-import type { Unit } from "@resequence/web-au/core";
-import { surface, border } from "@resequence/design-system";
-import type { BuildContext } from "../../../../../models/Context";
-import type { ProjectState } from "../../../../../models/State/Project";
 import { ViewHeader } from "../../../../ViewHeader";
 import { UnitNode } from "./UnitNode";
 import { buildGraph } from "./utils/buildGraph";
 import { layoutGraph } from "./utils/layoutGraph";
+import type { BuildContext } from "../../../../../models/Context";
+import type { ProjectState } from "../../../../../models/State/Project";
+import type { Unit } from "@resequence/web-au/core";
 
 const nodeTypes = { unit: UnitNode };
 

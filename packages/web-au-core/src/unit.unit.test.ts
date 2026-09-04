@@ -93,5 +93,4 @@ describe("Unit", () => {
 		expect(unit.modDeclarations).toHaveLength(1);
 		expect(unit.modDeclarations[0]?.paths).toEqual(["path.a", "path.b"]);
 	});
-
 });

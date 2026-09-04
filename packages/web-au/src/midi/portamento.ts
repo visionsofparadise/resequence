@@ -1,6 +1,6 @@
-import type { NoteEvent, NoteSlide, SetupResult, UnitContext, MidiUnitInput } from "@resequence/web-au-core";
 import { MidiUnit } from "@resequence/web-au-core";
 import { z } from "zod";
+import type { NoteEvent, NoteSlide, SetupResult, UnitContext, MidiUnitInput } from "@resequence/web-au-core";
 
 interface LastPitch {
 	readonly note: number;

@@ -4,7 +4,11 @@ import { read } from "./read";
 
 function mockContext() {
 	const gainNode = { connect: vi.fn(), disconnect: vi.fn() } as unknown as GainNode;
-	const sourceNode = { connect: vi.fn(), start: vi.fn(), buffer: null as AudioBuffer | null } as unknown as AudioBufferSourceNode;
+	const sourceNode = {
+		connect: vi.fn(),
+		start: vi.fn(),
+		buffer: null as AudioBuffer | null,
+	} as unknown as AudioBufferSourceNode;
 	const mockBuffer = { duration: 2.5 } as AudioBuffer;
 
 	const audioContext = {
@@ -96,5 +100,4 @@ describe("ReadUnit", () => {
 
 		expect(unit.duration).toBe(2.5);
 	});
-
 });

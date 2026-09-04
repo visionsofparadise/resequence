@@ -36,5 +36,4 @@ describe("analyser", () => {
 		g.to(a);
 		expect(g.targets).toContain(a);
 	});
-
 });

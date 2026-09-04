@@ -1,10 +1,12 @@
-import type { MidiPatternProperties, PatternProperties, RelativeNote, Pitch } from "@resequence/patterns-core";
 import { MidiPattern } from "@resequence/patterns-core";
+import type { MidiPatternProperties, PatternProperties, RelativeNote, Pitch } from "@resequence/patterns-core";
+
 function mulberry32(seed: number): () => number {
 	let state = seed;
 
 	return function (): number {
 		state += 0x6d2b79f5;
+
 		let value = state;
 
 		value = Math.imul(value ^ (value >>> 15), value | 1);

@@ -1,14 +1,14 @@
-import { resolveEntrypoint } from "@/renderer/utils/resolveEntrypoint";
 import { useEffect, useMemo, useState } from "react";
-import type { BuildContext, ProjectContext } from "../../../models/Context";
-import { createPortColorMap } from "./utils/outputColor";
+import { resolveEntrypoint } from "@/renderer/utils/resolveEntrypoint";
 import { TransportBar } from "../../TransportBar";
-import { Workspace } from "./Workspace";
 import { useBuildArrangement } from "./hooks/useBuildArrangement";
 import { useBundleBuild } from "./hooks/useBundle";
 import { useModifyGraph } from "./hooks/useModifyGraph";
 import { useResolveBuild } from "./hooks/useResolve";
 import { useSetupPlayback } from "./hooks/useSetup";
+import { createPortColorMap } from "./utils/outputColor";
+import { Workspace } from "./Workspace";
+import type { BuildContext, ProjectContext } from "../../../models/Context";
 
 interface BuildProps {
 	readonly context: ProjectContext;
@@ -33,10 +33,7 @@ export const Build: React.FC<BuildProps> = ({ context }) => {
 
 	const setup = useSetupPlayback(router, main);
 
-	const portColorMap = useMemo(
-		() => createPortColorMap([...router.ports.keys()]),
-		[router],
-	);
+	const portColorMap = useMemo(() => createPortColorMap([...router.ports.keys()]), [router]);
 
 	const buildContext = useMemo((): BuildContext | undefined => {
 		if (!setup) return undefined;

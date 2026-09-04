@@ -1,8 +1,8 @@
-import type { SetupResult, UnitContext, UnitInput } from "@resequence/web-au-core";
 import { Unit } from "@resequence/web-au-core";
 import { z } from "zod";
-import { filter, type FilterEffectUnit } from "./filter";
 import { chain } from "../composites/chain";
+import { filter, type FilterEffectUnit } from "./filter";
+import type { SetupResult, UnitContext, UnitInput } from "@resequence/web-au-core";
 
 const deHumSchema = z.object({
 	frequency: z.number().default(60).describe("Hum Frequency"),

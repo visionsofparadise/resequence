@@ -1,6 +1,6 @@
-import type { NoteEvent, SetupResult, UnitContext, MidiUnitInput } from "@resequence/web-au-core";
 import { MidiUnit } from "@resequence/web-au-core";
 import { z } from "zod";
+import type { NoteEvent, SetupResult, UnitContext, MidiUnitInput } from "@resequence/web-au-core";
 
 const humanizeSchema = z.object({
 	timing: z.number().min(0).default(0).describe("Timing jitter (ms)"),
@@ -19,8 +19,14 @@ export class HumanizeMidiUnit extends MidiUnit<typeof humanizeSchema> {
 	}
 
 	override schedule(noteEvent: NoteEvent, context: UnitContext): void {
-		const timingOffset = this.parameters.timing.value > 0 ? this.nextRandom() * this.parameters.timing.value * 2 - this.parameters.timing.value : 0;
-		const velocityOffset = this.parameters.velocity.value > 0 ? this.nextRandom() * this.parameters.velocity.value * 2 - this.parameters.velocity.value : 0;
+		const timingOffset =
+			this.parameters.timing.value > 0
+				? this.nextRandom() * this.parameters.timing.value * 2 - this.parameters.timing.value
+				: 0;
+		const velocityOffset =
+			this.parameters.velocity.value > 0
+				? this.nextRandom() * this.parameters.velocity.value * 2 - this.parameters.velocity.value
+				: 0;
 
 		const startMs = Math.max(0, noteEvent.startMs + timingOffset);
 		const stopMs = Math.max(startMs, noteEvent.stopMs + timingOffset);

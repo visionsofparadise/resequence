@@ -1,9 +1,9 @@
+import { Knob } from "@resequence/design-system";
 import { Handle, Position, type NodeProps } from "@xyflow/react";
 import { useEffect, useState, useCallback } from "react";
+import type { StudioDriver } from "../../models/StudioDriver";
 import type { Unit } from "@resequence/web-au/core";
 import type { Snapshot } from "valtio";
-import { Knob } from "@resequence/design-system";
-import type { StudioDriver } from "../../models/StudioDriver";
 
 export interface UnitNodeData {
 	readonly unit: Snapshot<Unit>;
@@ -17,26 +17,26 @@ const DriverKnob: React.FC<{ name: string; driver: StudioDriver }> = ({ name, dr
 	const range = driver.range ?? [0, 1];
 	const [min, max] = range;
 
-	useEffect(() => driver.subscribe((raw) => {
-		const norm = max !== min ? (raw - min) / (max - min) : 0;
+	useEffect(
+		() =>
+			driver.subscribe((raw) => {
+				const norm = max !== min ? (raw - min) / (max - min) : 0;
 
-		setNormalized(Math.max(0, Math.min(1, norm)));
-	}), [driver, min, max]);
-
-	const onChange = useCallback((normalized01: number) => {
-		const raw = normalized01 * (max - min) + min;
-
-		driver.offset.value = raw;
-	}, [driver, min, max]);
-
-	return (
-		<Knob
-			value={normalized}
-			label={name.split(".").pop() ?? name}
-			size={28}
-			onChange={onChange}
-		/>
+				setNormalized(Math.max(0, Math.min(1, norm)));
+			}),
+		[driver, min, max],
 	);
+
+	const onChange = useCallback(
+		(normalized01: number) => {
+			const raw = normalized01 * (max - min) + min;
+
+			driver.offset.value = raw;
+		},
+		[driver, min, max],
+	);
+
+	return <Knob value={normalized} label={name.split(".").pop() ?? name} size={28} onChange={onChange} />;
 };
 
 export const UnitNode: React.FC<NodeProps> = ({ data }) => {
@@ -48,8 +48,16 @@ export const UnitNode: React.FC<NodeProps> = ({ data }) => {
 			<div className="bg-elevated border border-border p-3 w-[200px] relative">
 				<span className="type-label">{typeName}</span>
 				<div className="animate-pulse bg-border/50 h-10 mt-2" />
-				<Handle type="target" position={Position.Left} style={{ width: PORT_SIZE, height: PORT_SIZE, background: "var(--color-dimmed)" }} />
-				<Handle type="source" position={Position.Right} style={{ width: PORT_SIZE, height: PORT_SIZE, background: "var(--color-dimmed)" }} />
+				<Handle
+					type="target"
+					position={Position.Left}
+					style={{ width: PORT_SIZE, height: PORT_SIZE, background: "var(--color-dimmed)" }}
+				/>
+				<Handle
+					type="source"
+					position={Position.Right}
+					style={{ width: PORT_SIZE, height: PORT_SIZE, background: "var(--color-dimmed)" }}
+				/>
 			</div>
 		);
 	}
@@ -61,8 +69,12 @@ export const UnitNode: React.FC<NodeProps> = ({ data }) => {
 			<div className="flex items-start justify-between mb-3">
 				<span className="type-display text-[16px]">{typeName}</span>
 				<div className="flex flex-col">
-					<button className="type-label text-dimmed hover:text-text-primary transition-colors bg-transparent border-none p-0 cursor-pointer leading-none">BYP</button>
-					<button className="type-label text-dimmed hover:text-text-primary transition-colors bg-transparent border-none p-0 cursor-pointer leading-none">RST</button>
+					<button className="type-label text-dimmed hover:text-text-primary transition-colors bg-transparent border-none p-0 cursor-pointer leading-none">
+						BYP
+					</button>
+					<button className="type-label text-dimmed hover:text-text-primary transition-colors bg-transparent border-none p-0 cursor-pointer leading-none">
+						RST
+					</button>
 				</div>
 			</div>
 

@@ -37,7 +37,14 @@ Build tempo-aware time conversion from pattern events:
 
 ```typescript
 import { collectMetadata, buildTempoMap, beatsToSeconds, secondsToBeats } from "@resequence/patterns-utils";
-import type { TempoMap, CollectedMetadata, MarkerPoint, RegionPoint, TempoPoint, TimeSignaturePoint } from "@resequence/patterns-utils";
+import type {
+	TempoMap,
+	CollectedMetadata,
+	MarkerPoint,
+	RegionPoint,
+	TempoPoint,
+	TimeSignaturePoint,
+} from "@resequence/patterns-utils";
 
 const metadata = collectMetadata(events);
 // metadata.tempoMap, metadata.markers, metadata.timeSignatures, metadata.regions
@@ -67,20 +74,20 @@ import { tuning } from "@resequence/patterns-core";
 tuning(pattern, Just.config);
 ```
 
-| Tuning | Description |
-|---|---|
-| `Midi` | 12-TET A=440, octave range [-1, 9] |
-| `A432` | 12-TET A=432 |
-| `QuarterTone` | 24 steps per octave |
-| `Just` | 5-limit just intonation |
-| `Pythagorean` | 3-limit frequency ratios |
-| `Meantone` | Quarter-comma meantone |
-| `Werckmeister` | Historical well-temperament |
-| `Pelog` | 7-step gamelan tuning |
-| `Slendro` | 5-step gamelan tuning |
-| `BohlenPierce` | 13 steps per tritave (octave ratio 3) |
-| `Tet19` / `Tet31` / `Tet53` | Equal temperaments with 19/31/53 steps |
-| `I` | Integer-index-based tuning for programmatic access |
+| Tuning                      | Description                                        |
+| --------------------------- | -------------------------------------------------- |
+| `Midi`                      | 12-TET A=440, octave range [-1, 9]                 |
+| `A432`                      | 12-TET A=432                                       |
+| `QuarterTone`               | 24 steps per octave                                |
+| `Just`                      | 5-limit just intonation                            |
+| `Pythagorean`               | 3-limit frequency ratios                           |
+| `Meantone`                  | Quarter-comma meantone                             |
+| `Werckmeister`              | Historical well-temperament                        |
+| `Pelog`                     | 7-step gamelan tuning                              |
+| `Slendro`                   | 5-step gamelan tuning                              |
+| `BohlenPierce`              | 13 steps per tritave (octave ratio 3)              |
+| `Tet19` / `Tet31` / `Tet53` | Equal temperaments with 19/31/53 steps             |
+| `I`                         | Integer-index-based tuning for programmatic access |
 
 ### Chord and Scale Utilities
 
@@ -88,12 +95,12 @@ tuning(pattern, Just.config);
 import { CD, CS } from "@resequence/patterns-utils";
 import type { ScaleAccessor } from "@resequence/patterns-utils";
 
-CD("Cm7", 2);               // chord — returns a layer of notes
+CD("Cm7", 2); // chord — returns a layer of notes
 CD("Gmaj9", 4);
 
 const scale = CS("C4 minor");
-scale(0);                    // C4
-scale(2);                    // Eb4
+scale(0); // C4
+scale(2); // Eb4
 ```
 
 ## Keyframe Evaluation
@@ -101,8 +108,8 @@ scale(2);                    // Eb4
 ```typescript
 import { applyCurve, evaluateAt } from "@resequence/patterns-utils";
 
-applyCurve(0.5, "exponential");    // apply curve shaping to a normalized value
-evaluateAt(keyframes, beat);       // evaluate a keyframe array at a beat position
+applyCurve(0.5, "exponential"); // apply curve shaping to a normalized value
+evaluateAt(keyframes, beat); // evaluate a keyframe array at a beat position
 ```
 
 ## Slide Utilities

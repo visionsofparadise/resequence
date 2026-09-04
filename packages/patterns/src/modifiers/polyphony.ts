@@ -1,5 +1,6 @@
-import type { Event, Note, ModifierProperties, Pattern, PatternProperties } from "@resequence/patterns-core";
 import { ModifierPattern, toPattern, flatModifyNotes, walkNotes } from "@resequence/patterns-core";
+import type { Event, Note, ModifierProperties, Pattern, PatternProperties } from "@resequence/patterns-core";
+
 export interface PolyphonyProperties extends ModifierProperties {
 	readonly max: number;
 	readonly isGreedy: boolean;
@@ -13,7 +14,11 @@ export class PolyphonyPattern extends ModifierPattern<PolyphonyProperties> {
 		const entries: Array<{ id: string; absoluteStart: number; absoluteEnd: number }> = [];
 
 		walkNotes(this, (note, { id, absoluteOffset }) => {
-			entries.push({ id, absoluteStart: absoluteOffset + note.startBeat, absoluteEnd: absoluteOffset + note.endBeat });
+			entries.push({
+				id,
+				absoluteStart: absoluteOffset + note.startBeat,
+				absoluteEnd: absoluteOffset + note.endBeat,
+			});
 		});
 		entries.sort((ea, eb) => ea.absoluteStart - eb.absoluteStart);
 
@@ -21,7 +26,10 @@ export class PolyphonyPattern extends ModifierPattern<PolyphonyProperties> {
 		const active: typeof entries = [];
 
 		for (const entry of entries) {
-			const stillActive = active.filter((keptEntry) => keptEntry.absoluteStart <= entry.absoluteStart && entry.absoluteStart < keptEntry.absoluteEnd);
+			const stillActive = active.filter(
+				(keptEntry) =>
+					keptEntry.absoluteStart <= entry.absoluteStart && entry.absoluteStart < keptEntry.absoluteEnd,
+			);
 
 			if (stillActive.length < this.properties.max) {
 				kept.add(entry.id);
@@ -36,6 +44,7 @@ export class PolyphonyPattern extends ModifierPattern<PolyphonyProperties> {
 				}
 
 				kept.delete(oldest.id);
+
 				const oldestIndex = active.indexOf(oldest);
 
 				if (oldestIndex >= 0) active.splice(oldestIndex, 1);
@@ -55,7 +64,11 @@ export class PolyphonyPattern extends ModifierPattern<PolyphonyProperties> {
 	}
 
 	clone(_overrides: Partial<PatternProperties>): PolyphonyPattern {
-		return new PolyphonyPattern({ max: this.properties.max, isGreedy: this.properties.isGreedy, input: this.properties.input });
+		return new PolyphonyPattern({
+			max: this.properties.max,
+			isGreedy: this.properties.isGreedy,
+			input: this.properties.input,
+		});
 	}
 }
 

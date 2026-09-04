@@ -2,8 +2,13 @@ import { createTuning } from "@resequence/patterns-core";
 
 const REF_HZ = 278;
 const CENTS: Record<string, number> = {
-	Bem: 0, Gul: 120, Dada: 260, Pelog: 410,
-	Lima: 540, Nem: 680, Barang: 820,
+	Bem: 0,
+	Gul: 120,
+	Dada: 260,
+	Pelog: 410,
+	Lima: 540,
+	Nem: 680,
+	Barang: 820,
 };
 
 const frequencies: Record<string, number> = {};

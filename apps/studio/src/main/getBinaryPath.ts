@@ -1,8 +1,10 @@
-import { app } from "electron";
 import path from "path";
+import { app } from "electron";
 
 const getBinaryPath = (name: string): string => {
-	const binDir = app.isPackaged ? path.join(process.resourcesPath, "binaries") : path.join(app.getAppPath(), "binaries", process.platform);
+	const binDir = app.isPackaged
+		? path.join(process.resourcesPath, "binaries")
+		: path.join(app.getAppPath(), "binaries", process.platform);
 
 	const ext = process.platform === "win32" ? ".exe" : "";
 

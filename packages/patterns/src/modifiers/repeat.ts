@@ -1,5 +1,6 @@
-import type { Event, Note, ModifierProperties, Pattern, PatternProperties } from "@resequence/patterns-core";
 import { PatternsError, ModifierPattern, toPattern, flatModifyNotes } from "@resequence/patterns-core";
+import type { Event, Note, ModifierProperties, Pattern, PatternProperties } from "@resequence/patterns-core";
+
 export interface RepeatProperties extends ModifierProperties {
 	readonly count: number;
 }
@@ -15,7 +16,11 @@ export class RepeatPattern extends ModifierPattern<RepeatProperties> {
 			const copies = [];
 
 			for (let index = 0; index < this.properties.count; index++) {
-				copies.push({ ...note, startBeat: note.startBeat + durationBeats * index, endBeat: note.endBeat + durationBeats * index });
+				copies.push({
+					...note,
+					startBeat: note.startBeat + durationBeats * index,
+					endBeat: note.endBeat + durationBeats * index,
+				});
 			}
 
 			return copies;

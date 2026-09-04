@@ -1,13 +1,16 @@
-import type { DriverEntry } from "@resequence/web-au/core";
 import { StudioDriver } from "../models/StudioDriver";
 import type { ValueScheduler } from "../models/ValueScheduler";
+import type { DriverEntry } from "@resequence/web-au/core";
 
 export interface DerivedDriverMap {
 	readonly byUnit: Map<string, Map<string, StudioDriver>>;
 	readonly all: Map<string, StudioDriver>;
 }
 
-export function hijackDrivers(driverMap: ReadonlyMap<string, DriverEntry>, scheduler: ValueScheduler): DerivedDriverMap {
+export function hijackDrivers(
+	driverMap: ReadonlyMap<string, DriverEntry>,
+	scheduler: ValueScheduler,
+): DerivedDriverMap {
 	const all = new Map<string, StudioDriver>();
 	const byUnit = new Map<string, Map<string, StudioDriver>>();
 

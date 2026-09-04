@@ -1,8 +1,9 @@
 import { useDrag } from "@use-gesture/react";
 import { useCallback, useMemo, useRef } from "react";
-import type { ProjectContext } from "../../../../../models/Context";
 import { useTransients } from "../../../../../hooks/useTransients";
+import type { ProjectContext } from "../../../../../models/Context";
 import type { PlaybackState } from "../../../../../models/State/Playback";
+
 export const RULER_HEIGHT = 24;
 
 const BUFFER_PX = 200;
@@ -21,10 +22,15 @@ function getTickInterval(pxPerBeat: number): TickInterval {
 	const targetBeats = targetMajorPx / pxPerBeat;
 
 	if (targetBeats <= 1) return { major: 1, minor: 0.25 };
+
 	if (targetBeats <= 2) return { major: 2, minor: 0.5 };
+
 	if (targetBeats <= 4) return { major: 4, minor: 1 };
+
 	if (targetBeats <= 8) return { major: 8, minor: 2 };
+
 	if (targetBeats <= 16) return { major: 16, minor: 4 };
+
 	if (targetBeats <= 32) return { major: 32, minor: 8 };
 
 	return { major: 64, minor: 16 };
@@ -142,7 +148,10 @@ export const Ruler: React.FC<RulerProps> = ({ context }) => {
 		}
 	}, [project.timelineZoom, project.timelineScrollX, getOrCreateTick]);
 
-	const rulerTransients = useMemo(() => [project.timelineZoom, project.timelineScrollX], [project.timelineZoom, project.timelineScrollX]);
+	const rulerTransients = useMemo(
+		() => [project.timelineZoom, project.timelineScrollX],
+		[project.timelineZoom, project.timelineScrollX],
+	);
 
 	useTransients(rulerTransients, updateTicks);
 
@@ -194,10 +203,7 @@ export const Ruler: React.FC<RulerProps> = ({ context }) => {
 			onClick={handleClick}
 			{...bindDrag()}
 		>
-			<div
-				ref={ticksContainerRef}
-				className="pointer-events-none absolute inset-0 overflow-visible"
-			/>
+			<div ref={ticksContainerRef} className="pointer-events-none absolute inset-0 overflow-visible" />
 		</div>
 	);
 };

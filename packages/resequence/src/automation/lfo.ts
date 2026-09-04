@@ -8,7 +8,13 @@ export interface Lfo {
 	readonly attack: number;
 }
 
-export function resolveLfo(lfo: { shape: LfoShape; value: number; frequency: number; delay?: number; attack?: number }): Lfo {
+export function resolveLfo(lfo: {
+	shape: LfoShape;
+	value: number;
+	frequency: number;
+	delay?: number;
+	attack?: number;
+}): Lfo {
 	return {
 		shape: lfo.shape,
 		value: lfo.value,
@@ -18,7 +24,14 @@ export function resolveLfo(lfo: { shape: LfoShape; value: number; frequency: num
 	};
 }
 
-export function scheduleLfo(lfo: Lfo, target: AudioParam, audioContext: BaseAudioContext, startTime: number, stopTime: number, depthScale: number): void {
+export function scheduleLfo(
+	lfo: Lfo,
+	target: AudioParam,
+	audioContext: BaseAudioContext,
+	startTime: number,
+	stopTime: number,
+	depthScale: number,
+): void {
 	const osc = audioContext.createOscillator();
 
 	osc.type = lfo.shape;

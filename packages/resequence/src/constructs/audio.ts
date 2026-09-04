@@ -1,5 +1,5 @@
-import type { Event, PatternProperties } from "@resequence/patterns-core";
 import { Pattern } from "@resequence/patterns-core";
+import type { Event, PatternProperties } from "@resequence/patterns-core";
 
 export interface PreloadAudioEvent {
 	readonly type: "preloadAudio";

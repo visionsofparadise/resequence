@@ -1,11 +1,15 @@
-import type { SetupResult, UnitContext, UnitInput } from "@resequence/web-au-core";
 import { Unit, driveParam, live } from "@resequence/web-au-core";
 import { z } from "zod";
+import type { SetupResult, UnitContext, UnitInput } from "@resequence/web-au-core";
 
-export type FilterMode = "lowpass" | "highpass" | "bandpass" | "peaking" | "notch" | "lowshelf" | "highshelf" | "allpass";
+export type FilterMode =
+	"lowpass" | "highpass" | "bandpass" | "peaking" | "notch" | "lowshelf" | "highshelf" | "allpass";
 
 const filterSchema = z.object({
-	mode: z.enum(["lowpass", "highpass", "bandpass", "notch", "allpass", "peaking", "lowshelf", "highshelf"]).default("lowpass").describe("Mode"),
+	mode: z
+		.enum(["lowpass", "highpass", "bandpass", "notch", "allpass", "peaking", "lowshelf", "highshelf"])
+		.default("lowpass")
+		.describe("Mode"),
 	frequency: live(z.number().min(20).max(20000).default(1000).describe("Frequency")),
 	resonance: live(z.number().min(0).max(30).default(1).describe("Resonance").optional()),
 	gain: live(z.number().min(-40).max(40).default(0).describe("Gain").optional()),
@@ -40,31 +44,93 @@ export class FilterEffectUnit extends Unit<typeof filterSchema> {
 	}
 }
 
-export function filter({ mode, frequency, resonance, gain, id }: { mode: FilterMode; frequency: number; resonance?: number; gain?: number; id?: string }): FilterEffectUnit {
+export function filter({
+	mode,
+	frequency,
+	resonance,
+	gain,
+	id,
+}: {
+	mode: FilterMode;
+	frequency: number;
+	resonance?: number;
+	gain?: number;
+	id?: string;
+}): FilterEffectUnit {
 	return new FilterEffectUnit({ mode, frequency, resonance, gain, id });
 }
 
-export function lowpass({ frequency, resonance, id }: { frequency: number; resonance?: number; id?: string }): FilterEffectUnit {
+export function lowpass({
+	frequency,
+	resonance,
+	id,
+}: {
+	frequency: number;
+	resonance?: number;
+	id?: string;
+}): FilterEffectUnit {
 	return filter({ mode: "lowpass", frequency, resonance, id });
 }
 
-export function highpass({ frequency, resonance, id }: { frequency: number; resonance?: number; id?: string }): FilterEffectUnit {
+export function highpass({
+	frequency,
+	resonance,
+	id,
+}: {
+	frequency: number;
+	resonance?: number;
+	id?: string;
+}): FilterEffectUnit {
 	return filter({ mode: "highpass", frequency, resonance, id });
 }
 
-export function bandpass({ frequency, resonance, id }: { frequency: number; resonance?: number; id?: string }): FilterEffectUnit {
+export function bandpass({
+	frequency,
+	resonance,
+	id,
+}: {
+	frequency: number;
+	resonance?: number;
+	id?: string;
+}): FilterEffectUnit {
 	return filter({ mode: "bandpass", frequency, resonance, id });
 }
 
-export function notch({ frequency, resonance, id }: { frequency: number; resonance?: number; id?: string }): FilterEffectUnit {
+export function notch({
+	frequency,
+	resonance,
+	id,
+}: {
+	frequency: number;
+	resonance?: number;
+	id?: string;
+}): FilterEffectUnit {
 	return filter({ mode: "notch", frequency, resonance, id });
 }
 
-export function allpass({ frequency, resonance, id }: { frequency: number; resonance?: number; id?: string }): FilterEffectUnit {
+export function allpass({
+	frequency,
+	resonance,
+	id,
+}: {
+	frequency: number;
+	resonance?: number;
+	id?: string;
+}): FilterEffectUnit {
 	return filter({ mode: "allpass", frequency, resonance, id });
 }
 
-export function peaking({ frequency, resonance, gain, id }: { frequency: number; resonance?: number; gain?: number; id?: string }): FilterEffectUnit {
+export function peaking({
+	frequency,
+	resonance,
+	gain,
+	id,
+}: {
+	frequency: number;
+	resonance?: number;
+	gain?: number;
+	id?: string;
+}): FilterEffectUnit {
 	return filter({ mode: "peaking", frequency, resonance, gain, id });
 }
 
@@ -72,6 +138,14 @@ export function lowshelf({ frequency, gain, id }: { frequency: number; gain?: nu
 	return filter({ mode: "lowshelf", frequency, gain, id });
 }
 
-export function highshelf({ frequency, gain, id }: { frequency: number; gain?: number; id?: string }): FilterEffectUnit {
+export function highshelf({
+	frequency,
+	gain,
+	id,
+}: {
+	frequency: number;
+	gain?: number;
+	id?: string;
+}): FilterEffectUnit {
 	return filter({ mode: "highshelf", frequency, gain, id });
 }

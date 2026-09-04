@@ -1,9 +1,9 @@
-import type { Event, MetadataEvent } from "../events";
 import { PatternsError } from "../error";
+import { Pattern } from "./pattern";
+import type { Event, MetadataEvent } from "../events";
 import type { Port } from "../port";
 import type { ResolvedTuning } from "../tuning";
 import type { PatternProperties } from "./pattern";
-import { Pattern } from "./pattern";
 
 export interface Metadata {
 	readonly name?: string;
@@ -26,13 +26,26 @@ export class MetadataPattern extends Pattern<MetadataProperties> {
 	constructor(properties: MetadataProperties) {
 		super(properties);
 
-		if (properties.meta.timeSignature !== undefined && (properties.meta.timeSignature[0] < 1 || properties.meta.timeSignature[1] < 1)) {
-			throw new PatternsError("INVALID_TIME_SIGNATURE", `timeSignature(): values must be >= 1, got [${properties.meta.timeSignature[0]}, ${properties.meta.timeSignature[1]}]`);
+		if (
+			properties.meta.timeSignature !== undefined &&
+			(properties.meta.timeSignature[0] < 1 || properties.meta.timeSignature[1] < 1)
+		) {
+			throw new PatternsError(
+				"INVALID_TIME_SIGNATURE",
+				`timeSignature(): values must be >= 1, got [${properties.meta.timeSignature[0]}, ${properties.meta.timeSignature[1]}]`,
+			);
 		}
 	}
 
-	override schedule(absoluteBeat: number, fromBeats: number, toBeats: number, ports: ReadonlyArray<Port> = [], tuning?: ResolvedTuning): Array<Event> {
-		if (absoluteBeat + this.properties.endBeat <= fromBeats || absoluteBeat + this.properties.startBeat >= toBeats) return [];
+	override schedule(
+		absoluteBeat: number,
+		fromBeats: number,
+		toBeats: number,
+		ports: ReadonlyArray<Port> = [],
+		tuning?: ResolvedTuning,
+	): Array<Event> {
+		if (absoluteBeat + this.properties.endBeat <= fromBeats || absoluteBeat + this.properties.startBeat >= toBeats)
+			return [];
 
 		const effectiveTuning = this.properties.meta.tuning ?? tuning;
 		const meta = this.properties.meta;
@@ -50,9 +63,13 @@ export class MetadataPattern extends Pattern<MetadataProperties> {
 			description: meta.description,
 		};
 
-		const hasContent = meta.tuning !== undefined || meta.timeSignature !== undefined ||
-			meta.marker !== undefined || meta.region !== undefined ||
-			meta.name !== undefined || meta.description !== undefined;
+		const hasContent =
+			meta.tuning !== undefined ||
+			meta.timeSignature !== undefined ||
+			meta.marker !== undefined ||
+			meta.region !== undefined ||
+			meta.name !== undefined ||
+			meta.description !== undefined;
 
 		if (hasContent) ownEvents.push(metadataEvent);
 
@@ -74,12 +91,20 @@ export class MetadataPattern extends Pattern<MetadataProperties> {
 }
 
 export function metadata(pattern: Pattern, meta: Metadata): MetadataPattern {
-	return new MetadataPattern({ notes: [], children: [{ offsetBeats: 0, pattern }], startBeat: pattern.startBeat, endBeat: pattern.endBeat, meta });
+	return new MetadataPattern({
+		notes: [],
+		children: [{ offsetBeats: 0, pattern }],
+		startBeat: pattern.startBeat,
+		endBeat: pattern.endBeat,
+		meta,
+	});
 }
 
-export const tuning = (pattern: Pattern, config: NonNullable<Metadata["tuning"]>): MetadataPattern => metadata(pattern, { tuning: config });
+export const tuning = (pattern: Pattern, config: NonNullable<Metadata["tuning"]>): MetadataPattern =>
+	metadata(pattern, { tuning: config });
 
-export const timeSignature = (pattern: Pattern, sig: readonly [number, number]): MetadataPattern => metadata(pattern, { timeSignature: sig });
+export const timeSignature = (pattern: Pattern, sig: readonly [number, number]): MetadataPattern =>
+	metadata(pattern, { timeSignature: sig });
 
 export const marker = (pattern: Pattern, name: string): MetadataPattern => metadata(pattern, { marker: name });
 

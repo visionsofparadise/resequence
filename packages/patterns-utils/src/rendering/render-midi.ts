@@ -1,10 +1,10 @@
-import type { Event, NoteEvent } from "@resequence/patterns-core";
-import type { Pattern } from "@resequence/patterns-core";
 import { pitchToMidi } from "@resequence/patterns-core";
 import { evaluateSlideCents } from "../utils/slide";
-import type { MidiNote, MidiPitchBend } from "./encode-midi";
 import { encodeMidi } from "./encode-midi";
 import { collectMetadata } from "./tempo-map";
+import type { MidiNote, MidiPitchBend } from "./encode-midi";
+import type { Pattern } from "@resequence/patterns-core";
+import type { Event, NoteEvent } from "@resequence/patterns-core";
 
 const DEFAULT_PPQ = 480;
 
@@ -65,7 +65,15 @@ export function renderMidi(pattern: Pattern, options?: { ppq?: number }): Map<st
 	for (const [portKey, notes] of grouped) {
 		const singleTrack = new Map([[portKey, notes]]);
 
-		result.set(portKey, encodeMidi(singleTrack, { ppq, tempoChanges: metadata.tempoMap, markers: metadata.markers, timeSignatureChanges: metadata.timeSignatures }));
+		result.set(
+			portKey,
+			encodeMidi(singleTrack, {
+				ppq,
+				tempoChanges: metadata.tempoMap,
+				markers: metadata.markers,
+				timeSignatureChanges: metadata.timeSignatures,
+			}),
+		);
 	}
 
 	return result;

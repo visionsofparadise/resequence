@@ -2,6 +2,7 @@ import type { Keyframe } from "@resequence/patterns-core";
 
 export function applyCurve(progress: number, curve: number): number {
 	if (curve === 0) return progress;
+
 	if (curve > 0) return Math.pow(progress, 1 + curve * 3);
 
 	return 1 - Math.pow(1 - progress, 1 + Math.abs(curve) * 3);

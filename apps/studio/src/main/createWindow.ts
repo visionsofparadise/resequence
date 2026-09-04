@@ -1,13 +1,13 @@
-import { app, BrowserWindow } from "electron";
 import path from "path";
-import type winston from "winston";
+import { app, BrowserWindow } from "electron";
 import { ASYNC_MAIN_IPCS } from "../shared/ipc/asyncMainIpcs";
-import type { IpcHandlerDependencies } from "../shared/models/AsyncMainIpc";
 import { interceptRendererLogs } from "../shared/models/Logger/interceptRendererLogs";
 import { Logger } from "../shared/models/Logger/Logger";
 import { emitToRenderer } from "../shared/utilities/emitToRenderer";
 import { getContentSecurityPolicy } from "./getContentSecurityPolicy";
 import { readSettings, restoreWindowState } from "./windowState";
+import type { IpcHandlerDependencies } from "../shared/models/AsyncMainIpc";
+import type winston from "winston";
 
 export interface WindowFactoryDependencies {
 	readonly logger: Logger;
@@ -71,7 +71,11 @@ export const createWindow = async (dependencies: WindowFactoryDependencies): Pro
 		new AsyncMainIpc().register(ipcDependencies);
 	}
 
-	logger.info("IPC handlers registered for window", { namespace: "window", transactionId, count: String(ASYNC_MAIN_IPCS.length) });
+	logger.info("IPC handlers registered for window", {
+		namespace: "window",
+		transactionId,
+		count: String(ASYNC_MAIN_IPCS.length),
+	});
 
 	interceptRendererLogs(transactionId, { browserWindow, winston });
 	logger.info("Renderer log interception initialized", { namespace: "window", transactionId });
@@ -85,11 +89,18 @@ export const createWindow = async (dependencies: WindowFactoryDependencies): Pro
 	const emitBounds = (): void => {
 		const { x, y, width, height } = browserWindow.getBounds();
 
-		emitToRenderer(browserWindow, "windowBoundsChanged", { x, y, width, height, maximized: browserWindow.isMaximized() });
+		emitToRenderer(browserWindow, "windowBoundsChanged", {
+			x,
+			y,
+			width,
+			height,
+			maximized: browserWindow.isMaximized(),
+		});
 	};
 
 	const debouncedEmit = (): void => {
 		if (debounceTimer) clearTimeout(debounceTimer);
+
 		debounceTimer = setTimeout(emitBounds, 500);
 	};
 
@@ -97,6 +108,7 @@ export const createWindow = async (dependencies: WindowFactoryDependencies): Pro
 	browserWindow.on("resize", debouncedEmit);
 	browserWindow.on("close", () => {
 		if (debounceTimer) clearTimeout(debounceTimer);
+
 		emitBounds();
 	});
 
@@ -109,7 +121,11 @@ export const createWindow = async (dependencies: WindowFactoryDependencies): Pro
 			});
 		});
 
-		logger.debug("Loaded dev server URL", { namespace: "window", transactionId, url: process.env.MAIN_WINDOW_VITE_DEV_SERVER_URL });
+		logger.debug("Loaded dev server URL", {
+			namespace: "window",
+			transactionId,
+			url: process.env.MAIN_WINDOW_VITE_DEV_SERVER_URL,
+		});
 	} else {
 		const filePath = path.join(__dirname, `../../renderer/${process.env.MAIN_WINDOW_VITE_NAME}/index.html`);
 

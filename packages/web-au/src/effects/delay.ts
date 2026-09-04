@@ -1,7 +1,7 @@
-import type { SetupResult, UnitContext, UnitInput } from "@resequence/web-au-core";
 import { Unit, driveParam, LiveParameter, live } from "@resequence/web-au-core";
 import { z } from "zod";
 import { linearGain, type GainEffectUnit } from "./gain";
+import type { SetupResult, UnitContext, UnitInput } from "@resequence/web-au-core";
 
 const delaySchema = z.object({
 	time: z.number().min(0).max(5000).default(250).describe("Time (ms)"),
@@ -34,6 +34,7 @@ export class DelayEffectUnit extends Unit<typeof delaySchema> {
 			void feedbackUnit.setup(context);
 
 			for (const entry of feedbackUnit.entryNodes) delayNode.connect(entry);
+
 			for (const exit of feedbackUnit.exitNodes) exit.connect(delayNode);
 
 			this.feedbackUnit = feedbackUnit;

@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useRef } from "react";
 import { useTransients } from "../../../../../hooks/useTransients";
-import type { BuildContext } from "../../../../../models/Context";
 import { ViewHeader } from "../../../../ViewHeader";
-import type { MidiClip, Sequence } from "../../utils/buildArrangement";
 import { PianoRollGrid } from "./Grid";
 import { PianoRollNote } from "./Note";
-import { PianoRollPitchSlide } from "./PitchSlide";
 import { PianoKeys } from "./PianoKeys";
+import { PianoRollPitchSlide } from "./PitchSlide";
+import type { BuildContext } from "../../../../../models/Context";
+import type { MidiClip, Sequence } from "../../utils/buildArrangement";
 
 const NUM_OCTAVES = 11;
 const PIANO_WIDTH = 48;
@@ -54,7 +54,17 @@ function resolveTarget(sequences: ReadonlyArray<Sequence>, target: PianoRollTarg
 	return null;
 }
 
-const BeatRuler = ({ totalBars, beatsPerBar, pixelsPerBeat, height = 24 }: { totalBars: number; beatsPerBar: number; pixelsPerBeat: number; height?: number }) => {
+const BeatRuler = ({
+	totalBars,
+	beatsPerBar,
+	pixelsPerBeat,
+	height = 24,
+}: {
+	totalBars: number;
+	beatsPerBar: number;
+	pixelsPerBeat: number;
+	height?: number;
+}) => {
 	const totalBeats = totalBars * beatsPerBar;
 	const totalWidth = totalBeats * pixelsPerBeat;
 	const ticks: Array<{ x: number; height: number; label?: string }> = [];
@@ -127,7 +137,10 @@ export const PianoRoll: React.FC<PianoRollProps> = ({ context, target, onBack })
 		container.scrollTop = Math.max(0, scrollTop);
 	}, [clip, maxPitchKey, pitchZoom]);
 
-	const transients = useMemo(() => [project.pitchZoom, project.timelineZoom], [project.pitchZoom, project.timelineZoom]);
+	const transients = useMemo(
+		() => [project.pitchZoom, project.timelineZoom],
+		[project.pitchZoom, project.timelineZoom],
+	);
 
 	useTransients(transients, () => {
 		if (!gridCellRef.current || !sequence) return;
@@ -161,17 +174,9 @@ export const PianoRoll: React.FC<PianoRollProps> = ({ context, target, onBack })
 
 	return (
 		<div className="flex h-full flex-col bg-surface">
-			<ViewHeader
-				title={clip.port}
-				unitColor={color}
-				onClose={onBack}
-			/>
+			<ViewHeader title={clip.port} unitColor={color} onClose={onBack} />
 
-			<div
-				ref={scrollRef}
-				className="flex-1 overflow-auto scrollbar-ruler"
-				style={{ minHeight: 0 }}
-			>
+			<div ref={scrollRef} className="flex-1 overflow-auto scrollbar-ruler" style={{ minHeight: 0 }}>
 				<div
 					style={{
 						display: "grid",
@@ -184,10 +189,7 @@ export const PianoRoll: React.FC<PianoRollProps> = ({ context, target, onBack })
 						style={{ position: "sticky", top: 0, left: 0, zIndex: 3 }}
 					/>
 
-					<div
-						className="border-b border-border"
-						style={{ position: "sticky", top: 0, zIndex: 2 }}
-					>
+					<div className="border-b border-border" style={{ position: "sticky", top: 0, zIndex: 2 }}>
 						<BeatRuler
 							totalBars={totalBars}
 							beatsPerBar={timeSignature[0]}
@@ -196,17 +198,9 @@ export const PianoRoll: React.FC<PianoRollProps> = ({ context, target, onBack })
 						/>
 					</div>
 
-					<PianoKeys
-						keyHeight={pitchZoom}
-						totalKeys={totalKeys}
-						stepsPerOctave={stepsPerOctave}
-					/>
+					<PianoKeys keyHeight={pitchZoom} totalKeys={totalKeys} stepsPerOctave={stepsPerOctave} />
 
-					<div
-						ref={gridCellRef}
-						className="relative"
-						style={{ width: gridWidth, height: gridHeight }}
-					>
+					<div ref={gridCellRef} className="relative" style={{ width: gridWidth, height: gridHeight }}>
 						<PianoRollGrid
 							minPitchKey={minPitchKey}
 							maxPitchKey={maxPitchKey}
@@ -218,12 +212,7 @@ export const PianoRoll: React.FC<PianoRollProps> = ({ context, target, onBack })
 						/>
 
 						{clip.notes.map((note, index) => (
-							<PianoRollNote
-								key={`n-${index}`}
-								note={note}
-								clip={clip}
-								context={context}
-							/>
+							<PianoRollNote key={`n-${index}`} note={note} clip={clip} context={context} />
 						))}
 
 						{clip.notes.map((noteData, ni) =>

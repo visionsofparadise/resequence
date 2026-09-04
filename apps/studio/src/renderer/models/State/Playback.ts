@@ -1,7 +1,7 @@
-import type { State } from ".";
 import { useCreateState } from "../ProxyStore/hooks/useCreateState";
-import type { ProxyStore } from "../ProxyStore/ProxyStore";
 import { Transient } from "../Transient";
+import type { State } from ".";
+import type { ProxyStore } from "../ProxyStore/ProxyStore";
 
 export interface PlaybackState extends State {
 	beat: Transient<number>;

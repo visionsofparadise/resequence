@@ -1,6 +1,6 @@
-import type { SetupResult, UnitContext, UnitInput, AnyUnit } from "@resequence/web-au-core";
 import { Unit } from "@resequence/web-au-core";
 import { z } from "zod";
+import type { SetupResult, UnitContext, UnitInput, AnyUnit } from "@resequence/web-au-core";
 
 export class RingModEffectUnit extends Unit {
 	readonly type = ["unit"];

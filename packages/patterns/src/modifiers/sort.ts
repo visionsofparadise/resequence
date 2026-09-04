@@ -1,5 +1,6 @@
-import type { Event, Note, ModifierProperties, Pattern, PatternProperties, Pitch } from "@resequence/patterns-core";
 import { ModifierPattern, toPattern, NUM_OCTAVES, pitchKey, modifyNotes, walkNotes } from "@resequence/patterns-core";
+import type { Event, Note, ModifierProperties, Pattern, PatternProperties, Pitch } from "@resequence/patterns-core";
+
 export type SortKey = "asc" | "desc" | ((noteA: Note, noteB: Note) => number);
 
 export interface SortProperties extends ModifierProperties {
@@ -18,9 +19,14 @@ export class SortPattern extends ModifierPattern<SortProperties> {
 				id,
 				absoluteStart: absoluteOffset + note.startBeat,
 				pitch: note.pitch,
-				absoluteNote: { ...note, startBeat: absoluteOffset + note.startBeat, endBeat: absoluteOffset + note.endBeat },
+				absoluteNote: {
+					...note,
+					startBeat: absoluteOffset + note.startBeat,
+					endBeat: absoluteOffset + note.endBeat,
+				},
 			});
 		});
+
 		const byTick = entries.slice().sort((ea, eb) => ea.absoluteStart - eb.absoluteStart);
 
 		let pitches: Array<Pitch>;
@@ -28,7 +34,9 @@ export class SortPattern extends ModifierPattern<SortProperties> {
 		if (typeof this.properties.key === "function") {
 			pitches = entries
 				.slice()
-				.sort((ea, eb) => (this.properties.key as (noteA: Note, noteB: Note) => number)(ea.absoluteNote, eb.absoluteNote))
+				.sort((ea, eb) =>
+					(this.properties.key as (noteA: Note, noteB: Note) => number)(ea.absoluteNote, eb.absoluteNote),
+				)
 				.map((entry) => entry.pitch);
 		} else if (this.properties.key === "desc") {
 			pitches = byTick.map((entry) => entry.pitch).sort((pitchA, pitchB) => pitchKey(pitchB) - pitchKey(pitchA));
@@ -55,7 +63,10 @@ export class SortPattern extends ModifierPattern<SortProperties> {
 				return {
 					...note,
 					pitch: newPitch,
-					slides: note.slides?.map((sl) => ({ ...sl, value: sl.value + shift / (note.pitch.stepsPerOctave * NUM_OCTAVES) })),
+					slides: note.slides?.map((sl) => ({
+						...sl,
+						value: sl.value + shift / (note.pitch.stepsPerOctave * NUM_OCTAVES),
+					})),
 				};
 			}
 

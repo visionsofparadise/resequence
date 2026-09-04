@@ -1,6 +1,6 @@
-import type { Event, Keyframe, MetadataEvent } from "@resequence/patterns-core";
 import { denormalizeBpm, normalizeBpm } from "@resequence/patterns-core";
 import { evaluateAt } from "../utils/keyframe";
+import type { Event, Keyframe, MetadataEvent } from "@resequence/patterns-core";
 
 export interface TempoPoint {
 	readonly beat: number;
@@ -61,6 +61,7 @@ export function collectTempoPoints(
 	for (const kf of sorted) {
 		if (kf.beat === 0) {
 			prevBeat = 0;
+
 			continue;
 		}
 
@@ -88,6 +89,7 @@ export function buildTempoMap(events: ReadonlyArray<Event>): TempoMap {
 
 	for (const event of events) {
 		if (event.type !== "metadata") continue;
+
 		const meta = event as MetadataEvent;
 
 		if (meta.bpm === undefined) continue;
@@ -127,6 +129,7 @@ export function secondsToBeats(fromBeat: number, elapsedSeconds: number, tempoMa
 	for (const point of tempoMap) {
 		if (point.beat <= fromBeat) {
 			bpm = point.bpm;
+
 			continue;
 		}
 
@@ -155,6 +158,7 @@ export function collectMetadata(events: ReadonlyArray<Event>): CollectedMetadata
 
 	for (const event of events) {
 		if (event.type !== "metadata") continue;
+
 		const meta = event as MetadataEvent;
 
 		if (meta.bpm !== undefined) {

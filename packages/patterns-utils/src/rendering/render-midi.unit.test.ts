@@ -112,12 +112,16 @@ describe("renderMidi", () => {
 		const tempoEvents = tempoTrack.filter((ev) => ev.type === "setTempo");
 		expect(tempoEvents.length).toBeGreaterThanOrEqual(1);
 		// 140 BPM = 60_000_000 / 140 ≈ 428571 microseconds per beat
-		const tempoEvent = tempoEvents.find((ev) => ev.type === "setTempo" && Math.abs(ev.microsecondsPerBeat - Math.round(60_000_000 / 140)) < 2);
+		const tempoEvent = tempoEvents.find(
+			(ev) => ev.type === "setTempo" && Math.abs(ev.microsecondsPerBeat - Math.round(60_000_000 / 140)) < 2,
+		);
 		expect(tempoEvent).toBeDefined();
 
 		const timeSigEvents = tempoTrack.filter((ev) => ev.type === "timeSignature");
 		expect(timeSigEvents.length).toBeGreaterThanOrEqual(1);
-		const timeSig = timeSigEvents.find((ev) => ev.type === "timeSignature" && ev.numerator === 3 && ev.denominator === Math.log2(4));
+		const timeSig = timeSigEvents.find(
+			(ev) => ev.type === "timeSignature" && ev.numerator === 3 && ev.denominator === Math.log2(4),
+		);
 		expect(timeSig).toBeDefined();
 
 		const markerEvents = tempoTrack.filter((ev) => ev.type === "marker");

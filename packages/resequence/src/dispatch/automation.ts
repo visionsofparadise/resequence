@@ -1,12 +1,19 @@
+import { beatsToSeconds, evaluateAt } from "@resequence/patterns-utils";
+import { scheduleKeyframes } from "../automation/keyframe";
+import type { Lfo } from "../automation/lfo";
+import type { AutomationEvent } from "../constructs/automate";
 import type { Keyframe } from "@resequence/patterns-core";
 import type { TempoMap } from "@resequence/patterns-utils";
-import { beatsToSeconds, evaluateAt } from "@resequence/patterns-utils";
 import type { DriverEntry } from "@resequence/web-au-core";
-import { scheduleKeyframes } from "../automation/keyframe";
-import type { AutomationEvent } from "../constructs/automate";
-import type { Lfo } from "../automation/lfo";
 
-export function dispatchAutomation(event: AutomationEvent, driverMap: ReadonlyMap<string, DriverEntry>, audioContext: BaseAudioContext, tempoMap: TempoMap, fromBeats: number, toBeats: number): void {
+export function dispatchAutomation(
+	event: AutomationEvent,
+	driverMap: ReadonlyMap<string, DriverEntry>,
+	audioContext: BaseAudioContext,
+	tempoMap: TempoMap,
+	fromBeats: number,
+	toBeats: number,
+): void {
 	if (Array.isArray(event.source)) {
 		dispatchKeyframes(event, event.source, driverMap, tempoMap, fromBeats, toBeats);
 	} else {
@@ -14,7 +21,14 @@ export function dispatchAutomation(event: AutomationEvent, driverMap: ReadonlyMa
 	}
 }
 
-function dispatchKeyframes(event: AutomationEvent, envelope: ReadonlyArray<Keyframe>, driverMap: ReadonlyMap<string, DriverEntry>, tempoMap: TempoMap, fromBeats: number, toBeats: number): void {
+function dispatchKeyframes(
+	event: AutomationEvent,
+	envelope: ReadonlyArray<Keyframe>,
+	driverMap: ReadonlyMap<string, DriverEntry>,
+	tempoMap: TempoMap,
+	fromBeats: number,
+	toBeats: number,
+): void {
 	if (envelope.length === 0) return;
 
 	const absoluteKeyframes: Array<Keyframe> = envelope.map((kf) => ({ ...kf, beat: event.absoluteBeat + kf.beat }));
@@ -47,7 +61,15 @@ function dispatchKeyframes(event: AutomationEvent, envelope: ReadonlyArray<Keyfr
 	}
 }
 
-function dispatchLfo(event: AutomationEvent, lfo: Lfo, driverMap: ReadonlyMap<string, DriverEntry>, audioContext: BaseAudioContext, tempoMap: TempoMap, fromBeats: number, toBeats: number): void {
+function dispatchLfo(
+	event: AutomationEvent,
+	lfo: Lfo,
+	driverMap: ReadonlyMap<string, DriverEntry>,
+	audioContext: BaseAudioContext,
+	tempoMap: TempoMap,
+	fromBeats: number,
+	toBeats: number,
+): void {
 	if (event.absoluteBeat >= toBeats) return;
 
 	const lfoStartSeconds = beatsToSeconds(event.absoluteBeat, tempoMap);

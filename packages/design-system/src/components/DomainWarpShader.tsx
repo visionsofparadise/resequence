@@ -1,8 +1,8 @@
-import { useRef, useEffect, useMemo } from 'react';
-import { cn } from '../cn';
-import { Canvas, useFrame } from '@react-three/fiber';
-import { Color, Vector2, Vector3, type Mesh } from 'three';
-import { useThemeColors } from './three-utils';
+import { Canvas, useFrame } from "@react-three/fiber";
+import { useRef, useEffect, useMemo } from "react";
+import { Color, Vector2, Vector3, type Mesh } from "three";
+import { cn } from "../cn";
+import { useThemeColors } from "./three-utils";
 
 const vertexShader = /* glsl */ `
   varying vec2 vUv;
@@ -113,99 +113,106 @@ const DEFAULT_COLOR_MIX = 0.65;
 const DEFAULT_COLOR_AMP = 2.5;
 
 interface WarpPlaneProps {
-  scale: number;
-  speed: number;
-  octaves: number;
-  warp: number;
-  colorMix: number;
-  colorAmp: number;
+	scale: number;
+	speed: number;
+	octaves: number;
+	warp: number;
+	colorMix: number;
+	colorAmp: number;
 }
 
 function WarpPlane({ scale, speed, octaves, warp, colorMix, colorAmp }: WarpPlaneProps) {
-  const meshRef = useRef<Mesh>(null);
-  const themeColors = useThemeColors();
+	const meshRef = useRef<Mesh>(null);
+	const themeColors = useThemeColors();
 
-  const uniforms = useMemo(() => ({
-    uTime: { value: 0 },
-    uResolution: { value: new Vector2(1, 1) },
-    uSurface: { value: new Vector3() },
-    uAccent1: { value: new Vector3() },
-    uAccent2: { value: new Vector3() },
-    uScale: { value: scale },
-    uSpeed: { value: speed },
-    uOctaves: { value: octaves },
-    uWarp: { value: warp },
-    uColorMix: { value: colorMix },
-    uColorAmp: { value: colorAmp },
-  }), []);
+	const uniforms = useMemo(
+		() => ({
+			uTime: { value: 0 },
+			uResolution: { value: new Vector2(1, 1) },
+			uSurface: { value: new Vector3() },
+			uAccent1: { value: new Vector3() },
+			uAccent2: { value: new Vector3() },
+			uScale: { value: scale },
+			uSpeed: { value: speed },
+			uOctaves: { value: octaves },
+			uWarp: { value: warp },
+			uColorMix: { value: colorMix },
+			uColorAmp: { value: colorAmp },
+		}),
+		[],
+	);
 
-  useEffect(() => {
-    const surface = new Color(themeColors.surface);
-    const accent1 = new Color(themeColors.accentPrimary);
-    const accent2 = new Color(themeColors.accentSecondary);
+	useEffect(() => {
+		const surface = new Color(themeColors.surface);
+		const accent1 = new Color(themeColors.accentPrimary);
+		const accent2 = new Color(themeColors.accentSecondary);
 
-    uniforms.uSurface.value.set(surface.r, surface.g, surface.b);
-    uniforms.uAccent1.value.set(accent1.r, accent1.g, accent1.b);
-    uniforms.uAccent2.value.set(accent2.r, accent2.g, accent2.b);
-  }, [themeColors, uniforms]);
+		uniforms.uSurface.value.set(surface.r, surface.g, surface.b);
+		uniforms.uAccent1.value.set(accent1.r, accent1.g, accent1.b);
+		uniforms.uAccent2.value.set(accent2.r, accent2.g, accent2.b);
+	}, [themeColors, uniforms]);
 
-  useEffect(() => {
-    uniforms.uScale.value = scale;
-    uniforms.uSpeed.value = speed;
-    uniforms.uOctaves.value = octaves;
-    uniforms.uWarp.value = warp;
-    uniforms.uColorMix.value = colorMix;
-    uniforms.uColorAmp.value = colorAmp;
-  }, [scale, speed, octaves, warp, colorMix, colorAmp, uniforms]);
+	useEffect(() => {
+		uniforms.uScale.value = scale;
+		uniforms.uSpeed.value = speed;
+		uniforms.uOctaves.value = octaves;
+		uniforms.uWarp.value = warp;
+		uniforms.uColorMix.value = colorMix;
+		uniforms.uColorAmp.value = colorAmp;
+	}, [scale, speed, octaves, warp, colorMix, colorAmp, uniforms]);
 
-  useFrame((state) => {
-    uniforms.uTime.value = state.clock.elapsedTime;
-    const { width, height } = state.size;
+	useFrame((state) => {
+		uniforms.uTime.value = state.clock.elapsedTime;
 
-    uniforms.uResolution.value.set(width, height);
-  });
+		const { width, height } = state.size;
 
-  return (
-    <mesh ref={meshRef}>
-      <planeGeometry args={[2, 2]} />
-      <shaderMaterial
-        vertexShader={vertexShader}
-        fragmentShader={fragmentShader}
-        uniforms={uniforms}
-      />
-    </mesh>
-  );
+		uniforms.uResolution.value.set(width, height);
+	});
+
+	return (
+		<mesh ref={meshRef}>
+			<planeGeometry args={[2, 2]} />
+			<shaderMaterial vertexShader={vertexShader} fragmentShader={fragmentShader} uniforms={uniforms} />
+		</mesh>
+	);
 }
 
 export default function DomainWarpShader({
-  scale = DEFAULT_SCALE,
-  speed = DEFAULT_SPEED,
-  octaves = DEFAULT_OCTAVES,
-  warp = DEFAULT_WARP,
-  colorMix = DEFAULT_COLOR_MIX,
-  colorAmp = DEFAULT_COLOR_AMP,
-  className,
-  style,
-  ref,
-  ...rest
-}: React.ComponentPropsWithRef<'div'> & {
-  scale?: number;
-  speed?: number;
-  octaves?: number;
-  warp?: number;
-  colorMix?: number;
-  colorAmp?: number;
+	scale = DEFAULT_SCALE,
+	speed = DEFAULT_SPEED,
+	octaves = DEFAULT_OCTAVES,
+	warp = DEFAULT_WARP,
+	colorMix = DEFAULT_COLOR_MIX,
+	colorAmp = DEFAULT_COLOR_AMP,
+	className,
+	style,
+	ref,
+	...rest
+}: React.ComponentPropsWithRef<"div"> & {
+	scale?: number;
+	speed?: number;
+	octaves?: number;
+	warp?: number;
+	colorMix?: number;
+	colorAmp?: number;
 }) {
-  return (
-    <div ref={ref} style={{ width: '100%', height: '100%', ...style }} className={cn(className)} {...rest}>
-      <Canvas
-        orthographic
-        camera={{ position: [0, 0, 1], zoom: 1, left: -1, right: 1, top: 1, bottom: -1, near: 0, far: 2 }}
-        gl={{ alpha: false, antialias: false }}
-        dpr={[1, 1.5]}
-      >
-        <WarpPlane scale={scale} speed={speed} octaves={octaves} warp={warp} colorMix={colorMix} colorAmp={colorAmp} />
-      </Canvas>
-    </div>
-  );
+	return (
+		<div ref={ref} style={{ width: "100%", height: "100%", ...style }} className={cn(className)} {...rest}>
+			<Canvas
+				orthographic
+				camera={{ position: [0, 0, 1], zoom: 1, left: -1, right: 1, top: 1, bottom: -1, near: 0, far: 2 }}
+				gl={{ alpha: false, antialias: false }}
+				dpr={[1, 1.5]}
+			>
+				<WarpPlane
+					scale={scale}
+					speed={speed}
+					octaves={octaves}
+					warp={warp}
+					colorMix={colorMix}
+					colorAmp={colorAmp}
+				/>
+			</Canvas>
+		</div>
+	);
 }

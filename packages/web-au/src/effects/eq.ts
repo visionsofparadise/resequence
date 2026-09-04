@@ -1,7 +1,7 @@
-import type { SetupResult, UnitContext, UnitInput } from "@resequence/web-au-core";
 import { Unit, type Parameter } from "@resequence/web-au-core";
 import { z } from "zod";
 import { filter, type FilterEffectUnit, type FilterMode } from "./filter";
+import type { SetupResult, UnitContext, UnitInput } from "@resequence/web-au-core";
 
 export interface EqBand {
 	readonly type: FilterMode;
@@ -12,13 +12,19 @@ export interface EqBand {
 }
 
 const eqSchema = z.object({
-	bands: z.array(z.object({
-		type: z.enum(["lowpass", "highpass", "bandpass", "notch", "allpass", "peaking", "lowshelf", "highshelf"]).default("peaking"),
-		frequency: z.number().min(20).max(20000).default(1000),
-		gain: z.number().min(-40).max(40).default(0).optional(),
-		resonance: z.number().min(0).max(30).default(1).optional(),
-		id: z.string().optional(),
-	})).default([]),
+	bands: z
+		.array(
+			z.object({
+				type: z
+					.enum(["lowpass", "highpass", "bandpass", "notch", "allpass", "peaking", "lowshelf", "highshelf"])
+					.default("peaking"),
+				frequency: z.number().min(20).max(20000).default(1000),
+				gain: z.number().min(-40).max(40).default(0).optional(),
+				resonance: z.number().min(0).max(30).default(1).optional(),
+				id: z.string().optional(),
+			}),
+		)
+		.default([]),
 });
 
 export class EqEffectUnit extends Unit<typeof eqSchema> {
@@ -33,20 +39,36 @@ export class EqEffectUnit extends Unit<typeof eqSchema> {
 	}
 
 	get bands(): ReadonlyArray<EqBand> {
-		return this.parameters.bands.map((band: { type: Parameter<FilterMode>; frequency: Parameter<number>; gain: Parameter<number> | null; resonance: Parameter<number> | null; id: Parameter<string> | null }) => ({
-			type: band.type.value,
-			frequency: band.frequency.value,
-			gain: band.gain?.value,
-			resonance: band.resonance?.value,
-			id: band.id?.value,
-		}));
+		return this.parameters.bands.map(
+			(band: {
+				type: Parameter<FilterMode>;
+				frequency: Parameter<number>;
+				gain: Parameter<number> | null;
+				resonance: Parameter<number> | null;
+				id: Parameter<string> | null;
+			}) => ({
+				type: band.type.value,
+				frequency: band.frequency.value,
+				gain: band.gain?.value,
+				resonance: band.resonance?.value,
+				id: band.id?.value,
+			}),
+		);
 	}
 
 	protected override _setup(_context: UnitContext): SetupResult {
 		const filters: Array<FilterEffectUnit> = [];
 
 		for (const band of this.bands) {
-			filters.push(filter({ mode: band.type, frequency: band.frequency, resonance: band.resonance, gain: band.gain, id: band.id }));
+			filters.push(
+				filter({
+					mode: band.type,
+					frequency: band.frequency,
+					resonance: band.resonance,
+					gain: band.gain,
+					id: band.id,
+				}),
+			);
 		}
 
 		for (let index = 0; index < filters.length - 1; index++) {

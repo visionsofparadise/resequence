@@ -3,7 +3,12 @@ import { N, collectNotes, pitchKey } from "@resequence/patterns-core";
 import { describe, expect, it } from "vitest";
 describe("random", () => {
 	it("generates the specified number of notes", () => {
-		const pat = random({ pitches: [N.C4(1).pitch, N.D4(1).pitch, N.E4(1).pitch], count: 8, stepDuration: 0.5, seed: 1 });
+		const pat = random({
+			pitches: [N.C4(1).pitch, N.D4(1).pitch, N.E4(1).pitch],
+			count: 8,
+			stepDuration: 0.5,
+			seed: 1,
+		});
 		const notes = collectNotes(pat);
 		expect(notes).toHaveLength(8);
 	});
@@ -21,7 +26,7 @@ describe("random", () => {
 	it("places notes at sequential step beats", () => {
 		const pat = random({ pitches: [N.C4(1).pitch], count: 3, stepDuration: 0.5, seed: 1 });
 		const notes = collectNotes(pat);
-		const sorted = notes.sort((a, b) => (a.absoluteBeat + a.note.startBeat) - (b.absoluteBeat + b.note.startBeat));
+		const sorted = notes.sort((a, b) => a.absoluteBeat + a.note.startBeat - (b.absoluteBeat + b.note.startBeat));
 		expect(sorted[0]!.absoluteBeat).toBe(0);
 		expect(sorted[1]!.absoluteBeat).toBe(0.5);
 		expect(sorted[2]!.absoluteBeat).toBe(1);
@@ -33,9 +38,7 @@ describe("random", () => {
 		const pat2 = random({ pitches, count: 8, stepDuration: 0.5, seed: 99 });
 		const notes1 = collectNotes(pat1);
 		const notes2 = collectNotes(pat2);
-		expect(notes1.map((n) => pitchKey(n.note.pitch))).toEqual(
-			notes2.map((n) => pitchKey(n.note.pitch)),
-		);
+		expect(notes1.map((n) => pitchKey(n.note.pitch))).toEqual(notes2.map((n) => pitchKey(n.note.pitch)));
 	});
 
 	it("constrains velocity to the given range", () => {

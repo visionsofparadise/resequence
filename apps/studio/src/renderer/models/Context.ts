@@ -1,11 +1,3 @@
-import type { QueryClient } from "@tanstack/react-query";
-import type { Playback, Router, TempoMap } from "resequence";
-import type { Unit } from "@resequence/web-au/core";
-import type { Snapshot } from "valtio";
-import type { AppSettings } from "../../shared/models/AppSettings";
-import type { Logger } from "../../shared/models/Logger/Logger";
-import type { DerivedDriverMap } from "../components/Project/Build/utils/hijackDrivers";
-import type { Arrangement } from "../components/Project/Build/utils/buildArrangement";
 import type { MainWithEvents } from "./Main";
 import type { ProxyStore } from "./ProxyStore/ProxyStore";
 import type { AppState } from "./State/App";
@@ -14,6 +6,14 @@ import type { HistoryState } from "./State/History";
 import type { OverrideEntry, OverrideState } from "./State/Override";
 import type { PlaybackState } from "./State/Playback";
 import type { ProjectState } from "./State/Project";
+import type { AppSettings } from "../../shared/models/AppSettings";
+import type { Logger } from "../../shared/models/Logger/Logger";
+import type { Arrangement } from "../components/Project/Build/utils/buildArrangement";
+import type { DerivedDriverMap } from "../components/Project/Build/utils/hijackDrivers";
+import type { Unit } from "@resequence/web-au/core";
+import type { QueryClient } from "@tanstack/react-query";
+import type { Playback, Router, TempoMap } from "resequence";
+import type { Snapshot } from "valtio";
 
 export interface AppContext {
 	readonly appSettings: AppSettings;

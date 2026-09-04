@@ -6,11 +6,7 @@ interface PianoKeysProps {
 	readonly stepsPerOctave?: number;
 }
 
-export const PianoKeys: React.FC<PianoKeysProps> = ({
-	keyHeight,
-	totalKeys = 120,
-	stepsPerOctave = 12,
-}) => {
+export const PianoKeys: React.FC<PianoKeysProps> = ({ keyHeight, totalKeys = 120, stepsPerOctave = 12 }) => {
 	const isChromatic = stepsPerOctave === 12;
 	const maxPitch = totalKeys - 1;
 
@@ -38,16 +34,9 @@ export const PianoKeys: React.FC<PianoKeysProps> = ({
 				}}
 			>
 				{isC && (
-					<span className="type-label text-[8px] leading-none">
-						{isChromatic ? `C${octave}` : `${octave}`}
-					</span>
+					<span className="type-label text-[8px] leading-none">{isChromatic ? `C${octave}` : `${octave}`}</span>
 				)}
-				{isBlack && (
-					<div
-						className="absolute right-0 top-0 bottom-0 bg-dimmed opacity-40"
-						style={{ width: 3 }}
-					/>
-				)}
+				{isBlack && <div className="absolute right-0 top-0 bottom-0 bg-dimmed opacity-40" style={{ width: 3 }} />}
 			</div>,
 		);
 	}

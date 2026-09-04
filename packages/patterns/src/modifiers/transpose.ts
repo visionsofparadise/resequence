@@ -1,5 +1,6 @@
-import type { Event, Note, ModifierProperties, Pattern, PatternProperties } from "@resequence/patterns-core";
 import { ModifierPattern, toPattern, addSteps, NUM_OCTAVES, modifyNotes } from "@resequence/patterns-core";
+import type { Event, Note, ModifierProperties, Pattern, PatternProperties } from "@resequence/patterns-core";
+
 export interface TransposeProperties extends ModifierProperties {
 	readonly interval: number;
 }
@@ -12,7 +13,10 @@ export class TransposePattern extends ModifierPattern<TransposeProperties> {
 		modifyNotes(this, (note) => ({
 			...note,
 			pitch: addSteps(note.pitch, this.properties.interval),
-			slides: note.slides?.map((sl) => ({ ...sl, value: sl.value + this.properties.interval / (note.pitch.stepsPerOctave * NUM_OCTAVES) })),
+			slides: note.slides?.map((sl) => ({
+				...sl,
+				value: sl.value + this.properties.interval / (note.pitch.stepsPerOctave * NUM_OCTAVES),
+			})),
 		}));
 
 		return [];

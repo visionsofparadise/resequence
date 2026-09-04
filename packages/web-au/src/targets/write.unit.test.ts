@@ -112,5 +112,4 @@ describe("WriteUnit", () => {
 		const { writeFileSync } = await import("node:fs");
 		expect(writeFileSync).not.toHaveBeenCalled();
 	});
-
 });

@@ -1,8 +1,8 @@
-import type { AnyUnit, SetupResult, UnitContext, UnitInput } from "@resequence/web-au-core";
 import { Unit } from "@resequence/web-au-core";
 import { z } from "zod";
 import { type GainEffectUnit, linearGain } from "./gain";
 import { linkwitzRiley } from "./linkwitz-riley";
+import type { AnyUnit, SetupResult, UnitContext, UnitInput } from "@resequence/web-au-core";
 
 const crossoverSchema = z.object({
 	bands: z.array(

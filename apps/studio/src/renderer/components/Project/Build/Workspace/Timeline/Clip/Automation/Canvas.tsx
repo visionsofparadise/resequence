@@ -1,10 +1,10 @@
 import { useMemo, useRef } from "react";
 import { useTransients } from "../../../../../../../hooks/useTransients";
-import type { BuildContext } from "../../../../../../../models/Context";
-import type { AutomationClip } from "../../../../utils/buildArrangement";
 import { drawEnvelope } from "./utils/drawEnvelope";
 import { drawLfo } from "./utils/drawLfo";
 import { isKeyframes } from "./utils/isKeyframes";
+import type { BuildContext } from "../../../../../../../models/Context";
+import type { AutomationClip } from "../../../../utils/buildArrangement";
 
 const AUTOMATION_LANE_HEIGHT = 32;
 
@@ -50,10 +50,5 @@ export const AutomationCanvas: React.FC<AutomationCanvasProps> = ({ clip, contex
 		}
 	});
 
-	return (
-		<canvas
-			ref={canvasRef}
-			className="h-full w-full"
-		/>
-	);
+	return <canvas ref={canvasRef} className="h-full w-full" />;
 };

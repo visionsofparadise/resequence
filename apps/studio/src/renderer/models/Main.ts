@@ -1,7 +1,7 @@
-import type { IpcRendererEvent } from "electron";
+import type { MainEvents } from "./MainEvents";
 import type { AsyncIpcAction, AsyncIpcParameters, AsyncIpcReturn } from "../../shared/ipc/asyncRendererIpcs";
 import type { MainEventMap, RendererEventMap } from "../../shared/utilities/emitToRenderer";
-import type { MainEvents } from "./MainEvents";
+import type { IpcRendererEvent } from "electron";
 
 type MainListener<K extends keyof MainEventMap> = (event: IpcRendererEvent, ...parameters: MainEventMap[K]) => void;
 
@@ -22,7 +22,7 @@ export type MainWithEvents = Omit<Main, "events"> & {
 	events: MainEvents;
 };
 
-export const main = (window as Window & typeof globalThis & { main: Main }).main;
+export const main = window.main;
 
 declare global {
 	interface Window {

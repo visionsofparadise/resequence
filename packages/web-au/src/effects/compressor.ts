@@ -1,6 +1,6 @@
-import type { SetupResult, UnitContext, UnitInput } from "@resequence/web-au-core";
 import { Unit, driveParam, live } from "@resequence/web-au-core";
 import { z } from "zod";
+import type { SetupResult, UnitContext, UnitInput } from "@resequence/web-au-core";
 
 const compressorSchema = z.object({
 	threshold: live(z.number().min(-100).max(0).default(-24).describe("Threshold (dB)")),
@@ -28,8 +28,12 @@ export class CompressorEffectUnit extends Unit<typeof compressorSchema> {
 		driveParam(compressorNode.ratio, this.parameters.ratio, undefined, context);
 
 		if (this.parameters.knee?.value !== undefined) compressorNode.knee.value = this.parameters.knee.value;
-		if (this.parameters.attack?.value !== undefined) compressorNode.attack.value = this.parameters.attack.value / 1000;
-		if (this.parameters.release?.value !== undefined) compressorNode.release.value = this.parameters.release.value / 1000;
+
+		if (this.parameters.attack?.value !== undefined)
+			compressorNode.attack.value = this.parameters.attack.value / 1000;
+
+		if (this.parameters.release?.value !== undefined)
+			compressorNode.release.value = this.parameters.release.value / 1000;
 
 		this.compressorNode = compressorNode;
 
@@ -41,10 +45,28 @@ export class CompressorEffectUnit extends Unit<typeof compressorSchema> {
 	}
 }
 
-export function compressor({ threshold, knee, ratio, attack, release, id }: { threshold: number; knee?: number; ratio: number; attack?: number; release?: number; id?: string }): CompressorEffectUnit {
+export function compressor({
+	threshold,
+	knee,
+	ratio,
+	attack,
+	release,
+	id,
+}: {
+	threshold: number;
+	knee?: number;
+	ratio: number;
+	attack?: number;
+	release?: number;
+	id?: string;
+}): CompressorEffectUnit {
 	return new CompressorEffectUnit({ threshold, knee, ratio, attack, release, id });
 }
 
-export function limiter({ threshold = -3, release = 100, id }: { threshold?: number; release?: number; id?: string } = {}): CompressorEffectUnit {
+export function limiter({
+	threshold = -3,
+	release = 100,
+	id,
+}: { threshold?: number; release?: number; id?: string } = {}): CompressorEffectUnit {
 	return new CompressorEffectUnit({ threshold, knee: 0, ratio: 100, attack: 1, release, id });
 }

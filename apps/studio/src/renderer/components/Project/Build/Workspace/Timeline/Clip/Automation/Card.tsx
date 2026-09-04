@@ -1,8 +1,8 @@
 import { useMemo, useRef } from "react";
 import { useTransients } from "../../../../../../../hooks/useTransients";
+import { AutomationCanvas } from "./Canvas";
 import type { BuildContext } from "../../../../../../../models/Context";
 import type { AutomationClip, Sequence } from "../../../../utils/buildArrangement";
-import { AutomationCanvas } from "./Canvas";
 
 const AUTOMATION_LANE_HEIGHT = 32;
 
@@ -30,15 +30,8 @@ export const AutomationClipCard: React.FC<AutomationClipCardProps> = ({ clip, se
 	});
 
 	return (
-		<div
-			className="relative border-b border-border"
-			style={{ height: AUTOMATION_LANE_HEIGHT }}
-		>
-			<div
-				ref={innerRef}
-				className="absolute top-0 overflow-hidden"
-				style={{ height: AUTOMATION_LANE_HEIGHT }}
-			>
+		<div className="relative border-b border-border" style={{ height: AUTOMATION_LANE_HEIGHT }}>
+			<div ref={innerRef} className="absolute top-0 overflow-hidden" style={{ height: AUTOMATION_LANE_HEIGHT }}>
 				<AutomationCanvas clip={clip} context={context} />
 				<span className="pointer-events-none absolute left-1 top-0.5 rounded-sm bg-surface/60 px-1 type-label">
 					{clip.name} &middot; {clip.paths.join(", ")}

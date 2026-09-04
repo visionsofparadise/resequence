@@ -1,6 +1,3 @@
-import React from "react";
-import type { RecentProject } from "../../../shared/models/AppSettings";
-import type { IconProps } from "@resequence/design-system";
 import {
 	PrimaryIcon,
 	BarcodeIcon,
@@ -12,6 +9,9 @@ import {
 	CrosshatchIcon,
 	CheckerboardIcon,
 } from "@resequence/design-system";
+import React from "react";
+import type { RecentProject } from "../../../shared/models/AppSettings";
+import type { IconProps } from "@resequence/design-system";
 
 const icons: Array<React.ComponentType<IconProps>> = [
 	PrimaryIcon,
@@ -32,7 +32,7 @@ const unitColorVars = [
 	"var(--color-unit-4)",
 	"var(--color-unit-5)",
 	"var(--color-unit-6)",
-];
+] as const;
 
 function hashString(input: string): number {
 	let hash = 5381;
@@ -55,7 +55,9 @@ const getRelativeTime = (timestamp: number): string => {
 	const rtf = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
 
 	if (diffDays > 0) return rtf.format(-diffDays, "day");
+
 	if (diffHours > 0) return rtf.format(-diffHours, "hour");
+
 	if (diffMinutes > 0) return rtf.format(-diffMinutes, "minute");
 
 	return rtf.format(-diffSeconds, "second");
@@ -96,7 +98,9 @@ export const RecentProjectsList: React.FC<RecentProjectsListProps> = ({ recentPr
 								{project.name}
 							</span>
 							<span className="type-label text-[8px] text-dimmed leading-none truncate">{project.path}</span>
-							<span className="type-label text-[8px] text-border leading-none">{getRelativeTime(project.lastOpenedAt)}</span>
+							<span className="type-label text-[8px] text-border leading-none">
+								{getRelativeTime(project.lastOpenedAt)}
+							</span>
 						</div>
 					</button>
 				);

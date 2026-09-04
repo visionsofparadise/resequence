@@ -1,12 +1,18 @@
-import type { QueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
+import { APP_SETTINGS_QUERY_KEY } from "../utils/appSettings";
 import type { AppSettings, WindowState } from "../../shared/models/AppSettings";
 import type { MainWithEvents } from "../models/Main";
 import type { ProxyStore } from "../models/ProxyStore/ProxyStore";
 import type { AppState } from "../models/State/App";
-import { APP_SETTINGS_QUERY_KEY } from "../utils/appSettings";
+import type { QueryClient } from "@tanstack/react-query";
 
-export function useWindowState(appState: AppState & { readonly _key: symbol }, appStore: ProxyStore, appSettings: AppSettings | undefined, main: MainWithEvents, queryClient: QueryClient): void {
+export function useWindowState(
+	appState: AppState & { readonly _key: symbol },
+	appStore: ProxyStore,
+	appSettings: AppSettings | undefined,
+	main: MainWithEvents,
+	queryClient: QueryClient,
+): void {
 	useEffect(() => {
 		if (appSettings?.windowState) {
 			appStore.mutate(appState, (proxy) => Object.assign(proxy, appSettings.windowState));

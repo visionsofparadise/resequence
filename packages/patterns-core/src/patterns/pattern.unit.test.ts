@@ -57,7 +57,12 @@ describe("Pattern base class", () => {
 
 	it("schedule recurses children", () => {
 		const child = sequence(N.C4(1)).route("piano");
-		const parent = new TestPattern({ notes: [], children: [{ offsetBeats: 0, pattern: child }], startBeat: 0, endBeat: 1 });
+		const parent = new TestPattern({
+			notes: [],
+			children: [{ offsetBeats: 0, pattern: child }],
+			startBeat: 0,
+			endBeat: 1,
+		});
 		const events = parent.schedule(0, -Infinity, Infinity);
 		expect(events).toHaveLength(1);
 		expect((events[0] as NoteEvent).port).toBe("piano");
@@ -71,7 +76,12 @@ describe("Pattern base class", () => {
 
 	it("setup recurses children", () => {
 		const child = testEvents([{ type: "test" }], 1);
-		const parent = new TestPattern({ notes: [], children: [{ offsetBeats: 0, pattern: child }], startBeat: 0, endBeat: 1 });
+		const parent = new TestPattern({
+			notes: [],
+			children: [{ offsetBeats: 0, pattern: child }],
+			startBeat: 0,
+			endBeat: 1,
+		});
 		const events = parent.setup(0);
 		expect(events).toHaveLength(1);
 		expect(events[0]?.type).toBe("test");
@@ -89,7 +99,12 @@ describe("MidiPattern", () => {
 
 	it("produces NoteEvents from owned notes with ports", () => {
 		const n = note(N.C4, 1);
-		const pattern = new TestMidiPattern({ notes: [{ offsetBeats: 0, note: n }], children: [], startBeat: 0, endBeat: 1 });
+		const pattern = new TestMidiPattern({
+			notes: [{ offsetBeats: 0, note: n }],
+			children: [],
+			startBeat: 0,
+			endBeat: 1,
+		});
 		pattern.route("piano");
 
 		const events = pattern.schedule(0, -Infinity, Infinity);
@@ -106,14 +121,24 @@ describe("MidiPattern", () => {
 
 	it("produces no events without ports", () => {
 		const n = note(N.C4, 1);
-		const pattern = new TestMidiPattern({ notes: [{ offsetBeats: 0, note: n }], children: [], startBeat: 0, endBeat: 1 });
+		const pattern = new TestMidiPattern({
+			notes: [{ offsetBeats: 0, note: n }],
+			children: [],
+			startBeat: 0,
+			endBeat: 1,
+		});
 		const events = pattern.schedule(0, -Infinity, Infinity);
 		expect(events).toEqual([]);
 	});
 
 	it("routes to specified channel", () => {
 		const n = note(N.C4, 1);
-		const pattern = new TestMidiPattern({ notes: [{ offsetBeats: 0, note: n }], children: [], startBeat: 0, endBeat: 1 });
+		const pattern = new TestMidiPattern({
+			notes: [{ offsetBeats: 0, note: n }],
+			children: [],
+			startBeat: 0,
+			endBeat: 1,
+		});
 		pattern.route("drums", 9);
 
 		const events = pattern.schedule(0, -Infinity, Infinity);
@@ -132,7 +157,12 @@ describe("MidiPattern", () => {
 
 	it("emits one NoteEvent per port per note", () => {
 		const n = note(N.C4, 1);
-		const pattern = new TestMidiPattern({ notes: [{ offsetBeats: 0, note: n }], children: [], startBeat: 0, endBeat: 1 });
+		const pattern = new TestMidiPattern({
+			notes: [{ offsetBeats: 0, note: n }],
+			children: [],
+			startBeat: 0,
+			endBeat: 1,
+		});
 		pattern.route("piano");
 		pattern.route("synth");
 

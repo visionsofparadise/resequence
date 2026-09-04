@@ -1,5 +1,6 @@
-import type { Event, Note, ModifierProperties, Pattern, PatternProperties } from "@resequence/patterns-core";
 import { ModifierPattern, toPattern, pitchKey, flatModifyNotes, walkNotes } from "@resequence/patterns-core";
+import type { Event, Note, ModifierProperties, Pattern, PatternProperties } from "@resequence/patterns-core";
+
 export interface HealProperties extends ModifierProperties {
 	readonly threshold: number;
 }
@@ -13,7 +14,12 @@ export class HealPattern extends ModifierPattern<HealProperties> {
 		const entries: Array<{ id: string; absoluteStart: number; absoluteEnd: number; key: number }> = [];
 
 		walkNotes(this, (note, { id, absoluteOffset }) => {
-			entries.push({ id, absoluteStart: absoluteOffset + note.startBeat, absoluteEnd: absoluteOffset + note.endBeat, key: pitchKey(note.pitch) });
+			entries.push({
+				id,
+				absoluteStart: absoluteOffset + note.startBeat,
+				absoluteEnd: absoluteOffset + note.endBeat,
+				key: pitchKey(note.pitch),
+			});
 		});
 		entries.sort((ea, eb) => ea.absoluteStart - eb.absoluteStart || ea.key - eb.key);
 
@@ -31,6 +37,7 @@ export class HealPattern extends ModifierPattern<HealProperties> {
 					extensions.set(last.id, entry.absoluteEnd);
 					merged.add(entry.id);
 					last = { ...last, absoluteEnd: entry.absoluteEnd };
+
 					continue;
 				}
 			}

@@ -1,6 +1,6 @@
-import type { Event, Keyframe, PatternProperties } from "@resequence/patterns-core";
 import { Pattern } from "@resequence/patterns-core";
 import type { Lfo } from "../automation/lfo";
+import type { Event, Keyframe, PatternProperties } from "@resequence/patterns-core";
 
 export function isAutomationEvent(event: Event | { type: string }): event is AutomationEvent {
 	return event.type === "automation";
@@ -29,14 +29,16 @@ export class AutomationPattern extends Pattern<AutomationPatternProperties> {
 	override _schedule(absoluteBeat: number): Array<Event> {
 		const endBeat = this.properties.endBeat;
 
-		return [{
-			type: "automation",
-			name: this.properties.automationName,
-			absoluteBeat,
-			durationBeats: endBeat,
-			paths: this.properties.paths,
-			source: this.properties.source,
-		}];
+		return [
+			{
+				type: "automation",
+				name: this.properties.automationName,
+				absoluteBeat,
+				durationBeats: endBeat,
+				paths: this.properties.paths,
+				source: this.properties.source,
+			},
+		];
 	}
 
 	clone(overrides: Partial<PatternProperties>): AutomationPattern {
@@ -47,7 +49,11 @@ export class AutomationPattern extends Pattern<AutomationPatternProperties> {
 	}
 }
 
-export function automate(name: string, paths: string | ReadonlyArray<string>, source: ReadonlyArray<Keyframe> | Lfo): AutomationPattern {
+export function automate(
+	name: string,
+	paths: string | ReadonlyArray<string>,
+	source: ReadonlyArray<Keyframe> | Lfo,
+): AutomationPattern {
 	const resolvedPaths = typeof paths === "string" ? [paths] : [...paths];
 
 	for (const path of resolvedPaths) {

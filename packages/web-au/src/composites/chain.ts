@@ -1,6 +1,6 @@
-import type { AnyUnit, SetupResult, UnitContext, UnitInput } from "@resequence/web-au-core";
 import { CompositeUnit, flattenUnits } from "@resequence/web-au-core";
 import { z } from "zod";
+import type { AnyUnit, SetupResult, UnitContext, UnitInput } from "@resequence/web-au-core";
 
 export class Chain extends CompositeUnit {
 	readonly type = ["unit", "composite"];
@@ -13,12 +13,14 @@ export class Chain extends CompositeUnit {
 
 	constructor(input: { units: ReadonlyArray<AnyUnit> } & UnitInput) {
 		super(input, z.object({}));
+
 		const units = [...input.units];
 
 		const firstUnit = units[0];
 		const last = units[units.length - 1];
 
 		if (!firstUnit || !last) throw new Error("chain() requires at least one unit");
+
 		this.units = units;
 		this.head = firstUnit;
 		this.tail = last;

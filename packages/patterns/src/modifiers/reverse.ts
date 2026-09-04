@@ -1,5 +1,6 @@
-import type { Event, Note, Pattern, PatternProperties } from "@resequence/patterns-core";
 import { ModifierPattern, toPattern, modifyNotes } from "@resequence/patterns-core";
+import type { Event, Note, Pattern, PatternProperties } from "@resequence/patterns-core";
+
 export class ReversePattern extends ModifierPattern {
 	readonly packageName = "@resequence/patterns";
 	readonly unitName = "reverse";

@@ -1,5 +1,6 @@
-import type { Event, Note, ModifierProperties, Pattern, PatternProperties } from "@resequence/patterns-core";
 import { ModifierPattern, toPattern, flatModifyNotes } from "@resequence/patterns-core";
+import type { Event, Note, ModifierProperties, Pattern, PatternProperties } from "@resequence/patterns-core";
+
 export interface FlamProperties extends ModifierProperties {
 	readonly flamOffset: number;
 	readonly graceVelocity: number;
@@ -25,7 +26,11 @@ export class FlamPattern extends ModifierPattern<FlamProperties> {
 	}
 
 	clone(_overrides: Partial<PatternProperties>): FlamPattern {
-		return new FlamPattern({ flamOffset: this.properties.flamOffset, graceVelocity: this.properties.graceVelocity, input: this.properties.input });
+		return new FlamPattern({
+			flamOffset: this.properties.flamOffset,
+			graceVelocity: this.properties.graceVelocity,
+			input: this.properties.input,
+		});
 	}
 }
 

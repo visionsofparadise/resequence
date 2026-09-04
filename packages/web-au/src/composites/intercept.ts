@@ -1,6 +1,6 @@
-import type { AnyUnit, NoteEvent, SetupResult, UnitContext, UnitInput } from "@resequence/web-au-core";
 import { CompositeUnit, LiveParameter, MidiUnit } from "@resequence/web-au-core";
 import { z } from "zod";
+import type { AnyUnit, NoteEvent, SetupResult, UnitContext, UnitInput } from "@resequence/web-au-core";
 
 export interface InterceptOptions {
 	readonly override?: Readonly<Record<string, number>>;
@@ -19,6 +19,7 @@ export class InterceptUnit extends MidiUnit {
 		super(input, z.object({}));
 		this.inner = input.inner;
 		this.options = input.options;
+
 		if (input.targets) this.targets.push(...input.targets);
 	}
 
@@ -39,6 +40,7 @@ export class InterceptUnit extends MidiUnit {
 			const last = insert[insert.length - 1];
 
 			if (last) last.to(inner);
+
 			const first = insert[0];
 
 			if (first) entryUnit = first;
@@ -46,7 +48,7 @@ export class InterceptUnit extends MidiUnit {
 
 		if (overrides && inner.id) {
 			for (const [paramName, normalizedValue] of Object.entries(overrides)) {
-				const param = (inner.parameters)[paramName];
+				const param = inner.parameters[paramName];
 
 				if (param instanceof LiveParameter) {
 					param.set(param.min + normalizedValue * (param.max - param.min));

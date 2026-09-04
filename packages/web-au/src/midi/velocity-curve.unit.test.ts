@@ -21,7 +21,9 @@ class CaptureMidiUnit extends MidiUnit {
 const stubContext = {
 	audioContext: {} as BaseAudioContext,
 	driverMap: new Map(),
-	getSample: async () => { throw new Error("not implemented"); },
+	getSample: async () => {
+		throw new Error("not implemented");
+	},
 	loadModule: async () => {},
 } as unknown as UnitContext;
 

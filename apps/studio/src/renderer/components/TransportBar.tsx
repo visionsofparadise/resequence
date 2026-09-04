@@ -1,8 +1,8 @@
-import { useMemo, useRef, useState } from "react";
 import { PlayButton, PauseButton, VolumeControl } from "@resequence/design-system";
-import type { BuildContext } from "../models/Context";
+import { useMemo, useRef, useState } from "react";
 import { useTransients } from "../hooks/useTransients";
 import { useBuilds } from "./Project/hooks/useBuilds";
+import type { BuildContext } from "../models/Context";
 
 interface TransportBarProps {
 	readonly context: BuildContext;
@@ -48,7 +48,9 @@ export const TransportBar: React.FC<TransportBarProps> = ({ context }) => {
 						style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
 					>
 						<div className="flex flex-col justify-center gap-0.5 items-start">
-							<span className="text-[10px] uppercase tracking-[0.06em] text-accent-primary leading-none">BUILD</span>
+							<span className="text-[10px] uppercase tracking-[0.06em] text-accent-primary leading-none">
+								BUILD
+							</span>
 							{activeBuild && (
 								<span className="text-[10px] tabular-nums leading-none text-text-primary">
 									{formatBuildTimestamp(activeBuild.timestamp)}
@@ -89,9 +91,20 @@ export const TransportBar: React.FC<TransportBarProps> = ({ context }) => {
 				<div className="flex items-center gap-2" style={{ width: 24 * 4 }}>
 					<span className="type-label">VOL</span>
 					<div className="flex-1 h-px bg-border" />
-					<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="text-text-secondary shrink-0">
+					<svg
+						width="14"
+						height="14"
+						viewBox="0 0 24 24"
+						fill="currentColor"
+						className="text-text-secondary shrink-0"
+					>
 						<polygon points="2,8 2,16 7,16 14,22 14,2 7,8" />
-						<path d="M17 8.5c1.3 1.1 2 2.2 2 3.5s-.7 2.4-2 3.5" fill="none" stroke="currentColor" strokeWidth="1.5" />
+						<path
+							d="M17 8.5c1.3 1.1 2 2.2 2 3.5s-.7 2.4-2 3.5"
+							fill="none"
+							stroke="currentColor"
+							strokeWidth="1.5"
+						/>
 					</svg>
 				</div>
 				<VolumeControl level={0.7} />

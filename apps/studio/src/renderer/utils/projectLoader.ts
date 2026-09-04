@@ -1,8 +1,8 @@
 import { useCallback } from "react";
-import type { RecentProject } from "../../shared/models/AppSettings";
-import type { AppContext } from "../models/Context";
 import { useSetAppSettings } from "./appSettings";
 import { resolveEntrypoint } from "./resolveEntrypoint";
+import type { RecentProject } from "../../shared/models/AppSettings";
+import type { AppContext } from "../models/Context";
 
 const MAX_RECENT_PROJECTS = 10;
 

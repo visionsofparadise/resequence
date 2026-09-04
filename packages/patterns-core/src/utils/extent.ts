@@ -1,6 +1,9 @@
 import type { RelativeChild, RelativeNote } from "../patterns/pattern";
 
-export function extentOf(notes: ReadonlyArray<RelativeNote>, children: ReadonlyArray<RelativeChild>): { startBeat: number; endBeat: number } {
+export function extentOf(
+	notes: ReadonlyArray<RelativeNote>,
+	children: ReadonlyArray<RelativeChild>,
+): { startBeat: number; endBeat: number } {
 	let startBeat = Infinity;
 	let endBeat = -Infinity;
 
@@ -15,6 +18,7 @@ export function extentOf(notes: ReadonlyArray<RelativeNote>, children: ReadonlyA
 	}
 
 	if (startBeat === Infinity) return { startBeat: 0, endBeat: 0 };
+
 	if (endBeat === -Infinity) return { startBeat: 0, endBeat: 0 };
 
 	return { startBeat, endBeat };

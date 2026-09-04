@@ -1,5 +1,5 @@
-import type { Unit } from "@resequence/web-au/core";
 import { resolveUnit } from "./resolveUnit";
+import type { Unit } from "@resequence/web-au/core";
 
 // FIX: A descent needs to take an array of indexes, not just 1 step
 export function descendUnits(root: Unit, index: number, injectedNodes?: WeakSet<object>): Unit | undefined {

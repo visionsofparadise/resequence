@@ -1,10 +1,19 @@
-/* eslint-disable barrel-files/avoid-barrel-files */
 export { GeneratorUnit } from "./generators/generator";
 
-// Effects — leaf
 export { CompressorEffectUnit, compressor, limiter } from "./effects/compressor";
 export { DelayEffectUnit, delay } from "./effects/delay";
-export { FilterEffectUnit, allpass, bandpass, filter, highpass, highshelf, lowpass, lowshelf, notch, peaking } from "./effects/filter";
+export {
+	FilterEffectUnit,
+	allpass,
+	bandpass,
+	filter,
+	highpass,
+	highshelf,
+	lowpass,
+	lowshelf,
+	notch,
+	peaking,
+} from "./effects/filter";
 export type { FilterMode } from "./effects/filter";
 export { GainEffectUnit, fader, gain, linearGain } from "./effects/gain";
 export { PanEffectUnit, pan } from "./effects/pan";
@@ -12,7 +21,6 @@ export { SpatialEffectUnit, spatial } from "./effects/spatial";
 export { WaveShaperCurve, WaveShaperEffectUnit, distortion, waveshaper } from "./effects/waveshaper";
 export type { Oversample } from "./effects/waveshaper";
 
-// Effects — composite
 export { AmEffectUnit, am } from "./effects/am";
 export { BitcrushEffectUnit, bitcrush } from "./effects/bitcrush";
 export { CCEffectUnit } from "./effects/cc";
@@ -34,25 +42,21 @@ export { RingModEffectUnit, ringmod } from "./effects/ringmod";
 export { DeEssEffectUnit, deEss, deSibilance } from "./effects/de-ess";
 export { DeHumEffectUnit, deHum } from "./effects/de-hum";
 
-// Composites
 export { BypassUnit, bypass } from "./composites/bypass";
 export { Chain, chain } from "./composites/chain";
 export { Fan, fan } from "./composites/fan";
 export { InterceptUnit, intercept } from "./composites/intercept";
 export type { InterceptOptions } from "./composites/intercept";
 
-// Modulation
 export { LfoUnit, lfo } from "./lfo";
 export type { WaveShape } from "./lfo";
 export { MacroUnit, macro } from "./macro";
 
-// Generators
 export { NoiseUnit, noise } from "./generators/noise";
 export { OscillatorUnit, osc, oscillator } from "./generators/oscillator";
 export { SamplerUnit, sampler } from "./generators/sampler";
 export type { SamplerZone } from "./generators/sampler";
 
-// MIDI transforms
 export { EnvelopeUnit, env, envelope } from "./midi/envelope";
 export type { EnvelopeAdsr } from "./midi/envelope";
 export { HarmonizeMidiUnit, harmonize } from "./midi/harmonize";
@@ -61,12 +65,9 @@ export { NoteFilterMidiUnit, noteFilter } from "./midi/note-filter";
 export { PortamentoUnit, porta, portamento } from "./midi/portamento";
 export { VelocityCurveMidiUnit, velocityCurve } from "./midi/velocity-curve";
 
-// Other
 export { AnalyserUnit, analyser } from "./analyser";
 
-// Targets
 export { SpeakersUnit, speakers } from "./targets/speakers";
 export { WriteUnit, write } from "./targets/write";
 
-// Sources
 export { ReadUnit, read } from "./sources/read";

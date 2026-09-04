@@ -1,6 +1,6 @@
-import type { SetupResult, UnitContext, UnitInput } from "@resequence/web-au-core";
 import { Unit, buildCurve } from "@resequence/web-au-core";
 import { z } from "zod";
+import type { SetupResult, UnitContext, UnitInput } from "@resequence/web-au-core";
 
 export const WaveShaperCurve = {
 	SoftClip: buildCurve((x) => x / (1 + Math.abs(x))),
@@ -35,6 +35,7 @@ export class WaveShaperEffectUnit extends Unit<typeof waveShaperSchema> {
 		const waveShaperNode = context.audioContext.createWaveShaper();
 
 		waveShaperNode.curve = this.curve;
+
 		if (this.parameters.oversample?.value !== undefined) waveShaperNode.oversample = this.parameters.oversample.value;
 
 		this.waveShaperNode = waveShaperNode;
@@ -47,7 +48,13 @@ export class WaveShaperEffectUnit extends Unit<typeof waveShaperSchema> {
 	}
 }
 
-export function waveshaper({ curve, oversample }: { curve: Float32Array<ArrayBuffer>; oversample?: Oversample }): WaveShaperEffectUnit {
+export function waveshaper({
+	curve,
+	oversample,
+}: {
+	curve: Float32Array<ArrayBuffer>;
+	oversample?: Oversample;
+}): WaveShaperEffectUnit {
 	return new WaveShaperEffectUnit({ curve, oversample });
 }
 

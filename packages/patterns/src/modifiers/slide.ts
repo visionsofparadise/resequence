@@ -1,6 +1,14 @@
-import type { Event, Keyframe, Note, Pattern, PatternProperties } from "@resequence/patterns-core";
-import { ModifierPattern, toPattern, normalizePitch, pitchKey, modifyNotes, walkNotes } from "@resequence/patterns-core";
+import {
+	ModifierPattern,
+	toPattern,
+	normalizePitch,
+	pitchKey,
+	modifyNotes,
+	walkNotes,
+} from "@resequence/patterns-core";
 import { evaluateSlide, mergeSlides } from "@resequence/patterns-utils";
+import type { Event, Keyframe, Note, Pattern, PatternProperties } from "@resequence/patterns-core";
+
 export class SlidePattern extends ModifierPattern {
 	readonly packageName = "@resequence/patterns";
 	readonly unitName = "slide";
@@ -9,7 +17,12 @@ export class SlidePattern extends ModifierPattern {
 		const entries: Array<{ id: string; absoluteStart: number; absoluteEnd: number; note: Note }> = [];
 
 		walkNotes(this, (note, { id, absoluteOffset }) => {
-			entries.push({ id, absoluteStart: absoluteOffset + note.startBeat, absoluteEnd: absoluteOffset + note.endBeat, note });
+			entries.push({
+				id,
+				absoluteStart: absoluteOffset + note.startBeat,
+				absoluteEnd: absoluteOffset + note.endBeat,
+				note,
+			});
 		});
 
 		if (entries.length < 2) return [];
@@ -25,6 +38,7 @@ export class SlidePattern extends ModifierPattern {
 
 			for (const entryB of entries) {
 				if (entryB.absoluteStart <= entryA.absoluteStart) continue;
+
 				if (entryB.absoluteStart >= aEnd) continue;
 
 				const dist = Math.abs(pitchKey(entryA.note.pitch) - pitchKey(entryB.note.pitch));
@@ -40,7 +54,9 @@ export class SlidePattern extends ModifierPattern {
 			const slideStartBeat = bestMatch.absoluteStart - entryA.absoluteStart;
 			const slideEndBeat = entryA.absoluteEnd - entryA.absoluteStart;
 
-			const currentPitchAtSlideStart = entryA.note.slides ? evaluateSlide(entryA.note.pitch, entryA.note.slides, slideStartBeat) : entryA.note.pitch;
+			const currentPitchAtSlideStart = entryA.note.slides
+				? evaluateSlide(entryA.note.pitch, entryA.note.slides, slideStartBeat)
+				: entryA.note.pitch;
 
 			const holdKeyframe: Keyframe = { beat: slideStartBeat, value: normalizePitch(currentPitchAtSlideStart) };
 			const targetKeyframe: Keyframe = { beat: slideEndBeat, value: normalizePitch(bestMatch.note.pitch) };

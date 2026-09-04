@@ -1,19 +1,19 @@
-import type { Event, NoteEvent as PatternNoteEvent } from "@resequence/patterns-core";
-import type { TempoMap } from "@resequence/patterns-utils";
 import { collectMetadata } from "@resequence/patterns-utils";
-import type { DriverEntry, UnitContext } from "@resequence/web-au-core";
 import { computeMaxLatency, createUnitContext } from "@resequence/web-au-core";
-import type { AudioEvent } from "./constructs/audio";
 import { isAudioEvent, isPreloadAudioEvent } from "./constructs/audio";
-import type { AutomationEvent } from "./constructs/automate";
 import { isAutomationEvent } from "./constructs/automate";
 import { dispatchAudioCue, dispatchAudioSetup } from "./dispatch/audio";
 import { dispatchAutomation } from "./dispatch/automation";
 import { seekAutomationFromEvents } from "./dispatch/seek";
 import { mapNoteEvent } from "./mapping";
 import { loadSample } from "./rendering/load-sample";
-import type { Router } from "./router";
 import { lowerBound } from "./utils/sorted";
+import type { AudioEvent } from "./constructs/audio";
+import type { AutomationEvent } from "./constructs/automate";
+import type { Router } from "./router";
+import type { Event, NoteEvent as PatternNoteEvent } from "@resequence/patterns-core";
+import type { TempoMap } from "@resequence/patterns-utils";
+import type { DriverEntry, UnitContext } from "@resequence/web-au-core";
 
 export type PlaybackState = "playing" | "paused" | "stopped";
 
@@ -101,11 +101,11 @@ export class Playback {
 
 				if (cached) return cached;
 
-				const buf = await loadSample(path, this.audioContext, getSample);
+				const loadedSample = await loadSample(path, this.audioContext, getSample);
 
-				this.sampleCache.set(path, buf);
+				this.sampleCache.set(path, loadedSample);
 
-				return buf;
+				return loadedSample;
 			});
 
 			if (buffer) this.sampleCache.set(event.sampleKey, buffer);
@@ -131,11 +131,12 @@ export class Playback {
 				const cached = this.sampleCache.get(path);
 
 				if (cached) return cached;
-				const buf = await loadSample(path, this.audioContext, getSample);
 
-				this.sampleCache.set(path, buf);
+				const loadedSample = await loadSample(path, this.audioContext, getSample);
 
-				return buf;
+				this.sampleCache.set(path, loadedSample);
+
+				return loadedSample;
 			},
 			async (url: string) => {
 				await this.audioContext.audioWorklet.addModule(url);
@@ -265,6 +266,7 @@ export class Playback {
 				const note = mapNoteEvent(noteEvent, this.tempoMap);
 
 				this.emitNoteEvent(noteEvent, noteEvent.startBeat);
+
 				if (this.unitContext) unit.schedule(note, this.unitContext);
 			}
 		}
@@ -272,7 +274,14 @@ export class Playback {
 		const totalBeats = this.patternEndBeat;
 
 		for (const automationEvent of automationEvents) {
-			dispatchAutomation(automationEvent, this.unitContext?.driverMap ?? new Map(), this.audioContext, this.tempoMap, fromBeats, totalBeats);
+			dispatchAutomation(
+				automationEvent,
+				this.unitContext?.driverMap ?? new Map(),
+				this.audioContext,
+				this.tempoMap,
+				fromBeats,
+				totalBeats,
+			);
 		}
 
 		for (const cueEvent of audioEvents) {
@@ -318,7 +327,11 @@ function isNoteEvent(event: Event): event is PatternNoteEvent {
 	return event.type === "note";
 }
 
-function filterPorts(keys: ReadonlyArray<string>, include?: ReadonlyArray<string>, exclude?: ReadonlyArray<string>): ReadonlyArray<string> {
+function filterPorts(
+	keys: ReadonlyArray<string>,
+	include?: ReadonlyArray<string>,
+	exclude?: ReadonlyArray<string>,
+): ReadonlyArray<string> {
 	let filtered = [...keys];
 
 	if (include && include.length > 0) {
@@ -336,7 +349,11 @@ function filterPorts(keys: ReadonlyArray<string>, include?: ReadonlyArray<string
 	return filtered;
 }
 
-function secondsToBeats(fromBeat: number, elapsedSeconds: number, tempoMap: ReadonlyArray<{ beat: number; bpm: number }>): number {
+function secondsToBeats(
+	fromBeat: number,
+	elapsedSeconds: number,
+	tempoMap: ReadonlyArray<{ beat: number; bpm: number }>,
+): number {
 	let remaining = elapsedSeconds;
 	let currentBeat = fromBeat;
 	let bpm = 120;

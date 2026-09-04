@@ -1,8 +1,8 @@
-import type { Fan } from "../composites/fan";
 import { fan } from "../composites/fan";
 import { mid } from "./channel";
 import { side } from "./channel";
 import { linearGain } from "./gain";
+import type { Fan } from "../composites/fan";
 
 export function midSide(value: number, options: { id?: string } = {}): Fan {
 	const { id } = options;

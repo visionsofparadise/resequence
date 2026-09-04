@@ -1,7 +1,7 @@
-import type { BuildContext } from "../../../../models/Context";
 import { PianoRoll } from "./PianoRoll";
 import { Timeline } from "./Timeline";
 import { UnitGraph } from "./UnitGraph";
+import type { BuildContext } from "../../../../models/Context";
 
 interface ActiveViewProps {
 	readonly context: BuildContext;
@@ -15,25 +15,12 @@ export const ActiveView: React.FC<ActiveViewProps> = ({ context, goBack }) => {
 		const unit = context.router.ports.get(project.activePort);
 
 		if (unit) {
-			return (
-				<UnitGraph
-					context={context}
-					portKey={project.activePort}
-					outputUnit={unit}
-					onBack={goBack}
-				/>
-			);
+			return <UnitGraph context={context} portKey={project.activePort} outputUnit={unit} onBack={goBack} />;
 		}
 	}
 
 	if (project.activePianoRoll) {
-		return (
-			<PianoRoll
-				context={context}
-				target={project.activePianoRoll}
-				onBack={goBack}
-			/>
-		);
+		return <PianoRoll context={context} target={project.activePianoRoll} onBack={goBack} />;
 	}
 
 	return <Timeline context={context} />;

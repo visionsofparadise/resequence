@@ -308,7 +308,11 @@ intercept(synth, {
 Assigning an `id` to a unit creates a namespace for its parameters. Each unit with an id exposes its parameters as a typed `parameters` object — the primary API for reading and controlling parameter values.
 
 ```typescript
-const synth = chain(osc({ type: "sawtooth", id: "osc" }), lowpass({ frequency: 2000, id: "lp" }), gain({ level: -6, id: "vol" }));
+const synth = chain(
+	osc({ type: "sawtooth", id: "osc" }),
+	lowpass({ frequency: 2000, id: "lp" }),
+	gain({ level: -6, id: "vol" }),
+);
 
 // Access parameters directly on the unit:
 lp.parameters.frequency; // LiveParameter — frequency cutoff
@@ -347,7 +351,11 @@ unit.parameters.frequency.normalized; // 0.039...
 Continuous parameter modulation in the audio graph.
 
 ```typescript
-chain(osc({ type: "sawtooth", id: "synth" }), lowpass({ frequency: 1000, id: "filt" }), lfo({ path: "synth.filt.frequency", shape: "sine", rate: 2, depth: 0.5 }));
+chain(
+	osc({ type: "sawtooth", id: "synth" }),
+	lowpass({ frequency: 1000, id: "filt" }),
+	lfo({ path: "synth.filt.frequency", shape: "sine", rate: 2, depth: 0.5 }),
+);
 ```
 
 ### Macro
@@ -410,7 +418,11 @@ chain(synth, speakers());
 File-based source and target for offline processing pipelines.
 
 ```typescript
-chain(read({ path: "input.wav" }), compressor({ threshold: -12, ratio: 3 }), write({ path: "output.wav", bitDepth: "24" }));
+chain(
+	read({ path: "input.wav" }),
+	compressor({ threshold: -12, ratio: 3 }),
+	write({ path: "output.wav", bitDepth: "24" }),
+);
 ```
 
 ## Custom Units
@@ -420,7 +432,16 @@ chain(read({ path: "input.wav" }), compressor({ threshold: -12, ratio: 3 }), wri
 Extend `Unit` (from `@resequence/web-au-core`), declare a Zod `schema` and `parameters`, implement `_setup()` to create AudioNodes and return entry/exit points. Use `driveParam()` to wire live parameters to AudioParams.
 
 ```typescript
-import { Unit, UnitProperties, UnitInput, SetupResult, UnitContext, driveParam, createParameters, type LiveParameter } from "@resequence/web-au/core";
+import {
+	Unit,
+	UnitProperties,
+	UnitInput,
+	SetupResult,
+	UnitContext,
+	driveParam,
+	createParameters,
+	type LiveParameter,
+} from "@resequence/web-au/core";
 import { z } from "zod";
 
 interface TremoloProperties extends UnitProperties {
@@ -478,7 +499,14 @@ export function tremolo({ speed, depth, id }: { speed: number; depth: number; id
 Extend `GeneratorUnit` and implement `_schedule()` to create audio sources per note. Use `scheduleVoice()` to route each voice through the generator's processing chain.
 
 ```typescript
-import { GeneratorUnit, GeneratorUnitProperties, GeneratorUnitInput, NoteEvent, UnitContext, SetupResult } from "@resequence/web-au/core";
+import {
+	GeneratorUnit,
+	GeneratorUnitProperties,
+	GeneratorUnitInput,
+	NoteEvent,
+	UnitContext,
+	SetupResult,
+} from "@resequence/web-au/core";
 
 class PulseUnit extends GeneratorUnit {
 	readonly type = ["unit", "midi", "generator", "pulse"] as const;

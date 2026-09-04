@@ -35,41 +35,54 @@ Every leaf unit declares a static Zod schema and an instance `parameters` object
 
 ```typescript
 import { z } from "zod";
-import { Unit, UnitProperties, UnitInput, SetupResult, UnitContext, driveParam, createParameters, LiveParameter } from "@resequence/web-au-core";
+import {
+	Unit,
+	UnitProperties,
+	UnitInput,
+	SetupResult,
+	UnitContext,
+	driveParam,
+	createParameters,
+	LiveParameter,
+} from "@resequence/web-au-core";
 
 interface BoostProperties extends UnitProperties {
-  readonly amount: number;
+	readonly amount: number;
 }
 
 class BoostUnit extends Unit {
-  readonly type = ["unit", "boost"] as const;
-  declare readonly properties: BoostProperties;
+	readonly type = ["unit", "boost"] as const;
+	declare readonly properties: BoostProperties;
 
-  // Schema defines parameter shapes, ranges, and metadata
-  static readonly schema = z.object({
-    amount: z.number().min(0).max(4).default(1).describe("Boost Amount").meta({ live: true }),
-  });
+	// Schema defines parameter shapes, ranges, and metadata
+	static readonly schema = z.object({
+		amount: z.number().min(0).max(4).default(1).describe("Boost Amount").meta({ live: true }),
+	});
 
-  // Parameters are created from the schema and properties
-  readonly parameters = createParameters(BoostUnit.schema, this.id, this.properties);
+	// Parameters are created from the schema and properties
+	readonly parameters = createParameters(BoostUnit.schema, this.id, this.properties);
 
-  constructor(properties: UnitInput<BoostProperties>) {
-    super(properties);
-    this.properties = { ...properties, targets: properties.targets ?? [], modDeclarations: properties.modDeclarations ?? [] };
-  }
+	constructor(properties: UnitInput<BoostProperties>) {
+		super(properties);
+		this.properties = {
+			...properties,
+			targets: properties.targets ?? [],
+			modDeclarations: properties.modDeclarations ?? [],
+		};
+	}
 
-  protected override _setup(context: UnitContext): SetupResult {
-    const gainNode = context.audioContext.createGain();
+	protected override _setup(context: UnitContext): SetupResult {
+		const gainNode = context.audioContext.createGain();
 
-    // driveParam reads path, value, and range from the LiveParameter
-    driveParam(gainNode.gain, this.parameters.amount as LiveParameter, context);
+		// driveParam reads path, value, and range from the LiveParameter
+		driveParam(gainNode.gain, this.parameters.amount as LiveParameter, context);
 
-    return { entries: [gainNode], exits: [gainNode] };
-  }
+		return { entries: [gainNode], exits: [gainNode] };
+	}
 }
 
 export function boost({ amount, id }: { amount: number; id?: string }): BoostUnit {
-  return new BoostUnit({ amount, id });
+	return new BoostUnit({ amount, id });
 }
 ```
 
@@ -88,7 +101,7 @@ param.set(0.75);
 
 // Subscribe to value changes
 const unsubscribe = param.subscribe((value) => {
-  console.log("Amount changed to", value);
+	console.log("Amount changed to", value);
 });
 ```
 

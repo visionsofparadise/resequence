@@ -1,9 +1,9 @@
-import React, { useCallback, useEffect, useState } from "react";
 import { Button, DomainWarpShader } from "@resequence/design-system";
-import type { AppContext } from "../../models/Context";
+import React, { useCallback, useEffect, useState } from "react";
 import { useProjectLoader } from "../../utils/projectLoader";
 import { RecentProjectsList } from "./RecentProjectsList";
 import { Titlebar } from "./Titlebar";
+import type { AppContext } from "../../models/Context";
 
 interface HomeProps {
 	readonly context: AppContext;
@@ -67,7 +67,10 @@ export const Home: React.FC<HomeProps> = ({ context }) => {
 		<div className="flex h-screen flex-col">
 			<Titlebar />
 			<div className="flex-1 min-h-0 flex items-center justify-center">
-				<div className="grid w-full border-t border-b border-border" style={{ gridTemplateColumns: "2fr 1fr", gridTemplateRows: "auto 240px" }}>
+				<div
+					className="grid w-full border-t border-b border-border"
+					style={{ gridTemplateColumns: "2fr 1fr", gridTemplateRows: "auto 240px" }}
+				>
 					<div className="border-r border-b border-border p-8 relative overflow-hidden">
 						<p className="type-label mb-3 text-accent-primary">HOME</p>
 						<h1 className="type-display text-[56px] leading-none">RESEQUENCE</h1>
@@ -101,7 +104,9 @@ export const Home: React.FC<HomeProps> = ({ context }) => {
 
 						<div className="flex flex-col gap-3 mt-auto">
 							<Button disabled>CREATE PROJECT</Button>
-							<Button variant="outline" onClick={handleOpenDirectory}>OPEN PROJECT</Button>
+							<Button variant="outline" onClick={handleOpenDirectory}>
+								OPEN PROJECT
+							</Button>
 						</div>
 					</div>
 				</div>

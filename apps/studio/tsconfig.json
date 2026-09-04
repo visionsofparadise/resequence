@@ -1,14 +1,15 @@
 {
-  "extends": "../../tsconfig.json",
-  "compilerOptions": {
-    "lib": ["ES2020", "DOM", "DOM.Iterable"],
-    "jsx": "react-jsx",
-    "noEmit": true,
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["./src/*"]
-    }
-  },
-  "include": ["src", "forge.env.d.ts"],
-  "exclude": [".vite", "node_modules", "out"]
+	"extends": "../../tsconfig.json",
+	"compilerOptions": {
+		"lib": ["ES2020", "DOM", "DOM.Iterable"],
+		"jsx": "react-jsx",
+		"noEmit": true,
+		"baseUrl": ".",
+		"paths": {
+			"@/*": ["./src/*"]
+		},
+		"types": ["node", "vite/client"]
+	},
+	"include": ["src", "forge.env.d.ts"],
+	"exclude": [".vite", "node_modules", "out"]
 }

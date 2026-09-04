@@ -11,7 +11,13 @@ interface PianoRollPitchSlideProps {
 	readonly context: BuildContext;
 }
 
-function buildSlidePathD(note: MidiClipNote, clip: MidiClip, sequence: Sequence, pxPerBeat: number, pitchZoom: number): string {
+function buildSlidePathD(
+	note: MidiClipNote,
+	clip: MidiClip,
+	sequence: Sequence,
+	pxPerBeat: number,
+	pitchZoom: number,
+): string {
 	const slides = note.slides;
 
 	if (!slides || slides.length === 0) return "";
@@ -30,6 +36,7 @@ function buildSlidePathD(note: MidiClipNote, clip: MidiClip, sequence: Sequence,
 		const kf = slides[ki];
 
 		if (!kf) continue;
+
 		const prevKf = ki > 0 ? (slides[ki - 1] ?? null) : null;
 		const prevBeat = prevKf ? note.startBeat + prevKf.beat : note.startBeat;
 		const prevValue = prevKf ? prevKf.value : pitchKey(note.pitch) / (stepsPerOctave * 11);
@@ -38,7 +45,10 @@ function buildSlidePathD(note: MidiClipNote, clip: MidiClip, sequence: Sequence,
 		const kfKey = pitchKey(kfPitch);
 
 		if (kf.step) {
-			points.push({ x: beatToX(kfBeat), y: keyToY(pitchKey(denormalizePitch(prevValue, stepsPerOctave, octaveRatio))) });
+			points.push({
+				x: beatToX(kfBeat),
+				y: keyToY(pitchKey(denormalizePitch(prevValue, stepsPerOctave, octaveRatio))),
+			});
 			points.push({ x: beatToX(kfBeat), y: keyToY(kfKey) });
 		} else {
 			const curve = kf.curve ?? 0;
@@ -68,11 +78,18 @@ export const PianoRollPitchSlide: React.FC<PianoRollPitchSlideProps> = ({ note, 
 	const { project } = context;
 	const pathRef = useRef<SVGPathElement>(null);
 
-	const transients = useMemo(() => [project.timelineZoom, project.pitchZoom], [project.timelineZoom, project.pitchZoom]);
+	const transients = useMemo(
+		() => [project.timelineZoom, project.pitchZoom],
+		[project.timelineZoom, project.pitchZoom],
+	);
 
 	useTransients(transients, () => {
 		if (!pathRef.current || !note.slides || note.slides.length === 0) return;
-		pathRef.current.setAttribute("d", buildSlidePathD(note, clip, sequence, project.timelineZoom.value, project.pitchZoom.value));
+
+		pathRef.current.setAttribute(
+			"d",
+			buildSlidePathD(note, clip, sequence, project.timelineZoom.value, project.pitchZoom.value),
+		);
 	});
 
 	if (!note.slides || note.slides.length === 0) return null;

@@ -1,7 +1,7 @@
 import { parseMidi as decodeMidi } from "midi-file";
-import type { NoteEvent, NoteSlide } from "@resequence/web-au-core";
 import { CC } from "./cc";
 import { type TempoPoint, tickToMs } from "./tempo-map";
+import type { NoteEvent, NoteSlide } from "@resequence/web-au-core";
 
 interface PendingNote {
 	readonly startTick: number;
@@ -42,7 +42,12 @@ export function parseMidiFile(data: Uint8Array): Array<NoteEvent> {
 			} else if (event.type === "noteOn" && event.velocity > 0) {
 				const key = `${event.channel}-${event.noteNumber}`;
 
-				pending.set(key, { startTick: tick, note: event.noteNumber, velocity: event.velocity, channel: event.channel });
+				pending.set(key, {
+					startTick: tick,
+					note: event.noteNumber,
+					velocity: event.velocity,
+					channel: event.channel,
+				});
 			} else if (event.type === "noteOff" || (event.type === "noteOn" && event.velocity === 0)) {
 				const key = `${event.channel}-${event.noteNumber}`;
 				const note = pending.get(key);
@@ -66,7 +71,9 @@ export function parseMidiFile(data: Uint8Array): Array<NoteEvent> {
 		const stopMs = tickToMs(stopTick, tempoMap, ppq);
 		const frequency = 440 * 2 ** ((note.note - 69) / 12);
 
-		const channelCCs = ccEvents.filter((cc) => cc.channel === note.channel && cc.tick >= note.startTick && cc.tick <= stopTick);
+		const channelCCs = ccEvents.filter(
+			(cc) => cc.channel === note.channel && cc.tick >= note.startTick && cc.tick <= stopTick,
+		);
 
 		const ccValues: Partial<Record<number, number>> = {};
 
@@ -74,7 +81,9 @@ export function parseMidiFile(data: Uint8Array): Array<NoteEvent> {
 			ccValues[cc.controller] = cc.value;
 		}
 
-		const channelBends = bendEvents.filter((bend) => bend.channel === note.channel && bend.tick >= note.startTick && bend.tick <= stopTick);
+		const channelBends = bendEvents.filter(
+			(bend) => bend.channel === note.channel && bend.tick >= note.startTick && bend.tick <= stopTick,
+		);
 
 		let slides: ReadonlyArray<NoteSlide> | undefined;
 

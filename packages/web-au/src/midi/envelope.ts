@@ -1,6 +1,6 @@
-import type { NoteEvent, SetupResult, UnitContext, MidiUnitInput } from "@resequence/web-au-core";
 import { driveParam, MidiUnit, live } from "@resequence/web-au-core";
 import { z } from "zod";
+import type { NoteEvent, SetupResult, UnitContext, MidiUnitInput } from "@resequence/web-au-core";
 
 export interface EnvelopeAdsr {
 	readonly attack?: number;
@@ -55,21 +55,27 @@ export class EnvelopeUnit extends MidiUnit<typeof envelopeSchema> {
 			switch (name) {
 				case "gate":
 					this.gateParam = param;
+
 					break;
 				case "attack":
 					driveParam(param, this.parameters.attack, undefined, context);
+
 					break;
 				case "hold":
 					driveParam(param, this.parameters.hold, undefined, context);
+
 					break;
 				case "decay":
 					driveParam(param, this.parameters.decay, undefined, context);
+
 					break;
 				case "sustain":
 					driveParam(param, this.parameters.sustain, undefined, context);
+
 					break;
 				case "release":
 					driveParam(param, this.parameters.release, undefined, context);
+
 					break;
 			}
 		});
@@ -93,7 +99,14 @@ export class EnvelopeUnit extends MidiUnit<typeof envelopeSchema> {
 	}
 }
 
-export function envelope({ attack, hold, decay, sustain, release, id }: EnvelopeAdsr & { id?: string } = {}): EnvelopeUnit {
+export function envelope({
+	attack,
+	hold,
+	decay,
+	sustain,
+	release,
+	id,
+}: EnvelopeAdsr & { id?: string } = {}): EnvelopeUnit {
 	return new EnvelopeUnit({ adsr: { attack, hold, decay, sustain, release }, id });
 }
 

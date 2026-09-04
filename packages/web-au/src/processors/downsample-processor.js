@@ -1,8 +1,6 @@
 class DownsampleProcessor extends AudioWorkletProcessor {
 	static get parameterDescriptors() {
-		return [
-			{ name: "targetRate", defaultValue: 22050, minValue: 100, maxValue: 192000, automationRate: "k-rate" },
-		];
+		return [{ name: "targetRate", defaultValue: 22050, minValue: 100, maxValue: 192000, automationRate: "k-rate" }];
 	}
 
 	constructor(options) {
@@ -31,7 +29,7 @@ class DownsampleProcessor extends AudioWorkletProcessor {
 					if ((this._counter + sample) % step === 0) {
 						this._heldSamples[channel] = inputChannel?.[sample] ?? 0;
 					}
-					
+
 					outputChannel[sample] = this._heldSamples[channel];
 				}
 			}

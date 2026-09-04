@@ -1,5 +1,6 @@
-import type { Event, Note, ModifierProperties, Pattern, PatternProperties } from "@resequence/patterns-core";
 import { ModifierPattern, toPattern, flatModifyNotes, walkPatterns } from "@resequence/patterns-core";
+import type { Event, Note, ModifierProperties, Pattern, PatternProperties } from "@resequence/patterns-core";
+
 export interface SliceProperties extends ModifierProperties {
 	readonly from: number;
 	readonly to: number;
@@ -16,11 +17,16 @@ export class SlicePattern extends ModifierPattern<SliceProperties> {
 			for (const { offsetBeats, note } of node.notes) {
 				const totalOffset = absoluteOffset + offsetBeats;
 
-				entries.push({ note, absoluteStart: totalOffset + note.startBeat, absoluteEnd: totalOffset + note.endBeat });
+				entries.push({
+					note,
+					absoluteStart: totalOffset + note.startBeat,
+					absoluteEnd: totalOffset + note.endBeat,
+				});
 			}
 		});
 
 		entries.sort((ea, eb) => ea.absoluteStart - eb.absoluteStart);
+
 		const keptEntries = entries.slice(this.properties.from, this.properties.to);
 
 		const first = keptEntries[0];

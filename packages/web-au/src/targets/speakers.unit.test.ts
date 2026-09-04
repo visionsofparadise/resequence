@@ -57,5 +57,4 @@ describe("SpeakersUnit", () => {
 		expect(unit.exitNodes).toHaveLength(1);
 		expect(gainNode.connect).not.toHaveBeenCalled();
 	});
-
 });
