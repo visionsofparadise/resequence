@@ -143,7 +143,9 @@ export abstract class Unit<S extends z.ZodObject = z.ZodObject> {
 				for (const entry of target.entryNodes) {
 					try {
 						exit.disconnect(entry);
-					} catch {}
+					} catch {
+						continue;
+					}
 				}
 			}
 		}
@@ -183,7 +185,9 @@ export abstract class Unit<S extends z.ZodObject = z.ZodObject> {
 				} else {
 					exit.disconnect(param);
 				}
-			} catch {}
+			} catch {
+				continue;
+			}
 		}
 
 		this.modConnections.length = 0;

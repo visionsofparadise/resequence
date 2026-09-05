@@ -315,6 +315,7 @@ const TimelineView = () => {
 	return (
 		<div
 			ref={containerRef}
+			role="presentation"
 			onWheel={handleWheel}
 			onMouseDown={handleMouseDown}
 			className="bg-surface relative overflow-hidden"

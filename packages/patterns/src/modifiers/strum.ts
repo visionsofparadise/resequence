@@ -1,4 +1,5 @@
 import { ModifierPattern, toPattern, pitchKey, modifyNotes, walkNotes } from "@resequence/patterns-core";
+import { groupByBeat } from "../utils/groupByBeat";
 import type { Event, Note, ModifierProperties, Pattern, PatternProperties } from "@resequence/patterns-core";
 
 export interface StrumOptions {
@@ -23,18 +24,7 @@ export class StrumPattern extends ModifierPattern<StrumProperties> {
 			entries.push({ id, absoluteStart: absoluteOffset + note.startBeat, key: pitchKey(note.pitch) });
 		});
 
-		const byBeat = new Map<number, typeof entries>();
-
-		for (const entry of entries) {
-			let group = byBeat.get(entry.absoluteStart);
-
-			if (!group) {
-				group = [];
-				byBeat.set(entry.absoluteStart, group);
-			}
-
-			group.push(entry);
-		}
+		const byBeat = groupByBeat(entries);
 
 		const shiftMap = new Map<string, number>();
 

@@ -1,6 +1,5 @@
-import { useMemo, useRef } from "react";
 import { beatsToSeconds } from "resequence";
-import { useTransients } from "../../../../../../../hooks/useTransients";
+import { useZoomedCanvas } from "../hooks/useZoomedCanvas";
 import { drawWaveform } from "./utils/drawWaveform";
 import type { WaveformBinary } from "../../../../../../../../shared/utilities/waveform/WaveformCodec";
 import type { BuildContext } from "../../../../../../../models/Context";
@@ -15,17 +14,9 @@ interface AudioCanvasProps {
 }
 
 export const AudioCanvas: React.FC<AudioCanvasProps> = ({ clip, context, waveform }) => {
-	const { project, tempoMap } = context;
-	const canvasRef = useRef<HTMLCanvasElement>(null);
+	const { tempoMap } = context;
 
-	const transients = useMemo(() => [project.timelineZoom], [project.timelineZoom]);
-
-	useTransients(transients, () => {
-		const canvas = canvasRef.current;
-
-		if (!canvas) return;
-
-		const pxPerBeat = project.timelineZoom.value;
+	const canvasRef = useZoomedCanvas(context, (canvas, pxPerBeat) => {
 		const width = (clip.endBeat - clip.startBeat) * pxPerBeat;
 		const displayWidth = Math.max(1, Math.floor(width));
 		const dpr = window.devicePixelRatio || 1;

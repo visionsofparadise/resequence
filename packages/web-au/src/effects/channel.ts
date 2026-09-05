@@ -3,7 +3,38 @@ import { z } from "zod";
 import { channelMerger } from "./channel-merger";
 import { channelSplitter } from "./channel-splitter";
 import { linearGain } from "./gain";
+import type { ChannelMergerUnit } from "./channel-merger";
+import type { ChannelSplitterUnit } from "./channel-splitter";
+import type { GainEffectUnit } from "./gain";
 import type { SetupResult, UnitContext, UnitInput, AnyUnit } from "@resequence/web-au-core";
+
+interface StereoBridge {
+	readonly split: ChannelSplitterUnit;
+	readonly merge: ChannelMergerUnit;
+	readonly splitLeft: GainEffectUnit;
+	readonly splitRight: GainEffectUnit;
+	readonly mergeLeft: GainEffectUnit;
+	readonly mergeRight: GainEffectUnit;
+}
+
+function createStereoBridge(): StereoBridge | undefined {
+	const split = channelSplitter(2);
+	const merge = channelMerger(2);
+
+	const [splitLeft, splitRight] = split.channels;
+	const [mergeLeft, mergeRight] = merge.channels;
+
+	if (!splitLeft || !splitRight || !mergeLeft || !mergeRight) return undefined;
+
+	return { split, merge, splitLeft, splitRight, mergeLeft, mergeRight };
+}
+
+async function setupStereoBridge(bridge: StereoBridge, context: UnitContext): Promise<SetupResult> {
+	await bridge.split.setup(context);
+	await bridge.merge.setup(context);
+
+	return { entries: [bridge.split], exits: [bridge.merge] };
+}
 
 export class ChannelEffectUnit extends Unit {
 	readonly type = ["unit"];
@@ -20,27 +51,21 @@ export class ChannelEffectUnit extends Unit {
 	}
 
 	protected override async _setup(context: UnitContext): Promise<SetupResult> {
-		const split = channelSplitter(2);
-		const merge = channelMerger(2);
+		const bridge = createStereoBridge();
 
-		const targetCh = this.channelIndex;
-		const otherCh = targetCh === 0 ? 1 : 0;
+		if (!bridge) return {};
 
-		const splitTarget = split.channels[targetCh];
-		const splitOther = split.channels[otherCh];
-		const mergeTarget = merge.channels[targetCh];
-		const mergeOther = merge.channels[otherCh];
-
-		if (!splitTarget || !splitOther || !mergeTarget || !mergeOther) return {};
+		const isLeft = this.channelIndex === 0;
+		const splitTarget = isLeft ? bridge.splitLeft : bridge.splitRight;
+		const splitOther = isLeft ? bridge.splitRight : bridge.splitLeft;
+		const mergeTarget = isLeft ? bridge.mergeLeft : bridge.mergeRight;
+		const mergeOther = isLeft ? bridge.mergeRight : bridge.mergeLeft;
 
 		splitTarget.to(this.inner);
 		this.inner.to(mergeTarget);
 		splitOther.to(mergeOther);
 
-		await split.setup(context);
-		await merge.setup(context);
-
-		return { entries: [split], exits: [merge] };
+		return setupStereoBridge(bridge, context);
 	}
 }
 
@@ -65,27 +90,19 @@ export class MidEffectUnit extends Unit {
 	}
 
 	protected override async _setup(context: UnitContext): Promise<SetupResult> {
-		const split = channelSplitter(2);
-		const merge = channelMerger(2);
+		const bridge = createStereoBridge();
+
+		if (!bridge) return {};
+
 		const sum = linearGain({ level: 0.5 });
 
-		const splitL = split.channels[0];
-		const splitR = split.channels[1];
-		const mergeL = merge.channels[0];
-		const mergeR = merge.channels[1];
-
-		if (!splitL || !splitR || !mergeL || !mergeR) return {};
-
-		splitL.to(sum);
-		splitR.to(sum);
+		bridge.splitLeft.to(sum);
+		bridge.splitRight.to(sum);
 		sum.to(this.inner);
-		this.inner.to(mergeL);
-		this.inner.to(mergeR);
+		this.inner.to(bridge.mergeLeft);
+		this.inner.to(bridge.mergeRight);
 
-		await split.setup(context);
-		await merge.setup(context);
-
-		return { entries: [split], exits: [merge] };
+		return setupStereoBridge(bridge, context);
 	}
 }
 
@@ -106,31 +123,23 @@ export class SideEffectUnit extends Unit {
 	}
 
 	protected override async _setup(context: UnitContext): Promise<SetupResult> {
-		const split = channelSplitter(2);
-		const merge = channelMerger(2);
+		const bridge = createStereoBridge();
+
+		if (!bridge) return {};
+
 		const diff = linearGain({ level: 0.5 });
 		const invert = linearGain({ level: -1 });
 		const reinvert = linearGain({ level: -1 });
 
-		const splitL = split.channels[0];
-		const splitR = split.channels[1];
-		const mergeL = merge.channels[0];
-		const mergeR = merge.channels[1];
-
-		if (!splitL || !splitR || !mergeL || !mergeR) return {};
-
-		splitL.to(diff);
-		splitR.to(invert);
+		bridge.splitLeft.to(diff);
+		bridge.splitRight.to(invert);
 		invert.to(diff);
 		diff.to(this.inner);
-		this.inner.to(mergeL);
+		this.inner.to(bridge.mergeLeft);
 		this.inner.to(reinvert);
-		reinvert.to(mergeR);
+		reinvert.to(bridge.mergeRight);
 
-		await split.setup(context);
-		await merge.setup(context);
-
-		return { entries: [split], exits: [merge] };
+		return setupStereoBridge(bridge, context);
 	}
 }
 

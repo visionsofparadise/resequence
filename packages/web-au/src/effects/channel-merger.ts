@@ -1,36 +1,26 @@
 import { Unit } from "@resequence/web-au-core";
-import { z } from "zod";
-import { type GainEffectUnit, linearGain } from "./gain";
+import { channelCountSchema, channelGainsOf, setupChannels } from "./utils/channelGains";
+import type { GainEffectUnit } from "./gain";
 import type { SetupResult, UnitContext, UnitInput } from "@resequence/web-au-core";
+import type { z } from "zod";
 
-const channelMergerSchema = z.object({
-	channelCount: z.number().min(1).max(32).default(2).describe("Channel Count"),
-});
-
-export class ChannelMergerUnit extends Unit<typeof channelMergerSchema> {
+export class ChannelMergerUnit extends Unit<typeof channelCountSchema> {
 	readonly type = ["unit"];
 	readonly packageName = "@resequence/web-au";
 	readonly unitName = "channel-merger";
-	readonly channels: Array<GainEffectUnit> = [];
+	readonly channels: Array<GainEffectUnit>;
 
-	constructor(input: z.infer<typeof channelMergerSchema> & UnitInput = { channelCount: 2 }) {
-		super(input, channelMergerSchema);
-
-		for (let channelIndex = 0; channelIndex < this.parameters.channelCount.value; channelIndex++) {
-			this.channels.push(linearGain({ level: 1 }));
-		}
+	constructor(input: z.infer<typeof channelCountSchema> & UnitInput = { channelCount: 2 }) {
+		super(input, channelCountSchema);
+		this.channels = channelGainsOf(this.parameters.channelCount.value);
 	}
 
 	protected override async _setup(context: UnitContext): Promise<SetupResult> {
 		const merger = context.audioContext.createChannelMerger(this.channels.length);
 
-		for (let channelIndex = 0; channelIndex < this.channels.length; channelIndex++) {
-			const channel = this.channels[channelIndex];
+		await setupChannels(this.channels, context);
 
-			if (!channel) continue;
-
-			await channel.setup(context);
-
+		for (const [channelIndex, channel] of this.channels.entries()) {
 			for (const exit of channel.exitNodes) {
 				exit.connect(merger, 0, channelIndex);
 			}

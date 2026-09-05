@@ -64,7 +64,7 @@ export interface AutomationClip {
 	readonly endBeat: number;
 }
 
-export type Clip = MidiClip | AudioClip | AutomationClip;
+type Clip = MidiClip | AudioClip | AutomationClip;
 
 export interface Sequence {
 	readonly patternId: string;
@@ -255,32 +255,40 @@ function collectSubtree(
 			state.encounterOrder.push(clipKey);
 		}
 
-		const span: PatternSpan = {
-			patternId,
-			patternPath: [...indexes],
-			patternType: patternTypeLabel(pattern),
-			startBeat: offset + pattern.startBeat,
-			endBeat: offset + pattern.endBeat,
-		};
-
-		collector.spans.push(span);
-
-		for (const { offsetBeats, note } of pattern.notes) {
-			collector.notes.push({
-				pitch: note.pitch,
-				startBeat: offset + offsetBeats + note.startBeat,
-				endBeat: offset + offsetBeats + note.endBeat,
-				velocity: note.velocity,
-				lyric: note.lyric,
-				slides: note.slides,
-				patternId,
-				patternPath: [...indexes],
-			});
-		}
+		collectPatternNotes(collector, pattern, offset, patternId, indexes);
 	}
 
 	for (const [childIndex, { offsetBeats, pattern: child }] of pattern.children.entries()) {
 		collectSubtree(child, offset + offsetBeats, currentPorts, state, [...indexes, childIndex], meta, tempoPoints);
+	}
+}
+
+function collectPatternNotes(
+	collector: NoteCollector,
+	pattern: Pattern,
+	offset: number,
+	patternId: string,
+	indexes: ReadonlyArray<number>,
+): void {
+	collector.spans.push({
+		patternId,
+		patternPath: [...indexes],
+		patternType: patternTypeLabel(pattern),
+		startBeat: offset + pattern.startBeat,
+		endBeat: offset + pattern.endBeat,
+	});
+
+	for (const { offsetBeats, note } of pattern.notes) {
+		collector.notes.push({
+			pitch: note.pitch,
+			startBeat: offset + offsetBeats + note.startBeat,
+			endBeat: offset + offsetBeats + note.endBeat,
+			velocity: note.velocity,
+			lyric: note.lyric,
+			slides: note.slides,
+			patternId,
+			patternPath: [...indexes],
+		});
 	}
 }
 
@@ -314,26 +322,7 @@ function collectSequences(
 		state.midiClips.set(clipKey, collector);
 		state.encounterOrder.push(clipKey);
 
-		collector.spans.push({
-			patternId,
-			patternPath: [...indexes],
-			patternType: patternTypeLabel(pattern),
-			startBeat: offset + pattern.startBeat,
-			endBeat: offset + pattern.endBeat,
-		});
-
-		for (const { offsetBeats, note } of pattern.notes) {
-			collector.notes.push({
-				pitch: note.pitch,
-				startBeat: offset + offsetBeats + note.startBeat,
-				endBeat: offset + offsetBeats + note.endBeat,
-				velocity: note.velocity,
-				lyric: note.lyric,
-				slides: note.slides,
-				patternId,
-				patternPath: [...indexes],
-			});
-		}
+		collectPatternNotes(collector, pattern, offset, patternId, indexes);
 
 		const sequenceEnd = offset + pattern.endBeat;
 		const clips = buildClips(state, sequenceEnd);

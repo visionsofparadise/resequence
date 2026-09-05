@@ -1,5 +1,5 @@
 import { PatternsError } from "../error";
-import { Pattern } from "./pattern";
+import { isOutsideWindow, Pattern } from "./pattern";
 import type { Event, MetadataEvent } from "../events";
 import type { Port } from "../port";
 import type { ResolvedTuning } from "../tuning";
@@ -44,8 +44,7 @@ export class MetadataPattern extends Pattern<MetadataProperties> {
 		ports: ReadonlyArray<Port> = [],
 		tuning?: ResolvedTuning,
 	): Array<Event> {
-		if (absoluteBeat + this.properties.endBeat <= fromBeats || absoluteBeat + this.properties.startBeat >= toBeats)
-			return [];
+		if (isOutsideWindow(this.properties, absoluteBeat, fromBeats, toBeats)) return [];
 
 		const effectiveTuning = this.properties.meta.tuning ?? tuning;
 		const meta = this.properties.meta;

@@ -1,27 +1,13 @@
 import { addAliases, createTuning } from "@resequence/patterns-core";
+import { TWELVE_TET_ALIASES, TWELVE_TET_CLASSES, type TwelveTetAlias, type TwelveTetClass } from "./utils/twelveTet";
 import type { Tuning } from "@resequence/patterns-core";
 
-const CLASSES = ["C", "Cs", "D", "Ds", "E", "F", "Fs", "G", "Gs", "A", "As", "B"] as const;
-
-type ChromaticClass = (typeof CLASSES)[number];
-type ChromaticAlias = "Db" | "Eb" | "Fb" | "Gb" | "Ab" | "Bb" | "Cb" | "Bs" | "Es";
-
-export const Midi: Tuning<ChromaticClass | ChromaticAlias> = addAliases(
+export const Midi: Tuning<TwelveTetClass | TwelveTetAlias> = addAliases(
 	createTuning({
-		classes: CLASSES,
+		classes: TWELVE_TET_CLASSES,
 		octaveRatio: 2,
 		reference: { class: "A", octave: 4, hz: 440 },
 		octaveRange: [-1, 9],
 	}),
-	{
-		Db: "Cs",
-		Eb: "Ds",
-		Fb: "E",
-		Gb: "Fs",
-		Ab: "Gs",
-		Bb: "As",
-		Es: "F",
-		Cb: ["B", -1],
-		Bs: ["C", 1],
-	},
+	TWELVE_TET_ALIASES,
 );

@@ -1,5 +1,4 @@
-import { useMemo, useRef } from "react";
-import { useTransients } from "../../../../../../../hooks/useTransients";
+import { useZoomedCanvas } from "../hooks/useZoomedCanvas";
 import { drawEnvelope } from "./utils/drawEnvelope";
 import { drawLfo } from "./utils/drawLfo";
 import { isKeyframes } from "./utils/isKeyframes";
@@ -14,17 +13,7 @@ interface AutomationCanvasProps {
 }
 
 export const AutomationCanvas: React.FC<AutomationCanvasProps> = ({ clip, context }) => {
-	const { project } = context;
-	const canvasRef = useRef<HTMLCanvasElement>(null);
-
-	const transients = useMemo(() => [project.timelineZoom], [project.timelineZoom]);
-
-	useTransients(transients, () => {
-		const canvas = canvasRef.current;
-
-		if (!canvas) return;
-
-		const pxPerBeat = project.timelineZoom.value;
+	const canvasRef = useZoomedCanvas(context, (canvas, pxPerBeat) => {
 		const totalBeats = clip.endBeat - clip.startBeat;
 		const width = totalBeats * pxPerBeat;
 		const height = AUTOMATION_LANE_HEIGHT;
@@ -46,7 +35,7 @@ export const AutomationCanvas: React.FC<AutomationCanvasProps> = ({ clip, contex
 		if (isKeyframes(clip.source)) {
 			drawEnvelope(context2d, clip.source, width, height, clip.startBeat, pxPerBeat);
 		} else {
-			drawLfo(context2d, clip.source, width, height, clip.startBeat, totalBeats);
+			drawLfo(context2d, clip.source, width, height, totalBeats);
 		}
 	});
 

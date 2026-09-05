@@ -3,13 +3,13 @@ import { Transient } from "../Transient";
 import type { State } from ".";
 import type { ProxyStore } from "../ProxyStore/ProxyStore";
 
-export interface OutputGraphViewport {
+interface OutputGraphViewport {
 	x: number;
 	y: number;
 	zoom: number;
 }
 
-export interface PianoRollTarget {
+interface PianoRollTarget {
 	sequencePath: Array<number>;
 	index: number;
 }

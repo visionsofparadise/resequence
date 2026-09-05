@@ -1,4 +1,4 @@
-import { collectMetadata } from "@resequence/patterns-utils";
+import { collectMetadata, secondsToBeats } from "@resequence/patterns-utils";
 import { computeMaxLatency, createUnitContext } from "@resequence/web-au-core";
 import { isAudioEvent, isPreloadAudioEvent } from "./constructs/audio";
 import { isAutomationEvent } from "./constructs/automate";
@@ -7,11 +7,13 @@ import { dispatchAutomation } from "./dispatch/automation";
 import { seekAutomationFromEvents } from "./dispatch/seek";
 import { mapNoteEvent } from "./mapping";
 import { loadSample } from "./rendering/load-sample";
+import { filterPorts } from "./utils/filterPorts";
+import { isNoteEvent } from "./utils/isNoteEvent";
 import { lowerBound } from "./utils/sorted";
 import type { AudioEvent } from "./constructs/audio";
 import type { AutomationEvent } from "./constructs/automate";
 import type { Router } from "./router";
-import type { Event, NoteEvent as PatternNoteEvent } from "@resequence/patterns-core";
+import type { NoteEvent as PatternNoteEvent } from "@resequence/patterns-core";
 import type { TempoMap } from "@resequence/patterns-utils";
 import type { DriverEntry, UnitContext } from "@resequence/web-au-core";
 
@@ -93,20 +95,22 @@ export class Playback {
 		const pattern = this.router.pattern;
 		const setupEvents = pattern.setup(0);
 
+		const loadCachedSample = async (path: string) => {
+			const cached = this.sampleCache.get(path);
+
+			if (cached) return cached;
+
+			const loadedSample = await loadSample(path, this.audioContext, getSample);
+
+			this.sampleCache.set(path, loadedSample);
+
+			return loadedSample;
+		};
+
 		for (const event of setupEvents) {
 			if (!isPreloadAudioEvent(event)) continue;
 
-			const buffer = await dispatchAudioSetup(event, async (path: string) => {
-				const cached = this.sampleCache.get(path);
-
-				if (cached) return cached;
-
-				const loadedSample = await loadSample(path, this.audioContext, getSample);
-
-				this.sampleCache.set(path, loadedSample);
-
-				return loadedSample;
-			});
+			const buffer = await dispatchAudioSetup(event, loadCachedSample);
 
 			if (buffer) this.sampleCache.set(event.sampleKey, buffer);
 		}
@@ -127,17 +131,7 @@ export class Playback {
 
 		const unitContext = createUnitContext(
 			this.audioContext,
-			async (path: string) => {
-				const cached = this.sampleCache.get(path);
-
-				if (cached) return cached;
-
-				const loadedSample = await loadSample(path, this.audioContext, getSample);
-
-				this.sampleCache.set(path, loadedSample);
-
-				return loadedSample;
-			},
+			loadCachedSample,
 			async (url: string) => {
 				await this.audioContext.audioWorklet.addModule(url);
 			},
@@ -321,63 +315,4 @@ export class Playback {
 			marker = this.markers[this.markerCursor];
 		}
 	}
-}
-
-function isNoteEvent(event: Event): event is PatternNoteEvent {
-	return event.type === "note";
-}
-
-function filterPorts(
-	keys: ReadonlyArray<string>,
-	include?: ReadonlyArray<string>,
-	exclude?: ReadonlyArray<string>,
-): ReadonlyArray<string> {
-	let filtered = [...keys];
-
-	if (include && include.length > 0) {
-		const set = new Set(include);
-
-		filtered = filtered.filter((key) => set.has(key));
-	}
-
-	if (exclude && exclude.length > 0) {
-		const set = new Set(exclude);
-
-		filtered = filtered.filter((key) => !set.has(key));
-	}
-
-	return filtered;
-}
-
-function secondsToBeats(
-	fromBeat: number,
-	elapsedSeconds: number,
-	tempoMap: ReadonlyArray<{ beat: number; bpm: number }>,
-): number {
-	let remaining = elapsedSeconds;
-	let currentBeat = fromBeat;
-	let bpm = 120;
-
-	for (const point of tempoMap) {
-		if (point.beat <= fromBeat) {
-			bpm = point.bpm;
-
-			continue;
-		}
-
-		if (point.beat > currentBeat) {
-			const beatsAtTempo = point.beat - currentBeat;
-			const secondsAtTempo = beatsAtTempo * (60 / bpm);
-
-			if (remaining <= secondsAtTempo) {
-				return currentBeat + remaining / (60 / bpm);
-			}
-
-			remaining -= secondsAtTempo;
-			currentBeat = point.beat;
-			bpm = point.bpm;
-		}
-	}
-
-	return currentBeat + remaining / (60 / bpm);
 }

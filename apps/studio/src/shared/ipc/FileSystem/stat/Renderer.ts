@@ -1,6 +1,6 @@
 import { AsyncRendererIpc } from "../../../models/AsyncRendererIpc";
 
-export interface FileStat {
+interface FileStat {
 	size: number;
 	modifiedAt: number;
 }

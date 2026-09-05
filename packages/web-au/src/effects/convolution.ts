@@ -25,7 +25,9 @@ export class ConvolutionEffectUnit extends Unit<typeof convolutionSchema> {
 
 		try {
 			convolverNode.buffer = await context.getSample(this.parameters.impulse.value);
-		} catch {}
+		} catch {
+			convolverNode.buffer = null;
+		}
 
 		this.convolverNode = convolverNode;
 

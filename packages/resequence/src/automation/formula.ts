@@ -1,4 +1,4 @@
-import type { Keyframe } from "./keyframe";
+import type { Keyframe } from "@resequence/patterns-core";
 
 export interface FormulaOptions {
 	readonly duration: number;

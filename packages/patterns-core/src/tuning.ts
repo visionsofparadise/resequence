@@ -92,6 +92,25 @@ export function createTuning(config: EqualTuningInput | FrequencyTuningInput): T
 	return createFrequencyTuning(config);
 }
 
+function buildTuningNamespace(resolved: ResolvedTuning, octaveRange: readonly [number, number]): Tuning<string> {
+	const { classes, frequencies, octaveRatio, referenceOctave } = resolved;
+	const stepsPerOctave = classes.length;
+	const namespace: Record<string, TuningNote> = {};
+
+	for (let octave = octaveRange[0]; octave <= octaveRange[1]; octave++) {
+		for (const [classIndex, className] of classes.entries()) {
+			const key = `${className}${octave}`;
+			const pitch: Pitch = { class: classIndex, stepsPerOctave, octave, octaveRatio };
+			const baseHz = frequencies[className] ?? 0;
+			const hz = baseHz * Math.pow(octaveRatio, octave - referenceOctave);
+
+			namespace[key] = createTuningNote(pitch, hz, key);
+		}
+	}
+
+	return Object.assign(namespace, { config: resolved });
+}
+
 function createEqualTuning(config: EqualTuningInput): Tuning<string> {
 	const { classes, octaveRatio = 2, reference, octaveRange = [0, 9] } = config;
 	const spo = classes.length;
@@ -114,20 +133,7 @@ function createEqualTuning(config: EqualTuningInput): Tuning<string> {
 		referenceOctave: reference.octave,
 	};
 
-	const namespace: Record<string, TuningNote> = {};
-
-	for (let octave = octaveRange[0]; octave <= octaveRange[1]; octave++) {
-		for (const [classIndex, className] of classes.entries()) {
-			const key = `${className}${octave}`;
-			const pitch: Pitch = { class: classIndex, stepsPerOctave: spo, octave, octaveRatio };
-			const baseHz = frequencies[className] ?? 0;
-			const hz = baseHz * Math.pow(octaveRatio, octave - reference.octave);
-
-			namespace[key] = createTuningNote(pitch, hz, key);
-		}
-	}
-
-	return Object.assign(namespace, { config: resolved });
+	return buildTuningNamespace(resolved, octaveRange);
 }
 
 function createFrequencyTuning(config: FrequencyTuningInput): Tuning<string> {
@@ -135,7 +141,6 @@ function createFrequencyTuning(config: FrequencyTuningInput): Tuning<string> {
 
 	const sorted = Object.entries(freqInput).sort((ea, eb) => ea[1] - eb[1]);
 	const classes = sorted.map(([name]) => name);
-	const spo = classes.length;
 	const frequencies: Record<string, number> = {};
 
 	for (const [name, hz] of sorted) {
@@ -149,20 +154,7 @@ function createFrequencyTuning(config: FrequencyTuningInput): Tuning<string> {
 		referenceOctave,
 	};
 
-	const namespace: Record<string, TuningNote> = {};
-
-	for (let octave = octaveRange[0]; octave <= octaveRange[1]; octave++) {
-		for (const [classIndex, className] of classes.entries()) {
-			const key = `${className}${octave}`;
-			const pitch: Pitch = { class: classIndex, stepsPerOctave: spo, octave, octaveRatio };
-			const baseHz = frequencies[className] ?? 0;
-			const hz = baseHz * Math.pow(octaveRatio, octave - referenceOctave);
-
-			namespace[key] = createTuningNote(pitch, hz, key);
-		}
-	}
-
-	return Object.assign(namespace, { config: resolved });
+	return buildTuningNamespace(resolved, octaveRange);
 }
 
 export function addAliases<C extends string, A extends string>(

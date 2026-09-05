@@ -1,5 +1,6 @@
-import { useState, useCallback, useRef } from "react";
+import { useRef } from "react";
 import { cn } from "../cn";
+import { useVerticalDrag } from "../hooks/useVerticalDrag";
 
 interface FaderProps extends Omit<React.ComponentPropsWithRef<"div">, "onChange"> {
 	value: number;
@@ -11,36 +12,7 @@ interface FaderProps extends Omit<React.ComponentPropsWithRef<"div">, "onChange"
 
 const Fader = ({ value, label, height = 80, width = 24, onChange, className, ref, ...rest }: FaderProps) => {
 	const trackRef = useRef<HTMLDivElement>(null);
-	const [dragging, setDragging] = useState(false);
-	const startY = useRef(0);
-	const startValue = useRef(0);
-
-	const onPointerDown = useCallback(
-		(ev: React.PointerEvent) => {
-			if (!onChange) return;
-
-			setDragging(true);
-			(ev.target as Element).setPointerCapture(ev.pointerId);
-			startY.current = ev.clientY;
-			startValue.current = value;
-		},
-		[onChange, value],
-	);
-
-	const onPointerMove = useCallback(
-		(ev: React.PointerEvent) => {
-			if (!dragging || !onChange) return;
-
-			const delta = (startY.current - ev.clientY) / height;
-
-			onChange(Math.max(0, Math.min(1, startValue.current + delta)));
-		},
-		[dragging, onChange, height],
-	);
-
-	const onPointerUp = useCallback(() => {
-		setDragging(false);
-	}, []);
+	const { onPointerDown, onPointerMove, onPointerUp } = useVerticalDrag({ value, travel: height, onChange });
 
 	return (
 		<div ref={ref} className={cn("flex flex-col items-center gap-2", className)} {...rest}>

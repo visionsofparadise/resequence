@@ -42,6 +42,8 @@ export const interceptRendererLogs = (
 
 				browserWindow.webContents.removeListener("console-message", consoleMessageListener);
 			}
-		} catch {}
+		} catch {
+			return;
+		}
 	};
 };

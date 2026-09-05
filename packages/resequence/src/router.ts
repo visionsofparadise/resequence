@@ -8,10 +8,12 @@ import { mapNoteEvent } from "./mapping";
 import { Playback } from "./playback";
 import { encodeWav } from "./rendering/encode-wav";
 import { loadSample } from "./rendering/load-sample";
+import { filterPorts } from "./utils/filterPorts";
+import { isNoteEvent } from "./utils/isNoteEvent";
 import type { AudioEvent } from "./constructs/audio";
 import type { AutomationEvent } from "./constructs/automate";
 import type { PlaybackOptions } from "./playback";
-import type { Event, Pattern, NoteEvent as PatternNoteEvent } from "@resequence/patterns-core";
+import type { Pattern, NoteEvent as PatternNoteEvent } from "@resequence/patterns-core";
 import type { TempoMap } from "@resequence/patterns-utils";
 import type { MidiUnit } from "@resequence/web-au-core";
 import type { WavBitDepth } from "@resequence/web-au-utils";
@@ -208,30 +210,4 @@ async function renderPort(
 	unit.teardown(unitContext);
 
 	return { portKey, buffer, wav };
-}
-
-function isNoteEvent(event: Event): event is PatternNoteEvent {
-	return event.type === "note";
-}
-
-function filterPorts(
-	keys: ReadonlyArray<string>,
-	include?: ReadonlyArray<string>,
-	exclude?: ReadonlyArray<string>,
-): ReadonlyArray<string> {
-	let filtered = [...keys];
-
-	if (include && include.length > 0) {
-		const set = new Set(include);
-
-		filtered = filtered.filter((key) => set.has(key));
-	}
-
-	if (exclude && exclude.length > 0) {
-		const set = new Set(exclude);
-
-		filtered = filtered.filter((key) => !set.has(key));
-	}
-
-	return filtered;
 }

@@ -1,12 +1,6 @@
-import {
-	ModifierPattern,
-	toPattern,
-	addSteps,
-	NUM_OCTAVES,
-	pitchKey,
-	modifyNotes,
-	walkNotes,
-} from "@resequence/patterns-core";
+import { ModifierPattern, toPattern, addSteps, pitchKey, modifyNotes, walkNotes } from "@resequence/patterns-core";
+import { groupByBeat } from "../utils/groupByBeat";
+import { repitchNote } from "../utils/repitchNote";
 import type { Event, Note, ModifierProperties, Pattern, PatternProperties, Pitch } from "@resequence/patterns-core";
 
 export type VoicingStyle = "close" | "drop2" | "drop3" | "open";
@@ -26,18 +20,7 @@ export class VoicingPattern extends ModifierPattern<VoicingProperties> {
 			entries.push({ id, absoluteStart: absoluteOffset + note.startBeat, pitch: note.pitch });
 		});
 
-		const byBeat = new Map<number, typeof entries>();
-
-		for (const entry of entries) {
-			let group = byBeat.get(entry.absoluteStart);
-
-			if (!group) {
-				group = [];
-				byBeat.set(entry.absoluteStart, group);
-			}
-
-			group.push(entry);
-		}
+		const byBeat = groupByBeat(entries);
 
 		const pitchChanges = new Map<string, Pitch>();
 
@@ -52,20 +35,7 @@ export class VoicingPattern extends ModifierPattern<VoicingProperties> {
 		modifyNotes(this, (note, { id }) => {
 			const newPitch = pitchChanges.get(id);
 
-			if (newPitch) {
-				const shift = pitchKey(newPitch) - pitchKey(note.pitch);
-
-				return {
-					...note,
-					pitch: newPitch,
-					slides: note.slides?.map((sl) => ({
-						...sl,
-						value: sl.value + shift / (note.pitch.stepsPerOctave * NUM_OCTAVES),
-					})),
-				};
-			}
-
-			return note;
+			return newPitch ? repitchNote(note, newPitch) : note;
 		});
 
 		return [];

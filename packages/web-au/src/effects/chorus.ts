@@ -1,15 +1,11 @@
-import { Unit, proxyDriver, live } from "@resequence/web-au-core";
-import { z } from "zod";
+import { Unit, proxyDriver } from "@resequence/web-au-core";
 import { lfo, type LfoUnit } from "../lfo";
 import { delay, type DelayEffectUnit } from "./delay";
+import { rateDepthSchema } from "./utils/rateDepthSchema";
 import type { SetupResult, UnitContext, UnitInput } from "@resequence/web-au-core";
+import type { z } from "zod";
 
-const chorusSchema = z.object({
-	rate: live(z.number().min(0.01).max(100).default(1).describe("Rate (Hz)")),
-	depth: live(z.number().min(0).max(1).default(0.5).describe("Depth")),
-});
-
-export class ChorusEffectUnit extends Unit<typeof chorusSchema> {
+export class ChorusEffectUnit extends Unit<typeof rateDepthSchema> {
 	readonly type = ["unit"];
 	readonly packageName = "@resequence/web-au";
 	readonly unitName = "chorus";
@@ -20,9 +16,9 @@ export class ChorusEffectUnit extends Unit<typeof chorusSchema> {
 	private lfoUnit: LfoUnit | undefined;
 
 	constructor(
-		input: z.infer<typeof chorusSchema> & UnitInput & { readonly delay: number; readonly feedback?: number },
+		input: z.infer<typeof rateDepthSchema> & UnitInput & { readonly delay: number; readonly feedback?: number },
 	) {
-		super(input, chorusSchema);
+		super(input, rateDepthSchema);
 		this.delay = input.delay;
 		this.feedback = input.feedback;
 	}

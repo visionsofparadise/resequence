@@ -1,4 +1,5 @@
-import { ModifierPattern, toPattern, modifyNotes, walkNotes } from "@resequence/patterns-core";
+import { ModifierPattern, toPattern, modifyNotes } from "@resequence/patterns-core";
+import { noteStartEntriesOf } from "../utils/noteStartEntries";
 import type { Event, Note, ModifierProperties, Pattern, PatternProperties } from "@resequence/patterns-core";
 
 export interface RotateProperties extends ModifierProperties {
@@ -10,12 +11,7 @@ export class RotatePattern extends ModifierPattern<RotateProperties> {
 	readonly unitName = "rotate";
 
 	override _setup(): Array<Event> {
-		const entries: Array<{ id: string; absoluteStart: number }> = [];
-
-		walkNotes(this, (note, { id, absoluteOffset }) => {
-			entries.push({ id, absoluteStart: absoluteOffset + note.startBeat });
-		});
-		entries.sort((ea, eb) => ea.absoluteStart - eb.absoluteStart);
+		const entries = noteStartEntriesOf(this);
 
 		if (entries.length === 0) return [];
 

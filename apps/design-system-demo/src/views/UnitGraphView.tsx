@@ -257,6 +257,7 @@ const UnitGraphView = () => {
 			}}
 		>
 			<div
+				role="presentation"
 				className="flex-1 relative overflow-hidden cursor-grab active:cursor-grabbing"
 				onMouseDown={(ev) => {
 					if (ev.target !== ev.currentTarget) return;

@@ -1,5 +1,6 @@
-import { CompositeUnit, LiveParameter, MidiUnit } from "@resequence/web-au-core";
+import { LiveParameter, MidiUnit } from "@resequence/web-au-core";
 import { z } from "zod";
+import { detachTargets } from "./utils/detachTargets";
 import type { AnyUnit, NoteEvent, SetupResult, UnitContext, UnitInput } from "@resequence/web-au-core";
 
 export interface InterceptOptions {
@@ -81,21 +82,7 @@ export function intercept(unit: AnyUnit, options: InterceptOptions): InterceptUn
 		(unit as { id: string }).id = crypto.randomUUID();
 	}
 
-	const targets: Array<AnyUnit> = [...unit.targets];
-
-	unit.targets.length = 0;
-
-	if (unit instanceof CompositeUnit) {
-		const tail = "tail" in unit ? (unit as { tail: AnyUnit }).tail : undefined;
-
-		if (tail) {
-			for (const target of tail.targets) {
-				if (!targets.includes(target)) targets.push(target);
-			}
-
-			tail.targets.length = 0;
-		}
-	}
+	const targets = detachTargets(unit);
 
 	return new InterceptUnit({ inner: unit, options, targets });
 }

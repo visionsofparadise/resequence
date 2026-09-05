@@ -1,6 +1,6 @@
 import { frequencyToNoteAndBend, pitchToFrequency } from "../frequency";
 import { N } from "../tunings/chromatic";
-import { Pattern } from "./pattern";
+import { isOutsideWindow, mergeScheduled, Pattern, scheduleChildren } from "./pattern";
 import type { Event, NoteEvent } from "../events";
 import type { Port } from "../port";
 import type { ResolvedTuning } from "../tuning";
@@ -37,25 +37,21 @@ export abstract class MidiPattern<P extends MidiPatternProperties = MidiPatternP
 		parentPorts: ReadonlyArray<Port> = [],
 		tuning?: ResolvedTuning,
 	): Array<Event> {
-		if (absoluteBeat + this.properties.endBeat <= fromBeats || absoluteBeat + this.properties.startBeat >= toBeats)
-			return [];
+		if (isOutsideWindow(this.properties, absoluteBeat, fromBeats, toBeats)) return [];
 
 		const effectivePorts = this.ports.length > 0 ? [...parentPorts, ...this.ports] : parentPorts;
 
 		const ownEvents = this._schedule(absoluteBeat, effectivePorts, tuning);
-		const childEvents: Array<Event> = [];
+		const childEvents = scheduleChildren(
+			this.properties.children,
+			absoluteBeat,
+			fromBeats,
+			toBeats,
+			effectivePorts,
+			tuning,
+		);
 
-		for (const { offsetBeats, pattern } of this.properties.children) {
-			const events = pattern.schedule(absoluteBeat + offsetBeats, fromBeats, toBeats, effectivePorts, tuning);
-
-			if (events.length > 0) childEvents.push(...events);
-		}
-
-		if (ownEvents.length === 0) return childEvents;
-
-		if (childEvents.length === 0) return ownEvents;
-
-		return [...ownEvents, ...childEvents];
+		return mergeScheduled(ownEvents, childEvents);
 	}
 
 	override _schedule(absoluteBeat: number, ports: ReadonlyArray<Port>, tuning?: ResolvedTuning): Array<Event> {

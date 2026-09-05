@@ -1,15 +1,11 @@
-import { Unit, proxyDriver, live } from "@resequence/web-au-core";
-import { z } from "zod";
+import { Unit, proxyDriver } from "@resequence/web-au-core";
 import { lfo, type LfoUnit } from "../lfo";
 import { allpass, type FilterEffectUnit } from "./filter";
+import { rateDepthSchema } from "./utils/rateDepthSchema";
 import type { SetupResult, UnitContext, UnitInput } from "@resequence/web-au-core";
+import type { z } from "zod";
 
-const phaserSchema = z.object({
-	rate: live(z.number().min(0.01).max(100).default(1).describe("Rate (Hz)")),
-	depth: live(z.number().min(0).max(1).default(0.5).describe("Depth")),
-});
-
-export class PhaserEffectUnit extends Unit<typeof phaserSchema> {
+export class PhaserEffectUnit extends Unit<typeof rateDepthSchema> {
 	readonly type = ["unit"];
 	readonly packageName = "@resequence/web-au";
 	readonly unitName = "phaser";
@@ -18,8 +14,8 @@ export class PhaserEffectUnit extends Unit<typeof phaserSchema> {
 	private stageChain: Array<FilterEffectUnit> = [];
 	private lfoUnit: LfoUnit | undefined;
 
-	constructor(input: z.infer<typeof phaserSchema> & UnitInput & { readonly stages: number }) {
-		super(input, phaserSchema);
+	constructor(input: z.infer<typeof rateDepthSchema> & UnitInput & { readonly stages: number }) {
+		super(input, rateDepthSchema);
 		this.stages = input.stages;
 	}
 

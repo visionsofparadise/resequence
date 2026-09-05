@@ -1,4 +1,5 @@
-import { ModifierPattern, toPattern, NUM_OCTAVES, pitchKey, modifyNotes, walkNotes } from "@resequence/patterns-core";
+import { ModifierPattern, toPattern, pitchKey, modifyNotes, walkNotes } from "@resequence/patterns-core";
+import { repitchNote } from "../utils/repitchNote";
 import type { Event, Note, ModifierProperties, Pattern, PatternProperties, Pitch } from "@resequence/patterns-core";
 
 export type SortKey = "asc" | "desc" | ((noteA: Note, noteB: Note) => number);
@@ -57,20 +58,7 @@ export class SortPattern extends ModifierPattern<SortProperties> {
 		modifyNotes(this, (note, { id }) => {
 			const newPitch = pitchAssignment.get(id);
 
-			if (newPitch) {
-				const shift = pitchKey(newPitch) - pitchKey(note.pitch);
-
-				return {
-					...note,
-					pitch: newPitch,
-					slides: note.slides?.map((sl) => ({
-						...sl,
-						value: sl.value + shift / (note.pitch.stepsPerOctave * NUM_OCTAVES),
-					})),
-				};
-			}
-
-			return note;
+			return newPitch ? repitchNote(note, newPitch) : note;
 		});
 
 		return [];

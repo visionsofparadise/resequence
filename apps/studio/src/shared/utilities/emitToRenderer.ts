@@ -18,5 +18,3 @@ export const emitToRenderer = <K extends keyof MainEventMap>(
 ): void => {
 	browserWindow.webContents.send(channel, ...args);
 };
-
-export const getValidEventChannels = (): Array<keyof MainEventMap> => ["change", "error", "windowBoundsChanged"];

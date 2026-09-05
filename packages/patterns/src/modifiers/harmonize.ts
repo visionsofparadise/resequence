@@ -1,4 +1,5 @@
-import { ModifierPattern, toPattern, addSteps, NUM_OCTAVES, flatModifyNotes } from "@resequence/patterns-core";
+import { ModifierPattern, toPattern, addSteps, flatModifyNotes } from "@resequence/patterns-core";
+import { repitchNote } from "../utils/repitchNote";
 import type { Event, Note, ModifierProperties, Pattern, PatternProperties } from "@resequence/patterns-core";
 
 export interface HarmonizeProperties extends ModifierProperties {
@@ -10,17 +11,7 @@ export class HarmonizePattern extends ModifierPattern<HarmonizeProperties> {
 	readonly unitName = "harmonize";
 
 	override _setup(): Array<Event> {
-		flatModifyNotes(this, (note) => [
-			note,
-			{
-				...note,
-				pitch: addSteps(note.pitch, this.properties.interval),
-				slides: note.slides?.map((sl) => ({
-					...sl,
-					value: sl.value + this.properties.interval / (note.pitch.stepsPerOctave * NUM_OCTAVES),
-				})),
-			},
-		]);
+		flatModifyNotes(this, (note) => [note, repitchNote(note, addSteps(note.pitch, this.properties.interval))]);
 
 		return [];
 	}

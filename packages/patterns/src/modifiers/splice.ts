@@ -1,4 +1,5 @@
-import { ModifierPattern, toPattern, flatModifyNotes, collectNotes, walkPatterns } from "@resequence/patterns-core";
+import { ModifierPattern, toPattern, flatModifyNotes, collectNotes } from "@resequence/patterns-core";
+import { noteSpanEntriesOf } from "../utils/noteSpanEntries";
 import type {
 	Event,
 	Note,
@@ -33,21 +34,7 @@ export class SplicePattern extends ModifierPattern<SpliceProperties> {
 		const options = this.properties.spliceOptions;
 		const removeCount = options.remove ?? 0;
 
-		const entries: Array<{ note: Note; absoluteStart: number; absoluteEnd: number }> = [];
-
-		walkPatterns(this, (node, absoluteOffset) => {
-			for (const { offsetBeats, note } of node.notes) {
-				const totalOffset = absoluteOffset + offsetBeats;
-
-				entries.push({
-					note,
-					absoluteStart: totalOffset + note.startBeat,
-					absoluteEnd: totalOffset + note.endBeat,
-				});
-			}
-		});
-
-		entries.sort((ea, eb) => ea.absoluteStart - eb.absoluteStart);
+		const entries = noteSpanEntriesOf(this);
 
 		const removing = entries.slice(options.at, options.at + removeCount);
 		const afterEntries = entries.slice(options.at + removeCount);

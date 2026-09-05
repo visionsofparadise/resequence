@@ -1,5 +1,5 @@
 import { surface, border } from "@resequence/design-system";
-import { ReactFlow, ReactFlowProvider, type OnMove, type OnMoveEnd } from "@xyflow/react";
+import { ReactFlow, ReactFlowProvider, type OnMove } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { useCallback, useMemo } from "react";
 import { ViewHeader } from "../../../../ViewHeader";
@@ -38,20 +38,7 @@ export const UnitGraph: React.FC<UnitGraphProps> = ({ context, portKey, outputUn
 	const storedViewport = project.outputGraphViewports[outputId];
 	const defaultViewport = storedViewport ?? { x: 0, y: 0, zoom: 1 };
 
-	const onMove = useCallback<OnMove>(
-		(_event, viewport) => {
-			projectStore.mutate<ProjectState>(project, (proxy) => {
-				proxy.outputGraphViewports[outputId] = {
-					x: viewport.x,
-					y: viewport.y,
-					zoom: viewport.zoom,
-				};
-			});
-		},
-		[project, projectStore, outputId],
-	);
-
-	const onMoveEnd = useCallback<OnMoveEnd>(
+	const storeViewport = useCallback<OnMove>(
 		(_event, viewport) => {
 			projectStore.mutate<ProjectState>(project, (proxy) => {
 				proxy.outputGraphViewports[outputId] = {
@@ -82,8 +69,8 @@ export const UnitGraph: React.FC<UnitGraphProps> = ({ context, portKey, outputUn
 					nodeTypes={nodeTypes}
 					defaultViewport={defaultViewport}
 					defaultEdgeOptions={defaultEdgeOptions}
-					onMove={onMove}
-					onMoveEnd={onMoveEnd}
+					onMove={storeViewport}
+					onMoveEnd={storeViewport}
 					proOptions={{ hideAttribution: true }}
 					nodesDraggable={false}
 					nodesConnectable={false}

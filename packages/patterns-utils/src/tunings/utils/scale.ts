@@ -1,42 +1,10 @@
-import { N } from "@resequence/patterns-core";
 import { Scale } from "tonal";
+import { resolveTonalNote } from "./resolveTonalNote";
 import type { TuningNote } from "@resequence/patterns-core";
-
-const TONAL_TO_KEY: Record<string, string> = {
-	C: "C",
-	"C#": "Cs",
-	Db: "Db",
-	D: "D",
-	"D#": "Ds",
-	Eb: "Eb",
-	E: "E",
-	"E#": "Es",
-	Fb: "Fb",
-	F: "F",
-	"F#": "Fs",
-	Gb: "Gb",
-	G: "G",
-	"G#": "Gs",
-	Ab: "Ab",
-	A: "A",
-	"A#": "As",
-	Bb: "Bb",
-	B: "B",
-	"B#": "Bs",
-	Cb: "Cb",
-};
 
 export type ScaleAccessor = (degree: number, octave?: number) => TuningNote;
 
 const SCALE_REGEX = /^([A-G][#b]?)(\d)\s+(.+)/;
-
-function resolveTonalNote(tonalName: string, octave: number): TuningNote | undefined {
-	const key = TONAL_TO_KEY[tonalName];
-
-	if (!key) return undefined;
-
-	return (N as unknown as Record<string, TuningNote>)[`${key}${octave}`];
-}
 
 export function CS(name: string): ScaleAccessor {
 	const match = SCALE_REGEX.exec(name) as [string, string, string, string] | null;

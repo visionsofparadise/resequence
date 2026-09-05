@@ -1,12 +1,6 @@
-import {
-	ModifierPattern,
-	toPattern,
-	addSteps,
-	NUM_OCTAVES,
-	pitchKey,
-	modifyNotes,
-	walkNotes,
-} from "@resequence/patterns-core";
+import { ModifierPattern, toPattern, addSteps, pitchKey, modifyNotes, walkNotes } from "@resequence/patterns-core";
+import { groupByBeat } from "../utils/groupByBeat";
+import { repitchNote } from "../utils/repitchNote";
 import type { Event, Note, ModifierProperties, Pattern, PatternProperties } from "@resequence/patterns-core";
 
 export interface InvertProperties extends ModifierProperties {
@@ -29,18 +23,7 @@ export class InvertPattern extends ModifierPattern<InvertProperties> {
 			});
 		});
 
-		const byBeat = new Map<number, typeof entries>();
-
-		for (const entry of entries) {
-			let group = byBeat.get(entry.absoluteStart);
-
-			if (!group) {
-				group = [];
-				byBeat.set(entry.absoluteStart, group);
-			}
-
-			group.push(entry);
-		}
+		const byBeat = groupByBeat(entries);
 
 		const shiftMap = new Map<string, number>();
 
@@ -67,18 +50,7 @@ export class InvertPattern extends ModifierPattern<InvertProperties> {
 		modifyNotes(this, (note, { id }) => {
 			const shift = shiftMap.get(id);
 
-			if (shift) {
-				return {
-					...note,
-					pitch: addSteps(note.pitch, shift),
-					slides: note.slides?.map((sl) => ({
-						...sl,
-						value: sl.value + shift / (note.pitch.stepsPerOctave * NUM_OCTAVES),
-					})),
-				};
-			}
-
-			return note;
+			return shift ? repitchNote(note, addSteps(note.pitch, shift)) : note;
 		});
 
 		return [];

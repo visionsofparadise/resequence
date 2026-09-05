@@ -20,6 +20,42 @@ export interface PatternProperties {
 	endBeat: number;
 }
 
+export function isOutsideWindow(
+	properties: PatternProperties,
+	absoluteBeat: number,
+	fromBeats: number,
+	toBeats: number,
+): boolean {
+	return absoluteBeat + properties.endBeat <= fromBeats || absoluteBeat + properties.startBeat >= toBeats;
+}
+
+export function scheduleChildren(
+	children: ReadonlyArray<RelativeChild>,
+	absoluteBeat: number,
+	fromBeats: number,
+	toBeats: number,
+	ports: ReadonlyArray<Port>,
+	tuning?: ResolvedTuning,
+): Array<Event> {
+	const childEvents: Array<Event> = [];
+
+	for (const { offsetBeats, pattern } of children) {
+		const events = pattern.schedule(absoluteBeat + offsetBeats, fromBeats, toBeats, ports, tuning);
+
+		if (events.length > 0) childEvents.push(...events);
+	}
+
+	return childEvents;
+}
+
+export function mergeScheduled(ownEvents: Array<Event>, childEvents: Array<Event>): Array<Event> {
+	if (ownEvents.length === 0) return childEvents;
+
+	if (childEvents.length === 0) return ownEvents;
+
+	return [...ownEvents, ...childEvents];
+}
+
 export abstract class Pattern<P extends PatternProperties = PatternProperties> {
 	abstract readonly type: ReadonlyArray<string>;
 	abstract readonly packageName: string;
@@ -78,23 +114,12 @@ export abstract class Pattern<P extends PatternProperties = PatternProperties> {
 		ports: ReadonlyArray<Port> = [],
 		tuning?: ResolvedTuning,
 	): Array<Event> {
-		if (absoluteBeat + this.properties.endBeat <= fromBeats || absoluteBeat + this.properties.startBeat >= toBeats)
-			return [];
+		if (isOutsideWindow(this.properties, absoluteBeat, fromBeats, toBeats)) return [];
 
 		const ownEvents = this._schedule(absoluteBeat, ports, tuning);
-		const childEvents: Array<Event> = [];
+		const childEvents = scheduleChildren(this.properties.children, absoluteBeat, fromBeats, toBeats, ports, tuning);
 
-		for (const { offsetBeats, pattern } of this.properties.children) {
-			const events = pattern.schedule(absoluteBeat + offsetBeats, fromBeats, toBeats, ports, tuning);
-
-			if (events.length > 0) childEvents.push(...events);
-		}
-
-		if (ownEvents.length === 0) return childEvents;
-
-		if (childEvents.length === 0) return ownEvents;
-
-		return [...ownEvents, ...childEvents];
+		return mergeScheduled(ownEvents, childEvents);
 	}
 
 	_schedule(_absoluteBeat: number, _ports: ReadonlyArray<Port>, _tuning?: ResolvedTuning): Array<Event> {

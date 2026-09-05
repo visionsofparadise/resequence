@@ -31,6 +31,20 @@ export class CrossoverEffectUnit extends Unit<typeof crossoverSchema> {
 		const inputUnit = linearGain({ level: 1 });
 		const mergerUnit = linearGain({ level: 1 });
 
+		const attachHighpass = (previousIndex: number, nodes: Array<AnyUnit>): AnyUnit | undefined => {
+			const previousBand = this.parameters.bands[previousIndex];
+			const previousFrequency = previousBand?.frequency?.value;
+
+			if (previousFrequency === undefined) return undefined;
+
+			const highpass = linkwitzRiley(previousFrequency, "highpass");
+
+			inputUnit.to(highpass);
+			nodes.push(highpass);
+
+			return highpass;
+		};
+
 		for (let bandIndex = 0; bandIndex < this.parameters.bands.length; bandIndex++) {
 			const bandParam = this.parameters.bands[bandIndex];
 			const bandGain = this.bands[bandIndex];
@@ -41,16 +55,9 @@ export class CrossoverEffectUnit extends Unit<typeof crossoverSchema> {
 			let bandHead: AnyUnit = inputUnit;
 
 			if (bandIndex > 0) {
-				const prevBand = this.parameters.bands[bandIndex - 1];
-				const prevFreq = prevBand?.frequency?.value;
+				const highpass = attachHighpass(bandIndex - 1, nodes);
 
-				if (prevFreq !== undefined) {
-					const hp = linkwitzRiley(prevFreq, "highpass");
-
-					inputUnit.to(hp);
-					bandHead = hp;
-					nodes.push(hp);
-				}
+				if (highpass) bandHead = highpass;
 			}
 
 			const freq = bandParam.frequency?.value;
@@ -62,16 +69,9 @@ export class CrossoverEffectUnit extends Unit<typeof crossoverSchema> {
 				bandHead = lp;
 				nodes.push(lp);
 			} else if (bandHead === inputUnit && bandIndex > 0) {
-				const prevBand = this.parameters.bands[bandIndex - 1];
-				const prevFreq = prevBand?.frequency?.value;
+				const highpass = attachHighpass(bandIndex - 1, nodes);
 
-				if (prevFreq !== undefined) {
-					const hp = linkwitzRiley(prevFreq, "highpass");
-
-					inputUnit.to(hp);
-					bandHead = hp;
-					nodes.push(hp);
-				}
+				if (highpass) bandHead = highpass;
 			}
 
 			bandHead.to(bandGain);

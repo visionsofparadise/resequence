@@ -22,8 +22,6 @@ export type MainWithEvents = Omit<Main, "events"> & {
 	events: MainEvents;
 };
 
-export const main = window.main;
-
 declare global {
 	interface Window {
 		main: Main;

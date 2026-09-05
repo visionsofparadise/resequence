@@ -1,8 +1,7 @@
-import { Canvas, useFrame } from "@react-three/fiber";
+import { useFrame } from "@react-three/fiber";
 import { useRef, useMemo } from "react";
 import { ConeGeometry, DoubleSide, MathUtils, type Group } from "three";
-import { cn } from "../cn";
-import { useThemeColors, SceneBackground } from "./three-utils";
+import IconCanvasButton from "./IconCanvasButton";
 
 export interface PlayButtonProps extends React.ComponentPropsWithRef<"button"> {
 	size?: number;
@@ -52,26 +51,13 @@ function Pyramid({ hovered, colors }: { hovered: boolean; colors: { primary: str
 	);
 }
 
-const PlayButton = ({ size = 48, hovered = false, className, ref, ...rest }: PlayButtonProps) => {
-	const colors = useThemeColors();
-
-	return (
-		<button
-			ref={ref}
-			type="button"
-			aria-label="Play"
-			style={{ width: size, height: size, padding: 0, border: "none", background: "transparent", cursor: "pointer" }}
-			className={cn("focus-visible:ring-1 focus-visible:ring-text-secondary focus-visible:outline-none", className)}
-			{...rest}
-		>
-			<Canvas camera={{ position: [0, 0, 3.5], fov: 40 }} gl={{ alpha: true, antialias: true }} dpr={2}>
-				<SceneBackground color={colors.surface} />
-				<ambientLight intensity={0.15} />
-				<directionalLight position={[3, 1, 2]} intensity={1.5} />
-				<Pyramid hovered={hovered} colors={colors} />
-			</Canvas>
-		</button>
-	);
-};
+const PlayButton = ({ size = 48, hovered = false, ...rest }: PlayButtonProps) => (
+	<IconCanvasButton
+		label="Play"
+		size={size}
+		shape={(colors) => <Pyramid hovered={hovered} colors={colors} />}
+		{...rest}
+	/>
+);
 
 export default PlayButton;

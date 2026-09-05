@@ -1,4 +1,4 @@
-import { useMemo, useRef } from "react";
+import { useCallback, useMemo, useRef } from "react";
 import { useTransients } from "../../../../../../../hooks/useTransients";
 import { PianoRollGrid } from "../../../PianoRoll/Grid";
 import { PianoRollNote } from "../../../PianoRoll/Note";
@@ -38,6 +38,12 @@ export const MidiClipCard: React.FC<MidiClipCardProps> = ({ clip, sequence, sequ
 
 	const transients = useMemo(() => [project.pitchZoom], [project.pitchZoom]);
 
+	const openPianoRoll = useCallback(() => {
+		projectStore.mutate<ProjectState>(project, (proxy) => {
+			proxy.activePianoRoll = { sequencePath, index };
+		});
+	}, [index, project, projectStore, sequencePath]);
+
 	useTransients(transients, () => {
 		if (!containerRef.current) return;
 
@@ -52,8 +58,17 @@ export const MidiClipCard: React.FC<MidiClipCardProps> = ({ clip, sequence, sequ
 	return (
 		<div
 			ref={containerRef}
+			role="button"
+			tabIndex={0}
+			aria-label={`Open the piano roll for the ${clip.port} clip`}
 			className="relative overflow-hidden border-b border-border"
 			style={{ height, backgroundColor: `color-mix(in srgb, ${color} 10%, transparent)` }}
+			onKeyDown={(event) => {
+				if (event.key !== "Enter" && event.key !== " ") return;
+
+				event.preventDefault();
+				openPianoRoll();
+			}}
 			onMouseDown={(ev) => {
 				mouseDownPos.current = { x: ev.clientX, y: ev.clientY };
 			}}
@@ -67,11 +82,7 @@ export const MidiClipCard: React.FC<MidiClipCardProps> = ({ clip, sequence, sequ
 				const dx = ev.clientX - pos.x;
 				const dy = ev.clientY - pos.y;
 
-				if (Math.sqrt(dx * dx + dy * dy) < CLICK_THRESHOLD) {
-					projectStore.mutate<ProjectState>(project, (proxy) => {
-						proxy.activePianoRoll = { sequencePath, index };
-					});
-				}
+				if (Math.sqrt(dx * dx + dy * dy) < CLICK_THRESHOLD) openPianoRoll();
 			}}
 		>
 			<PianoRollGrid

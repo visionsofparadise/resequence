@@ -1,4 +1,4 @@
-import { AUTOMATION_COLOR } from "./drawEnvelope";
+import { strokeValueCurve } from "./strokeValueCurve";
 import type { Lfo } from "resequence";
 
 function sampleLfoWaveform(shape: Lfo["shape"], phase: number): number {
@@ -23,18 +23,12 @@ export function drawLfo(
 	lfo: Lfo,
 	width: number,
 	height: number,
-	startBeat: number,
 	totalBeats: number,
 ): void {
-	const padding = 2;
-	const drawHeight = height - padding * 2;
 	const pxPerBeat = width / totalBeats;
 
-	canvasCtx.beginPath();
-
-	for (let px = 0; px <= width; px++) {
-		const beat = startBeat + px / pxPerBeat;
-		const elapsed = beat - startBeat;
+	strokeValueCurve(canvasCtx, width, height, (px) => {
+		const elapsed = px / pxPerBeat;
 
 		let amplitude: number;
 
@@ -48,15 +42,7 @@ export function drawLfo(
 
 		const phase = 2 * Math.PI * lfo.frequency * Math.max(0, elapsed - lfo.delay);
 		const sample = sampleLfoWaveform(lfo.shape, phase);
-		const value = 0.5 + (sample - 0.5) * lfo.value * amplitude;
 
-		const vy = padding + drawHeight * (1 - value);
-
-		if (px === 0) canvasCtx.moveTo(px, vy);
-		else canvasCtx.lineTo(px, vy);
-	}
-
-	canvasCtx.strokeStyle = AUTOMATION_COLOR;
-	canvasCtx.lineWidth = 1.5;
-	canvasCtx.stroke();
+		return 0.5 + (sample - 0.5) * lfo.value * amplitude;
+	});
 }

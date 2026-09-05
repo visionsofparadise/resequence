@@ -8,22 +8,8 @@ import {
 	walkNotes,
 } from "@resequence/patterns-core";
 import { I } from "@resequence/patterns-utils";
+import { mulberry32 } from "../utils/mulberry32";
 import type { Event, ModifierProperties, Note, Pattern, PatternProperties, Pitch } from "@resequence/patterns-core";
-
-function mulberry32(seed: number): () => number {
-	let state = seed;
-
-	return function (): number {
-		state += 0x6d2b79f5;
-
-		let value = state;
-
-		value = Math.imul(value ^ (value >>> 15), value | 1);
-		value ^= value + Math.imul(value ^ (value >>> 7), value | 61);
-
-		return ((value ^ (value >>> 14)) >>> 0) / 4294967296;
-	};
-}
 
 interface ArpStep {
 	readonly absoluteBeat: number;
@@ -190,14 +176,18 @@ export function arp(pattern: Pattern | Note, mappingPattern: Pattern): ArpPatter
 	return new ArpPattern({ mapping: mappingPattern, input: resolved });
 }
 
-export function arpUp(voices: number, rate: number): Pattern {
+function ascendingStepsOf(voices: number, rate: number): Array<Note> {
 	const steps: Array<Note> = [];
 
 	for (let voiceIndex = 0; voiceIndex < voices; voiceIndex++) {
 		steps.push(I(voiceIndex)(rate));
 	}
 
-	return sequence(...steps);
+	return steps;
+}
+
+export function arpUp(voices: number, rate: number): Pattern {
+	return sequence(...ascendingStepsOf(voices, rate));
 }
 
 export function arpDown(voices: number, rate: number): Pattern {
@@ -211,11 +201,7 @@ export function arpDown(voices: number, rate: number): Pattern {
 }
 
 export function arpUpDown(voices: number, rate: number): Pattern {
-	const steps: Array<Note> = [];
-
-	for (let voiceIndex = 0; voiceIndex < voices; voiceIndex++) {
-		steps.push(I(voiceIndex)(rate));
-	}
+	const steps = ascendingStepsOf(voices, rate);
 
 	for (let voiceIndex = voices - 2; voiceIndex >= 1; voiceIndex--) {
 		steps.push(I(voiceIndex)(rate));

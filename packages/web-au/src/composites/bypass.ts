@@ -1,6 +1,7 @@
-import { CompositeUnit, MidiUnit } from "@resequence/web-au-core";
+import { MidiUnit } from "@resequence/web-au-core";
 import { z } from "zod";
 import { linearGain, type GainEffectUnit } from "../effects/gain";
+import { detachTargets } from "./utils/detachTargets";
 import type { AnyUnit, SetupResult, UnitContext, UnitInput } from "@resequence/web-au-core";
 
 export class BypassUnit extends MidiUnit {
@@ -36,21 +37,7 @@ export class BypassUnit extends MidiUnit {
 }
 
 export function bypass(unit: AnyUnit): BypassUnit {
-	const targets: Array<AnyUnit> = [...unit.targets];
-
-	unit.targets.length = 0;
-
-	if (unit instanceof CompositeUnit) {
-		const tail = "tail" in unit ? (unit as { tail: AnyUnit }).tail : undefined;
-
-		if (tail) {
-			for (const target of tail.targets) {
-				if (!targets.includes(target)) targets.push(target);
-			}
-
-			tail.targets.length = 0;
-		}
-	}
+	const targets = detachTargets(unit);
 
 	return new BypassUnit({ inner: unit, targets });
 }

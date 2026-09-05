@@ -1,7 +1,6 @@
-import { textPrimary, accentPrimary } from "@resequence/design-system";
+import { accentPrimary } from "@resequence/design-system";
 import { evaluateAt, type Keyframe } from "resequence";
-
-export const AUTOMATION_COLOR = textPrimary;
+import { AUTOMATION_COLOR, strokeValueCurve } from "./strokeValueCurve";
 
 export function drawEnvelope(
 	canvasCtx: CanvasRenderingContext2D,
@@ -13,16 +12,13 @@ export function drawEnvelope(
 ): void {
 	const padding = 2;
 	const drawHeight = height - padding * 2;
+	const valueAt = (px: number): number => evaluateAt(keyframes, startBeat + px / pxPerBeat);
 
 	canvasCtx.beginPath();
 	canvasCtx.moveTo(0, height);
 
 	for (let px = 0; px <= width; px++) {
-		const beat = startBeat + px / pxPerBeat;
-		const value = evaluateAt(keyframes, beat);
-		const vy = padding + drawHeight * (1 - value);
-
-		canvasCtx.lineTo(px, vy);
+		canvasCtx.lineTo(px, padding + drawHeight * (1 - valueAt(px)));
 	}
 
 	canvasCtx.lineTo(width, height);
@@ -32,20 +28,7 @@ export function drawEnvelope(
 	canvasCtx.fill();
 	canvasCtx.globalAlpha = 1;
 
-	canvasCtx.beginPath();
-
-	for (let px = 0; px <= width; px++) {
-		const beat = startBeat + px / pxPerBeat;
-		const value = evaluateAt(keyframes, beat);
-		const vy = padding + drawHeight * (1 - value);
-
-		if (px === 0) canvasCtx.moveTo(px, vy);
-		else canvasCtx.lineTo(px, vy);
-	}
-
-	canvasCtx.strokeStyle = AUTOMATION_COLOR;
-	canvasCtx.lineWidth = 1.5;
-	canvasCtx.stroke();
+	strokeValueCurve(canvasCtx, width, height, valueAt);
 
 	canvasCtx.fillStyle = accentPrimary;
 

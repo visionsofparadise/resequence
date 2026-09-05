@@ -1,4 +1,5 @@
-import { ModifierPattern, toPattern, modifyNotes, walkNotes } from "@resequence/patterns-core";
+import { ModifierPattern, toPattern, modifyNotes } from "@resequence/patterns-core";
+import { noteStartEntriesOf } from "../utils/noteStartEntries";
 import type { Event, Note, ModifierProperties, Pattern, PatternProperties } from "@resequence/patterns-core";
 
 export interface LegatoProperties extends ModifierProperties {
@@ -10,12 +11,7 @@ export class LegatoPattern extends ModifierPattern<LegatoProperties> {
 	readonly unitName = "legato";
 
 	override _setup(): Array<Event> {
-		const entries: Array<{ id: string; absoluteStart: number }> = [];
-
-		walkNotes(this, (note, { id, absoluteOffset }) => {
-			entries.push({ id, absoluteStart: absoluteOffset + note.startBeat });
-		});
-		entries.sort((ea, eb) => ea.absoluteStart - eb.absoluteStart);
+		const entries = noteStartEntriesOf(this);
 
 		const totalDuration = this.endBeat - this.startBeat;
 

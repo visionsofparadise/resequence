@@ -9,6 +9,8 @@
 	"ignore": [
 		"**/.*/**",
 		"**/*.md",
+		"**/*.config.ts",
+		"apps/design-system-demo/**",
 		"**/*.test.ts",
 		"**/*.test.tsx",
 		"**/__fixtures__/**",

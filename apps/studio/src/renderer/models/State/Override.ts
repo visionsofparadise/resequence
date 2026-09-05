@@ -2,13 +2,13 @@ import { useCreateState } from "../ProxyStore/hooks/useCreateState";
 import type { State } from ".";
 import type { ProxyStore } from "../ProxyStore/ProxyStore";
 
-export interface PatternOverrideEntry {
+interface PatternOverrideEntry {
 	domain: "pattern";
 	path: Array<{ index: number; type: string }>;
 	action: string;
 }
 
-export interface UnitOverrideEntry {
+interface UnitOverrideEntry {
 	domain: "unit";
 	port: string;
 	path: Array<{ index: number; type: string }>;

@@ -1,40 +1,9 @@
-import { addSteps, layer, N, note, pitchKey } from "@resequence/patterns-core";
+import { addSteps, layer, note, pitchKey } from "@resequence/patterns-core";
 import { Chord } from "tonal";
-import type { LayerPattern, Pitch, TuningNote } from "@resequence/patterns-core";
-
-const TONAL_TO_KEY: Record<string, string> = {
-	C: "C",
-	"C#": "Cs",
-	Db: "Db",
-	D: "D",
-	"D#": "Ds",
-	Eb: "Eb",
-	E: "E",
-	"E#": "Es",
-	Fb: "Fb",
-	F: "F",
-	"F#": "Fs",
-	Gb: "Gb",
-	G: "G",
-	"G#": "Gs",
-	Ab: "Ab",
-	A: "A",
-	"A#": "As",
-	Bb: "Bb",
-	B: "B",
-	"B#": "Bs",
-	Cb: "Cb",
-};
+import { resolveTonalNote } from "./resolveTonalNote";
+import type { LayerPattern, Pitch } from "@resequence/patterns-core";
 
 const CLASS_NAMES_TONAL = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
-
-function resolveTonalNote(tonalName: string, octave: number): TuningNote | undefined {
-	const key = TONAL_TO_KEY[tonalName];
-
-	if (!key) return undefined;
-
-	return (N as unknown as Record<string, TuningNote>)[`${key}${octave}`];
-}
 
 export function CD(root: Pitch, quality: string, duration: number): LayerPattern {
 	const rootName = CLASS_NAMES_TONAL[root.class] ?? "C";

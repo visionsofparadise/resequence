@@ -1,5 +1,4 @@
-import { useMemo, useRef } from "react";
-import { useTransients } from "../../../../../../../hooks/useTransients";
+import { useClipBounds } from "../hooks/useClipBounds";
 import { AutomationCanvas } from "./Canvas";
 import type { BuildContext } from "../../../../../../../models/Context";
 import type { AutomationClip, Sequence } from "../../../../utils/buildArrangement";
@@ -13,21 +12,7 @@ interface AutomationClipCardProps {
 }
 
 export const AutomationClipCard: React.FC<AutomationClipCardProps> = ({ clip, sequence, context }) => {
-	const { project } = context;
-	const innerRef = useRef<HTMLDivElement>(null);
-
-	const transients = useMemo(() => [project.timelineZoom], [project.timelineZoom]);
-
-	useTransients(transients, () => {
-		if (!innerRef.current) return;
-
-		const pxPerBeat = project.timelineZoom.value;
-		const left = (clip.startBeat - sequence.startBeat) * pxPerBeat;
-		const width = (clip.endBeat - clip.startBeat) * pxPerBeat;
-
-		innerRef.current.style.left = `${left}px`;
-		innerRef.current.style.width = `${width}px`;
-	});
+	const innerRef = useClipBounds(clip, sequence, context);
 
 	return (
 		<div className="relative border-b border-border" style={{ height: AUTOMATION_LANE_HEIGHT }}>

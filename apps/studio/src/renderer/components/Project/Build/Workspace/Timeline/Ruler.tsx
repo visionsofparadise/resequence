@@ -167,16 +167,50 @@ export const Ruler: React.FC<RulerProps> = ({ context }) => {
 		[project.timelineScrollX, project.timelineZoom],
 	);
 
-	const handleClick = useCallback(
-		(event: React.MouseEvent) => {
-			const beat = getBeatFromClientX(event.clientX);
-
+	const seek = useCallback(
+		(beat: number) => {
 			projectStore.mutate<PlaybackState>(playback, (proxy) => {
 				proxy.beat.committed.value = beat;
 			});
 		},
-		[getBeatFromClientX, playback, projectStore],
+		[playback, projectStore],
 	);
+
+	const handleClick = useCallback(
+		(event: React.MouseEvent) => {
+			seek(getBeatFromClientX(event.clientX));
+		},
+		[getBeatFromClientX, seek],
+	);
+
+	const handleKeyDown = useCallback(
+		(event: React.KeyboardEvent) => {
+			const step = event.shiftKey ? 4 : 1;
+			const current = playback.beat.value;
+
+			if (event.key === "ArrowLeft") {
+				event.preventDefault();
+				seek(Math.max(0, current - step));
+			}
+
+			if (event.key === "ArrowRight") {
+				event.preventDefault();
+				seek(current + step);
+			}
+
+			if (event.key === "Home") {
+				event.preventDefault();
+				seek(0);
+			}
+		},
+		[playback.beat, seek],
+	);
+
+	const beatTransients = useMemo(() => [playback.beat], [playback.beat]);
+
+	useTransients(beatTransients, () => {
+		rulerRef.current?.setAttribute("aria-valuenow", String(Math.round(playback.beat.value)));
+	});
 
 	const bindDrag = useDrag(
 		({ xy: [clientX], last }) => {
@@ -198,9 +232,15 @@ export const Ruler: React.FC<RulerProps> = ({ context }) => {
 	return (
 		<div
 			ref={rulerRef}
+			role="slider"
+			tabIndex={0}
+			aria-label="Playhead position in beats"
+			aria-valuemin={0}
+			aria-valuenow={Math.round(playback.beat.value)}
 			className="sticky top-0 z-10 w-full cursor-col-resize border-b border-border bg-elevated"
 			style={{ height: RULER_HEIGHT, touchAction: "none" }}
 			onClick={handleClick}
+			onKeyDown={handleKeyDown}
 			{...bindDrag()}
 		>
 			<div ref={ticksContainerRef} className="pointer-events-none absolute inset-0 overflow-visible" />

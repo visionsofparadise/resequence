@@ -1,5 +1,6 @@
-import { useState, useCallback, useRef } from "react";
+import { useRef } from "react";
 import { cn } from "../cn";
+import { useVerticalDrag } from "../hooks/useVerticalDrag";
 
 interface KnobProps extends Omit<React.ComponentPropsWithRef<"div">, "onChange"> {
 	value: number;
@@ -11,9 +12,7 @@ interface KnobProps extends Omit<React.ComponentPropsWithRef<"div">, "onChange">
 
 const Knob = ({ value, label, size = 40, onChange, overridden = false, className, ref, ...rest }: KnobProps) => {
 	const svgRef = useRef<SVGSVGElement>(null);
-	const [dragging, setDragging] = useState(false);
-	const startY = useRef(0);
-	const startValue = useRef(0);
+	const { onPointerDown, onPointerMove, onPointerUp } = useVerticalDrag({ value, travel: 150, onChange });
 
 	const radius = (size - 4) / 2;
 	const cx = size / 2;
@@ -41,33 +40,6 @@ const Knob = ({ value, label, size = 40, onChange, overridden = false, className
 
 		return `M ${sp.x} ${sp.y} A ${radius} ${radius} 0 ${largeArc} 1 ${ep.x} ${ep.y}`;
 	};
-
-	const onPointerDown = useCallback(
-		(ev: React.PointerEvent) => {
-			if (!onChange) return;
-
-			setDragging(true);
-			(ev.target as Element).setPointerCapture(ev.pointerId);
-			startY.current = ev.clientY;
-			startValue.current = value;
-		},
-		[onChange, value],
-	);
-
-	const onPointerMove = useCallback(
-		(ev: React.PointerEvent) => {
-			if (!dragging || !onChange) return;
-
-			const delta = (startY.current - ev.clientY) / 150;
-
-			onChange(Math.max(0, Math.min(1, startValue.current + delta)));
-		},
-		[dragging, onChange],
-	);
-
-	const onPointerUp = useCallback(() => {
-		setDragging(false);
-	}, []);
 
 	return (
 		<div ref={ref} className={cn("flex flex-col items-center gap-1", className)} {...rest}>
