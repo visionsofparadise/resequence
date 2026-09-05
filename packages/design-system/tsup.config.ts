@@ -6,5 +6,5 @@ export default defineConfig({
 	dts: true,
 	treeshake: true,
 	clean: true,
-	external: ["react", "react-dom", "three", "@react-three/fiber", "@react-three/drei"],
+	external: ["react", "react-dom", "three", "@react-three/fiber"],
 });
