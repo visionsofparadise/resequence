@@ -209,14 +209,12 @@ const UnitGraphView = () => {
 		setDragging(null);
 	}, []);
 
-	// Build positioned nodes from current state
 	const positionedNodes = initialNodes.map((node) => {
 		const pos = nodePositions[node.id] ?? { x: node.x, y: node.y };
 
 		return { ...node, x: pos.x, y: pos.y };
 	});
 
-	// Compute bounds
 	const allX: Array<number> = positionedNodes.flatMap((nd) => [nd.x, nd.x + nd.w]);
 	const allY: Array<number> = positionedNodes.flatMap((nd) => [nd.y, nd.y + nd.h]);
 	const minX = Math.min(...allX);
@@ -234,7 +232,6 @@ const UnitGraphView = () => {
 	const firstNodeId = nodeData[0]?.id;
 	const lastNodeId = nodeData[nodeData.length - 1]?.id;
 
-	// Derive edge paths from current node positions
 	const edgePaths = graphEdges.map(([source, tgt]) => {
 		const srcNode = positionedNodes.find((nd) => nd.id === source);
 		const tgtNode = positionedNodes.find((nd) => nd.id === tgt);

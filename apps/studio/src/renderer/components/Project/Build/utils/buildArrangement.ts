@@ -428,7 +428,6 @@ function buildClips(state: SubtreeState, endBeat?: number): Array<Clip> {
 			const clip = state.automationClips[entry.index];
 
 			if (clip) {
-				// LFO patterns have zero endBeat — extend to containing sequence's endBeat
 				if (clip.startBeat === clip.endBeat && endBeat !== undefined) {
 					clips.push({ ...clip, endBeat: endBeat });
 				} else {

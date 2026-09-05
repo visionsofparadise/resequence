@@ -157,7 +157,6 @@ program
 			const getSample = createSampleLoader(basePath);
 			const loadModule = createModuleLoader();
 
-			// Probe setup to determine duration from the graph
 			const probeContext = createUnitContext(
 				new NodeOfflineAudioContext(2, 1, sampleRate),
 				getSample,
@@ -177,7 +176,6 @@ program
 
 			unit.teardown(probeContext);
 
-			// Run with correctly-sized offline context
 			const totalSamples = Math.ceil(duration * sampleRate);
 			const offlineContext = new NodeOfflineAudioContext(2, totalSamples, sampleRate);
 			const latencyBudget = computeMaxLatency(unit);

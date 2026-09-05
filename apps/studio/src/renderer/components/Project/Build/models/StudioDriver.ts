@@ -36,7 +36,6 @@ export class StudioDriver {
 		return () => this._listeners.delete(listener);
 	}
 
-	// AudioNode pass-throughs
 	get channelCount(): number {
 		return this._real.channelCount;
 	}
@@ -65,7 +64,6 @@ export class StudioDriver {
 		return this._real.numberOfOutputs;
 	}
 
-	// AudioScheduledSourceNode pass-throughs
 	get onended(): ((this: AudioScheduledSourceNode, ev: Event) => unknown) | null {
 		return this._real.onended;
 	}
@@ -73,7 +71,6 @@ export class StudioDriver {
 		this._real.onended = value;
 	}
 
-	// EventTarget pass-throughs
 	addEventListener(
 		type: string,
 		listener: EventListenerOrEventListenerObject,
@@ -151,7 +148,6 @@ export class StudioDriverOffset {
 		return this._driver.realNode.offset;
 	}
 
-	// AudioParam pass-throughs
 	get defaultValue(): number {
 		return this._driver.realNode.offset.defaultValue;
 	}

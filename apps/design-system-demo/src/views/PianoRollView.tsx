@@ -154,23 +154,19 @@ const PianoRollView = () => {
 						gridTemplateRows: `${RULER_HEIGHT}px ${GRID_HEIGHT}px`,
 					}}
 				>
-					{/* Top-left corner — sticky to both top and left */}
 					<div
 						className="bg-surface border-b border-border"
 						style={{ position: "sticky", top: 0, left: 0, zIndex: 3 }}
 					/>
 
-					{/* Ruler — sticky to top */}
 					<div className="border-b border-border" style={{ position: "sticky", top: 0, zIndex: 2 }}>
 						<BeatRuler totalBars={TOTAL_BARS} beatsPerBar={BEATS_PER_BAR} pixelsPerBeat={PIXELS_PER_BEAT} />
 					</div>
 
-					{/* Piano keys — sticky to left */}
 					<div className="border-r border-border" style={{ position: "sticky", left: 0, zIndex: 2 }}>
 						<PianoKeys keyHeight={KEY_HEIGHT} />
 					</div>
 
-					{/* Grid — notes area */}
 					<div className="relative">
 						{Array.from({ length: TOTAL_KEYS }, (_, row) => {
 							if (!BLACK_KEYS.has((MAX_PITCH - row) % 12)) return null;

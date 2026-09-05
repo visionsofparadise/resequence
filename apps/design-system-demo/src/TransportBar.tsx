@@ -11,7 +11,6 @@ const TransportBar = () => {
 
 	return (
 		<div className="w-full bg-surface flex items-center h-16 border-t border-border relative">
-			{/* Left: Build selector */}
 			<div className="flex items-center min-w-[200px] self-stretch">
 				<button className="flex items-center hover:text-text-primary transition-colors bg-surface border-r border-border px-4 cursor-pointer self-stretch">
 					<div className="flex flex-col justify-center gap-0.5 items-start">
@@ -27,26 +26,22 @@ const TransportBar = () => {
 				</button>
 			</div>
 
-			{/* Center: Playback controls — absolutely centered */}
 			<div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-3 self-stretch">
 				<button className="type-label italic hover:text-text-primary transition-colors bg-transparent border border-border px-2 py-0.5 cursor-pointer text-text-secondary">
 					1X
 				</button>
-				{/* Rewind */}
 				<button className={iconClass} aria-label="Rewind">
 					<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
 						<polygon points="12,3 0,12 12,21" />
 						<polygon points="24,3 12,12 24,21" />
 					</svg>
 				</button>
-				{/* Skip back */}
 				<button className={iconClass} aria-label="Skip back">
 					<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
 						<rect x="0" y="3" width="3" height="18" />
 						<polygon points="22,3 6,12 22,21" />
 					</svg>
 				</button>
-				{/* Play */}
 				<button
 					className="text-text-primary hover:text-text-primary transition-colors bg-transparent border-none cursor-pointer px-0 self-stretch flex items-center"
 					aria-label={playing ? "Pause" : "Play"}
@@ -59,14 +54,12 @@ const TransportBar = () => {
 						<PlayButton size={56} hovered={playHovered} onClick={() => setPlaying((previous) => !previous)} />
 					)}
 				</button>
-				{/* Skip forward */}
 				<button className={iconClass} aria-label="Skip forward">
 					<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
 						<polygon points="2,3 18,12 2,21" />
 						<rect x="21" y="3" width="3" height="18" />
 					</svg>
 				</button>
-				{/* Fast forward */}
 				<button className={iconClass} aria-label="Fast forward">
 					<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
 						<polygon points="0,3 12,12 0,21" />
@@ -75,7 +68,6 @@ const TransportBar = () => {
 				</button>
 			</div>
 
-			{/* Right: Volume */}
 			<div className="flex flex-col gap-1 min-w-[200px] items-end self-stretch justify-center pr-4 ml-auto">
 				<div className="flex items-center gap-2" style={{ width: 24 * 4 }}>
 					<span className="type-label">VOL</span>

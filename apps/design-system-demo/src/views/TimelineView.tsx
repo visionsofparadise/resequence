@@ -30,7 +30,6 @@ const seededRandom = (seed: number): (() => number) => {
 	};
 };
 
-// Header shared by clips and sequences — identical structure
 const ClipHeader = ({ name, color }: { name: string; color?: string }) => (
 	<div
 		className="px-1.5 flex items-center cursor-pointer"
@@ -196,7 +195,6 @@ const PatternBox = ({ pattern, pxPerBeat }: { pattern: TreePattern; pxPerBeat: n
 		);
 	}
 
-	// Sequence
 	return (
 		<div className="shrink-0 outline outline-1 outline-border -outline-offset-1 bg-surface diagonal-stripes">
 			{pattern.name && <ClipHeader name={pattern.name} />}

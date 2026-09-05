@@ -82,8 +82,6 @@ export const createWindow = async (dependencies: WindowFactoryDependencies): Pro
 
 	restoreWindowState(browserWindow, settings);
 
-	// Emit window bounds to renderer on move/resize (debounced) and close (immediate).
-	// The renderer owns persistence — it reads the event and writes settings via IPC.
 	let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
 	const emitBounds = (): void => {

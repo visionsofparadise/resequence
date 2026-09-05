@@ -31,7 +31,6 @@ export class EnvelopeUnit extends MidiUnit<typeof envelopeSchema> {
 	constructor(input: { adsr: EnvelopeAdsr } & MidiUnitInput) {
 		const adsr = input.adsr;
 
-		// Convert ms ADSR values to seconds for schema parameters
 		const schemaInput = {
 			id: input.id,
 			attack: (adsr.attack ?? 10) / 1000,

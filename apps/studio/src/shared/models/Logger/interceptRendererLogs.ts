@@ -42,8 +42,6 @@ export const interceptRendererLogs = (
 
 				browserWindow.webContents.removeListener("console-message", consoleMessageListener);
 			}
-		} catch {
-			// Window already destroyed during app quit
-		}
+		} catch {}
 	};
 };

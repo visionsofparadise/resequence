@@ -55,10 +55,6 @@ export class LiveParameter {
 	}
 }
 
-/**
- * Unwrap optional and default wrappers to get to the core Zod type.
- * Returns the innermost schema and any default value found during unwrapping.
- */
 function unwrapField(field: z.ZodType): { inner: z.ZodType; defaultValue: unknown } {
 	let current = field;
 	let defaultValue: unknown = undefined;
@@ -113,7 +109,6 @@ export function createParameters<S extends z.ZodObject>(input: object, schema: S
 		const propValue = props[key];
 
 		if (innerType === "optional" || innerType === "default") {
-			// Should not happen after unwrapping, but guard defensively
 			result[key] = new Parameter(propValue ?? defaultValue ?? null);
 		} else if (innerType === "number" && meta.live === true) {
 			const value = (propValue as number | undefined) ?? (defaultValue as number | undefined) ?? 0;
@@ -145,7 +140,6 @@ export function createParameters<S extends z.ZodObject>(input: object, schema: S
 				result[key] = new Parameter(propValue ?? defaultValue ?? []);
 			}
 		} else {
-			// Structural parameter: enum, string, boolean, etc.
 			result[key] = new Parameter(propValue ?? defaultValue ?? null);
 		}
 	}

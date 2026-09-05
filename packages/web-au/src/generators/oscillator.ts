@@ -22,7 +22,6 @@ export class OscillatorUnit extends GeneratorUnit<typeof oscillatorSchema> {
 	protected override async _setup(context: UnitContext): Promise<SetupResult> {
 		const result = await super._setup(context);
 
-		// Pre-register frequency driver for external modulation targeting
 		if (this.id) {
 			getOrCreateDriver(`${this.id}.frequency`, 0, context, [20, 20000]);
 		}
@@ -38,12 +37,10 @@ export class OscillatorUnit extends GeneratorUnit<typeof oscillatorSchema> {
 
 		const frequency = noteToFrequency(ne.note, ne.bend);
 
-		// Frequency is per-voice (computed from note), uses offsetParam for additive modulation
 		const freqParam = new LiveParameter(this.id ? `${this.id}.frequency` : null, frequency, 20, 20000);
 
 		offsetParam(oscillator.frequency, freqParam, undefined, context);
 
-		// Detune is unit-level, shared across all voices via the same driver
 		driveParam(oscillator.detune, this.parameters.detune, undefined, context);
 
 		if (ne.slides && ne.slides.length > 0) {

@@ -31,14 +31,11 @@ const generateDrumPattern = (bars: number): Array<Note> => {
 	for (let bar = 0; bar < bars; bar++) {
 		const bt = bar * 4;
 
-		// Kick
 		notes.push({ beat: bt, pitch: 36, duration: 0.5, velocity: 120 });
 		notes.push({ beat: bt + 2, pitch: 36, duration: 0.5, velocity: 110 });
-		// Snare
 		notes.push({ beat: bt + 1, pitch: 38, duration: 0.5, velocity: 100 });
 		notes.push({ beat: bt + 3, pitch: 38, duration: 0.5, velocity: 105 });
 
-		// Hi-hats
 		for (let hi = 0; hi < 8; hi++) {
 			notes.push({
 				beat: bt + hi * 0.5,
@@ -48,12 +45,10 @@ const generateDrumPattern = (bars: number): Array<Note> => {
 			});
 		}
 
-		// Fill on last bar of every 4
 		if (bar % 4 === 3) {
 			notes.push({ beat: bt + 3.5, pitch: 36, duration: 0.5, velocity: 80 });
 		}
 
-		// Ghost note
 		if (bar % 2 === 1) {
 			notes.push({ beat: bt + 2.5, pitch: 38, duration: 0.25, velocity: 60 });
 		}
@@ -69,14 +64,12 @@ const generateBuildingDrums = (bars: number): Array<Note> => {
 		const bt = bar * 4;
 		const intensity = (bar + 1) / bars;
 
-		// Kick — sparse at first, fills in
 		notes.push({ beat: bt, pitch: 36, duration: 0.5, velocity: 80 + intensity * 40 });
 
 		if (bar >= 2) {
 			notes.push({ beat: bt + 2, pitch: 36, duration: 0.5, velocity: 70 + intensity * 30 });
 		}
 
-		// Hi-hats — increasing density
 		const subdivs = bar < 2 ? 4 : 8;
 
 		for (let hi = 0; hi < subdivs; hi++) {
@@ -99,7 +92,6 @@ export const composition: TreePattern = {
 	type: "sequence",
 	beats: 96,
 	children: [
-		// INTRO — 16 beats (4 bars)
 		{
 			name: "INTRO",
 			type: "sequence",
@@ -117,7 +109,6 @@ export const composition: TreePattern = {
 							unitColor: "var(--color-unit-1)",
 							beats: 16,
 							notes: [
-								// Cm pad — whole notes
 								{ beat: 0, pitch: 60, duration: 8, velocity: 70 },
 								{ beat: 0, pitch: 63, duration: 8, velocity: 65 },
 								{ beat: 0, pitch: 67, duration: 8, velocity: 60 },
@@ -139,7 +130,6 @@ export const composition: TreePattern = {
 			],
 		},
 
-		// VERSE — 32 beats (8 bars)
 		{
 			name: "VERSE",
 			type: "sequence",
@@ -157,11 +147,9 @@ export const composition: TreePattern = {
 							unitColor: "var(--color-unit-1)",
 							beats: 32,
 							notes: [
-								// Cm: C4, Eb4, G4 — bars 1-4
 								{ beat: 0, pitch: 60, duration: 16, velocity: 90 },
 								{ beat: 0, pitch: 63, duration: 16, velocity: 85 },
 								{ beat: 0, pitch: 67, duration: 16, velocity: 80 },
-								// Ab: Ab3, C4, Eb4 — bars 5-8
 								{ beat: 16, pitch: 56, duration: 16, velocity: 88 },
 								{ beat: 16, pitch: 60, duration: 16, velocity: 82 },
 								{ beat: 16, pitch: 63, duration: 16, velocity: 78 },
@@ -174,14 +162,12 @@ export const composition: TreePattern = {
 							unitColor: "var(--color-unit-2)",
 							beats: 32,
 							notes: [
-								// C root — bars 1-4
 								{ beat: 0, pitch: 36, duration: 4, velocity: 110 },
 								{ beat: 4, pitch: 36, duration: 2, velocity: 100 },
 								{ beat: 6, pitch: 48, duration: 2, velocity: 95 },
 								{ beat: 8, pitch: 36, duration: 4, velocity: 108 },
 								{ beat: 12, pitch: 36, duration: 2, velocity: 100 },
 								{ beat: 14, pitch: 43, duration: 2, velocity: 90 },
-								// Ab root — bars 5-8
 								{ beat: 16, pitch: 44, duration: 4, velocity: 105 },
 								{ beat: 20, pitch: 44, duration: 2, velocity: 98 },
 								{ beat: 22, pitch: 48, duration: 2, velocity: 92 },
@@ -203,13 +189,11 @@ export const composition: TreePattern = {
 			],
 		},
 
-		// CHORUS — 32 beats (8 bars), split into CHORUS A + CHORUS B
 		{
 			name: "CHORUS",
 			type: "sequence",
 			beats: 32,
 			children: [
-				// CHORUS A — 16 beats (4 bars)
 				{
 					name: "CHORUS A",
 					type: "sequence",
@@ -227,11 +211,9 @@ export const composition: TreePattern = {
 									unitColor: "var(--color-unit-1)",
 									beats: 16,
 									notes: [
-										// Bb: Bb3, D4, F4
 										{ beat: 0, pitch: 58, duration: 8, velocity: 92 },
 										{ beat: 0, pitch: 62, duration: 8, velocity: 86 },
 										{ beat: 0, pitch: 65, duration: 8, velocity: 80 },
-										// G: G3, B3, D4
 										{ beat: 8, pitch: 55, duration: 8, velocity: 95 },
 										{ beat: 8, pitch: 59, duration: 8, velocity: 88 },
 										{ beat: 8, pitch: 62, duration: 8, velocity: 82 },
@@ -244,11 +226,9 @@ export const composition: TreePattern = {
 									unitColor: "var(--color-unit-2)",
 									beats: 16,
 									notes: [
-										// Bb root
 										{ beat: 0, pitch: 46, duration: 4, velocity: 110 },
 										{ beat: 4, pitch: 46, duration: 2, velocity: 100 },
 										{ beat: 6, pitch: 41, duration: 2, velocity: 95 },
-										// G root
 										{ beat: 8, pitch: 43, duration: 4, velocity: 112 },
 										{ beat: 12, pitch: 43, duration: 2, velocity: 100 },
 										{ beat: 14, pitch: 36, duration: 2, velocity: 95 },
@@ -281,7 +261,6 @@ export const composition: TreePattern = {
 					],
 				},
 
-				// CHORUS B — 16 beats (4 bars)
 				{
 					name: "CHORUS B",
 					type: "sequence",
@@ -299,7 +278,6 @@ export const composition: TreePattern = {
 									unitColor: "var(--color-unit-1)",
 									beats: 16,
 									notes: [
-										// Arpeggiated variation
 										{ beat: 0, pitch: 58, duration: 2, velocity: 100 },
 										{ beat: 0, pitch: 62, duration: 2, velocity: 90 },
 										{ beat: 2, pitch: 65, duration: 2, velocity: 95 },
@@ -308,7 +286,6 @@ export const composition: TreePattern = {
 										{ beat: 4, pitch: 63, duration: 2, velocity: 92 },
 										{ beat: 6, pitch: 67, duration: 2, velocity: 95 },
 										{ beat: 6, pitch: 72, duration: 2, velocity: 100 },
-										// Resolving chords
 										{ beat: 8, pitch: 55, duration: 8, velocity: 95 },
 										{ beat: 8, pitch: 59, duration: 8, velocity: 88 },
 										{ beat: 8, pitch: 62, duration: 8, velocity: 82 },
@@ -345,7 +322,6 @@ export const composition: TreePattern = {
 			],
 		},
 
-		// OUTRO — 16 beats (4 bars)
 		{
 			name: "OUTRO",
 			type: "sequence",
@@ -363,7 +339,6 @@ export const composition: TreePattern = {
 							unitColor: "var(--color-unit-1)",
 							beats: 16,
 							notes: [
-								// Fading Cm pad
 								{ beat: 0, pitch: 60, duration: 16, velocity: 70 },
 								{ beat: 0, pitch: 63, duration: 16, velocity: 60 },
 								{ beat: 0, pitch: 67, duration: 16, velocity: 50 },
@@ -383,7 +358,6 @@ export const composition: TreePattern = {
 	],
 };
 
-// Backward-compatible exports for PianoRollView
 export interface Pattern {
 	name: string;
 	unitColor: string;

@@ -151,10 +151,8 @@ const Showcase = ({ selectedFont, onSelectFont }: { selectedFont: string; onSele
 				</div>
 			</div>
 
-			{/* Specimen grid */}
 			<div className="grid border-b border-border" style={{ gridTemplateColumns: "1fr" }}>
 				<div className="grid border-collapse" style={{ gridTemplateColumns: "1fr 1fr 1fr" }}>
-					{/* Identity cell — spans 2 cols */}
 					<div className="col-span-2 border-r border-b border-border p-8 relative overflow-hidden">
 						<p className="type-label mb-3 text-accent-primary">DESIGN SYSTEM</p>
 						<h1 className="type-display text-[56px] leading-none">RESEQUENCE</h1>
@@ -163,7 +161,6 @@ const Showcase = ({ selectedFont, onSelectFont }: { selectedFont: string; onSele
 						<span className="type-label text-dimmed absolute bottom-3 right-4">V0.1.0</span>
 					</div>
 
-					{/* Accent colors cell */}
 					<div className="border-b border-border p-6 flex flex-col justify-between">
 						<p className="type-label mb-4">ACCENTS</p>
 						<div className="flex flex-col gap-3">
@@ -179,7 +176,6 @@ const Showcase = ({ selectedFont, onSelectFont }: { selectedFont: string; onSele
 						</div>
 					</div>
 
-					{/* Monochrome tones — full width */}
 					<div className="col-span-3 border-b border-border">
 						<div className="flex">
 							{monochromeTones.map((tone, ix) => (
@@ -205,7 +201,6 @@ const Showcase = ({ selectedFont, onSelectFont }: { selectedFont: string; onSele
 						</div>
 					</div>
 
-					{/* Unit colors */}
 					<div className="col-span-2 border-r border-b border-border p-6">
 						<p className="type-label mb-4">UNIT ASSIGNMENT</p>
 						<div className="flex gap-2">
@@ -218,7 +213,6 @@ const Showcase = ({ selectedFont, onSelectFont }: { selectedFont: string; onSele
 						</div>
 					</div>
 
-					{/* Typography scale */}
 					<div className="border-b border-border p-6">
 						<p className="type-label mb-4">TYPE SCALE</p>
 						<div className="flex flex-col gap-3">
@@ -241,7 +235,6 @@ const Showcase = ({ selectedFont, onSelectFont }: { selectedFont: string; onSele
 						</div>
 					</div>
 
-					{/* Components row */}
 					<div className="border-b border-border p-6">
 						<p className="type-label mb-4">KNOBS</p>
 						<div className="flex gap-4">

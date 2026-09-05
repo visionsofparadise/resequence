@@ -95,7 +95,5 @@ export function undriveParam(liveParam: LiveParameter, context: UnitContext): vo
 		const entry = context.driverMap.get(liveParam.path);
 
 		if (entry && liveParam.audioParam) entry.node.disconnect(liveParam.audioParam);
-	} catch {
-		// already disconnected
-	}
+	} catch {}
 }

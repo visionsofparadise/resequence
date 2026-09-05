@@ -22,7 +22,6 @@ const mainApi = {
 		ipcRenderer.send(eventName, ...args);
 	},
 
-	// Must stay in preload — File objects aren't serializable over IPC
 	getPathForFile: (file: File) => webUtils.getPathForFile(file),
 };
 

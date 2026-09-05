@@ -105,7 +105,6 @@ const HomeView = () => (
 			className="grid w-full border-t border-b border-border"
 			style={{ gridTemplateColumns: "2fr 1fr", gridTemplateRows: "auto 240px" }}
 		>
-			{/* Identity cell */}
 			<div className="border-r border-b border-border p-8 relative overflow-hidden">
 				<p className="type-label mb-3 text-accent-primary">HOME</p>
 				<h1 className="type-display text-[56px] leading-none">RESEQUENCE</h1>
@@ -114,7 +113,6 @@ const HomeView = () => (
 				<span className="type-label text-dimmed absolute bottom-3 right-4">V0.1.0</span>
 			</div>
 
-			{/* Recent projects — 2 columns */}
 			<div className="border-b border-border p-6 flex flex-col">
 				<p className="type-label mb-4">RECENT</p>
 				<div className="grid grid-cols-2 gap-x-4 gap-y-2 flex-1 overflow-auto">
@@ -142,14 +140,12 @@ const HomeView = () => (
 				</div>
 			</div>
 
-			{/* Bottom left — shader art */}
 			<div className="border-r border-border" style={{ position: "relative" }}>
 				<div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}>
 					<DomainWarpShader />
 				</div>
 			</div>
 
-			{/* Create / Open project */}
 			<div className="border-border p-6 flex flex-col justify-between">
 				<p className="type-label mb-4">PROJECT</p>
 				<div className="flex flex-col gap-3 mt-auto">

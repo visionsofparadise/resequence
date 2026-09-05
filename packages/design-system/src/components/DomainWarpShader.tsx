@@ -4,7 +4,7 @@ import { Color, Vector2, Vector3, type Mesh } from "three";
 import { cn } from "../cn";
 import { useThemeColors } from "./three-utils";
 
-const vertexShader = /* glsl */ `
+const vertexShader = `
   varying vec2 vUv;
   void main() {
     vUv = uv;
@@ -12,7 +12,7 @@ const vertexShader = /* glsl */ `
   }
 `;
 
-const fragmentShader = /* glsl */ `
+const fragmentShader = `
   precision highp float;
 
   uniform float uTime;

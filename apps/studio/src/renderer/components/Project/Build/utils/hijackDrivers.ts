@@ -21,7 +21,6 @@ export function hijackDrivers(
 
 		all.set(path, studioDriver);
 
-		// Group by unit ID: path format is "unitId.paramName"
 		const dotIndex = path.indexOf(".");
 
 		if (dotIndex !== -1) {

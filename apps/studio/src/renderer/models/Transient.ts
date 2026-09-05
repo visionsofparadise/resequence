@@ -48,7 +48,6 @@ export class Transient<V> {
 		return this._transient.current ?? this._committed;
 	}
 
-	// Accessor for committed value — mutations go through the valtio proxy and generate ops
 	get committed(): { value: V } {
 		// eslint-disable-next-line @typescript-eslint/no-this-alias
 		const _this = this;
@@ -66,7 +65,6 @@ export class Transient<V> {
 		};
 	}
 
-	// Setter in a ref — generates at most one op per gesture (isDirty: false → true)
 	get transient(): { value: V | undefined } {
 		// eslint-disable-next-line @typescript-eslint/no-this-alias
 		const _this = this;
