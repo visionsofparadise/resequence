@@ -11,14 +11,26 @@
 	"workspaces": {
 		".": {},
 		"apps/*": {
-			"project": ["src/**/*.{ts,tsx}"]
+			"project": ["src/**/*.{ts,tsx,css}"]
 		},
 		"packages/*": {
 			"project": ["src/**/*.{ts,tsx}"]
 		},
 		"apps/studio": {
-			"project": ["src/**/*.{ts,tsx}"],
+			"project": ["src/**/*.{ts,tsx,css}"],
 			"entry": ["src/main/index.ts", "src/preload/index.ts", "forge.config.ts"]
+		},
+		"packages/patterns-core": {
+			"project": ["src/**/*.{ts,tsx}"],
+			"ignoreIssues": {
+				"src/**": ["duplicates"]
+			}
+		},
+		"packages/web-au": {
+			"project": ["src/**/*.{ts,tsx}"],
+			"ignoreIssues": {
+				"src/**": ["duplicates"]
+			}
 		}
 	}
 }
