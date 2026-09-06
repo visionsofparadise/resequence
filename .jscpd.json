@@ -18,6 +18,19 @@
 		"**/package.json",
 		"package-lock.json",
 		"pnpm-lock.yaml",
-		"yarn.lock"
+		"yarn.lock",
+		"packages/patterns-core/src/pitch.ts",
+		"packages/web-au-utils/src/pitch.ts",
+		"packages/patterns-utils/src/utils/keyframe.ts",
+		"packages/web-au-utils/src/schedule-slides.ts",
+		"packages/resequence/src/rendering/encode-wav.ts",
+		"packages/web-au-utils/src/encode-wav.ts",
+		"packages/patterns-core/src/patterns/metadata.ts",
+		"packages/patterns-core/src/patterns/pattern.ts",
+		"packages/web-au/src/effects/am.ts",
+		"packages/web-au/src/effects/ringmod.ts",
+		"packages/web-au/src/effects/channel-merger.ts",
+		"packages/web-au/src/effects/channel-splitter.ts",
+		"packages/web-au/src/effects/channel.ts"
 	]
 }
