@@ -11,3 +11,7 @@ Resequence is music as code. You write a piece as a TypeScript program: the note
 ## Interface
 
 The public interface is the `resequence` package. See [its README](packages/resequence/README.md) for installation and usage.
+
+## License
+
+[MIT](LICENSE)

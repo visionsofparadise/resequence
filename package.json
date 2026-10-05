@@ -56,5 +56,6 @@
 		"electron-winstaller@5.4.0": true,
 		"unrs-resolver@1.11.1": true,
 		"esbuild": true
-	}
+	},
+	"license": "MIT"
 }
