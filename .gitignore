@@ -10,3 +10,4 @@ binaries/
 .tools/
 tsconfig.tsbuildinfo
 .stylelintcache
+.scratch/
